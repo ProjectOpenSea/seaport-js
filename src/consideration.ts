@@ -39,7 +39,10 @@ export class Consideration {
       ...orderParameters,
       nonce:
         nonce ??
-        (await this.contract.getNonce(signer._address, orderParameters.zone)),
+        (await this.contract.getNonce(
+          orderParameters.offerer,
+          orderParameters.zone
+        )),
     };
 
     return await signer._signTypedData(
