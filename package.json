@@ -7,6 +7,9 @@
     "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git",
     "ethers": "^5.6.0"
   },
+  "engines": {
+    "node": "16.11.0"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
