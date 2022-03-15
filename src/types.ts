@@ -29,3 +29,5 @@ export type OrderParameters = {
     recipient: string;
   }[];
 };
+
+export type OrderComponents = OrderParameters & { nonce: BigNumberish };

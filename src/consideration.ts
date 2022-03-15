@@ -1,7 +1,7 @@
 import { Contract, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
-import { ConsiderationConfig, OrderParameters } from "./types";
+import { ConsiderationConfig, OrderComponents, OrderParameters } from "./types";
 import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
@@ -37,7 +37,7 @@ export class Consideration {
       chainId,
     };
 
-    const orderComponents = {
+    const orderComponents: OrderComponents = {
       ...orderParameters,
       nonce:
         nonce ??
