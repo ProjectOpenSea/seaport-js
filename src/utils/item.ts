@@ -1,30 +1,33 @@
 import { BigNumberish } from "ethers";
 import { ethers } from "hardhat";
-import { ItemType } from "../constants";
+import { ItemType, NftItemType } from "../constants";
 import { OfferItem, ReceivedItem } from "../types";
 
-type PaymentItem<T> = T extends { recipient: string }
+type CreateItemParams = {
+  itemType: BigNumberish;
+  token: string;
+  amount: BigNumberish;
+  identifierOrCriteria: BigNumberish;
+  endAmount?: BigNumberish;
+  recipient?: string;
+};
+
+type CreatedItem<T> = T extends { recipient: string }
   ? ReceivedItem
   : OfferItem;
 
-export const createPaymentItem = <
-  T extends {
-    token?: string;
-    amount: BigNumberish;
-    endAmount?: BigNumberish;
-    recipient?: string;
-  }
->({
+const createItem = <T extends CreateItemParams>({
+  itemType,
   token = ethers.constants.AddressZero,
   amount,
+  identifierOrCriteria,
   endAmount,
   recipient,
 }: T): T extends { recipient: string } ? ReceivedItem : OfferItem => {
   const item = {
-    itemType:
-      token === ethers.constants.AddressZero ? ItemType.ETH : ItemType.ERC20,
+    itemType,
     token,
-    identifierOrCriteria: 0,
+    identifierOrCriteria,
     startAmount: amount,
     endAmount: endAmount ?? amount,
   };
@@ -33,8 +36,48 @@ export const createPaymentItem = <
     return {
       ...item,
       recipient,
-    } as PaymentItem<T>;
+    } as CreatedItem<T>;
   }
 
-  return item as PaymentItem<T>;
+  return item as CreatedItem<T>;
+};
+
+export const createNftItem = <
+  T extends Omit<CreateItemParams, "endAmount" | "itemType"> & {
+    itemType?: NftItemType;
+  }
+>({
+  itemType = ItemType.ERC721,
+  token,
+  amount,
+  identifierOrCriteria,
+  recipient,
+}: T): CreatedItem<T> => {
+  return createItem({
+    itemType,
+    token,
+    amount,
+    identifierOrCriteria,
+    recipient,
+  }) as CreatedItem<T>;
+};
+
+export const createPaymentItem = <
+  T extends Pick<CreateItemParams, "amount" | "endAmount" | "recipient"> &
+    Partial<Pick<CreateItemParams, "token">>
+>({
+  token = ethers.constants.AddressZero,
+  amount,
+  endAmount,
+  recipient,
+}: T): CreatedItem<T> => {
+  return createItem({
+    itemType:
+      token === ethers.constants.AddressZero ? ItemType.ETH : ItemType.ERC20,
+    token,
+    amount,
+    identifierOrCriteria: 0,
+    endAmount,
+    recipient,
+  }) as CreatedItem<T>;
 };
