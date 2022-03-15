@@ -1,5 +1,5 @@
-import { providers } from "ethers";
-import { Consideration as ConsiderationContract } from "../typechain/Consideration";
+import { Contract, providers } from "ethers";
+import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
 import { ConsiderationConfig, OrderParameters } from "./types";
 import {
@@ -19,10 +19,12 @@ export class Consideration {
     config?: ConsiderationConfig
   ) {
     this.provider = provider;
-    this.contract = new ConsiderationContract(
+
+    this.contract = new Contract(
       config?.overrides?.contractAddress ?? "",
-      ConsiderationABI.abi
-    );
+      ConsiderationABI.abi,
+      provider.getSigner()
+    ) as ConsiderationContract;
   }
 
   public async signOrder(orderParameters: OrderParameters, nonce?: number) {

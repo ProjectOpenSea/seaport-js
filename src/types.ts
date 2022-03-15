@@ -1,4 +1,4 @@
-import { Consideration } from "../typechain";
+import type { Consideration } from "./typechain";
 
 export type ConsiderationConfig = {
   overrides?: {

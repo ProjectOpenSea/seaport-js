@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project",
+  "name": "consideration",
   "scripts": {
     "test": "npx hardhat test"
   },
@@ -37,6 +37,7 @@
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.7.20",
     "ts-node": "^10.7.0",
+    "tsconfig-paths": "^3.14.0",
     "typechain": "^5.2.0",
     "typescript": "^4.6.2"
   }

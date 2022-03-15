@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Consideration as ConsiderationContract } from "../typechain";
+import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
 import { randomBytes } from "crypto";
-import { Consideration } from "../src/consideration";
+import { Consideration } from "../consideration";
 
-describe("Consideration", function () {
+describe("Sign order", function () {
   let considerationContract: ConsiderationContract;
   let consideration: Consideration;
   let testERC721: TestERC721;
@@ -81,10 +81,10 @@ describe("Consideration", function () {
 
     const signature = await consideration.signOrder(orderParameters);
 
-    expect(
-      await considerationContract.validate([
-        { parameters: orderParameters, signature },
-      ])
-    );
+    const isValid = await considerationContract.callStatic.validate([
+      { parameters: orderParameters, signature },
+    ]);
+
+    expect(isValid).to.be.true;
   });
 });
