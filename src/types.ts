@@ -1,4 +1,4 @@
-import type { Consideration } from "./typechain";
+import { BigNumberish } from "ethers";
 
 export type ConsiderationConfig = {
   overrides?: {
@@ -6,6 +6,26 @@ export type ConsiderationConfig = {
   };
 };
 
-export type OrderParameters = Parameters<
-  Consideration["validate"]
->[0][0]["parameters"];
+export type OrderParameters = {
+  offerer: string;
+  zone: string;
+  orderType: BigNumberish;
+  startTime: BigNumberish;
+  endTime: BigNumberish;
+  salt: BigNumberish;
+  offer: {
+    itemType: BigNumberish;
+    token: string;
+    identifierOrCriteria: BigNumberish;
+    startAmount: BigNumberish;
+    endAmount: BigNumberish;
+  }[];
+  consideration: {
+    itemType: BigNumberish;
+    token: string;
+    identifierOrCriteria: BigNumberish;
+    startAmount: BigNumberish;
+    endAmount: BigNumberish;
+    recipient: string;
+  }[];
+};

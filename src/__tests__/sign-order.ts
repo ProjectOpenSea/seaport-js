@@ -29,7 +29,7 @@ describe("Sign order", function () {
     await testERC721.deployed();
   });
 
-  it("should return a valid order", async function () {
+  it("should be a valid order", async function () {
     const [offerer, zone] = await ethers.getSigners();
     const startTime = 0;
     const endTime = ethers.BigNumber.from(
