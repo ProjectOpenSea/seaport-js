@@ -1,4 +1,4 @@
-import { Contract, providers } from "ethers";
+import { Contract, ethers, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
 import { ConsiderationConfig, OrderComponents, OrderParameters } from "./types";
@@ -52,5 +52,22 @@ export class Consideration {
       EIP_712_ORDER_TYPE,
       orderComponents
     );
+  }
+
+  public async cancelOrders(orders: OrderComponents[]) {
+    return this.contract.cancel(orders);
+  }
+
+  public async bulkCancelOrders({
+    offerer,
+    zone = ethers.constants.AddressZero,
+  }: {
+    offerer?: string;
+    zone: string;
+  }) {
+    const resolvedOfferer =
+      offerer ?? (await this.provider.getSigner().getAddress());
+
+    return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 }
