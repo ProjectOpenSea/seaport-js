@@ -1,7 +1,7 @@
 import { BigNumberish } from "ethers";
 import { ethers } from "hardhat";
-import { ItemType } from "src/constants";
-import { OfferItem, ReceivedItem } from "src/types";
+import { ItemType } from "../constants";
+import { OfferItem, ReceivedItem } from "../types";
 
 type PaymentItem<T> = T extends { recipient: string }
   ? ReceivedItem

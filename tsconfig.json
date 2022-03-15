@@ -19,8 +19,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "baseUrl": "."
+    "isolatedModules": true
   },
   "include": ["./src/**/*"],
   "files": ["./hardhat.config.ts"]

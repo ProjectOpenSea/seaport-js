@@ -4,7 +4,7 @@ import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
 import { randomBytes } from "crypto";
 import { Consideration } from "../consideration";
-import { createPaymentItem } from "src/utils/item";
+import { createPaymentItem } from "../utils/item";
 
 describe("Sign order", function () {
   let considerationContract: ConsiderationContract;
