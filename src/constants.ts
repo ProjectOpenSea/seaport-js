@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 export const CONSIDERATION_CONTRACT_NAME = "Consideration";
 export const CONSIDERATION_CONTRACT_VERSION = "1";
 export const EIP_712_ORDER_TYPE = {
@@ -31,3 +32,28 @@ export const EIP_712_ORDER_TYPE = {
     { name: "recipient", type: "address" },
   ],
 };
+
+export enum OrderType {
+  FULL_OPEN = 0, // no partial fills, anyone can execute
+  PARTIAL_OPEN = 1, // partial fills supported, anyone can execute
+  FULL_RESTRICTED = 2, // no partial fills, only offerer or zone can execute
+  PARTIAL_RESTRICTED = 3, // partial fills supported, only offerer or zone can execute
+  FULL_OPEN_VIA_PROXY = 4, // no partial fills, anyone can execute, routed through proxy
+  PARTIAL_OPEN_VIA_PROXY = 5, // partial fills supported, anyone can execute, routed through proxy
+  FULL_RESTRICTED_VIA_PROXY = 6, // no partial fills, only offerer or zone can execute, routed through proxy
+  PARTIAL_RESTRICTED_VIA_PROXY = 7, // partial fills supported, only offerer or zone can execute, routed through proxy
+}
+
+export enum ItemType {
+  ETH = 0,
+  ERC20 = 1,
+  ERC721 = 2,
+  ERC1155 = 3,
+  ERC721_WITH_CRITERIA = 4,
+  ERC1155_WITH_CRITERIA = 5,
+}
+
+export enum Side {
+  OFFER = 0, // Items being supplied
+  CONSIDERATION = 1, // Items being received
+}

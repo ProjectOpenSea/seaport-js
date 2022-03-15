@@ -30,4 +30,8 @@ export type OrderParameters = {
   }[];
 };
 
+export type OfferItem = OrderParameters["offer"][0];
+
+export type ReceivedItem = OrderParameters["consideration"][0];
+
 export type OrderComponents = OrderParameters & { nonce: BigNumberish };

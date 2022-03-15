@@ -4,6 +4,7 @@ import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
 import { randomBytes } from "crypto";
 import { Consideration } from "../consideration";
+import { createPaymentItem } from "src/utils/item";
 
 describe("Sign order", function () {
   let considerationContract: ConsiderationContract;
@@ -50,22 +51,14 @@ describe("Sign order", function () {
     ];
 
     const considerationData = [
-      {
-        itemType: 0, // ETH
-        token: ethers.constants.AddressZero,
-        identifierOrCriteria: 0, // ignored for ETH
-        startAmount: ethers.utils.parseEther("10"),
-        endAmount: ethers.utils.parseEther("10"),
+      createPaymentItem({
+        amount: ethers.utils.parseEther("10"),
         recipient: offerer.address,
-      },
-      {
-        itemType: 0, // ETH
-        token: ethers.constants.AddressZero,
-        identifierOrCriteria: 0, // ignored for ETH
-        startAmount: ethers.utils.parseEther("1"),
-        endAmount: ethers.utils.parseEther("1"),
+      }),
+      createPaymentItem({
+        amount: ethers.utils.parseEther("1"),
         recipient: zone.address,
-      },
+      }),
     ];
 
     const orderParameters = {
