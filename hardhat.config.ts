@@ -20,6 +20,13 @@ const config: HardhatUserConfig = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
+  typechain: {
+    outDir: "src/typechain",
+    target: "ethers-v5",
+  },
+  paths: {
+    tests: "src/__tests__",
+  },
 };
 
 export default config;

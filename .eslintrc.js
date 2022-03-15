@@ -1,15 +1,17 @@
 module.exports = {
   env: {
-    browser: false,
+    browser: true,
     es2021: true,
     mocha: true,
     node: true,
   },
-  plugins: ["@typescript-eslint"],
+  ignorePatterns: ["lib"],
+  plugins: ["@typescript-eslint", "import"],
   extends: [
     "standard",
     "plugin:prettier/recommended",
-    "plugin:node/recommended",
+    "eslint:recommended",
+    "plugin:import/typescript",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {

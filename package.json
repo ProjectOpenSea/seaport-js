@@ -1,11 +1,14 @@
 {
-  "name": "hardhat-project",
+  "name": "consideration",
   "scripts": {
     "test": "npx hardhat test"
   },
   "dependencies": {
     "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git",
     "ethers": "^5.6.0"
+  },
+  "engines": {
+    "node": "16.11.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
