@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { BasicFulfillOrder, ItemType } from "../constants";
+import { BasicFulfillOrder, ItemType, OrderType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { OfferItem, Order } from "../types";
 
@@ -99,10 +99,7 @@ const offerAndConsiderationFulfillmentMapping: {
  */
 export const fulfillBasicOrder = (
   { parameters: orderParameters, signature }: Order,
-  contract: Consideration,
-  { useFulfillerProxy }: { useFulfillerProxy: boolean } = {
-    useFulfillerProxy: false,
-  }
+  contract: Consideration
 ) => {
   const { offer, consideration } = orderParameters;
 
@@ -135,7 +132,12 @@ export const fulfillBasicOrder = (
     startTime: orderParameters.startTime,
     endTime: orderParameters.endTime,
     salt: orderParameters.salt,
-    useFulfillerProxy,
+    useFulfillerProxy: [
+      OrderType.FULL_OPEN_VIA_PROXY,
+      OrderType.PARTIAL_OPEN_VIA_PROXY,
+      OrderType.FULL_RESTRICTED_VIA_PROXY,
+      OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
+    ].includes(orderParameters.orderType),
     signature,
     additionalRecipients,
   };

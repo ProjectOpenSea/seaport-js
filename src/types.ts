@@ -1,5 +1,5 @@
 import { BigNumberish, BytesLike } from "ethers";
-import { ItemType } from "./constants";
+import { ItemType, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
   overrides?: {
@@ -27,7 +27,7 @@ export type ReceivedItem = {
 export type OrderParameters = {
   offerer: string;
   zone: string;
-  orderType: BigNumberish;
+  orderType: OrderType;
   startTime: BigNumberish;
   endTime: BigNumberish;
   salt: BigNumberish;
