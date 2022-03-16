@@ -52,7 +52,7 @@ export class Consideration {
     useProxy,
     // fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput) {
+  }: CreateOrderInput): Order {
     const offerer = await this.provider.getSigner().getAddress();
 
     const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
@@ -83,7 +83,7 @@ export class Consideration {
 
     const signature = await this.signOrder(orderParameters, nonce);
 
-    return signature;
+    return { parameters: orderParameters, signature };
   }
 
   public async signOrder(
