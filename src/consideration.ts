@@ -1,7 +1,12 @@
 import { Contract, ethers, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
-import { ConsiderationConfig, OrderComponents, OrderParameters } from "./types";
+import {
+  ConsiderationConfig,
+  Order,
+  OrderComponents,
+  OrderParameters,
+} from "./types";
 import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
@@ -72,18 +77,12 @@ export class Consideration {
     return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 
-  public fulfillOrder({
-    offerer,
-    zone,
-    orderType,
-    startTime,
-    endTime,
-    salt,
-    offer,
-    consideration,
-  }: OrderComponents) {
-    if (shouldUseBasicFulfill({ offer, consideration })) {
-      return fulfillBasicOrder({ offer, consideration });
+  public fulfillOrder(order: Order) {
+    if (shouldUseBasicFulfill(order)) {
+      return fulfillBasicOrder(order, this.contract);
     }
+
+    // TODO: Implement more advanced order fulfillment
+    return null;
   }
 }

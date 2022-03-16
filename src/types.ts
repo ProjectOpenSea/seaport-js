@@ -1,10 +1,27 @@
-import { BigNumberish } from "ethers";
+import { BigNumberish, BytesLike } from "ethers";
 import { ItemType } from "./constants";
 
 export type ConsiderationConfig = {
   overrides?: {
     contractAddress: string;
   };
+};
+
+export type OfferItem = {
+  itemType: ItemType;
+  token: string;
+  identifierOrCriteria: BigNumberish;
+  startAmount: BigNumberish;
+  endAmount: BigNumberish;
+};
+
+export type ReceivedItem = {
+  itemType: ItemType;
+  token: string;
+  identifierOrCriteria: BigNumberish;
+  startAmount: BigNumberish;
+  endAmount: BigNumberish;
+  recipient: string;
 };
 
 export type OrderParameters = {
@@ -14,25 +31,13 @@ export type OrderParameters = {
   startTime: BigNumberish;
   endTime: BigNumberish;
   salt: BigNumberish;
-  offer: {
-    itemType: ItemType;
-    token: string;
-    identifierOrCriteria: BigNumberish;
-    startAmount: BigNumberish;
-    endAmount: BigNumberish;
-  }[];
-  consideration: {
-    itemType: ItemType;
-    token: string;
-    identifierOrCriteria: BigNumberish;
-    startAmount: BigNumberish;
-    endAmount: BigNumberish;
-    recipient: string;
-  }[];
+  offer: OfferItem[];
+  consideration: ReceivedItem[];
 };
 
-export type OfferItem = OrderParameters["offer"][0];
-
-export type ReceivedItem = OrderParameters["consideration"][0];
-
 export type OrderComponents = OrderParameters & { nonce: BigNumberish };
+
+export type Order = {
+  parameters: OrderParameters;
+  signature: BytesLike;
+};
