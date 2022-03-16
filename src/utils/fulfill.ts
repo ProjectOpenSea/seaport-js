@@ -1,4 +1,5 @@
 import { BigNumber } from "ethers";
+import { ethers } from "hardhat";
 import { BasicFulfillOrder, ItemType, OrderType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { OfferItem, Order } from "../types";
@@ -10,6 +11,12 @@ import { OfferItem, Order } from "../types";
  * 3. All other items have the same Ether or ERC20 item type and token
  * 4. All items have the same startAmount and endAmount
  * 5. First consideration item must contain the offerer as the recipient
+ * 6. If the order has multiple consideration items and all consideration items other than the
+ *    first consideration item have the same item type as the offered item, the offered item
+ *    amount is not less than the sum of all consideration item amounts excluding the
+ *    first consideration item amount
+ * 7. The token on native currency items needs to be set to the null address and the identifier on
+ *    currencies needs to be zero, and the amounts on the 721 item need to be 1
  */
 export const shouldUseBasicFulfill = ({
   parameters: { offer, consideration, offerer },
@@ -21,18 +28,18 @@ export const shouldUseBasicFulfill = ({
 
   const allItems = [...offer, ...consideration];
 
-  const numNfts = allItems.filter(({ itemType }) =>
+  const nfts = allItems.filter(({ itemType }) =>
     [ItemType.ERC721, ItemType.ERC1155].includes(itemType)
-  ).length;
+  );
 
-  const numNftsWithCriteria = allItems.filter(({ itemType }) =>
+  const nftsWithCriteria = allItems.filter(({ itemType }) =>
     [ItemType.ERC721_WITH_CRITERIA, ItemType.ERC1155_WITH_CRITERIA].includes(
       itemType
     )
-  ).length;
+  );
 
   // The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
-  if (numNfts !== 1 && numNftsWithCriteria !== 0) {
+  if (nfts.length !== 1 && nftsWithCriteria.length !== 0) {
     return false;
   }
 
@@ -60,8 +67,45 @@ export const shouldUseBasicFulfill = ({
     return false;
   }
 
+  const [firstConsideration, ...restConsideration] = consideration;
+
   // First consideration item must contain the offerer as the recipient
-  return consideration[0].recipient.toLowerCase() === offerer.toLowerCase();
+  const firstConsiderationRecipientIsNotOfferer =
+    firstConsideration.recipient.toLowerCase() !== offerer.toLowerCase();
+
+  if (!firstConsiderationRecipientIsNotOfferer) {
+    return false;
+  }
+
+  // If the order has multiple consideration items and all consideration items other than the
+  // first consideration item have the same item type as the offered item, the offered item
+  // amount is not less than the sum of all consideration item amounts excluding the
+  // first consideration item amount
+  if (consideration.length > 1) {
+    if (totalItemsAmount(restConsideration).endAmount.gt(offer[0].endAmount)) {
+      return false;
+    }
+  }
+
+  //  The token on native currency items needs to be set to the null address and the identifier on
+  //  currencies needs to be zero, and the amounts on the 721 item need to be 1
+  const nativeCurrencyIsZeroAddress = currencies
+    .filter(({ itemType }) => itemType === ItemType.NATIVE)
+    .every(({ token }) => token === ethers.constants.AddressZero);
+
+  const currencyIdentifiersAreZero = currencies.every(
+    ({ identifierOrCriteria }) => BigNumber.from(identifierOrCriteria).eq(0)
+  );
+
+  const erc721sAreSingleAmount = nfts
+    .filter(({ itemType }) => itemType === ItemType.ERC721)
+    .every(({ endAmount }) => endAmount === 1);
+
+  return (
+    nativeCurrencyIsZeroAddress &&
+    currencyIdentifiersAreZero &&
+    erc721sAreSingleAmount
+  );
 };
 
 const offerAndConsiderationFulfillmentMapping: {
