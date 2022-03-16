@@ -1,5 +1,5 @@
 import { BigNumberish, BytesLike } from "ethers";
-import { ItemType, OrderType } from "./constants";
+import { ItemType, NftItemType, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
   overrides?: {
@@ -40,4 +40,30 @@ export type OrderComponents = OrderParameters & { nonce: BigNumberish };
 export type Order = {
   parameters: OrderParameters;
   signature: BytesLike;
+};
+
+export type Erc721Item = {
+  token: string;
+  identifierOrCriteria: BigNumberish;
+};
+
+export type Erc1155Item = {
+  token: string;
+  identifierOrCriteria: BigNumberish;
+  amount: string;
+};
+
+export type CurrencyItem = {
+  token: string;
+  amount: string;
+  endAmount?: string;
+};
+
+export type CreateOrderInput = {
+  offerer: string;
+  zone: string;
+  startTime: BigNumberish;
+  endTime: BigNumberish;
+  offer: OfferItem[];
+  consideration: ReceivedItem[];
 };
