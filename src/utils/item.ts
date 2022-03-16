@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { ItemType, NftItemType } from "../constants";
 import { OfferItem, ReceivedItem } from "../types";
 
-type CreateItemParams = {
+type ConstructItemParams = {
   itemType: BigNumberish;
   token: string;
   amount: BigNumberish;
@@ -12,11 +12,11 @@ type CreateItemParams = {
   recipient?: string;
 };
 
-type CreatedItem<T> = T extends { recipient: string }
+type ConstructdItem<T> = T extends { recipient: string }
   ? ReceivedItem
   : OfferItem;
 
-const createItem = <T extends CreateItemParams>({
+const constructItem = <T extends ConstructItemParams>({
   itemType,
   token = ethers.constants.AddressZero,
   amount,
@@ -36,14 +36,14 @@ const createItem = <T extends CreateItemParams>({
     return {
       ...item,
       recipient,
-    } as CreatedItem<T>;
+    } as ConstructdItem<T>;
   }
 
-  return item as CreatedItem<T>;
+  return item as ConstructdItem<T>;
 };
 
-export const createNftItem = <
-  T extends Omit<CreateItemParams, "endAmount" | "itemType"> & {
+export const constructNftItem = <
+  T extends Omit<ConstructItemParams, "endAmount" | "itemType"> & {
     itemType?: NftItemType;
   }
 >({
@@ -52,26 +52,26 @@ export const createNftItem = <
   amount,
   identifierOrCriteria,
   recipient,
-}: T): CreatedItem<T> => {
-  return createItem({
+}: T): ConstructdItem<T> => {
+  return constructItem({
     itemType,
     token,
     amount,
     identifierOrCriteria,
     recipient,
-  }) as CreatedItem<T>;
+  }) as ConstructdItem<T>;
 };
 
-export const createCurrencyItem = <
-  T extends Pick<CreateItemParams, "amount" | "endAmount" | "recipient"> &
-    Partial<Pick<CreateItemParams, "token">>
+export const constructCurrencyItem = <
+  T extends Pick<ConstructItemParams, "amount" | "endAmount" | "recipient"> &
+    Partial<Pick<ConstructItemParams, "token">>
 >({
   token = ethers.constants.AddressZero,
   amount,
   endAmount,
   recipient,
-}: T): CreatedItem<T> => {
-  return createItem({
+}: T): ConstructdItem<T> => {
+  return constructItem({
     itemType:
       token === ethers.constants.AddressZero ? ItemType.NATIVE : ItemType.ERC20,
     token,
@@ -79,5 +79,5 @@ export const createCurrencyItem = <
     identifierOrCriteria: 0,
     endAmount,
     recipient,
-  }) as CreatedItem<T>;
+  }) as ConstructdItem<T>;
 };
