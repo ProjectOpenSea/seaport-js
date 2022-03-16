@@ -1,5 +1,5 @@
 import { BigNumberish, BytesLike } from "ethers";
-import { ItemType, NftItemType, OrderType } from "./constants";
+import { ItemType, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
   overrides?: {
