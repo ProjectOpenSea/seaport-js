@@ -5,7 +5,6 @@ import { OfferItem, Order } from "../types";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
- *
  * 1. The order only contains a single offer item and contains at least one consideration item
  * 2. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
  * 3. All other items have the same Ether or ERC20 item type and token
@@ -86,14 +85,12 @@ const offerAndConsiderationFulfillmentMapping: {
 
 /**
  * Executes one of the six basic fulfillment methods
- *
  * 1. fulfillBasicEthForERC721Order
  * 2. fulfillBasicEthForERC1155Order
  * 3. fulfillBasicERC1155ForERC20Order
  * 4. fulfillBasicERC20ForERC1155Order
  * 5. fulfillBasicERC20ForERC721Order
  * 6. fulfillBasicERC721ForERC20Order
- *
  * @param order - Standard order object
  * @param contract - Consideration ethers contract
  */
