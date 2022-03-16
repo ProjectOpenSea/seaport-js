@@ -12,7 +12,7 @@ type ConstructItemParams = {
   recipient?: string;
 };
 
-type ConstructdItem<T> = T extends { recipient: string }
+type ConstructedItem<T> = T extends { recipient: string }
   ? ReceivedItem
   : OfferItem;
 
@@ -36,10 +36,10 @@ const constructItem = <T extends ConstructItemParams>({
     return {
       ...item,
       recipient,
-    } as ConstructdItem<T>;
+    } as ConstructedItem<T>;
   }
 
-  return item as ConstructdItem<T>;
+  return item as ConstructedItem<T>;
 };
 
 export const constructNftItem = <
@@ -52,14 +52,14 @@ export const constructNftItem = <
   amount,
   identifierOrCriteria,
   recipient,
-}: T): ConstructdItem<T> => {
+}: T): ConstructedItem<T> => {
   return constructItem({
     itemType,
     token,
     amount,
     identifierOrCriteria,
     recipient,
-  }) as ConstructdItem<T>;
+  }) as ConstructedItem<T>;
 };
 
 export const constructCurrencyItem = <
@@ -70,7 +70,7 @@ export const constructCurrencyItem = <
   amount,
   endAmount,
   recipient,
-}: T): ConstructdItem<T> => {
+}: T): ConstructedItem<T> => {
   return constructItem({
     itemType:
       token === ethers.constants.AddressZero ? ItemType.NATIVE : ItemType.ERC20,
@@ -79,5 +79,5 @@ export const constructCurrencyItem = <
     identifierOrCriteria: 0,
     endAmount,
     recipient,
-  }) as ConstructdItem<T>;
+  }) as ConstructedItem<T>;
 };
