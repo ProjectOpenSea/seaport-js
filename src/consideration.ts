@@ -1,8 +1,9 @@
-import { Contract, ethers, providers } from "ethers";
+import { BigNumberish, Contract, ethers, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
 import {
   ConsiderationConfig,
+  CreateOrderInput,
   Order,
   OrderComponents,
   OrderParameters,
@@ -13,6 +14,12 @@ import {
   EIP_712_ORDER_TYPE,
 } from "./constants";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
+import {
+  feeToConsiderationItem,
+  mapInputItemToOfferItem,
+  ORDER_OPTIONS_TO_ORDER_TYPE,
+  validateOrderParameters,
+} from "./utils/order";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -33,7 +40,54 @@ export class Consideration {
     ) as ConsiderationContract;
   }
 
-  public async signOrder(orderParameters: OrderParameters, nonce?: number) {
+  public async createOrder({
+    zone = ethers.constants.AddressZero,
+    startTime,
+    endTime,
+    offer,
+    consideration,
+    nonce,
+    allowPartialFills,
+    restrictedByZone,
+    useProxy,
+    // fees,
+    salt = ethers.utils.randomBytes(16),
+  }: CreateOrderInput) {
+    const offerer = await this.provider.getSigner().getAddress();
+
+    const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
+    const restrictedKey = restrictedByZone ? "RESTRICTED" : "OPEN";
+    const proxyKey = useProxy ? "VIA_PROXY" : "WITHOUT_PROXY";
+
+    const orderType =
+      ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey][proxyKey];
+
+    const orderParameters: OrderParameters = {
+      offerer,
+      zone,
+      startTime,
+      endTime,
+      orderType,
+      offer: offer.map(mapInputItemToOfferItem),
+      consideration: [
+        ...consideration.map((consideration) => ({
+          ...mapInputItemToOfferItem(consideration),
+          recipient: consideration.recipient ?? offerer,
+        })),
+        // ...(fees?.map((fee) => feeToConsiderationItem({ fee })) ?? []),
+      ],
+      salt,
+    };
+
+    validateOrderParameters(orderParameters);
+
+    this.signOrder(orderParameters, nonce);
+  }
+
+  public async signOrder(
+    orderParameters: OrderParameters,
+    nonce?: BigNumberish
+  ) {
     const signer = this.provider.getSigner();
     const { chainId } = await this.provider.getNetwork();
 

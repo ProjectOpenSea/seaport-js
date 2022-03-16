@@ -2,7 +2,8 @@ import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { BasicFulfillOrder, ItemType, OrderType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
-import { OfferItem, Order } from "../types";
+import { Order } from "../types";
+import { areAllCurrenciesSame, totalItemsAmount } from "./order";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -43,18 +44,8 @@ export const shouldUseBasicFulfill = ({
     return false;
   }
 
-  const currencies = allItems.filter(({ itemType }) =>
-    [ItemType.NATIVE, ItemType.ERC20].includes(itemType)
-  );
-
-  const areCurrenciesDifferent = currencies.some(
-    ({ itemType, token }) =>
-      itemType !== currencies[0].itemType ||
-      token.toLowerCase() !== currencies[0].token.toLowerCase()
-  );
-
   // All currencies need to have the same address and item type (Native, ERC20)
-  if (areCurrenciesDifferent) {
+  if (!areAllCurrenciesSame({ offer, consideration })) {
     return false;
   }
 
@@ -86,6 +77,10 @@ export const shouldUseBasicFulfill = ({
       return false;
     }
   }
+
+  const currencies = allItems.filter(({ itemType }) =>
+    [ItemType.NATIVE, ItemType.ERC20].includes(itemType)
+  );
 
   //  The token on native currency items needs to be set to the null address and the identifier on
   //  currencies needs to be zero, and the amounts on the 721 item need to be 1
@@ -235,30 +230,4 @@ export const fulfillBasicOrder = (
         basicOrderParameters
       );
   }
-};
-
-const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
-  const initialValues = {
-    startAmount: BigNumber.from(0),
-    endAmount: BigNumber.from(0),
-  };
-
-  return items
-    .map(({ startAmount, endAmount }) => ({
-      startAmount,
-      endAmount,
-    }))
-    .reduce<typeof initialValues>(
-      (
-        { startAmount: totalStartAmount, endAmount: totalEndAmount },
-        { startAmount, endAmount }
-      ) => ({
-        startAmount: totalStartAmount.add(startAmount),
-        endAmount: totalEndAmount.add(endAmount),
-      }),
-      {
-        startAmount: BigNumber.from(0),
-        endAmount: BigNumber.from(0),
-      }
-    );
 };

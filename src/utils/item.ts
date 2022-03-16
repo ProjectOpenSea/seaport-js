@@ -81,3 +81,6 @@ export const constructCurrencyItem = <
     recipient,
   }) as ConstructedItem<T>;
 };
+
+export const isCurrencyItem = (item: OfferItem | ReceivedItem) =>
+  [ItemType.NATIVE, ItemType.ERC20].includes(item.itemType);

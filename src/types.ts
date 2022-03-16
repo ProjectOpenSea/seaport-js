@@ -43,27 +43,45 @@ export type Order = {
 };
 
 export type Erc721Item = {
+  itemType: ItemType.ERC721 | ItemType.ERC721_WITH_CRITERIA;
   token: string;
   identifierOrCriteria: BigNumberish;
+  // Used for criteria based items i.e. offering to buy 5 NFTs for a collection
+  amount?: string;
 };
 
 export type Erc1155Item = {
+  itemType: ItemType.ERC1155 | ItemType.ERC1155_WITH_CRITERIA;
   token: string;
   identifierOrCriteria: BigNumberish;
-  amount: string;
-};
-
-export type CurrencyItem = {
-  token: string;
   amount: string;
   endAmount?: string;
 };
 
+export type CurrencyItem = {
+  token?: string;
+  amount: string;
+  endAmount?: string;
+};
+
+export type InputItem = Erc721Item | Erc1155Item | CurrencyItem;
+export type ReceivedInputItem = InputItem & { recipient?: string };
+
+export type Fee = {
+  recipient: string;
+  basisPoints: BigNumberish;
+};
+
 export type CreateOrderInput = {
-  offerer: string;
-  zone: string;
+  zone?: string;
   startTime: BigNumberish;
   endTime: BigNumberish;
-  offer: OfferItem[];
-  consideration: ReceivedItem[];
+  offer: InputItem[];
+  consideration: ReceivedInputItem[];
+  nonce?: BigNumberish;
+  fees?: Fee[];
+  allowPartialFills?: boolean;
+  restrictedByZone?: boolean;
+  useProxy?: boolean;
+  salt?: BigNumberish;
 };
