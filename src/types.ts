@@ -1,4 +1,5 @@
 import { BigNumberish } from "ethers";
+import { ItemType } from "./constants";
 
 export type ConsiderationConfig = {
   overrides?: {
@@ -14,14 +15,14 @@ export type OrderParameters = {
   endTime: BigNumberish;
   salt: BigNumberish;
   offer: {
-    itemType: BigNumberish;
+    itemType: ItemType;
     token: string;
     identifierOrCriteria: BigNumberish;
     startAmount: BigNumberish;
     endAmount: BigNumberish;
   }[];
   consideration: {
-    itemType: BigNumberish;
+    itemType: ItemType;
     token: string;
     identifierOrCriteria: BigNumberish;
     startAmount: BigNumberish;

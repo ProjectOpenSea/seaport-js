@@ -62,7 +62,7 @@ export const createNftItem = <
   }) as CreatedItem<T>;
 };
 
-export const createPaymentItem = <
+export const createCurrencyItem = <
   T extends Pick<CreateItemParams, "amount" | "endAmount" | "recipient"> &
     Partial<Pick<CreateItemParams, "token">>
 >({
@@ -73,7 +73,7 @@ export const createPaymentItem = <
 }: T): CreatedItem<T> => {
   return createItem({
     itemType:
-      token === ethers.constants.AddressZero ? ItemType.ETH : ItemType.ERC20,
+      token === ethers.constants.AddressZero ? ItemType.NATIVE : ItemType.ERC20,
     token,
     amount,
     identifierOrCriteria: 0,

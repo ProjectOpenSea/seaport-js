@@ -7,6 +7,7 @@ import {
   CONSIDERATION_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
 } from "./constants";
+import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -69,5 +70,20 @@ export class Consideration {
       offerer ?? (await this.provider.getSigner().getAddress());
 
     return this.contract.incrementNonce(resolvedOfferer, zone);
+  }
+
+  public fulfillOrder({
+    offerer,
+    zone,
+    orderType,
+    startTime,
+    endTime,
+    salt,
+    offer,
+    consideration,
+  }: OrderComponents) {
+    if (shouldUseBasicFulfill({ offer, consideration })) {
+      return fulfillBasicOrder({ offer, consideration });
+    }
   }
 }
