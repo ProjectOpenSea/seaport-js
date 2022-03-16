@@ -4,7 +4,7 @@ import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
 import { randomBytes } from "crypto";
 import { Consideration } from "../consideration";
-import { createNftItem, createCurrencyItem } from "../utils/item";
+import { constructNftItem, constructCurrencyItem } from "../utils/item";
 
 describe("Sign order", function () {
   let considerationContract: ConsiderationContract;
@@ -41,7 +41,7 @@ describe("Sign order", function () {
     const nftId = 0;
 
     const offer = [
-      createNftItem({
+      constructNftItem({
         token: testERC721.address,
         identifierOrCriteria: nftId,
         amount: 1,
@@ -49,11 +49,11 @@ describe("Sign order", function () {
     ];
 
     const considerationData = [
-      createCurrencyItem({
+      constructCurrencyItem({
         amount: ethers.utils.parseEther("10"),
         recipient: offerer.address,
       }),
-      createCurrencyItem({
+      constructCurrencyItem({
         amount: ethers.utils.parseEther("1"),
         recipient: zone.address,
       }),
