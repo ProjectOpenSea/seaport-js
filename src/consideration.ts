@@ -81,7 +81,9 @@ export class Consideration {
 
     validateOrderParameters(orderParameters);
 
-    this.signOrder(orderParameters, nonce);
+    const signature = await this.signOrder(orderParameters, nonce);
+
+    return signature;
   }
 
   public async signOrder(
