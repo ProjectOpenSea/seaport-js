@@ -48,6 +48,24 @@ export class Consideration {
       config?.overrides?.legacyProxyRegistryAddress ?? "";
   }
 
+  private _getOrderTypeFromOrderOptions({
+    allowPartialFills,
+    restrictedByZone,
+    useProxy,
+  }: Pick<
+    CreateOrderInput,
+    "allowPartialFills" | "restrictedByZone" | "useProxy"
+  >) {
+    const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
+    const restrictedKey = restrictedByZone ? "RESTRICTED" : "OPEN";
+    const proxyKey = useProxy ? "VIA_PROXY" : "WITHOUT_PROXY";
+
+    const orderType =
+      ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey][proxyKey];
+
+    return orderType;
+  }
+
   public async createOrder({
     zone = ethers.constants.AddressZero,
     startTime,
@@ -62,14 +80,11 @@ export class Consideration {
     salt = ethers.utils.randomBytes(16),
   }: CreateOrderInput): Promise<Order> {
     const offerer = await this.provider.getSigner().getAddress();
-
-    const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
-    const restrictedKey = restrictedByZone ? "RESTRICTED" : "OPEN";
-    const proxyKey = useProxy ? "VIA_PROXY" : "WITHOUT_PROXY";
-
-    const orderType =
-      ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey][proxyKey];
-
+    const orderType = this._getOrderTypeFromOrderOptions({
+      allowPartialFills,
+      restrictedByZone,
+      useProxy,
+    });
     const offerItems = offer.map(mapInputItemToOfferItem);
 
     const considerationItems = [
@@ -106,8 +121,9 @@ export class Consideration {
       salt,
     };
 
-    validateOrderParameters(orderParameters, this.provider);
-    checkApprovals(orderParameters, {
+    await validateOrderParameters(orderParameters, this.provider);
+
+    await checkApprovals(orderParameters, {
       considerationContract: this.contract,
       legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
       provider: this.provider,
@@ -120,12 +136,23 @@ export class Consideration {
 
   public async getMissingApprovalsNeededToCreateOffer({
     offer,
-    offerer,
-    orderType,
-  }: OrderParameters) {
+    allowPartialFills,
+    restrictedByZone,
+    useProxy,
+  }: CreateOrderInput) {
+    const offerer = await this.provider.getSigner().getAddress();
+
+    const orderType = this._getOrderTypeFromOrderOptions({
+      allowPartialFills,
+      restrictedByZone,
+      useProxy,
+    });
+
+    const offerItems = offer.map(mapInputItemToOfferItem);
+
     return getInsufficientApprovalsForOrderCreation(
       {
-        offer,
+        offer: offerItems,
         offerer,
         orderType,
       },
