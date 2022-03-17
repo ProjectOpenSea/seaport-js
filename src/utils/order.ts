@@ -6,7 +6,7 @@ import {
   ERC721,
   ProxyRegistryInterface,
 } from "../typechain";
-import { ItemType, MAX_INT, OrderType } from "../constants";
+import { ItemType, OrderType, MAX_INT } from "../constants";
 import { ProxyRegistryInterfaceABI } from "../abi/ProxyRegistryInterface";
 
 import {
@@ -259,12 +259,7 @@ export const checkApprovals = async (
     provider: ethers.providers.JsonRpcProvider;
   }
 ) => {
-  const useProxy = [
-    OrderType.FULL_OPEN_VIA_PROXY,
-    OrderType.PARTIAL_OPEN_VIA_PROXY,
-    OrderType.FULL_RESTRICTED_VIA_PROXY,
-    OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
-  ].includes(orderType);
+  const useProxy = useOffererProxy(orderType);
 
   const signer = provider.getSigner();
 
@@ -300,3 +295,11 @@ export const checkApprovals = async (
     }
   }
 };
+
+export const useOffererProxy = (orderType: OrderType) =>
+  [
+    OrderType.FULL_OPEN_VIA_PROXY,
+    OrderType.PARTIAL_OPEN_VIA_PROXY,
+    OrderType.FULL_RESTRICTED_VIA_PROXY,
+    OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
+  ].includes(orderType);
