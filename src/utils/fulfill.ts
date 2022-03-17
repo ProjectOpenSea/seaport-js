@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from "ethers";
-import { BasicFulfillOrder, ItemType, OrderType } from "../constants";
+import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { Order } from "../types";
 import { areAllCurrenciesSame, totalItemsAmount } from "./order";

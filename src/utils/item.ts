@@ -1,8 +1,5 @@
-import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
-import { ERC1155ABI } from "../abi/ERC1155";
-import { ERC721ABI } from "../abi/ERC721";
-import { ItemType, MAX_INT, NftItemType } from "../constants";
-import { Consideration, ERC1155, ERC20, ERC721 } from "../typechain";
+import { BigNumberish, ethers } from "ethers";
+import { ItemType, NftItemType } from "../constants";
 import { Item, OfferItem, ReceivedItem } from "../types";
 
 type ConstructItemParams = {
@@ -92,56 +89,3 @@ export const isErc721Item = ({ itemType }: Item) =>
 
 export const isErc1155Item = ({ itemType }: Item) =>
   [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType);
-
-export const balanceOf = async (
-  owner: string,
-  item: Item,
-  provider: ethers.providers.JsonRpcProvider
-): Promise<BigNumber> => {
-  if (isErc721Item(item)) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
-
-    if (item.itemType === ItemType.ERC721_WITH_CRITERIA) {
-      return contract.balanceOf(owner);
-    }
-
-    const isOwner = await contract.ownerOf(item.identifierOrCriteria);
-    return BigNumber.from(Number(isOwner));
-  } else if (isErc1155Item(item)) {
-    if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
-      throw new Error("ERC1155 Criteria based offers are not supported");
-    }
-
-    const contract = new Contract(item.token, ERC1155ABI, provider) as ERC1155;
-    return contract.balanceOf(owner, item.identifierOrCriteria);
-  }
-
-  if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
-    return contract.balanceOf(owner);
-  }
-
-  return await provider.getBalance(owner);
-};
-
-export const approvedItemAmount = async (
-  owner: string,
-  item: Item,
-  operator: string,
-  provider: ethers.providers.JsonRpcProvider
-) => {
-  if (isErc721Item(item) || isErc1155Item(item)) {
-    // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
-    const isApprovedForAll = await contract.isApprovedForAll(owner, operator);
-
-    return isApprovedForAll ? MAX_INT : BigNumber.from(0);
-  } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
-
-    return contract.allowance(owner, operator);
-  }
-
-  // We don't need to check approvals for native tokens
-  return MAX_INT;
-};

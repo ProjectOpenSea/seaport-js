@@ -1,14 +1,5 @@
-import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
-import { ERC721ABI } from "../abi/ERC721";
-import {
-  Consideration,
-  ERC20,
-  ERC721,
-  ProxyRegistryInterface,
-} from "../typechain";
-import { ItemType, OrderType, MAX_INT } from "../constants";
-import { ProxyRegistryInterfaceABI } from "../abi/ProxyRegistryInterface";
-
+import { BigNumber, BigNumberish, ethers } from "ethers";
+import { ItemType, OrderType } from "../constants";
 import {
   Fee,
   InputItem,
@@ -16,13 +7,8 @@ import {
   OrderParameters,
   ReceivedItem,
 } from "../types";
-import {
-  approvedItemAmount,
-  balanceOf,
-  isCurrencyItem,
-  isErc721Item,
-  isErc1155Item,
-} from "./item";
+import { validateOfferBalances } from "./balances";
+import { isCurrencyItem } from "./item";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -148,191 +134,6 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
     );
 };
 
-/**
- * The offerer should have sufficient balance of all offered items.
- * @param orderParameters - standard Order parameters
- */
-export const validateOfferBalances = async (
-  { offer, offerer }: OrderParameters,
-  provider: providers.JsonRpcProvider
-) => {
-  const insufficientBalances = await Promise.all(
-    await getInsufficientCheckedAmounts(offer, async (item) =>
-      balanceOf(offerer, item, provider)
-    )
-  );
-
-  if (insufficientBalances.length > 0) {
-    throw new Error(
-      `The offerer does not have the amounts needed to create the order.`
-    );
-  }
-};
-
-/**
- * The offerer should have sufficient checked amounts of all offered items.
- * @param orderParameters - standard Order parameters
- * @param amountToCheck - function that returns the specific amount to check for
- */
-const getInsufficientCheckedAmounts = async (
-  offer: OrderParameters["offer"],
-  amountToCheck: (item: OfferItem) => Promise<BigNumber>
-) => {
-  const tokenAndIdentifierAndCheckedAmount = await Promise.all(
-    offer.map(async (item) => {
-      const checkedAmount = await amountToCheck(item);
-
-      return [
-        item.token,
-        BigNumber.from(item.identifierOrCriteria).toString(),
-        checkedAmount,
-      ] as [string, string, BigNumber];
-    })
-  );
-
-  const tokenAndIdentifierToCheckedAmount =
-    tokenAndIdentifierAndCheckedAmount.reduce<
-      Record<string, Record<string, BigNumber>>
-    >(
-      (map, [token, identifierOrCriteria, checkedAmount]) => ({
-        ...map,
-        [token]: { [identifierOrCriteria]: checkedAmount },
-      }),
-      {}
-    );
-
-  const tokenAndIdentifierToAmountNeeded = offer.reduce<
-    Record<string, Record<string, BigNumber>>
-  >((map, item) => {
-    const identifierOrCriteria = BigNumber.from(
-      item.identifierOrCriteria
-    ).toString();
-
-    const startAmount = BigNumber.from(item.startAmount);
-    const endAmount = BigNumber.from(item.endAmount);
-    const maxAmount = startAmount.gt(endAmount) ? startAmount : endAmount;
-
-    return {
-      ...map,
-      [item.token]: {
-        // Being explicit about the undefined type as it's possible for it to be undefined at first iteration
-        [identifierOrCriteria]: (
-          (map[item.token][identifierOrCriteria] as BigNumber | undefined) ??
-          BigNumber.from(0)
-        ).add(maxAmount),
-      },
-    };
-  }, {});
-
-  const tokenAndIdentifierAndAmountNeeded = [
-    ...Object.entries(tokenAndIdentifierToAmountNeeded).map(
-      ([token, identifierToAmount]) =>
-        Object.entries(identifierToAmount).map(
-          ([identifierOrCriteria, amountNeeded]) =>
-            [token, identifierOrCriteria, amountNeeded] as const
-        )
-    ),
-  ].flat();
-
-  const insufficientAmounts = tokenAndIdentifierAndAmountNeeded.filter(
-    ([token, identifierOrCriteria, amountNeeded]) =>
-      tokenAndIdentifierToCheckedAmount[token][identifierOrCriteria].lt(
-        amountNeeded
-      )
-  );
-
-  return insufficientAmounts.map(([token, identifierOrCriteria, amount]) => ({
-    token,
-    identifierOrCriteria,
-    amountNeeded: amount,
-    amountHave: tokenAndIdentifierToCheckedAmount[token][identifierOrCriteria],
-  }));
-};
-
-/**
- * The following must be checked when creating offers
- * 1. If the order does not indicate proxy utilization, the offerer should have sufficient approvals
- *    set for the Consideration contract for all offered ERC20, ERC721, and ERC1155 items.
- * 2. If the order does indicate proxy utilization, the offerer should have sufficient approvals
- *    set for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
- */
-export const checkApprovals = async (
-  { offer, offerer, orderType }: OrderParameters,
-  {
-    considerationContract,
-    legacyProxyRegistryAddress,
-    provider,
-  }: {
-    considerationContract: Consideration;
-    legacyProxyRegistryAddress: string;
-    provider: ethers.providers.JsonRpcProvider;
-  }
-) => {
-  const operator = await getApprovalOperator(
-    { offerer, orderType },
-    { considerationContract, legacyProxyRegistryAddress, provider }
-  );
-
-  const insufficientApprovals = await getInsufficientApprovalsForOrderCreation(
-    {
-      offer,
-      offerer,
-      orderType,
-    },
-    {
-      considerationContract,
-      legacyProxyRegistryAddress,
-      provider,
-    }
-  );
-
-  const signer = provider.getSigner();
-
-  for (const { token } of insufficientApprovals) {
-    // This is guaranteed to exist
-    const item = offer.find((item) => item.token === token) as OfferItem;
-
-    if (isErc721Item(item) || isErc1155Item(item)) {
-      // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-      const contract = new Contract(token, ERC721ABI, signer) as ERC721;
-      await contract.setApprovalForAll(operator, true);
-    } else if (item.itemType === ItemType.ERC20) {
-      const contract = new Contract(token, ERC721ABI, signer) as ERC20;
-      await contract.approve(operator, MAX_INT);
-    }
-  }
-};
-
-export const getInsufficientApprovalsForOrderCreation = async (
-  {
-    offer,
-    offerer,
-    orderType,
-  }: Pick<OrderParameters, "offer" | "offerer" | "orderType">,
-  {
-    considerationContract,
-    legacyProxyRegistryAddress,
-    provider,
-  }: {
-    considerationContract: Consideration;
-    legacyProxyRegistryAddress: string;
-    provider: ethers.providers.JsonRpcProvider;
-  }
-) => {
-  const operator = await getApprovalOperator(
-    { offerer, orderType },
-    { considerationContract, legacyProxyRegistryAddress, provider }
-  );
-
-  const insufficientAmounts = await Promise.all(
-    await getInsufficientCheckedAmounts(offer, (item) =>
-      approvedItemAmount(offerer, item, operator, provider)
-    )
-  );
-
-  return insufficientAmounts;
-};
-
 export const useOffererProxy = (orderType: OrderType) =>
   [
     OrderType.FULL_OPEN_VIA_PROXY,
@@ -340,30 +141,3 @@ export const useOffererProxy = (orderType: OrderType) =>
     OrderType.FULL_RESTRICTED_VIA_PROXY,
     OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
   ].includes(orderType);
-
-export const getApprovalOperator = async (
-  { offerer, orderType }: Pick<OrderParameters, "offerer" | "orderType">,
-  {
-    considerationContract,
-    legacyProxyRegistryAddress,
-    provider,
-  }: {
-    considerationContract: Consideration;
-    legacyProxyRegistryAddress: string;
-    provider: ethers.providers.JsonRpcProvider;
-  }
-) => {
-  const useProxy = useOffererProxy(orderType);
-
-  const proxyRegistryInterface = new Contract(
-    legacyProxyRegistryAddress,
-    ProxyRegistryInterfaceABI,
-    provider
-  ) as ProxyRegistryInterface;
-
-  const operator = useProxy
-    ? await proxyRegistryInterface.proxies(offerer)
-    : considerationContract.address;
-
-  return operator;
-};

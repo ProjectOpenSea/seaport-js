@@ -1,4 +1,10 @@
 import { BigNumberish, Contract, ethers, providers } from "ethers";
+import { ConsiderationABI } from "./abi/Consideration";
+import {
+  CONSIDERATION_CONTRACT_NAME,
+  CONSIDERATION_CONTRACT_VERSION,
+  EIP_712_ORDER_TYPE,
+} from "./constants";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import {
   ConsiderationConfig,
@@ -8,22 +14,18 @@ import {
   OrderParameters,
 } from "./types";
 import {
-  CONSIDERATION_CONTRACT_NAME,
-  CONSIDERATION_CONTRACT_VERSION,
-  EIP_712_ORDER_TYPE,
-} from "./constants";
-import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
-import {
   checkApprovals,
-  feeToConsiderationItem,
   getInsufficientApprovalsForOrderCreation,
+} from "./utils/approvals";
+import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
+import { isCurrencyItem } from "./utils/item";
+import {
+  feeToConsiderationItem,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
   validateOrderParameters,
 } from "./utils/order";
-import { isCurrencyItem } from "./utils/item";
-import { ConsiderationABI } from "./abi/Consideration";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
