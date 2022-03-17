@@ -1,6 +1,7 @@
 {
   "name": "consideration",
   "scripts": {
+    "build": "yarn tsc -p tsconfig-build.json",
     "test": "npx hardhat test"
   },
   "dependencies": {
