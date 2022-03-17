@@ -109,7 +109,7 @@ export const balanceOf = async (
     return BigNumber.from(Number(isOwner));
   } else if (isErc1155Item(item)) {
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
-      throw new Error("This doesn't make sense");
+      throw new Error("ERC1155 Criteria based offers are not supported");
     }
 
     const contract = new Contract(item.token, ERC1155ABI, provider) as ERC1155;
