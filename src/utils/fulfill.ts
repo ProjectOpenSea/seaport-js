@@ -1,5 +1,4 @@
-import { BigNumber } from "ethers";
-import { ethers } from "hardhat";
+import { BigNumber, ethers } from "ethers";
 import { BasicFulfillOrder, ItemType, OrderType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { Order } from "../types";

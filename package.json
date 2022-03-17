@@ -1,8 +1,8 @@
 {
   "name": "consideration",
   "scripts": {
-    "build": "yarn tsc -p tsconfig-build.json",
-    "test": "npx hardhat test"
+    "build": "yarn hardhat compile && yarn tsc -p tsconfig-build.json",
+    "test": "yarn hardhat test"
   },
   "dependencies": {
     "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git",

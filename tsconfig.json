@@ -22,6 +22,5 @@
     "isolatedModules": true,
     "rootDir": "./src"
   },
-  "include": ["./src/**/*"],
-  "files": ["./hardhat.config.ts"]
+  "include": ["./src/**/*"]
 }

@@ -1,5 +1,4 @@
-import { BigNumberish } from "ethers";
-import { ethers } from "hardhat";
+import { BigNumberish, ethers } from "ethers";
 import { ItemType, NftItemType } from "../constants";
 import { OfferItem, ReceivedItem } from "../types";
 

@@ -1,6 +1,6 @@
 import { BigNumberish, Contract, ethers, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
-import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
+import ConsiderationABI from "./artifacts/consideration/contracts/Consideration.sol/Consideration.json";
 import {
   ConsiderationConfig,
   CreateOrderInput,
