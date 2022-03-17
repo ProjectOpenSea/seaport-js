@@ -18,8 +18,10 @@ import {
   feeToConsiderationItem,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
+  totalItemsAmount,
   validateOrderParameters,
 } from "./utils/order";
+import { isCurrencyItem } from "./utils/item";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -50,9 +52,9 @@ export class Consideration {
     allowPartialFills,
     restrictedByZone,
     useProxy,
-    // fees,
+    fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Order {
+  }: CreateOrderInput): Promise<Order> {
     const offerer = await this.provider.getSigner().getAddress();
 
     const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
@@ -62,6 +64,21 @@ export class Consideration {
     const orderType =
       ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey][proxyKey];
 
+    const offerItems = offer.map(mapInputItemToOfferItem);
+
+    const considerationItems = [
+      ...consideration.map((consideration) => ({
+        ...mapInputItemToOfferItem(consideration),
+        recipient: consideration.recipient ?? offerer,
+      })),
+    ];
+
+    const currencies = [...offerItems, ...considerationItems].filter(
+      isCurrencyItem
+    );
+
+    const totalCurrencyAmount = totalItemsAmount(currencies);
+
     const orderParameters: OrderParameters = {
       offerer,
       zone,
@@ -70,11 +87,15 @@ export class Consideration {
       orderType,
       offer: offer.map(mapInputItemToOfferItem),
       consideration: [
-        ...consideration.map((consideration) => ({
-          ...mapInputItemToOfferItem(consideration),
-          recipient: consideration.recipient ?? offerer,
-        })),
-        // ...(fees?.map((fee) => feeToConsiderationItem({ fee })) ?? []),
+        ...considerationItems,
+        ...(fees?.map((fee) =>
+          feeToConsiderationItem({
+            fee,
+            token: currencies[0].token,
+            baseAmount: totalCurrencyAmount.startAmount,
+            baseEndAmount: totalCurrencyAmount.endAmount,
+          })
+        ) ?? []),
       ],
       salt,
     };
@@ -109,11 +130,14 @@ export class Consideration {
         )),
     };
 
-    return await signer._signTypedData(
+    const signature = await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents
     );
+
+    // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
+    return ethers.utils.splitSignature(signature).compact;
   }
 
   public async cancelOrders(orders: OrderComponents[]) {

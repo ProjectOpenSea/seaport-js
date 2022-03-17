@@ -48,6 +48,7 @@ export type Erc721Item = {
   identifierOrCriteria: BigNumberish;
   // Used for criteria based items i.e. offering to buy 5 NFTs for a collection
   amount?: string;
+  endAmount?: string;
 };
 
 export type Erc1155Item = {
