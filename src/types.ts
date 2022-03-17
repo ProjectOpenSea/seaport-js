@@ -24,6 +24,8 @@ export type ReceivedItem = {
   recipient: string;
 };
 
+export type Item = OfferItem | ReceivedItem;
+
 export type OrderParameters = {
   offerer: string;
   zone: string;

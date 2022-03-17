@@ -1,6 +1,5 @@
 import { BigNumberish, Contract, ethers, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
-import ConsiderationABI from "./artifacts/consideration/contracts/Consideration.sol/Consideration.json";
 import {
   ConsiderationConfig,
   CreateOrderInput,
@@ -22,6 +21,7 @@ import {
   validateOrderParameters,
 } from "./utils/order";
 import { isCurrencyItem } from "./utils/item";
+import { ConsiderationABI } from "./abi/Consideration";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -37,7 +37,7 @@ export class Consideration {
 
     this.contract = new Contract(
       config?.overrides?.contractAddress ?? "",
-      ConsiderationABI.abi,
+      ConsiderationABI,
       provider.getSigner()
     ) as ConsiderationContract;
   }

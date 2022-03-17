@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish, ethers } from "ethers";
+import { BigNumber, BigNumberish, ethers, providers } from "ethers";
 import { ItemType, OrderType } from "../constants";
 import {
   Fee,
@@ -7,7 +7,7 @@ import {
   OrderParameters,
   ReceivedItem,
 } from "../types";
-import { isCurrencyItem } from "./item";
+import { balanceOf, isCurrencyItem } from "./item";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -128,4 +128,63 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
         endAmount: BigNumber.from(0),
       }
     );
+};
+
+/**
+ * When creating an offer, the following requirements should be checked to ensure that the order will be fulfillable:
+ * 1. The offerer should have sufficient balance of all offered items.
+ * 2. If the order does not indicate proxy utilization, the offerer should have sufficient approvals
+ *    set for the Consideration contract for all offered ERC20, ERC721, and ERC1155 items.
+ * 3. If the order does indicate proxy utilization, the offerer should have sufficient approvals
+ *    set for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
+ * @param orderParameters - standard Order parameters
+ */
+export const validateBalances = async (
+  { offer, offerer }: OrderParameters,
+  provider: providers.JsonRpcProvider
+) => {
+  const tokenAndIdentifierAndBalance = await Promise.all(
+    offer.map(async (item) => {
+      const balance = await balanceOf(offerer, item, provider);
+
+      return [
+        item.token,
+        BigNumber.from(item.identifierOrCriteria).toString(),
+        balance,
+      ] as [string, string, BigNumber];
+    })
+  );
+
+  const tokenAndIdentifierToBalance = tokenAndIdentifierAndBalance.reduce<
+    Record<string, Record<string, BigNumber>>
+  >(
+    (map, [token, identifierOrCriteria, balance]) => ({
+      ...map,
+      [token]: { [identifierOrCriteria]: balance },
+    }),
+    {}
+  );
+
+  const tokenAndIdentifierToAmountNeeded = offer.reduce<
+    Record<string, Record<string, BigNumber>>
+  >((map, item) => {
+    const identifierOrCriteria = BigNumber.from(
+      item.identifierOrCriteria
+    ).toString();
+
+    const startAmount = BigNumber.from(item.startAmount);
+    const endAmount = BigNumber.from(item.endAmount);
+    const maxAmount = startAmount.gt(endAmount) ? startAmount : endAmount;
+
+    return {
+      ...map,
+      [item.token]: {
+        // Being explicit about the undefined type as it's possible for it to be undefined at first iteration
+        [identifierOrCriteria]: (
+          (map[item.token][identifierOrCriteria] as BigNumber | undefined) ??
+          BigNumber.from(0)
+        ).add(maxAmount),
+      },
+    };
+  }, {});
 };
