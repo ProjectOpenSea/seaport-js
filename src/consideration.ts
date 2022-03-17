@@ -16,6 +16,7 @@ import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import {
   checkApprovals,
   feeToConsiderationItem,
+  getInsufficientApprovalsForOrderCreation,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
@@ -115,6 +116,25 @@ export class Consideration {
     const signature = await this.signOrder(orderParameters, nonce);
 
     return { parameters: orderParameters, signature };
+  }
+
+  public async getMissingApprovalsNeededToCreateOffer({
+    offer,
+    offerer,
+    orderType,
+  }: OrderParameters) {
+    return getInsufficientApprovalsForOrderCreation(
+      {
+        offer,
+        offerer,
+        orderType,
+      },
+      {
+        considerationContract: this.contract,
+        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+        provider: this.provider,
+      }
+    );
   }
 
   public async signOrder(

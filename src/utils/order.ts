@@ -170,8 +170,9 @@ export const validateOfferBalances = async (
 };
 
 /**
- * The offerer should have sufficient balance of all offered items.
+ * The offerer should have sufficient checked amounts of all offered items.
  * @param orderParameters - standard Order parameters
+ * @param amountToCheck - function that returns the specific amount to check for
  */
 const getInsufficientCheckedAmounts = async (
   offer: OrderParameters["offer"],
@@ -189,15 +190,16 @@ const getInsufficientCheckedAmounts = async (
     })
   );
 
-  const tokenAndIdentifierToBalance = tokenAndIdentifierAndCheckedAmount.reduce<
-    Record<string, Record<string, BigNumber>>
-  >(
-    (map, [token, identifierOrCriteria, checkedAmount]) => ({
-      ...map,
-      [token]: { [identifierOrCriteria]: checkedAmount },
-    }),
-    {}
-  );
+  const tokenAndIdentifierToCheckedAmount =
+    tokenAndIdentifierAndCheckedAmount.reduce<
+      Record<string, Record<string, BigNumber>>
+    >(
+      (map, [token, identifierOrCriteria, checkedAmount]) => ({
+        ...map,
+        [token]: { [identifierOrCriteria]: checkedAmount },
+      }),
+      {}
+    );
 
   const tokenAndIdentifierToAmountNeeded = offer.reduce<
     Record<string, Record<string, BigNumber>>
@@ -226,18 +228,25 @@ const getInsufficientCheckedAmounts = async (
     ...Object.entries(tokenAndIdentifierToAmountNeeded).map(
       ([token, identifierToAmount]) =>
         Object.entries(identifierToAmount).map(
-          ([identifierOrCriteria, amount]) =>
-            [token, identifierOrCriteria, amount] as const
+          ([identifierOrCriteria, amountNeeded]) =>
+            [token, identifierOrCriteria, amountNeeded] as const
         )
     ),
   ].flat();
 
   const insufficientAmounts = tokenAndIdentifierAndAmountNeeded.filter(
-    ([token, identifierOrCriteria, amount]) =>
-      tokenAndIdentifierToBalance[token][identifierOrCriteria].lt(amount)
+    ([token, identifierOrCriteria, amountNeeded]) =>
+      tokenAndIdentifierToCheckedAmount[token][identifierOrCriteria].lt(
+        amountNeeded
+      )
   );
 
-  return insufficientAmounts;
+  return insufficientAmounts.map(([token, identifierOrCriteria, amount]) => ({
+    token,
+    identifierOrCriteria,
+    amountNeeded: amount,
+    amountHave: tokenAndIdentifierToCheckedAmount[token][identifierOrCriteria],
+  }));
 };
 
 /**
@@ -259,9 +268,92 @@ export const checkApprovals = async (
     provider: ethers.providers.JsonRpcProvider;
   }
 ) => {
-  const useProxy = useOffererProxy(orderType);
+  const operator = await getApprovalOperator(
+    { offerer, orderType },
+    { considerationContract, legacyProxyRegistryAddress, provider }
+  );
+
+  const insufficientApprovals = await getInsufficientApprovalsForOrderCreation(
+    {
+      offer,
+      offerer,
+      orderType,
+    },
+    {
+      considerationContract,
+      legacyProxyRegistryAddress,
+      provider,
+    }
+  );
 
   const signer = provider.getSigner();
+
+  for (const { token } of insufficientApprovals) {
+    // This is guaranteed to exist
+    const item = offer.find((item) => item.token === token) as OfferItem;
+
+    if (isErc721Item(item) || isErc1155Item(item)) {
+      // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
+      const contract = new Contract(token, ERC721ABI, signer) as ERC721;
+      await contract.setApprovalForAll(operator, true);
+    } else if (item.itemType === ItemType.ERC20) {
+      const contract = new Contract(token, ERC721ABI, signer) as ERC20;
+      await contract.approve(operator, MAX_INT);
+    }
+  }
+};
+
+export const getInsufficientApprovalsForOrderCreation = async (
+  {
+    offer,
+    offerer,
+    orderType,
+  }: Pick<OrderParameters, "offer" | "offerer" | "orderType">,
+  {
+    considerationContract,
+    legacyProxyRegistryAddress,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    legacyProxyRegistryAddress: string;
+    provider: ethers.providers.JsonRpcProvider;
+  }
+) => {
+  const operator = await getApprovalOperator(
+    { offerer, orderType },
+    { considerationContract, legacyProxyRegistryAddress, provider }
+  );
+
+  const insufficientAmounts = await Promise.all(
+    await getInsufficientCheckedAmounts(offer, (item) =>
+      approvedItemAmount(offerer, item, operator, provider)
+    )
+  );
+
+  return insufficientAmounts;
+};
+
+export const useOffererProxy = (orderType: OrderType) =>
+  [
+    OrderType.FULL_OPEN_VIA_PROXY,
+    OrderType.PARTIAL_OPEN_VIA_PROXY,
+    OrderType.FULL_RESTRICTED_VIA_PROXY,
+    OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
+  ].includes(orderType);
+
+export const getApprovalOperator = async (
+  { offerer, orderType }: Pick<OrderParameters, "offerer" | "orderType">,
+  {
+    considerationContract,
+    legacyProxyRegistryAddress,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    legacyProxyRegistryAddress: string;
+    provider: ethers.providers.JsonRpcProvider;
+  }
+) => {
+  const useProxy = useOffererProxy(orderType);
 
   const proxyRegistryInterface = new Contract(
     legacyProxyRegistryAddress,
@@ -273,33 +365,5 @@ export const checkApprovals = async (
     ? await proxyRegistryInterface.proxies(offerer)
     : considerationContract.address;
 
-  if (useProxy) {
-    const insufficientAmounts = await Promise.all(
-      await getInsufficientCheckedAmounts(offer, (item) =>
-        approvedItemAmount(offerer, item, operator, provider)
-      )
-    );
-
-    for (const [token] of insufficientAmounts) {
-      // This is guaranteed to exist
-      const item = offer.find((item) => item.token === token) as OfferItem;
-
-      if (isErc721Item(item) || isErc1155Item(item)) {
-        // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-        const contract = new Contract(token, ERC721ABI, signer) as ERC721;
-        await contract.setApprovalForAll(operator, true);
-      } else if (item.itemType === ItemType.ERC20) {
-        const contract = new Contract(token, ERC721ABI, signer) as ERC20;
-        await contract.approve(operator, MAX_INT);
-      }
-    }
-  }
+  return operator;
 };
-
-export const useOffererProxy = (orderType: OrderType) =>
-  [
-    OrderType.FULL_OPEN_VIA_PROXY,
-    OrderType.PARTIAL_OPEN_VIA_PROXY,
-    OrderType.FULL_RESTRICTED_VIA_PROXY,
-    OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
-  ].includes(orderType);
