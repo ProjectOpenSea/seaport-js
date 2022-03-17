@@ -93,7 +93,7 @@ export const shouldUseBasicFulfill = ({
 
   const erc721sAreSingleAmount = nfts
     .filter(({ itemType }) => itemType === ItemType.ERC721)
-    .every(({ endAmount }) => endAmount === 1);
+    .every(({ endAmount }) => endAmount === "1");
 
   return (
     nativeCurrencyIsZeroAddress &&
@@ -134,6 +134,7 @@ const offerAndConsiderationFulfillmentMapping: {
  */
 export const fulfillBasicOrder = (
   { parameters: orderParameters, signature }: Order,
+  useFulfillerProxy: boolean,
   contract: Consideration
 ) => {
   const { offer, consideration } = orderParameters;
@@ -167,12 +168,7 @@ export const fulfillBasicOrder = (
     startTime: orderParameters.startTime,
     endTime: orderParameters.endTime,
     salt: orderParameters.salt,
-    useFulfillerProxy: [
-      OrderType.FULL_OPEN_VIA_PROXY,
-      OrderType.PARTIAL_OPEN_VIA_PROXY,
-      OrderType.FULL_RESTRICTED_VIA_PROXY,
-      OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
-    ].includes(orderParameters.orderType),
+    useFulfillerProxy,
     signature,
     additionalRecipients,
   };

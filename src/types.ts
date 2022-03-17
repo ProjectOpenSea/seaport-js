@@ -4,6 +4,7 @@ import { ItemType, OrderType } from "./constants";
 export type ConsiderationConfig = {
   overrides?: {
     contractAddress: string;
+    legacyProxyRegistryAddress: string;
   };
 };
 
@@ -11,16 +12,16 @@ export type OfferItem = {
   itemType: ItemType;
   token: string;
   identifierOrCriteria: BigNumberish;
-  startAmount: BigNumberish;
-  endAmount: BigNumberish;
+  startAmount: string;
+  endAmount: string;
 };
 
 export type ReceivedItem = {
   itemType: ItemType;
   token: string;
   identifierOrCriteria: BigNumberish;
-  startAmount: BigNumberish;
-  endAmount: BigNumberish;
+  startAmount: string;
+  endAmount: string;
   recipient: string;
 };
 

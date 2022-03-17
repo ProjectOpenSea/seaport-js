@@ -14,6 +14,7 @@ import {
 } from "./constants";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import {
+  checkApprovals,
   feeToConsiderationItem,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
@@ -28,6 +29,7 @@ export class Consideration {
   public contract: ConsiderationContract;
 
   private provider: providers.JsonRpcProvider;
+  private legacyProxyRegistryAddress: string;
 
   public constructor(
     provider: providers.JsonRpcProvider,
@@ -40,6 +42,9 @@ export class Consideration {
       ConsiderationABI,
       provider.getSigner()
     ) as ConsiderationContract;
+
+    this.legacyProxyRegistryAddress =
+      config?.overrides?.legacyProxyRegistryAddress ?? "";
   }
 
   public async createOrder({
@@ -100,7 +105,12 @@ export class Consideration {
       salt,
     };
 
-    validateOrderParameters(orderParameters);
+    validateOrderParameters(orderParameters, this.provider);
+    checkApprovals(orderParameters, {
+      considerationContract: this.contract,
+      legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+      provider: this.provider,
+    });
 
     const signature = await this.signOrder(orderParameters, nonce);
 
@@ -157,9 +167,9 @@ export class Consideration {
     return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 
-  public fulfillOrder(order: Order) {
+  public fulfillOrder(order: Order, useFulfillerProxy = false) {
     if (shouldUseBasicFulfill(order)) {
-      return fulfillBasicOrder(order, this.contract);
+      return fulfillBasicOrder(order, useFulfillerProxy, this.contract);
     }
 
     // TODO: Implement more advanced order fulfillment

@@ -1,7 +1,8 @@
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
+import { ERC1155ABI } from "../abi/ERC1155";
 import { ERC721ABI } from "../abi/ERC721";
-import { ItemType, NftItemType } from "../constants";
-import { ERC1155, ERC20, ERC721 } from "../typechain";
+import { ItemType, MAX_INT, NftItemType } from "../constants";
+import { Consideration, ERC1155, ERC20, ERC721 } from "../typechain";
 import { Item, OfferItem, ReceivedItem } from "../types";
 
 type ConstructItemParams = {
@@ -111,7 +112,7 @@ export const balanceOf = async (
       throw new Error("This doesn't make sense");
     }
 
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC1155;
+    const contract = new Contract(item.token, ERC1155ABI, provider) as ERC1155;
     return contract.balanceOf(owner, item.identifierOrCriteria);
   }
 
@@ -121,4 +122,26 @@ export const balanceOf = async (
   }
 
   return await provider.getBalance(owner);
+};
+
+export const approvedItemAmount = async (
+  owner: string,
+  item: Item,
+  operator: string,
+  provider: ethers.providers.JsonRpcProvider
+) => {
+  if (isErc721Item(item) || isErc1155Item(item)) {
+    // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
+    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
+    const isApprovedForAll = await contract.isApprovedForAll(owner, operator);
+
+    return isApprovedForAll ? MAX_INT : BigNumber.from(0);
+  } else if (item.itemType === ItemType.ERC20) {
+    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
+
+    return contract.allowance(owner, operator);
+  }
+
+  // We don't need to check approvals for native tokens
+  return MAX_INT;
 };
