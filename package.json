@@ -1,5 +1,6 @@
 {
   "name": "consideration",
+  "license": "MIT",
   "scripts": {
     "build": "yarn hardhat compile && yarn tsc -p tsconfig-build.json",
     "test": "yarn hardhat test"
