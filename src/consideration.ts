@@ -1,12 +1,27 @@
-import { Contract, ethers, providers } from "ethers";
+import { BigNumberish, Contract, ethers, providers } from "ethers";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import ConsiderationABI from "../artifacts/consideration/contracts/Consideration.sol/Consideration.json";
-import { ConsiderationConfig, OrderComponents, OrderParameters } from "./types";
+import {
+  ConsiderationConfig,
+  CreateOrderInput,
+  Order,
+  OrderComponents,
+  OrderParameters,
+} from "./types";
 import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
 } from "./constants";
+import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
+import {
+  feeToConsiderationItem,
+  mapInputItemToOfferItem,
+  ORDER_OPTIONS_TO_ORDER_TYPE,
+  totalItemsAmount,
+  validateOrderParameters,
+} from "./utils/order";
+import { isCurrencyItem } from "./utils/item";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -27,7 +42,75 @@ export class Consideration {
     ) as ConsiderationContract;
   }
 
-  public async signOrder(orderParameters: OrderParameters, nonce?: number) {
+  public async createOrder({
+    zone = ethers.constants.AddressZero,
+    startTime,
+    endTime,
+    offer,
+    consideration,
+    nonce,
+    allowPartialFills,
+    restrictedByZone,
+    useProxy,
+    fees,
+    salt = ethers.utils.randomBytes(16),
+  }: CreateOrderInput): Promise<Order> {
+    const offerer = await this.provider.getSigner().getAddress();
+
+    const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
+    const restrictedKey = restrictedByZone ? "RESTRICTED" : "OPEN";
+    const proxyKey = useProxy ? "VIA_PROXY" : "WITHOUT_PROXY";
+
+    const orderType =
+      ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey][proxyKey];
+
+    const offerItems = offer.map(mapInputItemToOfferItem);
+
+    const considerationItems = [
+      ...consideration.map((consideration) => ({
+        ...mapInputItemToOfferItem(consideration),
+        recipient: consideration.recipient ?? offerer,
+      })),
+    ];
+
+    const currencies = [...offerItems, ...considerationItems].filter(
+      isCurrencyItem
+    );
+
+    const totalCurrencyAmount = totalItemsAmount(currencies);
+
+    const orderParameters: OrderParameters = {
+      offerer,
+      zone,
+      startTime,
+      endTime,
+      orderType,
+      offer: offer.map(mapInputItemToOfferItem),
+      consideration: [
+        ...considerationItems,
+        ...(fees?.map((fee) =>
+          feeToConsiderationItem({
+            fee,
+            token: currencies[0].token,
+            baseAmount: totalCurrencyAmount.startAmount,
+            baseEndAmount: totalCurrencyAmount.endAmount,
+          })
+        ) ?? []),
+      ],
+      salt,
+    };
+
+    validateOrderParameters(orderParameters);
+
+    const signature = await this.signOrder(orderParameters, nonce);
+
+    return { parameters: orderParameters, signature };
+  }
+
+  public async signOrder(
+    orderParameters: OrderParameters,
+    nonce?: BigNumberish
+  ) {
     const signer = this.provider.getSigner();
     const { chainId } = await this.provider.getNetwork();
 
@@ -47,11 +130,14 @@ export class Consideration {
         )),
     };
 
-    return await signer._signTypedData(
+    const signature = await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents
     );
+
+    // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
+    return ethers.utils.splitSignature(signature).compact;
   }
 
   public async cancelOrders(orders: OrderComponents[]) {
@@ -69,5 +155,14 @@ export class Consideration {
       offerer ?? (await this.provider.getSigner().getAddress());
 
     return this.contract.incrementNonce(resolvedOfferer, zone);
+  }
+
+  public fulfillOrder(order: Order) {
+    if (shouldUseBasicFulfill(order)) {
+      return fulfillBasicOrder(order, this.contract);
+    }
+
+    // TODO: Implement more advanced order fulfillment
+    return null;
   }
 }

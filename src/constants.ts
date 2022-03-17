@@ -45,7 +45,7 @@ export enum OrderType {
 }
 
 export enum ItemType {
-  ETH = 0,
+  NATIVE = 0,
   ERC20 = 1,
   ERC721 = 2,
   ERC1155 = 3,
@@ -62,4 +62,13 @@ export type NftItemType =
 export enum Side {
   OFFER = 0, // Items being supplied
   CONSIDERATION = 1, // Items being received
+}
+
+export enum BasicFulfillOrder {
+  ETH_FOR_ERC721,
+  ETH_FOR_ERC1155,
+  ERC20_FOR_ERC721,
+  ERC20_FOR_ERC1155,
+  ERC721_FOR_ERC20,
+  ERC1155_FOR_ERC20,
 }
