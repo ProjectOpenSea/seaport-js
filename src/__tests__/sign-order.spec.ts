@@ -74,7 +74,7 @@ describe("Sign order", function () {
       endTime,
     };
 
-    const signature = await consideration.signOrder(orderParameters);
+    const signature = await consideration.signOrder(orderParameters, 0);
 
     const isValid = await considerationContract.callStatic.validate([
       { parameters: orderParameters, signature },

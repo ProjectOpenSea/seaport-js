@@ -1,7 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
-import { ConsiderationABI } from "src/abi/Consideration";
-import { Consideration } from "src/typechain";
+import { ConsiderationABI } from "../abi/Consideration";
+import { Consideration } from "../typechain";
 import { ItemType, OrderType } from "../constants";
 import {
   Fee,
