@@ -14,21 +14,22 @@ import {
   OrderComponents,
   OrderParameters,
 } from "./types";
-import {
-  setNeededApprovalsForOrderCreation,
-  getApprovalOperator,
-} from "./utils/approval";
+import { setNeededApprovalsForOrderCreation } from "./utils/approval";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import { isCurrencyItem } from "./utils/item";
 import {
   feeToConsiderationItem,
+  getNonce,
+  getOrderHash,
   getOrderStatus,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
+  useOffererProxy,
   validateOrderParameters,
 } from "./utils/order";
 import { getBalancesAndApprovals } from "./utils/balancesAndApprovals";
+import { getProxy } from "./utils/proxy";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -40,7 +41,7 @@ export class Consideration {
   // NOTE: Do NOT await between sequential requests if you're intending to batch
   // instead, use Promise.all() and map to fetch data in parallel
   // https://www.npmjs.com/package/@0xsequence/multicall
-  private readOnlyProvider: multicallProviders.MulticallProvider;
+  private multicallProvider: multicallProviders.MulticallProvider;
 
   private legacyProxyRegistryAddress: string;
 
@@ -49,7 +50,7 @@ export class Consideration {
     config?: ConsiderationConfig
   ) {
     this.provider = provider;
-    this.readOnlyProvider = new multicallProviders.MulticallProvider(provider);
+    this.multicallProvider = new multicallProviders.MulticallProvider(provider);
 
     this.contract = new Contract(
       config?.overrides?.contractAddress ?? "",
@@ -79,6 +80,9 @@ export class Consideration {
     return orderType;
   }
 
+  // Check if single offer 721/1155 - if so do NOT use proxy
+  // Check to see if theres sufficient approvals on consideration. if so use it
+  // If not, check if theres proxies, and then check in proxy for approvals. If it has enough approvals, then use proxy
   public async createOrder({
     zone = ethers.constants.AddressZero,
     startTime,
@@ -88,6 +92,7 @@ export class Consideration {
     nonce,
     allowPartialFills,
     restrictedByZone,
+    // TODO: abstract
     useProxy,
     fees,
     salt = ethers.utils.randomBytes(16),
@@ -134,25 +139,30 @@ export class Consideration {
       salt,
     };
 
-    const operator = await getApprovalOperator(
-      { offerer, orderType },
-      {
-        considerationContract: this.contract,
+    const [proxy, resolvedNonce] = await Promise.all([
+      getProxy(offerer, {
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        provider: this.readOnlyProvider,
+        multicallProvider: this.multicallProvider,
+      }),
+      nonce ??
+        getNonce(
+          { offerer, zone },
+          {
+            considerationContract: this.contract,
+            multicallProvider: this.multicallProvider,
+          }
+        ),
+    ]);
+
+    const balancesAndApprovals = await getBalancesAndApprovals(
+      offerer,
+      orderParameters.offer,
+      {
+        proxy,
+        considerationContract: this.contract,
+        multicallProvider: this.multicallProvider,
       }
     );
-
-    const [balancesAndApprovals, resolvedNonce] = await Promise.all([
-      getBalancesAndApprovals(
-        offerer,
-        orderParameters.offer,
-        operator,
-        this.readOnlyProvider
-      ),
-      nonce ??
-        this.contract.getNonce(orderParameters.offerer, orderParameters.zone),
-    ]);
 
     validateOrderParameters(orderParameters, balancesAndApprovals);
 
@@ -163,7 +173,7 @@ export class Consideration {
         considerationContract: this.contract,
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
         provider: this.provider,
-        readOnlyProvider: this.readOnlyProvider,
+        multicallProvider: this.multicallProvider,
       }
     );
 
@@ -220,11 +230,59 @@ export class Consideration {
     return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 
-  public async fulfillOrder(order: Order, useFulfillerProxy = false) {
-    const { isValidated, isCancelled, totalFilled, totalSize } =
-      await getOrderStatus(order, {
+  public async fulfillOrder(order: Order) {
+    const { parameters: orderParameters } = order;
+    const { orderType, offerer, zone, offer, consideration } = orderParameters;
+
+    const fulfiller = await this.provider.getSigner().getAddress();
+
+    const shouldUseOffererProxy = useOffererProxy(orderType);
+
+    const [offererProxy, fulfillerProxy, nonce] = await Promise.all([
+      shouldUseOffererProxy
+        ? getProxy(offerer, {
+            legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+            multicallProvider: this.multicallProvider,
+          })
+        : undefined,
+      getProxy(fulfiller, {
+        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+        multicallProvider: this.multicallProvider,
+      }),
+      getNonce(
+        { offerer, zone },
+        {
+          considerationContract: this.contract,
+          multicallProvider: this.multicallProvider,
+        }
+      ),
+    ]);
+
+    const [
+      offererBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      orderHash,
+    ] = await Promise.all([
+      getBalancesAndApprovals(offerer, offer, {
+        proxy: offererProxy,
         considerationContract: this.contract,
-        provider: this.readOnlyProvider,
+        multicallProvider: this.multicallProvider,
+      }),
+      getBalancesAndApprovals(fulfiller, consideration, {
+        proxy: offererProxy,
+        considerationContract: this.contract,
+        multicallProvider: this.multicallProvider,
+      }),
+      getOrderHash(order, {
+        considerationContract: this.contract,
+        multicallProvider: this.multicallProvider,
+      }),
+    ]);
+
+    const { isValidated, isCancelled, totalFilled, totalSize } =
+      await getOrderStatus(orderHash, {
+        considerationContract: this.contract,
+        provider: this.provider,
       });
 
     if (isCancelled) {
@@ -238,8 +296,9 @@ export class Consideration {
 
     const advancedOrder = { ...order, totalFilled, totalSize };
 
-    if (shouldUseBasicFulfill(advancedOrder.parameters)) {
-      return fulfillBasicOrder(order, useFulfillerProxy, this.contract);
+    if (shouldUseBasicFulfill(advancedOrder.parameters, totalFilled)) {
+      // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
+      return fulfillBasicOrder(order, false, this.contract);
     }
 
     // TODO: Implement more advanced order fulfillment

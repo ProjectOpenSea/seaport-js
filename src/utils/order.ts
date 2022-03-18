@@ -1,5 +1,4 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
+import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { ConsiderationABI } from "../abi/Consideration";
 import { Consideration } from "../typechain";
 import { ItemType, OrderType } from "../constants";
@@ -14,6 +13,7 @@ import {
 import { validateOfferBalances } from "./balance";
 import { BalancesAndApprovals } from "./balancesAndApprovals";
 import { isCurrencyItem } from "./item";
+import { providers as multicallProviders } from "@0xsequence/multicall";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -148,13 +148,13 @@ export const useOffererProxy = (orderType: OrderType) =>
   ].includes(orderType);
 
 export const getOrderStatus = async (
-  order: Order,
+  orderHash: string,
   {
     considerationContract,
     provider,
   }: {
     considerationContract: Consideration;
-    provider: multicallProviders.MulticallProvider;
+    provider: providers.JsonRpcProvider;
   }
 ) => {
   const contract = new Contract(
@@ -163,7 +163,43 @@ export const getOrderStatus = async (
     provider
   ) as Consideration;
 
-  const orderHash = await contract.getOrderHash(order.parameters);
-
   return contract.getOrderStatus(orderHash);
+};
+
+export const getOrderHash = async (
+  order: Order,
+  {
+    considerationContract,
+    multicallProvider,
+  }: {
+    considerationContract: Consideration;
+    multicallProvider: multicallProviders.MulticallProvider;
+  }
+) => {
+  const contract = new Contract(
+    considerationContract.address,
+    ConsiderationABI,
+    multicallProvider
+  ) as Consideration;
+
+  return contract.getOrderHash(order.parameters);
+};
+
+export const getNonce = (
+  { offerer, zone }: { offerer: string; zone: string },
+  {
+    considerationContract,
+    multicallProvider,
+  }: {
+    considerationContract: Consideration;
+    multicallProvider: multicallProviders.MulticallProvider;
+  }
+) => {
+  const contract = new Contract(
+    considerationContract.address,
+    ConsiderationABI,
+    multicallProvider
+  ) as Consideration;
+
+  return contract.getNonce(offerer, zone);
 };

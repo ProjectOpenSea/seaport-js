@@ -45,10 +45,14 @@ export const validateOfferBalances = (
 export const balanceOf = async (
   owner: string,
   item: Item,
-  provider: multicallProviders.MulticallProvider
+  multicallProvider: multicallProviders.MulticallProvider
 ): Promise<BigNumber> => {
   if (isErc721Item(item)) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
+    const contract = new Contract(
+      item.token,
+      ERC721ABI,
+      multicallProvider
+    ) as ERC721;
 
     if (item.itemType === ItemType.ERC721_WITH_CRITERIA) {
       return contract.balanceOf(owner);
@@ -61,14 +65,22 @@ export const balanceOf = async (
       throw new Error("ERC1155 Criteria based offers are not supported");
     }
 
-    const contract = new Contract(item.token, ERC1155ABI, provider) as ERC1155;
+    const contract = new Contract(
+      item.token,
+      ERC1155ABI,
+      multicallProvider
+    ) as ERC1155;
     return contract.balanceOf(owner, item.identifierOrCriteria);
   }
 
   if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
+    const contract = new Contract(
+      item.token,
+      ERC721ABI,
+      multicallProvider
+    ) as ERC20;
     return contract.balanceOf(owner);
   }
 
-  return provider.getBalance(owner);
+  return multicallProvider.getBalance(owner);
 };

@@ -104,3 +104,10 @@ export type CreateOrderInput = {
   useProxy?: boolean;
   salt?: BigNumberish;
 };
+
+export type OrderStatus = {
+  isValidated: boolean;
+  isCancelled: boolean;
+  totalFilled: BigNumber;
+  totalSize: BigNumber;
+};

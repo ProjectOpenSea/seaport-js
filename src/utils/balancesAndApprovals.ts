@@ -1,43 +1,87 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber } from "ethers";
 import { MAX_INT } from "../constants";
+import { Consideration } from "../typechain";
 import { Item } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";
-import { getSummedTokenAndIdentifierAmounts } from "./item";
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isErc1155Item,
+  isErc20Item,
+  isErc721Item,
+} from "./item";
 
 export type BalancesAndApprovals = {
   token: string;
   identifierOrCriteria: string;
   balance: BigNumber;
-  approvedAmount: BigNumber;
+  ownerApprovedAmount: BigNumber;
+  proxyApprovedAmount: BigNumber;
 }[];
 
 export const getBalancesAndApprovals = async (
   owner: string,
   items: Item[],
-  operator: string,
-  provider: multicallProviders.MulticallProvider
-) => {
-  const balancesAndApprovedAmounts = await Promise.all(
-    items.map(async (item) => ({
-      token: item.token,
-      identifierOrCriteria: BigNumber.from(
-        item.identifierOrCriteria
-      ).toString(),
-      balance: await balanceOf(owner, item, provider),
-      approvedAmount: await approvedItemAmount(owner, item, operator, provider),
-    }))
-  );
+  {
+    considerationContract,
+    proxy,
+    multicallProvider,
+  }: {
+    considerationContract: Consideration;
+    proxy?: string;
+    multicallProvider: multicallProviders.MulticallProvider;
+  }
+) =>
+  Promise.all(
+    items.map(async (item) => {
+      let ownerApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
+      let proxyApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
 
-  return balancesAndApprovedAmounts.map((item) => ({
-    ...item,
-    approvedAmount:
-      // approvedAmounts are true means isApprovedForAll is true.
-      // Setting to the max int to consolidate types and simplify
-      item.approvedAmount === true ? MAX_INT : BigNumber.from(0),
-  }));
-};
+      // If erc721 or erc1155 check both consideration and proxy approvals unless config says ignore proxy
+      if (isErc721Item(item) || isErc1155Item(item)) {
+        ownerApprovedAmountPromise = approvedItemAmount(
+          owner,
+          item,
+          considerationContract.address,
+          multicallProvider
+        );
+
+        if (proxy) {
+          proxyApprovedAmountPromise = approvedItemAmount(
+            owner,
+            item,
+            proxy,
+            multicallProvider
+          );
+        }
+      }
+      // If erc20 check just consideration contract for approvals
+      else if (isErc20Item(item)) {
+        ownerApprovedAmountPromise = approvedItemAmount(
+          owner,
+          item,
+          considerationContract.address,
+          multicallProvider
+        );
+      }
+      // If native token, we don't need to check for approvals
+      else {
+        ownerApprovedAmountPromise = Promise.resolve(MAX_INT);
+        proxyApprovedAmountPromise = Promise.resolve(MAX_INT);
+      }
+
+      return {
+        token: item.token,
+        identifierOrCriteria: BigNumber.from(
+          item.identifierOrCriteria
+        ).toString(),
+        balance: await balanceOf(owner, item, multicallProvider),
+        ownerApprovedAmount: await ownerApprovedAmountPromise,
+        proxyApprovedAmount: await proxyApprovedAmountPromise,
+      };
+    })
+  );
 
 export const getInsufficientBalanceAndApprovalAmounts = (
   balancesAndApprovals: BalancesAndApprovals,
@@ -78,7 +122,9 @@ export const getInsufficientBalanceAndApprovalAmounts = (
     return balanceAndApproval;
   };
 
-  const filterBalancesOrApprovals = (filterKey: "balance" | "approvedAmount") =>
+  const filterBalancesOrApprovals = (
+    filterKey: "balance" | "ownerApprovedAmount" | "proxyApprovedAmount"
+  ) =>
     tokenAndIdentifierAndAmountNeeded
       .filter(([token, identifierOrCriteria, amountNeeded]) =>
         findBalanceAndApproval(token, identifierOrCriteria)[filterKey].lt(
@@ -94,13 +140,19 @@ export const getInsufficientBalanceAndApprovalAmounts = (
         ],
       }));
 
-  const [insufficientBalances, insufficientApprovals] = [
+  const [
+    insufficientBalances,
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  ] = [
     filterBalancesOrApprovals("balance"),
-    filterBalancesOrApprovals("approvedAmount"),
+    filterBalancesOrApprovals("ownerApprovedAmount"),
+    filterBalancesOrApprovals("proxyApprovedAmount"),
   ];
 
   return {
     insufficientBalances,
-    insufficientApprovals,
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
   };
 };

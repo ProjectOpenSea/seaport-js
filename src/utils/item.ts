@@ -84,6 +84,8 @@ export const constructCurrencyItem = <
 export const isCurrencyItem = ({ itemType }: Item) =>
   [ItemType.NATIVE, ItemType.ERC20].includes(itemType);
 
+export const isErc20Item = ({ itemType }: Item) => itemType === ItemType.ERC20;
+
 export const isErc721Item = ({ itemType }: Item) =>
   [ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(itemType);
 

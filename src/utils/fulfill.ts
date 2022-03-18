@@ -1,28 +1,34 @@
 import { BigNumber, ethers } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
-import { Order, OrderParameters } from "../types";
+import { Order, OrderParameters, OrderStatus } from "../types";
 import { areAllCurrenciesSame, totalItemsAmount } from "./order";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
- * 1. The order only contains a single offer item and contains at least one consideration item
- * 2. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
- * 3. All other items have the same Ether or ERC20 item type and token
- * 4. All items have the same startAmount and endAmount
- * 5. First consideration item must contain the offerer as the recipient
- * 6. If the order has multiple consideration items and all consideration items other than the
+ * 1. The order should not be partially filled.
+ * 2. The order only contains a single offer item and contains at least one consideration item
+ * 3. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
+ * 4. All other items have the same Ether or ERC20 item type and token
+ * 5. The order should not be partially filled
+ * 6. All items have the same startAmount and endAmount
+ * 7. First consideration item must contain the offerer as the recipient
+ * 8. If the order has multiple consideration items and all consideration items other than the
  *    first consideration item have the same item type as the offered item, the offered item
  *    amount is not less than the sum of all consideration item amounts excluding the
  *    first consideration item amount
- * 7. The token on native currency items needs to be set to the null address and the identifier on
+ * 9. The token on native currency items needs to be set to the null address and the identifier on
  *    currencies needs to be zero, and the amounts on the 721 item need to be 1
  */
-export const shouldUseBasicFulfill = ({
-  offer,
-  consideration,
-  offerer,
-}: OrderParameters) => {
+export const shouldUseBasicFulfill = (
+  { offer, consideration, offerer }: OrderParameters,
+  totalFilled: BigNumber
+) => {
+  // The order must not be partially fileld
+  if (!totalFilled.eq(0)) {
+    return false;
+  }
+
   // Must be single offer and at least one consideration
   if (offer.length > 1 || consideration.length === 0) {
     return false;

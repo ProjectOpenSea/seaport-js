@@ -38,7 +38,10 @@ export const approvedItemAmount = async (
   if (isErc721Item(item) || isErc1155Item(item)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
     const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
-    return contract.isApprovedForAll(owner, operator);
+    return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
+      // Setting to the max int to consolidate types and simplify
+      isApprovedForAll ? MAX_INT : BigNumber.from(0)
+    );
   } else if (item.itemType === ItemType.ERC20) {
     const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
 
@@ -63,12 +66,12 @@ export const setNeededApprovalsForOrderCreation = async (
     considerationContract,
     legacyProxyRegistryAddress,
     provider,
-    readOnlyProvider,
+    multicallProvider,
   }: {
     considerationContract: Consideration;
     legacyProxyRegistryAddress: string;
     provider: providers.JsonRpcProvider;
-    readOnlyProvider: multicallProviders.MulticallProvider;
+    multicallProvider: multicallProviders.MulticallProvider;
   }
 ) => {
   const operator = await getApprovalOperator(
@@ -76,7 +79,7 @@ export const setNeededApprovalsForOrderCreation = async (
     {
       considerationContract,
       legacyProxyRegistryAddress,
-      provider: readOnlyProvider,
+      provider: multicallProvider,
     }
   );
 
@@ -100,31 +103,4 @@ export const setNeededApprovalsForOrderCreation = async (
       await contract.approve(operator, MAX_INT);
     }
   }
-};
-
-export const getApprovalOperator = async (
-  { offerer, orderType }: Pick<OrderParameters, "offerer" | "orderType">,
-  {
-    considerationContract,
-    legacyProxyRegistryAddress,
-    provider,
-  }: {
-    considerationContract: Consideration;
-    legacyProxyRegistryAddress: string;
-    provider: multicallProviders.MulticallProvider;
-  }
-) => {
-  const useProxy = useOffererProxy(orderType);
-
-  const proxyRegistryInterface = new Contract(
-    legacyProxyRegistryAddress,
-    ProxyRegistryInterfaceABI,
-    provider
-  ) as ProxyRegistryInterface;
-
-  const operator = useProxy
-    ? await proxyRegistryInterface.proxies(offerer)
-    : considerationContract.address;
-
-  return operator;
 };
