@@ -14,8 +14,8 @@ import {
   OrderParameters,
 } from "./types";
 import {
-  checkApprovals,
-  getInsufficientApprovalsForOrderCreation,
+  setNeededApprovalsForOrderCreation,
+  getNeededApprovalsForOrderCreation,
 } from "./utils/approvals";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import { isCurrencyItem } from "./utils/item";
@@ -26,12 +26,16 @@ import {
   totalItemsAmount,
   validateOrderParameters,
 } from "./utils/order";
+import { Provider as MulticallProvider } from "ethers-multicall";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
   public contract: ConsiderationContract;
 
   private provider: providers.JsonRpcProvider;
+
+  // Used to batch multiple eth calls into one request for performance
+  private multicallProvider: MulticallProvider;
   private legacyProxyRegistryAddress: string;
 
   public constructor(
@@ -39,6 +43,7 @@ export class Consideration {
     config?: ConsiderationConfig
   ) {
     this.provider = provider;
+    this.multicallProvider = new MulticallProvider(provider);
 
     this.contract = new Contract(
       config?.overrides?.contractAddress ?? "",
@@ -125,7 +130,7 @@ export class Consideration {
 
     await validateOrderParameters(orderParameters, this.provider);
 
-    await checkApprovals(orderParameters, {
+    await setNeededApprovalsForOrderCreation(orderParameters, {
       considerationContract: this.contract,
       legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
       provider: this.provider,
@@ -152,7 +157,7 @@ export class Consideration {
 
     const offerItems = offer.map(mapInputItemToOfferItem);
 
-    return getInsufficientApprovalsForOrderCreation(
+    return getNeededApprovalsForOrderCreation(
       {
         offer: offerItems,
         offerer,
@@ -217,11 +222,23 @@ export class Consideration {
   }
 
   public fulfillOrder(order: Order, useFulfillerProxy = false) {
-    if (shouldUseBasicFulfill(order)) {
+    if (shouldUseBasicFulfill(order.parameters)) {
       return fulfillBasicOrder(order, useFulfillerProxy, this.contract);
     }
 
     // TODO: Implement more advanced order fulfillment
+
+    // Building fulfillments
+    // Can only match if everything about them is the same except for the amounts
+    // Bucket all the offers and considerations
+    // Look at item type, token, flatten every offer and every consideration into one array
+    // in process of flattening, keep track of indices
+    // If first time seen this item type, token, identifier combo and offerer/recipient, then goes into new bucket
+    // If i've seen it, put it into the bucket
+    // If only one possibility to match, then match
+    // i.e. 2 items in bucket. 1 offer 1 ETH, 1 offer 2 ETH. 2 consideration items, 1 expect 2 ETH, 1 expect 1 ETH
+    // Minimize number of fulfillments
+    // Most robust way is to go through every single permutation of both sides
     return null;
   }
 }

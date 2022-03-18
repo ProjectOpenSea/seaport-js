@@ -1,7 +1,7 @@
 import { BigNumber, ethers } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
-import { Order } from "../types";
+import { Order, OrderParameters } from "../types";
 import { areAllCurrenciesSame, totalItemsAmount } from "./order";
 
 /**
@@ -19,8 +19,10 @@ import { areAllCurrenciesSame, totalItemsAmount } from "./order";
  *    currencies needs to be zero, and the amounts on the 721 item need to be 1
  */
 export const shouldUseBasicFulfill = ({
-  parameters: { offer, consideration, offerer },
-}: Order) => {
+  offer,
+  consideration,
+  offerer,
+}: OrderParameters) => {
   // Must be single offer and at least one consideration
   if (offer.length > 1 || consideration.length === 0) {
     return false;

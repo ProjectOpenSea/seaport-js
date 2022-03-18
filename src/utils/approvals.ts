@@ -12,6 +12,37 @@ import { Item, OfferItem, OrderParameters } from "../types";
 import { isErc1155Item, isErc721Item } from "./item";
 import { useOffererProxy } from "./order";
 
+// get balances first
+// get approvals
+// get order status
+// from multicall
+
+// when fulfilling order
+// if validated or order is already filled, it's validated
+// then pass in empty signature into fulfillOrder call
+
+export const approvedItemAmount = async (
+  owner: string,
+  item: Item,
+  operator: string,
+  provider: providers.JsonRpcProvider
+) => {
+  if (isErc721Item(item) || isErc1155Item(item)) {
+    // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
+    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
+    const isApprovedForAll = await contract.isApprovedForAll(owner, operator);
+
+    return isApprovedForAll ? MAX_INT : BigNumber.from(0);
+  } else if (item.itemType === ItemType.ERC20) {
+    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
+
+    return contract.allowance(owner, operator);
+  }
+
+  // We don't need to check approvals for native tokens
+  return MAX_INT;
+};
+
 /**
  * The offerer should have sufficient checked amounts of all offered items.
  * @param orderParameters - standard Order parameters
@@ -93,13 +124,13 @@ export const getInsufficientCheckedAmounts = async (
 };
 
 /**
- * The following must be checked when creating offers
+ * The following must be checked when creating orders
  * 1. If the order does not indicate proxy utilization, the offerer should have sufficient approvals
  *    set for the Consideration contract for all offered ERC20, ERC721, and ERC1155 items.
  * 2. If the order does indicate proxy utilization, the offerer should have sufficient approvals
  *    set for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
  */
-export const checkApprovals = async (
+export const setNeededApprovalsForOrderCreation = async (
   { offer, offerer, orderType }: OrderParameters,
   {
     considerationContract,
@@ -116,7 +147,7 @@ export const checkApprovals = async (
     { considerationContract, legacyProxyRegistryAddress, provider }
   );
 
-  const insufficientApprovals = await getInsufficientApprovalsForOrderCreation(
+  const insufficientApprovals = await getNeededApprovalsForOrderCreation(
     {
       offer,
       offerer,
@@ -146,29 +177,37 @@ export const checkApprovals = async (
   }
 };
 
-export const approvedItemAmount = async (
-  owner: string,
-  item: Item,
-  operator: string,
-  provider: providers.JsonRpcProvider
-) => {
-  if (isErc721Item(item) || isErc1155Item(item)) {
-    // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
-    const isApprovedForAll = await contract.isApprovedForAll(owner, operator);
-
-    return isApprovedForAll ? MAX_INT : BigNumber.from(0);
-  } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
-
-    return contract.allowance(owner, operator);
+export const getNeededApprovalsForOrderCreation = async (
+  {
+    offer,
+    offerer,
+    orderType,
+  }: Pick<OrderParameters, "offer" | "offerer" | "orderType">,
+  {
+    considerationContract,
+    legacyProxyRegistryAddress,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    legacyProxyRegistryAddress: string;
+    provider: providers.JsonRpcProvider;
   }
+) => {
+  const operator = await getApprovalOperator(
+    { offerer, orderType },
+    { considerationContract, legacyProxyRegistryAddress, provider }
+  );
 
-  // We don't need to check approvals for native tokens
-  return MAX_INT;
+  const insufficientAmounts = await Promise.all(
+    await getInsufficientCheckedAmounts(offer, (item) =>
+      approvedItemAmount(offerer, item, operator, provider)
+    )
+  );
+
+  return insufficientAmounts;
 };
 
-export const getInsufficientApprovalsForOrderCreation = async (
+export const getNeededApprovalsForBasicFulfill = async (
   {
     offer,
     offerer,
