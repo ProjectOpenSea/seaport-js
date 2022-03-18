@@ -1,29 +1,43 @@
-import { BigNumber, Contract, providers } from "ethers";
+import { BigNumber, Contract } from "ethers";
 import { ERC1155ABI } from "../abi/ERC1155";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType } from "../constants";
 import { ERC1155, ERC20, ERC721 } from "../typechain";
 import { Item, OrderParameters } from "../types";
-import { getInsufficientCheckedAmounts } from "./approvals";
-import { isErc1155Item, isErc721Item } from "./item";
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isErc1155Item,
+  isErc721Item,
+  TimeBasedItemParams,
+} from "./item";
+import { providers as multicallProviders } from "@0xsequence/multicall";
+import {
+  BalancesAndApprovals,
+  getInsufficientBalanceAndApprovalAmounts,
+} from "./balancesAndApprovals";
 
 /**
  * The offerer should have sufficient balance of all offered items.
  * @param orderParameters - standard Order parameters
  */
-export const validateOfferBalances = async (
-  { offer, offerer }: OrderParameters,
-  provider: providers.JsonRpcProvider
+export const validateOfferBalances = (
+  offer: OrderParameters["offer"],
+  {
+    balancesAndApprovals,
+    timeBasedItemParams,
+  }: {
+    balancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams?: TimeBasedItemParams;
+  }
 ) => {
-  const insufficientBalances = await Promise.all(
-    await getInsufficientCheckedAmounts(offer, async (item) =>
-      balanceOf(offerer, item, provider)
-    )
+  const { insufficientBalances } = getInsufficientBalanceAndApprovalAmounts(
+    balancesAndApprovals,
+    getSummedTokenAndIdentifierAmounts(offer, timeBasedItemParams)
   );
 
   if (insufficientBalances.length > 0) {
     throw new Error(
-      `The offerer does not have the amounts needed to create the order.`
+      `The offerer does not have the amount needed to create or fulfill.`
     );
   }
 };
@@ -31,7 +45,7 @@ export const validateOfferBalances = async (
 export const balanceOf = async (
   owner: string,
   item: Item,
-  provider: providers.JsonRpcProvider
+  provider: multicallProviders.MulticallProvider
 ): Promise<BigNumber> => {
   if (isErc721Item(item)) {
     const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
@@ -56,5 +70,5 @@ export const balanceOf = async (
     return contract.balanceOf(owner);
   }
 
-  return await provider.getBalance(owner);
+  return provider.getBalance(owner);
 };

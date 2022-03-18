@@ -1,4 +1,5 @@
 import { BigNumberish, Contract, ethers, providers } from "ethers";
+import { providers as multicallProviders } from "@0xsequence/multicall";
 import { ConsiderationABI } from "./abi/Consideration";
 import {
   CONSIDERATION_CONTRACT_NAME,
@@ -15,8 +16,8 @@ import {
 } from "./types";
 import {
   setNeededApprovalsForOrderCreation,
-  getNeededApprovalsForOrderCreation,
-} from "./utils/approvals";
+  getApprovalOperator,
+} from "./utils/approval";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import { isCurrencyItem } from "./utils/item";
 import {
@@ -26,7 +27,7 @@ import {
   totalItemsAmount,
   validateOrderParameters,
 } from "./utils/order";
-import { Provider as MulticallProvider } from "ethers-multicall";
+import { getBalancesAndApprovals } from "./utils/balancesAndApprovals";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -34,8 +35,11 @@ export class Consideration {
 
   private provider: providers.JsonRpcProvider;
 
-  // Used to batch multiple eth calls into one request for performance
-  private multicallProvider: MulticallProvider;
+  // Use the multicall provider for reads for batching and performance optimisations
+  // NOTE: Do NOT await between sequential requests, and instead use Promise.all() and map to fetch data in parallel
+  // https://www.npmjs.com/package/@0xsequence/multicall
+  private readOnlyProvider: multicallProviders.MulticallProvider;
+
   private legacyProxyRegistryAddress: string;
 
   public constructor(
@@ -43,7 +47,7 @@ export class Consideration {
     config?: ConsiderationConfig
   ) {
     this.provider = provider;
-    this.multicallProvider = new MulticallProvider(provider);
+    this.readOnlyProvider = new multicallProviders.MulticallProvider(provider);
 
     this.contract = new Contract(
       config?.overrides?.contractAddress ?? "",
@@ -128,47 +132,38 @@ export class Consideration {
       salt,
     };
 
-    await validateOrderParameters(orderParameters, this.provider);
-
-    await setNeededApprovalsForOrderCreation(orderParameters, {
-      considerationContract: this.contract,
-      legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-      provider: this.provider,
-    });
-
-    const signature = await this.signOrder(orderParameters, nonce);
-
-    return { parameters: orderParameters, signature };
-  }
-
-  public async getMissingApprovalsNeededToCreateOffer({
-    offer,
-    allowPartialFills,
-    restrictedByZone,
-    useProxy,
-  }: CreateOrderInput) {
-    const offerer = await this.provider.getSigner().getAddress();
-
-    const orderType = this._getOrderTypeFromOrderOptions({
-      allowPartialFills,
-      restrictedByZone,
-      useProxy,
-    });
-
-    const offerItems = offer.map(mapInputItemToOfferItem);
-
-    return getNeededApprovalsForOrderCreation(
+    const operator = await getApprovalOperator(
+      { offerer, orderType },
       {
-        offer: offerItems,
-        offerer,
-        orderType,
-      },
+        considerationContract: this.contract,
+        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+        provider: this.readOnlyProvider,
+      }
+    );
+
+    const balancesAndApprovals = await getBalancesAndApprovals(
+      offerer,
+      orderParameters.offer,
+      operator,
+      this.readOnlyProvider
+    );
+
+    await validateOrderParameters(orderParameters, balancesAndApprovals);
+
+    await setNeededApprovalsForOrderCreation(
+      orderParameters,
+      balancesAndApprovals,
       {
         considerationContract: this.contract,
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
         provider: this.provider,
+        readOnlyProvider: this.readOnlyProvider,
       }
     );
+
+    const signature = await this.signOrder(orderParameters, nonce);
+
+    return { parameters: orderParameters, signature };
   }
 
   public async signOrder(

@@ -1,3 +1,4 @@
+import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { ItemType, OrderType } from "../constants";
 import {
@@ -7,7 +8,8 @@ import {
   OrderParameters,
   ReceivedItem,
 } from "../types";
-import { validateOfferBalances } from "./balances";
+import { validateOfferBalances } from "./balance";
+import { BalancesAndApprovals } from "./balancesAndApprovals";
 import { isCurrencyItem } from "./item";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
@@ -98,14 +100,14 @@ export const areAllCurrenciesSame = ({
 
 export const validateOrderParameters = async (
   orderParameters: OrderParameters,
-  provider: ethers.providers.JsonRpcProvider
+  balancesAndApprovals: BalancesAndApprovals
 ) => {
   const { offer, consideration } = orderParameters;
   if (!areAllCurrenciesSame({ offer, consideration })) {
     throw new Error("All currency tokens in the order must be the same");
   }
 
-  await validateOfferBalances(orderParameters, provider);
+  validateOfferBalances(offer, { balancesAndApprovals });
 };
 
 export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
