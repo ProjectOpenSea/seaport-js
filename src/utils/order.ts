@@ -1,5 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, BigNumberish, ethers } from "ethers";
+import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
+import { ConsiderationABI } from "src/abi/Consideration";
+import { Consideration } from "src/typechain";
 import { ItemType, OrderType } from "../constants";
 import {
   Fee,
@@ -99,7 +101,7 @@ export const areAllCurrenciesSame = ({
   );
 };
 
-export const validateOrderParameters = async (
+export const validateOrderParameters = (
   orderParameters: OrderParameters,
   balancesAndApprovals: BalancesAndApprovals
 ) => {
@@ -145,4 +147,23 @@ export const useOffererProxy = (orderType: OrderType) =>
     OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
   ].includes(orderType);
 
-export const getOrderStatus = (order: Order) => {};
+export const getOrderStatus = async (
+  order: Order,
+  {
+    considerationContract,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    provider: multicallProviders.MulticallProvider;
+  }
+) => {
+  const contract = new Contract(
+    considerationContract.address,
+    ConsiderationABI,
+    provider
+  ) as Consideration;
+
+  const orderHash = await contract.getOrderHash(order.parameters);
+
+  return contract.getOrderStatus(orderHash);
+};

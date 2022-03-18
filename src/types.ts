@@ -1,4 +1,4 @@
-import { BigNumberish, BytesLike } from "ethers";
+import { BigNumber, BigNumberish, BytesLike } from "ethers";
 import { ItemType, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
@@ -53,6 +53,11 @@ export type OrderComponents = OrderParameters & { nonce: BigNumberish };
 export type Order = {
   parameters: OrderComponents;
   signature: BytesLike;
+};
+
+export type AdvancedOrder = Order & {
+  totalFilled: BigNumber;
+  totalSize: BigNumber;
 };
 
 export type Erc721Item = {

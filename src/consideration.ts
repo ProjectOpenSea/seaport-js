@@ -22,6 +22,7 @@ import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import { isCurrencyItem } from "./utils/item";
 import {
   feeToConsiderationItem,
+  getOrderStatus,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
@@ -36,7 +37,8 @@ export class Consideration {
   private provider: providers.JsonRpcProvider;
 
   // Use the multicall provider for reads for batching and performance optimisations
-  // NOTE: Do NOT await between sequential requests, and instead use Promise.all() and map to fetch data in parallel
+  // NOTE: Do NOT await between sequential requests if you're intending to batch
+  // instead, use Promise.all() and map to fetch data in parallel
   // https://www.npmjs.com/package/@0xsequence/multicall
   private readOnlyProvider: multicallProviders.MulticallProvider;
 
@@ -141,14 +143,18 @@ export class Consideration {
       }
     );
 
-    const balancesAndApprovals = await getBalancesAndApprovals(
-      offerer,
-      orderParameters.offer,
-      operator,
-      this.readOnlyProvider
-    );
+    const [balancesAndApprovals, resolvedNonce] = await Promise.all([
+      getBalancesAndApprovals(
+        offerer,
+        orderParameters.offer,
+        operator,
+        this.readOnlyProvider
+      ),
+      nonce ??
+        this.contract.getNonce(orderParameters.offerer, orderParameters.zone),
+    ]);
 
-    await validateOrderParameters(orderParameters, balancesAndApprovals);
+    validateOrderParameters(orderParameters, balancesAndApprovals);
 
     await setNeededApprovalsForOrderCreation(
       orderParameters,
@@ -161,14 +167,17 @@ export class Consideration {
       }
     );
 
-    const signature = await this.signOrder(orderParameters, nonce);
+    const signature = await this.signOrder(orderParameters, resolvedNonce);
 
-    return { parameters: orderParameters, signature };
+    return {
+      parameters: { ...orderParameters, nonce: resolvedNonce },
+      signature,
+    };
   }
 
   public async signOrder(
     orderParameters: OrderParameters,
-    nonce?: BigNumberish
+    nonce: BigNumberish
   ) {
     const signer = this.provider.getSigner();
     const { chainId } = await this.provider.getNetwork();
@@ -181,12 +190,7 @@ export class Consideration {
 
     const orderComponents: OrderComponents = {
       ...orderParameters,
-      nonce:
-        nonce ??
-        (await this.contract.getNonce(
-          orderParameters.offerer,
-          orderParameters.zone
-        )),
+      nonce,
     };
 
     const signature = await signer._signTypedData(
@@ -216,8 +220,25 @@ export class Consideration {
     return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 
-  public fulfillOrder(order: Order, useFulfillerProxy = false) {
-    if (shouldUseBasicFulfill(order.parameters)) {
+  public async fulfillOrder(order: Order, useFulfillerProxy = false) {
+    const { isValidated, isCancelled, totalFilled, totalSize } =
+      await getOrderStatus(order, {
+        considerationContract: this.contract,
+        provider: this.readOnlyProvider,
+      });
+
+    if (isCancelled) {
+      throw new Error("The order you are trying to fulfill is cancelled");
+    }
+
+    if (isValidated) {
+      // If the order is already validated, manually wipe the signature off of the order to save gas
+      order.signature = "";
+    }
+
+    const advancedOrder = { ...order, totalFilled, totalSize };
+
+    if (shouldUseBasicFulfill(advancedOrder.parameters)) {
       return fulfillBasicOrder(order, useFulfillerProxy, this.contract);
     }
 
