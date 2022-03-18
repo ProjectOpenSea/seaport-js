@@ -5,6 +5,7 @@ import {
   Fee,
   InputItem,
   OfferItem,
+  Order,
   OrderParameters,
   ReceivedItem,
 } from "../types";
@@ -143,3 +144,5 @@ export const useOffererProxy = (orderType: OrderType) =>
     OrderType.FULL_RESTRICTED_VIA_PROXY,
     OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
   ].includes(orderType);
+
+export const getOrderStatus = (order: Order) => {};

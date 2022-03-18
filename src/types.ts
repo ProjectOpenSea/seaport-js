@@ -51,7 +51,7 @@ export type OrderParameters = {
 export type OrderComponents = OrderParameters & { nonce: BigNumberish };
 
 export type Order = {
-  parameters: OrderParameters;
+  parameters: OrderComponents;
   signature: BytesLike;
 };
 
