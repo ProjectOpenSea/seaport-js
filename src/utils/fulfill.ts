@@ -2,15 +2,16 @@ import { BigNumber, ethers } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { Order, OrderParameters, OrderStatus } from "../types";
+import { isNativeCurrencyItem } from "./item";
 import { areAllCurrenciesSame, totalItemsAmount } from "./order";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
  * 1. The order should not be partially filled.
  * 2. The order only contains a single offer item and contains at least one consideration item
- * 3. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
- * 4. All other items have the same Ether or ERC20 item type and token
- * 5. The order should not be partially filled
+ * 3. The order does not offer an item with Ether (or other native tokens) as its item type.
+ * 4. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
+ * 5. All other items have the same Native or ERC20 item type and token
  * 6. All items have the same startAmount and endAmount
  * 7. First consideration item must contain the offerer as the recipient
  * 8. If the order has multiple consideration items and all consideration items other than the
@@ -22,14 +23,14 @@ import { areAllCurrenciesSame, totalItemsAmount } from "./order";
  */
 export const shouldUseBasicFulfill = (
   { offer, consideration, offerer }: OrderParameters,
-  totalFilled: BigNumber
+  { totalFilled }: OrderStatus
 ) => {
-  // The order must not be partially fileld
+  // 1. The order must not be partially filled
   if (!totalFilled.eq(0)) {
     return false;
   }
 
-  // Must be single offer and at least one consideration
+  // 2. Must be single offer and at least one consideration
   if (offer.length > 1 || consideration.length === 0) {
     return false;
   }
@@ -46,17 +47,24 @@ export const shouldUseBasicFulfill = (
     )
   );
 
-  // The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
+  const offersNativeCurrency = isNativeCurrencyItem(offer[0]);
+
+  // 3. The order does not offer an item with Ether (or other native tokens) as its item type.
+  if (offersNativeCurrency) {
+    return false;
+  }
+
+  // 4. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
   if (nfts.length !== 1 && nftsWithCriteria.length !== 0) {
     return false;
   }
 
-  // All currencies need to have the same address and item type (Native, ERC20)
+  // 5. All currencies need to have the same address and item type (Native, ERC20)
   if (!areAllCurrenciesSame({ offer, consideration })) {
     return false;
   }
 
-  // All individual items need to have the same startAmount and endAmount
+  // 6. All individual items need to have the same startAmount and endAmount
   const differentStartAndEndAmount = allItems.some(
     ({ startAmount, endAmount }) => startAmount !== endAmount
   );
@@ -67,7 +75,7 @@ export const shouldUseBasicFulfill = (
 
   const [firstConsideration, ...restConsideration] = consideration;
 
-  // First consideration item must contain the offerer as the recipient
+  // 7. First consideration item must contain the offerer as the recipient
   const firstConsiderationRecipientIsNotOfferer =
     firstConsideration.recipient.toLowerCase() !== offerer.toLowerCase();
 
@@ -75,7 +83,7 @@ export const shouldUseBasicFulfill = (
     return false;
   }
 
-  // If the order has multiple consideration items and all consideration items other than the
+  // 8. If the order has multiple consideration items and all consideration items other than the
   // first consideration item have the same item type as the offered item, the offered item
   // amount is not less than the sum of all consideration item amounts excluding the
   // first consideration item amount
@@ -89,7 +97,7 @@ export const shouldUseBasicFulfill = (
     [ItemType.NATIVE, ItemType.ERC20].includes(itemType)
   );
 
-  //  The token on native currency items needs to be set to the null address and the identifier on
+  //  9. The token on native currency items needs to be set to the null address and the identifier on
   //  currencies needs to be zero, and the amounts on the 721 item need to be 1
   const nativeCurrencyIsZeroAddress = currencies
     .filter(({ itemType }) => itemType === ItemType.NATIVE)
