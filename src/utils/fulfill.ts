@@ -229,7 +229,8 @@ export const fulfillBasicOrder = (
         // The order offer is ERC20
         offerItem.token,
         offerItem.endAmount,
-        basicOrderParameters
+        basicOrderParameters,
+        useFulfillerProxy
       );
     case BasicFulfillOrder.ERC1155_FOR_ERC20:
       return contract.fulfillBasicERC1155ForERC20Order(
@@ -238,7 +239,8 @@ export const fulfillBasicOrder = (
         offerItem.endAmount,
         // The order consideration is ERC1155
         forOfferer.endAmount,
-        basicOrderParameters
+        basicOrderParameters,
+        useFulfillerProxy
       );
   }
 };

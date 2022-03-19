@@ -3032,7 +3032,7 @@ concat-stream@^1.5.1, concat-stream@^1.6.0, concat-stream@^1.6.2:
 
 "consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git":
   version "0.0.1"
-  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#aa67eb5a22c83b2bb528d422e9b5ed00262bd62f"
+  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#3c5f054d90874736ca02635e23b27d16aa6208ee"
   dependencies:
     "@openzeppelin/contracts" "^4.4.2"
     eip-712 "^0.4.3"
