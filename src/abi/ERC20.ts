@@ -1,4 +1,4 @@
-import ERC20Artifact from "../artifacts/consideration/contracts/test/TestERC20.sol/TestERC20.json";
+import ERC20Artifact from "../artifacts/@openzeppelin/contracts/token/ERC20/IERC20.sol/IERC20.json";
 
 const ERC20ABI = ERC20Artifact.abi;
 
