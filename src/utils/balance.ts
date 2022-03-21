@@ -60,12 +60,88 @@ export const validateOfferBalancesAndApprovals = (
   }
 };
 
+/**
+ * When fulfilling a basic order, the following requirements need to be checked to ensure that the order will be fulfillable:
+ * 1. Offer checks need to be performed to ensure that the offerer still has sufficient balance and approvals
+ * 2. The fulfiller should have sufficient balance of all consideration items except for those with an
+ *    item type that matches the order's offered item type — by way of example, if the fulfilled order offers
+ *    an ERC20 item and requires an ERC721 item to the offerer and the same ERC20 item to another recipient,
+ *    the fulfiller needs to own the ERC721 item but does not need to own the ERC20 item as it will be sourced from the offerer.
+ * 3. If the fulfiller does not elect to utilize a proxy, they need to have sufficient approvals set for the
+ *    Consideration contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order except
+ *    for ERC20 items with an item type that matches the order's offered item type.
+ * 4. If the fulfiller does elect to utilize a proxy, they need to have sufficient approvals set for their
+ *    respective proxy contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order
+ *    except for ERC20 items with an item type that matches the order's offered item type.
+ * 5. If the fulfilled order specifies Ether (or other native tokens) as consideration items, the fulfiller must
+ *    be able to supply the sum total of those items as msg.value.
+ *
+ * @returns the list of insufficient owner and proxy approvals
+ */
+export const validateBasicFulfillBalancesAndApprovals = (
+  {
+    offer,
+    orderType,
+    consideration,
+  }: Pick<OrderParameters, "offer" | "orderType" | "consideration">,
+  {
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+  }: {
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams?: TimeBasedItemParams;
+  }
+) => {
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    {
+      balancesAndApprovals: offererBalancesAndApprovals,
+      timeBasedItemParams,
+      throwOnInsufficientApprovals: true,
+    }
+  );
+
+  const considerationWithoutOfferItemType = consideration.filter(
+    (item) => item.itemType !== offer[0].itemType
+  );
+
+  const {
+    insufficientBalances,
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  } = getInsufficientBalanceAndApprovalAmounts(
+    fulfillerBalancesAndApprovals,
+    getSummedTokenAndIdentifierAmounts(
+      considerationWithoutOfferItemType,
+      timeBasedItemParams
+    )
+  );
+
+  if (insufficientBalances.length > 0) {
+    throw new Error(
+      "The fulfiller does not have the balances needed to fulfill."
+    );
+  }
+
+  const approvalsToCheck = useOffererProxy(orderType)
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
+
+  if (approvalsToCheck.length > 0) {
+    throw new Error("The offer does not have the sufficient approvals.");
+  }
+
+  return { insufficientOwnerApprovals, insufficientProxyApprovals };
+};
+
 export const balanceOf = async (
   owner: string,
   item: Item,
   multicallProvider: multicallProviders.MulticallProvider
 ): Promise<BigNumber> => {
-  if (isErc721Item(item)) {
+  if (isErc721Item(item.itemType)) {
     const contract = new Contract(
       item.token,
       ERC721ABI,
@@ -78,7 +154,7 @@ export const balanceOf = async (
 
     const isOwner = await contract.ownerOf(item.identifierOrCriteria);
     return BigNumber.from(Number(isOwner));
-  } else if (isErc1155Item(item)) {
+  } else if (isErc1155Item(item.itemType)) {
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
       throw new Error("ERC1155 Criteria based offers are not supported");
     }

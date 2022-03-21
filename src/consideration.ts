@@ -164,7 +164,7 @@ export class Consideration {
       }
     );
 
-    validateOrderParameters(orderParameters, balancesAndApprovals);
+    validateOrderParameters(orderParameters, { balancesAndApprovals });
 
     await setNeededApprovalsForOrderCreation(
       orderParameters,

@@ -1,6 +1,6 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber } from "ethers";
-import { MAX_INT } from "../constants";
+import { ItemType, MAX_INT } from "../constants";
 import { Consideration } from "../typechain";
 import { Item } from "../types";
 import { approvedItemAmount } from "./approval";
@@ -18,6 +18,8 @@ export type BalancesAndApprovals = {
   balance: BigNumber;
   ownerApprovedAmount: BigNumber;
   proxyApprovedAmount: BigNumber;
+  operator: string;
+  itemType: ItemType;
 }[];
 
 export const getBalancesAndApprovals = async (
@@ -32,14 +34,14 @@ export const getBalancesAndApprovals = async (
     proxy?: string;
     multicallProvider: multicallProviders.MulticallProvider;
   }
-) =>
+): Promise<BalancesAndApprovals> =>
   Promise.all(
     items.map(async (item) => {
       let ownerApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
       let proxyApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
 
       // If erc721 or erc1155 check both consideration and proxy approvals unless config says ignore proxy
-      if (isErc721Item(item) || isErc1155Item(item)) {
+      if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
         ownerApprovedAmountPromise = approvedItemAmount(
           owner,
           item,
@@ -57,7 +59,7 @@ export const getBalancesAndApprovals = async (
         }
       }
       // If erc20 check just consideration contract for approvals
-      else if (isErc20Item(item)) {
+      else if (isErc20Item(item.itemType)) {
         ownerApprovedAmountPromise = approvedItemAmount(
           owner,
           item,
@@ -79,6 +81,10 @@ export const getBalancesAndApprovals = async (
         balance: await balanceOf(owner, item, multicallProvider),
         ownerApprovedAmount: await ownerApprovedAmountPromise,
         proxyApprovedAmount: await proxyApprovedAmountPromise,
+        operator: isErc20Item(item.itemType)
+          ? considerationContract.address
+          : proxy ?? considerationContract.address,
+        itemType: item.itemType,
       };
     })
   );
@@ -131,14 +137,21 @@ export const getInsufficientBalanceAndApprovalAmounts = (
           amountNeeded
         )
       )
-      .map(([token, identifierOrCriteria, amount]) => ({
-        token,
-        identifierOrCriteria,
-        amountNeeded: amount,
-        amountHave: findBalanceAndApproval(token, identifierOrCriteria)[
-          filterKey
-        ],
-      }));
+      .map(([token, identifierOrCriteria, amount]) => {
+        const balanceAndApproval = findBalanceAndApproval(
+          token,
+          identifierOrCriteria
+        );
+
+        return {
+          token,
+          identifierOrCriteria,
+          amountNeeded: amount,
+          amountHave: balanceAndApproval[filterKey],
+          operator: balanceAndApproval.operator,
+          itemType: balanceAndApproval.itemType,
+        };
+      });
 
   const [
     insufficientBalances,

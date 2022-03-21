@@ -87,12 +87,13 @@ export const isCurrencyItem = ({ itemType }: Item) =>
 export const isNativeCurrencyItem = ({ itemType }: Item) =>
   itemType === ItemType.NATIVE;
 
-export const isErc20Item = ({ itemType }: Item) => itemType === ItemType.ERC20;
+export const isErc20Item = (itemType: Item["itemType"]) =>
+  itemType === ItemType.ERC20;
 
-export const isErc721Item = ({ itemType }: Item) =>
+export const isErc721Item = (itemType: Item["itemType"]) =>
   [ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(itemType);
 
-export const isErc1155Item = ({ itemType }: Item) =>
+export const isErc1155Item = (itemType: Item["itemType"]) =>
   [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType);
 
 export type TimeBasedItemParams = {

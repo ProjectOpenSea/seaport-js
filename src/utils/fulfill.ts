@@ -2,6 +2,7 @@ import { BigNumber, ethers } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { Order, OrderParameters, OrderStatus } from "../types";
+import { validateOfferBalancesAndApprovals } from "./balance";
 import { isNativeCurrencyItem } from "./item";
 import { areAllCurrenciesSame, totalItemsAmount } from "./order";
 
@@ -23,7 +24,7 @@ import { areAllCurrenciesSame, totalItemsAmount } from "./order";
  */
 export const shouldUseBasicFulfill = (
   { offer, consideration, offerer }: OrderParameters,
-  { totalFilled }: OrderStatus
+  totalFilled: OrderStatus["totalFilled"]
 ) => {
   // 1. The order must not be partially filled
   if (!totalFilled.eq(0)) {
@@ -153,7 +154,7 @@ export const fulfillBasicOrder = (
   useFulfillerProxy: boolean,
   contract: Consideration
 ) => {
-  const { offer, consideration } = orderParameters;
+  const { offer, consideration, orderType } = orderParameters;
 
   const offerItem = offer[0];
   const [forOfferer, ...forAdditionalRecipients] = consideration;
@@ -178,7 +179,7 @@ export const fulfillBasicOrder = (
   const basicOrderParameters = {
     offerer: orderParameters.offerer,
     zone: orderParameters.zone,
-    orderType: orderParameters.orderType,
+    orderType,
     token: offerItem.token,
     identifier: offerItem.identifierOrCriteria,
     startTime: orderParameters.startTime,
@@ -192,6 +193,11 @@ export const fulfillBasicOrder = (
   const payableOverrides = { value: totalEthAmount };
 
   // TODO: Check approvals here
+
+  // validateOfferBalancesAndApprovals(
+  //   { offer, orderType },
+  //   { balancesAndApprovals, timeBasedItemParams, throwOnInsufficientApprovals }
+  // );
 
   switch (basicFulfillOrder) {
     case BasicFulfillOrder.ETH_FOR_ERC721: {
