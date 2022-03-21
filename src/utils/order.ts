@@ -10,7 +10,7 @@ import {
   OrderParameters,
   ReceivedItem,
 } from "../types";
-import { validateOfferBalances } from "./balance";
+import { validateOfferBalancesAndApprovals } from "./balance";
 import { BalancesAndApprovals } from "./balancesAndApprovals";
 import { isCurrencyItem } from "./item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
@@ -103,14 +103,23 @@ export const areAllCurrenciesSame = ({
 
 export const validateOrderParameters = (
   orderParameters: OrderParameters,
-  balancesAndApprovals: BalancesAndApprovals
+  {
+    balancesAndApprovals,
+    throwOnInsufficientApprovals,
+  }: {
+    balancesAndApprovals: BalancesAndApprovals;
+    throwOnInsufficientApprovals?: boolean;
+  }
 ) => {
-  const { offer, consideration } = orderParameters;
+  const { offer, consideration, orderType } = orderParameters;
   if (!areAllCurrenciesSame({ offer, consideration })) {
     throw new Error("All currency tokens in the order must be the same");
   }
 
-  validateOfferBalances(offer, { balancesAndApprovals });
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    { balancesAndApprovals, throwOnInsufficientApprovals }
+  );
 };
 
 export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {

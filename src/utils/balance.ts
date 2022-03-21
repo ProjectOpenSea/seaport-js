@@ -15,30 +15,48 @@ import {
   BalancesAndApprovals,
   getInsufficientBalanceAndApprovalAmounts,
 } from "./balancesAndApprovals";
+import { useOffererProxy } from "./order";
 
 /**
- * The offerer should have sufficient balance of all offered items.
- * @param orderParameters - standard Order parameters
+ * 1. The offerer should have sufficient balance of all offered items.
+ * 2. If the order does not indicate proxy utilization, the offerer should have sufficient approvals set
+ *    for the Consideration contract for all offered ERC20, ERC721, and ERC1155 items.
+ * 3. If the order does indicate proxy utilization, the offerer should have sufficient approvals set
+ *    for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
  */
-export const validateOfferBalances = (
-  offer: OrderParameters["offer"],
+export const validateOfferBalancesAndApprovals = (
+  { offer, orderType }: Pick<OrderParameters, "offer" | "orderType">,
   {
     balancesAndApprovals,
     timeBasedItemParams,
+    throwOnInsufficientApprovals,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams?: TimeBasedItemParams;
+    throwOnInsufficientApprovals?: boolean;
   }
 ) => {
-  const { insufficientBalances } = getInsufficientBalanceAndApprovalAmounts(
+  const {
+    insufficientBalances,
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  } = getInsufficientBalanceAndApprovalAmounts(
     balancesAndApprovals,
     getSummedTokenAndIdentifierAmounts(offer, timeBasedItemParams)
   );
 
   if (insufficientBalances.length > 0) {
     throw new Error(
-      `The offerer does not have the amount needed to create or fulfill.`
+      "The offerer does not have the amount needed to create or fulfill."
     );
+  }
+
+  const approvalsToCheck = useOffererProxy(orderType)
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
+
+  if (throwOnInsufficientApprovals && approvalsToCheck.length > 0) {
+    throw new Error("The offer does not have the sufficient approvals.");
   }
 };
 
