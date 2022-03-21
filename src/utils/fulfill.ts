@@ -1,9 +1,14 @@
-import { BigNumber, ethers } from "ethers";
+import { BigNumber, ethers, providers } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import { Order, OrderParameters, OrderStatus } from "../types";
-import { validateOfferBalancesAndApprovals } from "./balance";
-import { isNativeCurrencyItem } from "./item";
+import { setNeededApprovals } from "./approval";
+import {
+  validateOfferBalancesAndApprovals,
+  BalancesAndApprovals,
+  validateBasicFulfillBalancesAndApprovals,
+} from "./balancesAndApprovals";
+import { isNativeCurrencyItem, TimeBasedItemParams } from "./item";
 import { areAllCurrenciesSame, totalItemsAmount } from "./order";
 
 /**
@@ -149,10 +154,21 @@ const offerAndConsiderationFulfillmentMapping: {
  * @param order - Standard order object
  * @param contract - Consideration ethers contract
  */
-export const fulfillBasicOrder = (
+export const fulfillBasicOrder = async (
   { parameters: orderParameters, signature }: Order,
-  useFulfillerProxy: boolean,
-  contract: Consideration
+  {
+    considerationContract,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams: TimeBasedItemParams;
+    provider: providers.JsonRpcProvider;
+  }
 ) => {
   const { offer, consideration, orderType } = orderParameters;
 
@@ -174,7 +190,39 @@ export const fulfillBasicOrder = (
     ({ startAmount, recipient }) => ({ amount: startAmount, recipient })
   );
 
-  const totalEthAmount = totalItemsAmount(consideration).endAmount;
+  const totalNativeAmount = totalItemsAmount(consideration).endAmount;
+
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    {
+      balancesAndApprovals: offererBalancesAndApprovals,
+      timeBasedItemParams,
+      throwOnInsufficientApprovals: true,
+    }
+  );
+
+  const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+    validateBasicFulfillBalancesAndApprovals(
+      {
+        offer,
+        orderType,
+        consideration,
+      },
+      {
+        offererBalancesAndApprovals,
+        fulfillerBalancesAndApprovals,
+        timeBasedItemParams,
+      }
+    );
+
+  const approvalsToUse =
+    insufficientOwnerApprovals.length === 0
+      ? insufficientOwnerApprovals
+      : insufficientProxyApprovals;
+
+  const useFulfillerProxy = approvalsToUse === insufficientProxyApprovals;
+
+  await setNeededApprovals(approvalsToUse, { provider });
 
   const basicOrderParameters = {
     offerer: orderParameters.offerer,
@@ -190,40 +238,33 @@ export const fulfillBasicOrder = (
     additionalRecipients,
   };
 
-  const payableOverrides = { value: totalEthAmount };
-
-  // TODO: Check approvals here
-
-  // validateOfferBalancesAndApprovals(
-  //   { offer, orderType },
-  //   { balancesAndApprovals, timeBasedItemParams, throwOnInsufficientApprovals }
-  // );
+  const payableOverrides = { value: totalNativeAmount };
 
   switch (basicFulfillOrder) {
     case BasicFulfillOrder.ETH_FOR_ERC721: {
-      return contract.fulfillBasicEthForERC721Order(
-        totalEthAmount,
+      return considerationContract.fulfillBasicEthForERC721Order(
+        totalNativeAmount,
         basicOrderParameters,
         payableOverrides
       );
     }
     case BasicFulfillOrder.ETH_FOR_ERC1155:
-      return contract.fulfillBasicEthForERC1155Order(
-        totalEthAmount,
+      return considerationContract.fulfillBasicEthForERC1155Order(
+        totalNativeAmount,
         // The order offer is ERC1155
         offerItem.endAmount,
         basicOrderParameters,
         payableOverrides
       );
     case BasicFulfillOrder.ERC20_FOR_ERC721:
-      return contract.fulfillBasicERC20ForERC721Order(
+      return considerationContract.fulfillBasicERC20ForERC721Order(
         // The order consideration is ERC20
         forOfferer.token,
         forOfferer.endAmount,
         basicOrderParameters
       );
     case BasicFulfillOrder.ERC20_FOR_ERC1155:
-      return contract.fulfillBasicERC20ForERC1155Order(
+      return considerationContract.fulfillBasicERC20ForERC1155Order(
         // The order consideration is ERC20
         forOfferer.token,
         forOfferer.endAmount,
@@ -231,7 +272,7 @@ export const fulfillBasicOrder = (
         basicOrderParameters
       );
     case BasicFulfillOrder.ERC721_FOR_ERC20:
-      return contract.fulfillBasicERC721ForERC20Order(
+      return considerationContract.fulfillBasicERC721ForERC20Order(
         // The order offer is ERC20
         offerItem.token,
         offerItem.endAmount,
@@ -239,7 +280,7 @@ export const fulfillBasicOrder = (
         useFulfillerProxy
       );
     case BasicFulfillOrder.ERC1155_FOR_ERC20:
-      return contract.fulfillBasicERC1155ForERC20Order(
+      return considerationContract.fulfillBasicERC1155ForERC20Order(
         // The order offer is ERC20
         offerItem.token,
         offerItem.endAmount,

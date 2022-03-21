@@ -10,8 +10,11 @@ import {
   OrderParameters,
   ReceivedItem,
 } from "../types";
-import { validateOfferBalancesAndApprovals } from "./balance";
-import { BalancesAndApprovals } from "./balancesAndApprovals";
+import {
+  BalancesAndApprovals,
+  InsufficientBalancesAndApprovals,
+  validateOfferBalancesAndApprovals,
+} from "./balancesAndApprovals";
 import { isCurrencyItem } from "./item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 
@@ -110,13 +113,13 @@ export const validateOrderParameters = (
     balancesAndApprovals: BalancesAndApprovals;
     throwOnInsufficientApprovals?: boolean;
   }
-) => {
+): InsufficientBalancesAndApprovals => {
   const { offer, consideration, orderType } = orderParameters;
   if (!areAllCurrenciesSame({ offer, consideration })) {
     throw new Error("All currency tokens in the order must be the same");
   }
 
-  validateOfferBalancesAndApprovals(
+  return validateOfferBalancesAndApprovals(
     { offer, orderType },
     { balancesAndApprovals, throwOnInsufficientApprovals }
   );
@@ -177,6 +180,7 @@ export const getOrderStatus = async (
 
 export const getOrderHash = async (
   order: Order,
+  nonce: BigNumber,
   {
     considerationContract,
     multicallProvider,
@@ -191,7 +195,7 @@ export const getOrderHash = async (
     multicallProvider
   ) as Consideration;
 
-  return contract.getOrderHash(order.parameters);
+  return contract.getOrderHash({ ...order.parameters, nonce });
 };
 
 export const getNonce = (

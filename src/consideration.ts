@@ -1,4 +1,4 @@
-import { BigNumberish, Contract, ethers, providers } from "ethers";
+import { BigNumberish, BytesLike, Contract, ethers, providers } from "ethers";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { ConsiderationABI } from "./abi/Consideration";
 import {
@@ -14,7 +14,7 @@ import {
   OrderComponents,
   OrderParameters,
 } from "./types";
-import { setNeededApprovalsForOrderCreation } from "./utils/approval";
+import { setNeededApprovals } from "./utils/approval";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
 import { isCurrencyItem } from "./utils/item";
 import {
@@ -43,23 +43,37 @@ export class Consideration {
   // https://www.npmjs.com/package/@0xsequence/multicall
   private multicallProvider: multicallProviders.MulticallProvider;
 
+  private config: Required<Omit<ConsiderationConfig, "overrides">>;
   private legacyProxyRegistryAddress: string;
 
   public constructor(
     provider: providers.JsonRpcProvider,
-    config?: ConsiderationConfig
+    {
+      overrides,
+      ascendingAmountFulfillmentBuffer = 1800,
+      approveExactAmount = false,
+      safetyChecksOnOrderCreation = true,
+      safetyChecksOnOrderFulfillment = true,
+    }: ConsiderationConfig
   ) {
     this.provider = provider;
     this.multicallProvider = new multicallProviders.MulticallProvider(provider);
 
     this.contract = new Contract(
-      config?.overrides?.contractAddress ?? "",
+      overrides?.contractAddress ?? "",
       ConsiderationABI,
       provider.getSigner()
     ) as ConsiderationContract;
 
+    this.config = {
+      ascendingAmountFulfillmentBuffer,
+      approveExactAmount,
+      safetyChecksOnOrderCreation,
+      safetyChecksOnOrderFulfillment,
+    };
+
     this.legacyProxyRegistryAddress =
-      config?.overrides?.legacyProxyRegistryAddress ?? "";
+      overrides?.legacyProxyRegistryAddress ?? "";
   }
 
   private _getOrderTypeFromOrderOptions({
@@ -96,7 +110,7 @@ export class Consideration {
     useProxy,
     fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Promise<Order> {
+  }: CreateOrderInput): Promise<OrderComponents & { signature: BytesLike }> {
     const offerer = await this.provider.getSigner().getAddress();
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
@@ -164,23 +178,19 @@ export class Consideration {
       }
     );
 
-    validateOrderParameters(orderParameters, { balancesAndApprovals });
-
-    await setNeededApprovalsForOrderCreation(
-      orderParameters,
+    const insufficientApprovals = validateOrderParameters(orderParameters, {
       balancesAndApprovals,
-      {
-        considerationContract: this.contract,
-        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        provider: this.provider,
-        multicallProvider: this.multicallProvider,
-      }
-    );
+    });
+
+    await setNeededApprovals(insufficientApprovals, {
+      provider: this.provider,
+    });
 
     const signature = await this.signOrder(orderParameters, resolvedNonce);
 
     return {
-      parameters: { ...orderParameters, nonce: resolvedNonce },
+      ...orderParameters,
+      nonce: resolvedNonce,
       signature,
     };
   }
@@ -238,30 +248,33 @@ export class Consideration {
 
     const shouldUseOffererProxy = useOffererProxy(orderType);
 
-    const [offererProxy, fulfillerProxy, nonce] = await Promise.all([
-      shouldUseOffererProxy
-        ? getProxy(offerer, {
-            legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-            multicallProvider: this.multicallProvider,
-          })
-        : undefined,
-      getProxy(fulfiller, {
-        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        multicallProvider: this.multicallProvider,
-      }),
-      getNonce(
-        { offerer, zone },
-        {
-          considerationContract: this.contract,
+    const [offererProxy, fulfillerProxy, nonce, latestBlock] =
+      await Promise.all([
+        shouldUseOffererProxy
+          ? getProxy(offerer, {
+              legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+              multicallProvider: this.multicallProvider,
+            })
+          : undefined,
+        getProxy(fulfiller, {
+          legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
           multicallProvider: this.multicallProvider,
-        }
-      ),
-    ]);
+        }),
+        getNonce(
+          { offerer, zone },
+          {
+            considerationContract: this.contract,
+            multicallProvider: this.multicallProvider,
+          }
+        ),
+        this.multicallProvider.getBlockNumber(),
+      ]);
 
     const [
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       orderHash,
+      currentBlock,
     ] = await Promise.all([
       getBalancesAndApprovals(offerer, offer, {
         proxy: offererProxy,
@@ -269,15 +282,18 @@ export class Consideration {
         multicallProvider: this.multicallProvider,
       }),
       getBalancesAndApprovals(fulfiller, consideration, {
-        proxy: offererProxy,
+        proxy: fulfillerProxy,
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
-      getOrderHash(order, {
+      getOrderHash(order, nonce, {
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
+      this.multicallProvider.getBlock(latestBlock),
     ]);
+
+    const currentBlockTimestamp = currentBlock.timestamp;
 
     const { isValidated, isCancelled, totalFilled, totalSize } =
       await getOrderStatus(orderHash, {
@@ -298,7 +314,19 @@ export class Consideration {
 
     if (shouldUseBasicFulfill(advancedOrder.parameters, totalFilled)) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder(order, false, this.contract);
+      return fulfillBasicOrder(order, {
+        considerationContract: this.contract,
+        offererBalancesAndApprovals,
+        fulfillerBalancesAndApprovals,
+        provider: this.provider,
+        timeBasedItemParams: {
+          startTime: order.parameters.startTime,
+          endTime: order.parameters.endTime,
+          currentBlockTimestamp,
+          ascendingAmountTimestampBuffer:
+            this.config.ascendingAmountFulfillmentBuffer,
+        },
+      });
     }
 
     // TODO: Implement more advanced order fulfillment

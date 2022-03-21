@@ -4,7 +4,7 @@ import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
 import { ERC20, ERC721 } from "../typechain";
 import { Item } from "../types";
-import { BalancesAndApprovals } from "./balancesAndApprovals";
+import { InsufficientBalancesAndApprovals } from "./balancesAndApprovals";
 import { isErc1155Item, isErc721Item } from "./item";
 
 export const approvedItemAmount = async (
@@ -34,7 +34,7 @@ export const approvedItemAmount = async (
  * Set the appropriate approvals given a list of insufficent approvals.
  */
 export const setNeededApprovals = async (
-  insufficientApprovals: BalancesAndApprovals,
+  insufficientApprovals: InsufficientBalancesAndApprovals,
   {
     provider,
   }: {

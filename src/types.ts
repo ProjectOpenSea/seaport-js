@@ -2,8 +2,8 @@ import { BigNumber, BigNumberish, BytesLike } from "ethers";
 import { ItemType, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
-  // Used because fulfillments may be invalid if confirmation's take too long. Default buffer is 30 minutes
-  defaultAscendingAmountFulfillmentBuffer?: number;
+  // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
+  ascendingAmountFulfillmentBuffer?: number;
 
   // Used for ERC-20 approvals. Defaults to false (thus, approving the max amount)
   approveExactAmount?: boolean;
@@ -13,8 +13,8 @@ export type ConsiderationConfig = {
   safetyChecksOnOrderFulfillment?: boolean;
 
   overrides?: {
-    contractAddress: string;
-    legacyProxyRegistryAddress: string;
+    contractAddress?: string;
+    legacyProxyRegistryAddress?: string;
   };
 };
 
@@ -51,7 +51,7 @@ export type OrderParameters = {
 export type OrderComponents = OrderParameters & { nonce: BigNumberish };
 
 export type Order = {
-  parameters: OrderComponents;
+  parameters: OrderParameters;
   signature: BytesLike;
 };
 
