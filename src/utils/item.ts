@@ -1,6 +1,6 @@
-import { BigNumberish, ethers } from "ethers";
+import { BigNumber, BigNumberish, ethers } from "ethers";
 import { ItemType, NftItemType } from "../constants";
-import { OfferItem, ReceivedItem } from "../types";
+import { Item, OfferItem, OrderParameters, ReceivedItem } from "../types";
 
 type ConstructItemParams = {
   itemType: BigNumberish;
@@ -81,5 +81,108 @@ export const constructCurrencyItem = <
   }) as ConstructedItem<T>;
 };
 
-export const isCurrencyItem = (item: OfferItem | ReceivedItem) =>
-  [ItemType.NATIVE, ItemType.ERC20].includes(item.itemType);
+export const isCurrencyItem = ({ itemType }: Item) =>
+  [ItemType.NATIVE, ItemType.ERC20].includes(itemType);
+
+export const isNativeCurrencyItem = ({ itemType }: Item) =>
+  itemType === ItemType.NATIVE;
+
+export const isErc20Item = (itemType: Item["itemType"]) =>
+  itemType === ItemType.ERC20;
+
+export const isErc721Item = (itemType: Item["itemType"]) =>
+  [ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(itemType);
+
+export const isErc1155Item = (itemType: Item["itemType"]) =>
+  [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType);
+
+export type TimeBasedItemParams = {
+  isConsiderationItem?: boolean;
+  currentBlockTimestamp: number;
+  ascendingAmountTimestampBuffer: number;
+} & Pick<OrderParameters, "startTime" | "endTime">;
+
+export const getPresentItemAmount = ({
+  startAmount,
+  endAmount,
+  isConsiderationItem,
+  currentBlockTimestamp,
+  ascendingAmountTimestampBuffer,
+  startTime,
+  endTime,
+}: Pick<Item, "startAmount" | "endAmount"> &
+  TimeBasedItemParams): BigNumber => {
+  const startAmountBn = BigNumber.from(startAmount);
+  const endAmountBn = BigNumber.from(endAmount);
+  const duration = BigNumber.from(endTime).sub(startTime);
+  const isAscending = endAmountBn.gt(startAmount);
+  const adjustedBlockTimestamp = BigNumber.from(
+    isAscending
+      ? currentBlockTimestamp + ascendingAmountTimestampBuffer
+      : currentBlockTimestamp
+  );
+
+  if (adjustedBlockTimestamp.lt(startTime)) {
+    return startAmountBn;
+  }
+
+  const elapsed = (
+    adjustedBlockTimestamp.gt(endTime)
+      ? BigNumber.from(endTime)
+      : adjustedBlockTimestamp
+  ).sub(startTime);
+
+  const remaining = duration.sub(elapsed);
+
+  // Adjust amounts based on current time
+  // For offer items, we round down
+  // For consideration items, we round up
+  return startAmountBn
+    .mul(remaining)
+    .add(endAmountBn.mul(elapsed))
+    .add(isConsiderationItem ? duration.sub(1) : 0)
+    .div(duration);
+};
+
+export const getSummedTokenAndIdentifierAmounts = (
+  items: Item[],
+  timeBasedItemParams?: TimeBasedItemParams
+) => {
+  const tokenAndIdentifierToSummedAmount = items.reduce<
+    Record<string, Record<string, BigNumber>>
+  >((map, item) => {
+    const identifierOrCriteria = BigNumber.from(
+      item.identifierOrCriteria
+    ).toString();
+
+    const startAmount = BigNumber.from(item.startAmount);
+    const endAmount = BigNumber.from(item.endAmount);
+    const maxAmount = startAmount.gt(endAmount) ? startAmount : endAmount;
+
+    const amount = timeBasedItemParams
+      ? getPresentItemAmount({
+          startAmount: startAmount.toString(),
+          endAmount: endAmount.toString(),
+          isConsiderationItem: timeBasedItemParams.isConsiderationItem,
+          currentBlockTimestamp: timeBasedItemParams.currentBlockTimestamp,
+          ascendingAmountTimestampBuffer:
+            timeBasedItemParams.ascendingAmountTimestampBuffer,
+          startTime: timeBasedItemParams.startTime,
+          endTime: timeBasedItemParams.endTime,
+        })
+      : maxAmount;
+
+    return {
+      ...map,
+      [item.token]: {
+        // Being explicit about the undefined type as it's possible for it to be undefined at first iteration
+        [identifierOrCriteria]: (
+          (map[item.token][identifierOrCriteria] as BigNumber | undefined) ??
+          BigNumber.from(0)
+        ).add(amount),
+      },
+    };
+  }, {});
+
+  return tokenAndIdentifierToSummedAmount;
+};

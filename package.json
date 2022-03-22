@@ -1,10 +1,12 @@
 {
   "name": "consideration",
+  "license": "MIT",
   "scripts": {
     "build": "yarn hardhat compile && yarn tsc -p tsconfig-build.json",
     "test": "yarn hardhat test"
   },
   "dependencies": {
+    "@0xsequence/multicall": "^0.36.7",
     "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git",
     "ethers": "^5.6.0"
   },

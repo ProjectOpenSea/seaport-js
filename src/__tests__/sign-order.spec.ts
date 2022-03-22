@@ -5,6 +5,7 @@ import { TestERC721 } from "../typechain/TestERC721";
 import { randomBytes } from "crypto";
 import { Consideration } from "../consideration";
 import { constructNftItem, constructCurrencyItem } from "../utils/item";
+import { BigNumber } from "ethers";
 
 describe("Sign order", function () {
   let considerationContract: ConsiderationContract;
@@ -22,7 +23,10 @@ describe("Sign order", function () {
     await considerationContract.deployed();
 
     consideration = new Consideration(ethers.provider, {
-      overrides: { contractAddress: considerationContract.address },
+      overrides: {
+        contractAddress: considerationContract.address,
+        legacyProxyRegistryAddress: "",
+      },
     });
 
     const TestERC721 = await ethers.getContractFactory("TestERC721");
@@ -70,7 +74,7 @@ describe("Sign order", function () {
       endTime,
     };
 
-    const signature = await consideration.signOrder(orderParameters);
+    const signature = await consideration.signOrder(orderParameters, 0);
 
     const isValid = await considerationContract.callStatic.validate([
       { parameters: orderParameters, signature },

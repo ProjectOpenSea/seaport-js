@@ -23,7 +23,10 @@ module.exports = {
       { ignores: ["modules"] },
     ],
     "no-unused-expressions": "off",
-    "no-unused-vars": ["error", { varsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+    ],
     "object-shorthand": ["error", "always"],
   },
 };

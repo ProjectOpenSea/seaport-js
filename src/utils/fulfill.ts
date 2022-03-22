@@ -1,27 +1,57 @@
-import { BigNumber, ethers } from "ethers";
-import { BasicFulfillOrder, ItemType, OrderType } from "../constants";
+import { BigNumber, ContractTransaction, ethers, providers } from "ethers";
+import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
-import { Order } from "../types";
-import { areAllCurrenciesSame, totalItemsAmount } from "./order";
+import {
+  Order,
+  OrderExchangeYields,
+  OrderParameters,
+  OrderStatus,
+  OrderUseCase,
+} from "../types";
+import { setNeededApprovals } from "./approval";
+import {
+  validateOfferBalancesAndApprovals,
+  BalancesAndApprovals,
+  validateBasicFulfillBalancesAndApprovals,
+  validateStandardFulfillBalancesAndApprovals,
+} from "./balancesAndApprovals";
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isNativeCurrencyItem,
+  TimeBasedItemParams,
+} from "./item";
+import {
+  areAllCurrenciesSame,
+  totalItemsAmount,
+  useFulfillerProxy,
+} from "./order";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
- * 1. The order only contains a single offer item and contains at least one consideration item
- * 2. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
- * 3. All other items have the same Ether or ERC20 item type and token
- * 4. All items have the same startAmount and endAmount
- * 5. First consideration item must contain the offerer as the recipient
- * 6. If the order has multiple consideration items and all consideration items other than the
+ * 1. The order should not be partially filled.
+ * 2. The order only contains a single offer item and contains at least one consideration item
+ * 3. The order does not offer an item with Ether (or other native tokens) as its item type.
+ * 4. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
+ * 5. All other items have the same Native or ERC20 item type and token
+ * 6. All items have the same startAmount and endAmount
+ * 7. First consideration item must contain the offerer as the recipient
+ * 8. If the order has multiple consideration items and all consideration items other than the
  *    first consideration item have the same item type as the offered item, the offered item
  *    amount is not less than the sum of all consideration item amounts excluding the
  *    first consideration item amount
- * 7. The token on native currency items needs to be set to the null address and the identifier on
+ * 9. The token on native currency items needs to be set to the null address and the identifier on
  *    currencies needs to be zero, and the amounts on the 721 item need to be 1
  */
-export const shouldUseBasicFulfill = ({
-  parameters: { offer, consideration, offerer },
-}: Order) => {
-  // Must be single offer and at least one consideration
+export const shouldUseBasicFulfill = (
+  { offer, consideration, offerer }: OrderParameters,
+  totalFilled: OrderStatus["totalFilled"]
+) => {
+  // 1. The order must not be partially filled
+  if (!totalFilled.eq(0)) {
+    return false;
+  }
+
+  // 2. Must be single offer and at least one consideration
   if (offer.length > 1 || consideration.length === 0) {
     return false;
   }
@@ -38,17 +68,24 @@ export const shouldUseBasicFulfill = ({
     )
   );
 
-  // The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
+  const offersNativeCurrency = isNativeCurrencyItem(offer[0]);
+
+  // 3. The order does not offer an item with Ether (or other native tokens) as its item type.
+  if (offersNativeCurrency) {
+    return false;
+  }
+
+  // 4. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
   if (nfts.length !== 1 && nftsWithCriteria.length !== 0) {
     return false;
   }
 
-  // All currencies need to have the same address and item type (Native, ERC20)
+  // 5. All currencies need to have the same address and item type (Native, ERC20)
   if (!areAllCurrenciesSame({ offer, consideration })) {
     return false;
   }
 
-  // All individual items need to have the same startAmount and endAmount
+  // 6. All individual items need to have the same startAmount and endAmount
   const differentStartAndEndAmount = allItems.some(
     ({ startAmount, endAmount }) => startAmount !== endAmount
   );
@@ -59,7 +96,7 @@ export const shouldUseBasicFulfill = ({
 
   const [firstConsideration, ...restConsideration] = consideration;
 
-  // First consideration item must contain the offerer as the recipient
+  // 7. First consideration item must contain the offerer as the recipient
   const firstConsiderationRecipientIsNotOfferer =
     firstConsideration.recipient.toLowerCase() !== offerer.toLowerCase();
 
@@ -67,7 +104,7 @@ export const shouldUseBasicFulfill = ({
     return false;
   }
 
-  // If the order has multiple consideration items and all consideration items other than the
+  // 8. If the order has multiple consideration items and all consideration items other than the
   // first consideration item have the same item type as the offered item, the offered item
   // amount is not less than the sum of all consideration item amounts excluding the
   // first consideration item amount
@@ -81,7 +118,7 @@ export const shouldUseBasicFulfill = ({
     [ItemType.NATIVE, ItemType.ERC20].includes(itemType)
   );
 
-  //  The token on native currency items needs to be set to the null address and the identifier on
+  //  9. The token on native currency items needs to be set to the null address and the identifier on
   //  currencies needs to be zero, and the amounts on the 721 item need to be 1
   const nativeCurrencyIsZeroAddress = currencies
     .filter(({ itemType }) => itemType === ItemType.NATIVE)
@@ -93,7 +130,7 @@ export const shouldUseBasicFulfill = ({
 
   const erc721sAreSingleAmount = nfts
     .filter(({ itemType }) => itemType === ItemType.ERC721)
-    .every(({ endAmount }) => endAmount === 1);
+    .every(({ endAmount }) => endAmount === "1");
 
   return (
     nativeCurrencyIsZeroAddress &&
@@ -132,11 +169,23 @@ const offerAndConsiderationFulfillmentMapping: {
  * @param order - Standard order object
  * @param contract - Consideration ethers contract
  */
-export const fulfillBasicOrder = (
+export function fulfillBasicOrder(
   { parameters: orderParameters, signature }: Order,
-  contract: Consideration
-) => {
-  const { offer, consideration } = orderParameters;
+  {
+    considerationContract,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams: TimeBasedItemParams;
+    provider: providers.JsonRpcProvider;
+  }
+): OrderUseCase<OrderExchangeYields> {
+  const { offer, consideration, orderType } = orderParameters;
 
   const offerItem = offer[0];
   const [forOfferer, ...forAdditionalRecipients] = consideration;
@@ -156,77 +205,214 @@ export const fulfillBasicOrder = (
     ({ startAmount, recipient }) => ({ amount: startAmount, recipient })
   );
 
-  const totalEthAmount = totalItemsAmount(consideration).endAmount;
+  const considerationWithoutOfferItemType = consideration.filter(
+    (item) => item.itemType !== offer[0].itemType
+  );
+
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
+    considerationWithoutOfferItemType,
+    {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    }
+  )[ethers.constants.AddressZero]["0"];
+
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    {
+      balancesAndApprovals: offererBalancesAndApprovals,
+      timeBasedItemParams,
+      throwOnInsufficientApprovals: true,
+    }
+  );
+
+  const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+    validateBasicFulfillBalancesAndApprovals(
+      {
+        offer,
+        orderType,
+        consideration,
+      },
+      {
+        offererBalancesAndApprovals,
+        fulfillerBalancesAndApprovals,
+        timeBasedItemParams,
+      }
+    );
+
+  const useProxyForFulfiller = useFulfillerProxy({
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  });
+
+  const approvalsToUse = useProxyForFulfiller
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
 
   const basicOrderParameters = {
     offerer: orderParameters.offerer,
     zone: orderParameters.zone,
-    orderType: orderParameters.orderType,
+    orderType,
     token: offerItem.token,
     identifier: offerItem.identifierOrCriteria,
     startTime: orderParameters.startTime,
     endTime: orderParameters.endTime,
     salt: orderParameters.salt,
-    useFulfillerProxy: [
-      OrderType.FULL_OPEN_VIA_PROXY,
-      OrderType.PARTIAL_OPEN_VIA_PROXY,
-      OrderType.FULL_RESTRICTED_VIA_PROXY,
-      OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
-    ].includes(orderParameters.orderType),
+    useFulfillerProxy: useProxyForFulfiller,
     signature,
     additionalRecipients,
   };
 
-  const payableOverrides = { value: totalEthAmount };
+  const payableOverrides = { value: totalNativeAmount };
 
-  // TODO: Check approvals here
+  async function* execute() {
+    yield* setNeededApprovals(approvalsToUse, { provider });
 
-  switch (basicFulfillOrder) {
-    case BasicFulfillOrder.ETH_FOR_ERC721: {
-      return contract.fulfillBasicEthForERC721Order(
-        totalEthAmount,
-        basicOrderParameters,
-        payableOverrides
+    let transaction: ContractTransaction | undefined;
+
+    switch (basicFulfillOrder) {
+      case BasicFulfillOrder.ETH_FOR_ERC721:
+        transaction = await considerationContract.fulfillBasicEthForERC721Order(
+          totalNativeAmount,
+          basicOrderParameters,
+          payableOverrides
+        );
+        break;
+      case BasicFulfillOrder.ETH_FOR_ERC1155:
+        transaction =
+          await considerationContract.fulfillBasicEthForERC1155Order(
+            totalNativeAmount,
+            // The order offer is ERC1155
+            offerItem.endAmount,
+            basicOrderParameters,
+            payableOverrides
+          );
+        break;
+      case BasicFulfillOrder.ERC20_FOR_ERC721:
+        transaction =
+          await considerationContract.fulfillBasicERC20ForERC721Order(
+            // The order consideration is ERC20
+            forOfferer.token,
+            forOfferer.endAmount,
+            basicOrderParameters
+          );
+        break;
+      case BasicFulfillOrder.ERC20_FOR_ERC1155:
+        transaction =
+          await considerationContract.fulfillBasicERC20ForERC1155Order(
+            // The order consideration is ERC20
+            forOfferer.token,
+            forOfferer.endAmount,
+            offerItem.endAmount,
+            basicOrderParameters
+          );
+        break;
+      case BasicFulfillOrder.ERC721_FOR_ERC20:
+        transaction =
+          await considerationContract.fulfillBasicERC721ForERC20Order(
+            // The order offer is ERC20
+            offerItem.token,
+            offerItem.endAmount,
+            basicOrderParameters,
+            useProxyForFulfiller
+          );
+        break;
+      case BasicFulfillOrder.ERC1155_FOR_ERC20:
+        transaction =
+          await considerationContract.fulfillBasicERC1155ForERC20Order(
+            // The order offer is ERC20
+            offerItem.token,
+            offerItem.endAmount,
+            // The order consideration is ERC1155
+            forOfferer.endAmount,
+            basicOrderParameters,
+            useProxyForFulfiller
+          );
+    }
+
+    if (transaction === undefined) {
+      throw new Error(
+        "There was an error finding the correct basic fulfillment method to execute"
       );
     }
-    case BasicFulfillOrder.ETH_FOR_ERC1155:
-      return contract.fulfillBasicEthForERC1155Order(
-        totalEthAmount,
-        // The order offer is ERC1155
-        offerItem.endAmount,
-        basicOrderParameters,
-        payableOverrides
-      );
-    case BasicFulfillOrder.ERC20_FOR_ERC721:
-      return contract.fulfillBasicERC20ForERC721Order(
-        // The order consideration is ERC20
-        forOfferer.token,
-        forOfferer.endAmount,
-        basicOrderParameters
-      );
-    case BasicFulfillOrder.ERC20_FOR_ERC1155:
-      return contract.fulfillBasicERC20ForERC1155Order(
-        // The order consideration is ERC20
-        forOfferer.token,
-        forOfferer.endAmount,
-        offerItem.endAmount,
-        basicOrderParameters
-      );
-    case BasicFulfillOrder.ERC721_FOR_ERC20:
-      return contract.fulfillBasicERC721ForERC20Order(
-        // The order offer is ERC20
-        offerItem.token,
-        offerItem.endAmount,
-        basicOrderParameters
-      );
-    case BasicFulfillOrder.ERC1155_FOR_ERC20:
-      return contract.fulfillBasicERC1155ForERC20Order(
-        // The order offer is ERC20
-        offerItem.token,
-        offerItem.endAmount,
-        // The order consideration is ERC1155
-        forOfferer.endAmount,
-        basicOrderParameters
-      );
+
+    yield { type: "exchange", transaction } as const;
   }
-};
+
+  return { insufficientApprovals: approvalsToUse, execute };
+}
+
+export function fulfillStandardOrder(
+  { parameters: orderParameters, signature }: Order,
+  {
+    considerationContract,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams: TimeBasedItemParams;
+    provider: providers.JsonRpcProvider;
+  }
+): OrderUseCase<OrderExchangeYields> {
+  const { offer, consideration, orderType } = orderParameters;
+
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
+    ...timeBasedItemParams,
+    isConsiderationItem: true,
+  })[ethers.constants.AddressZero]["0"];
+
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    {
+      balancesAndApprovals: offererBalancesAndApprovals,
+      timeBasedItemParams,
+      throwOnInsufficientApprovals: true,
+    }
+  );
+
+  const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+    validateStandardFulfillBalancesAndApprovals(
+      {
+        offer,
+        orderType,
+        consideration,
+      },
+      {
+        offererBalancesAndApprovals,
+        fulfillerBalancesAndApprovals,
+        timeBasedItemParams,
+      }
+    );
+
+  const useProxyForFulfiller = useFulfillerProxy({
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  });
+
+  const approvalsToUse = useProxyForFulfiller
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
+
+  const payableOverrides = { value: totalNativeAmount };
+
+  async function* execute() {
+    yield* setNeededApprovals(approvalsToUse, { provider });
+
+    const transaction = await considerationContract.fulfillOrder(
+      {
+        parameters: orderParameters,
+        signature,
+      },
+      useProxyForFulfiller,
+      payableOverrides
+    );
+
+    yield { type: "exchange", transaction } as const;
+  }
+
+  return { insufficientApprovals: approvalsToUse, execute };
+}

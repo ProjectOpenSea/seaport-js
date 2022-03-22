@@ -1,9 +1,26 @@
-import { BigNumberish, BytesLike } from "ethers";
+import {
+  BigNumber,
+  BigNumberish,
+  BytesLike,
+  ContractTransaction,
+} from "ethers";
 import { ItemType, OrderType } from "./constants";
+import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
 export type ConsiderationConfig = {
+  // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
+  ascendingAmountFulfillmentBuffer?: number;
+
+  // Used for ERC-20 approvals. Defaults to false (thus, approving the max amount)
+  approveExactAmount?: boolean;
+
+  // Skip approvals for consumers who wish to create orders beforehand.
+  safetyChecksOnOrderCreation?: boolean;
+  safetyChecksOnOrderFulfillment?: boolean;
+
   overrides?: {
-    contractAddress: string;
+    contractAddress?: string;
+    legacyProxyRegistryAddress?: string;
   };
 };
 
@@ -11,18 +28,20 @@ export type OfferItem = {
   itemType: ItemType;
   token: string;
   identifierOrCriteria: BigNumberish;
-  startAmount: BigNumberish;
-  endAmount: BigNumberish;
+  startAmount: string;
+  endAmount: string;
 };
 
 export type ReceivedItem = {
   itemType: ItemType;
   token: string;
   identifierOrCriteria: BigNumberish;
-  startAmount: BigNumberish;
-  endAmount: BigNumberish;
+  startAmount: string;
+  endAmount: string;
   recipient: string;
 };
+
+export type Item = OfferItem | ReceivedItem;
 
 export type OrderParameters = {
   offerer: string;
@@ -40,6 +59,11 @@ export type OrderComponents = OrderParameters & { nonce: BigNumberish };
 export type Order = {
   parameters: OrderParameters;
   signature: BytesLike;
+};
+
+export type AdvancedOrder = Order & {
+  totalFilled: BigNumber;
+  totalSize: BigNumber;
 };
 
 export type Erc721Item = {
@@ -85,4 +109,43 @@ export type CreateOrderInput = {
   restrictedByZone?: boolean;
   useProxy?: boolean;
   salt?: BigNumberish;
+};
+
+export type OrderStatus = {
+  isValidated: boolean;
+  isCancelled: boolean;
+  totalFilled: BigNumber;
+  totalSize: BigNumber;
+};
+
+export type CreatedOrder = OrderComponents & { signature: BytesLike };
+
+export type YieldedApproval = {
+  type: "approval";
+  token: string;
+  identifierOrCriteria: BigNumberish;
+  itemType: ItemType;
+  transaction: ContractTransaction;
+};
+
+export type YieldedExchange = {
+  type: "exchange";
+  transaction: ContractTransaction;
+};
+
+export type YieldedCreatedOrder = {
+  type: "create";
+  order: CreatedOrder;
+};
+
+export type YieldedTransaction = YieldedApproval | YieldedExchange;
+
+export type OrderCreateYields = YieldedApproval | YieldedCreatedOrder;
+
+export type OrderExchangeYields = YieldedApproval | YieldedExchange;
+
+export type OrderUseCase<T = OrderCreateYields | OrderExchangeYields> = {
+  insufficientApprovals: InsufficientApprovals;
+
+  execute: () => AsyncGenerator<T>;
 };
