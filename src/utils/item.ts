@@ -148,7 +148,7 @@ export const getSummedTokenAndIdentifierAmounts = (
   items: Item[],
   timeBasedItemParams?: TimeBasedItemParams
 ) => {
-  const tokenAndIdentifierToAmountNeeded = items.reduce<
+  const tokenAndIdentifierToSummedAmount = items.reduce<
     Record<string, Record<string, BigNumber>>
   >((map, item) => {
     const identifierOrCriteria = BigNumber.from(
@@ -184,5 +184,5 @@ export const getSummedTokenAndIdentifierAmounts = (
     };
   }, {});
 
-  return tokenAndIdentifierToAmountNeeded;
+  return tokenAndIdentifierToSummedAmount;
 };

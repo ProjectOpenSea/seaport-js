@@ -12,7 +12,7 @@ import {
   isErc721Item,
   TimeBasedItemParams,
 } from "./item";
-import { useOffererProxy } from "./order";
+import { useFulfillerProxy, useOffererProxy } from "./order";
 
 export type BalancesAndApprovals = {
   token: string;
@@ -41,6 +41,30 @@ export type InsufficientApprovals = {
   operator: string;
   itemType: ItemType;
 }[];
+
+const findBalanceAndApproval = (
+  balancesAndApprovals: BalancesAndApprovals,
+  token: string,
+  identifierOrCriteria: string
+) => {
+  const balanceAndApproval = balancesAndApprovals.find(
+    ({
+      token: checkedToken,
+      identifierOrCriteria: checkedIdentifierOrCriteria,
+    }) =>
+      token.toLowerCase() === checkedToken.toLowerCase() &&
+      checkedIdentifierOrCriteria.toLowerCase() ===
+        identifierOrCriteria.toLowerCase()
+  );
+
+  if (!balanceAndApproval) {
+    throw new Error(
+      "Balances and approvals didn't contain all tokens and identifiers"
+    );
+  }
+
+  return balanceAndApproval;
+};
 
 export const getBalancesAndApprovals = async (
   owner: string,
@@ -129,40 +153,20 @@ export const getInsufficientBalanceAndApprovalAmounts = (
     ),
   ].flat();
 
-  const findBalanceAndApproval = (
-    token: string,
-    identifierOrCriteria: string
-  ) => {
-    const balanceAndApproval = balancesAndApprovals.find(
-      ({
-        token: checkedToken,
-        identifierOrCriteria: checkedIdentifierOrCriteria,
-      }) =>
-        token.toLowerCase() === checkedToken.toLowerCase() &&
-        checkedIdentifierOrCriteria.toLowerCase() ===
-          identifierOrCriteria.toLowerCase()
-    );
-
-    if (!balanceAndApproval) {
-      throw new Error(
-        "Balances and approvals didn't contain all tokens and identifiers"
-      );
-    }
-
-    return balanceAndApproval;
-  };
-
   const filterBalancesOrApprovals = (
     filterKey: "balance" | "ownerApprovedAmount" | "proxyApprovedAmount"
   ) =>
     tokenAndIdentifierAndAmountNeeded
       .filter(([token, identifierOrCriteria, amountNeeded]) =>
-        findBalanceAndApproval(token, identifierOrCriteria)[filterKey].lt(
-          amountNeeded
-        )
+        findBalanceAndApproval(
+          balancesAndApprovals,
+          token,
+          identifierOrCriteria
+        )[filterKey].lt(amountNeeded)
       )
       .map(([token, identifierOrCriteria, amount]) => {
         const balanceAndApproval = findBalanceAndApproval(
+          balancesAndApprovals,
           token,
           identifierOrCriteria
         );
@@ -318,12 +322,126 @@ export const validateBasicFulfillBalancesAndApprovals = (
     );
   }
 
-  const approvalsToCheck = useOffererProxy(orderType)
+  const approvalsToCheck = useFulfillerProxy({
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  })
     ? insufficientProxyApprovals
     : insufficientOwnerApprovals;
 
   if (approvalsToCheck.length > 0) {
-    throw new Error("The offer does not have the sufficient approvals.");
+    throw new Error("The fulfiller does not have the sufficient approvals.");
+  }
+
+  return { insufficientOwnerApprovals, insufficientProxyApprovals };
+};
+
+/**
+ * When fulfilling a standard order, the following requirements need to be checked to ensure that the order will be fulfillable:
+ * 1. Offer checks need to be performed to ensure that the offerer still has sufficient balance and approvals
+ * 2. The fulfiller should have sufficient balance of all consideration items after receiving all offered items
+ *    — by way of example, if the fulfilled order offers an ERC20 item and requires an ERC721 item to the offerer
+ *    and the same ERC20 item to another recipient with an amount less than or equal to the offered amount,
+ *    the fulfiller does not need to own the ERC20 item as it will first be received from the offerer.
+ * 3. If the fulfiller does not elect to utilize a proxy, they need to have sufficient approvals set for the
+ *    Consideration contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order.
+ * 4. If the fulfiller does elect to utilize a proxy, they need to have sufficient approvals set for their
+ *    respective proxy contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order.
+ * 5. If the fulfilled order specifies Ether (or other native tokens) as consideration items, the fulfiller must
+ *    be able to supply the sum total of those items as msg.value.
+ *
+ * @returns the list of insufficient owner and proxy approvals
+ */
+export const validateStandardFulfillBalancesAndApprovals = (
+  {
+    offer,
+    orderType,
+    consideration,
+  }: Pick<OrderParameters, "offer" | "orderType" | "consideration">,
+  {
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+  }: {
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams: TimeBasedItemParams;
+  }
+) => {
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    {
+      balancesAndApprovals: offererBalancesAndApprovals,
+      timeBasedItemParams: {
+        ...timeBasedItemParams,
+        isConsiderationItem: false,
+      },
+      throwOnInsufficientApprovals: true,
+    }
+  );
+
+  const summedOfferAmounts = getSummedTokenAndIdentifierAmounts(
+    offer,
+    timeBasedItemParams
+  );
+
+  // Deep clone existing balances
+  const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
+    fulfillerBalancesAndApprovals.map((item) => ({ ...item }));
+
+  // Add each summed offer amount to the fulfiller's balances as we check balances after receiving all offered items
+  Object.entries(summedOfferAmounts).forEach(
+    ([token, identifierOrCriteriaToAmount]) =>
+      Object.entries(identifierOrCriteriaToAmount).forEach(
+        ([identifierOrCriteria, amount]) => {
+          const balanceAndApproval = findBalanceAndApproval(
+            fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
+            token,
+            identifierOrCriteria.toString()
+          );
+
+          const balanceAndApprovalIndex =
+            fulfillerBalancesAndApprovalsAfterReceivingOfferedItems.indexOf(
+              balanceAndApproval
+            );
+
+          fulfillerBalancesAndApprovalsAfterReceivingOfferedItems[
+            balanceAndApprovalIndex
+          ].balance =
+            fulfillerBalancesAndApprovalsAfterReceivingOfferedItems[
+              balanceAndApprovalIndex
+            ].balance.add(amount);
+        }
+      )
+  );
+
+  const {
+    insufficientBalances,
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  } = getInsufficientBalanceAndApprovalAmounts(
+    fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
+    getSummedTokenAndIdentifierAmounts(consideration, {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    })
+  );
+
+  if (insufficientBalances.length > 0) {
+    throw new Error(
+      "The fulfiller does not have the balances needed to fulfill."
+    );
+  }
+
+  const approvalsToCheck = useFulfillerProxy({
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  })
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
+
+  if (approvalsToCheck.length > 0) {
+    throw new Error("The fulfiller does not have the sufficient approvals.");
   }
 
   return { insufficientOwnerApprovals, insufficientProxyApprovals };

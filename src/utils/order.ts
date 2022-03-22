@@ -12,6 +12,7 @@ import {
 } from "../types";
 import {
   BalancesAndApprovals,
+  InsufficientApprovals,
   InsufficientBalancesAndApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
@@ -159,6 +160,21 @@ export const useOffererProxy = (orderType: OrderType) =>
     OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
   ].includes(orderType);
 
+export const useFulfillerProxy = ({
+  insufficientOwnerApprovals,
+  insufficientProxyApprovals,
+}: {
+  insufficientOwnerApprovals: InsufficientApprovals;
+  insufficientProxyApprovals: InsufficientApprovals;
+}) => {
+  const approvalsToUse =
+    insufficientOwnerApprovals.length === 0
+      ? insufficientOwnerApprovals
+      : insufficientProxyApprovals;
+
+  return approvalsToUse === insufficientProxyApprovals;
+};
+
 export const getOrderStatus = async (
   orderHash: string,
   {
@@ -216,3 +232,5 @@ export const getNonce = (
 
   return contract.getNonce(offerer, zone);
 };
+
+export const shouldUseMatchForFulfill = () => true;

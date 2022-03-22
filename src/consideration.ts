@@ -18,7 +18,11 @@ import {
   OrderUseCase,
 } from "./types";
 import { setNeededApprovals } from "./utils/approval";
-import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
+import {
+  fulfillBasicOrder,
+  fulfillStandardOrder,
+  shouldUseBasicFulfill,
+} from "./utils/fulfill";
 import { isCurrencyItem } from "./utils/item";
 import {
   feeToConsiderationItem,
@@ -27,6 +31,7 @@ import {
   getOrderStatus,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
+  shouldUseMatchForFulfill,
   totalItemsAmount,
   useOffererProxy,
   validateOrderParameters,
@@ -295,7 +300,9 @@ export class Consideration {
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
-      getBalancesAndApprovals(fulfiller, consideration, {
+      // Get fulfiller balances and approvals of all items in the set, as offer items
+      // may be received by the fulfiller for standard fulfills
+      getBalancesAndApprovals(fulfiller, [...offer, ...consideration], {
         proxy: fulfillerProxy,
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
@@ -326,6 +333,14 @@ export class Consideration {
 
     const advancedOrder = { ...order, totalFilled, totalSize };
 
+    const timeBasedItemParams = {
+      startTime: order.parameters.startTime,
+      endTime: order.parameters.endTime,
+      currentBlockTimestamp,
+      ascendingAmountTimestampBuffer:
+        this.config.ascendingAmountFulfillmentBuffer,
+    };
+
     if (shouldUseBasicFulfill(advancedOrder.parameters, totalFilled)) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
       return fulfillBasicOrder(order, {
@@ -333,17 +348,9 @@ export class Consideration {
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         provider: this.provider,
-        timeBasedItemParams: {
-          startTime: order.parameters.startTime,
-          endTime: order.parameters.endTime,
-          currentBlockTimestamp,
-          ascendingAmountTimestampBuffer:
-            this.config.ascendingAmountFulfillmentBuffer,
-        },
+        timeBasedItemParams,
       });
     }
-
-    // TODO: Implement more advanced order fulfillment
 
     // Building fulfillments
     // Can only match if everything about them is the same except for the amounts
@@ -356,6 +363,16 @@ export class Consideration {
     // i.e. 2 items in bucket. 1 offer 1 ETH, 1 offer 2 ETH. 2 consideration items, 1 expect 2 ETH, 1 expect 1 ETH
     // Minimize number of fulfillments
     // Most robust way is to go through every single permutation of both sides
-    return null;
+    if (shouldUseMatchForFulfill()) {
+      // pass
+    }
+
+    return fulfillStandardOrder(order, {
+      considerationContract: this.contract,
+      offererBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      provider: this.provider,
+      timeBasedItemParams,
+    });
   }
 }

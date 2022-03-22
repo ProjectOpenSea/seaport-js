@@ -13,9 +13,18 @@ import {
   validateOfferBalancesAndApprovals,
   BalancesAndApprovals,
   validateBasicFulfillBalancesAndApprovals,
+  validateStandardFulfillBalancesAndApprovals,
 } from "./balancesAndApprovals";
-import { isNativeCurrencyItem, TimeBasedItemParams } from "./item";
-import { areAllCurrenciesSame, totalItemsAmount } from "./order";
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isNativeCurrencyItem,
+  TimeBasedItemParams,
+} from "./item";
+import {
+  areAllCurrenciesSame,
+  totalItemsAmount,
+  useFulfillerProxy,
+} from "./order";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -196,7 +205,17 @@ export function fulfillBasicOrder(
     ({ startAmount, recipient }) => ({ amount: startAmount, recipient })
   );
 
-  const totalNativeAmount = totalItemsAmount(consideration).endAmount;
+  const considerationWithoutOfferItemType = consideration.filter(
+    (item) => item.itemType !== offer[0].itemType
+  );
+
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
+    considerationWithoutOfferItemType,
+    {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    }
+  )[ethers.constants.AddressZero]["0"];
 
   validateOfferBalancesAndApprovals(
     { offer, orderType },
@@ -221,12 +240,14 @@ export function fulfillBasicOrder(
       }
     );
 
-  const approvalsToUse =
-    insufficientOwnerApprovals.length === 0
-      ? insufficientOwnerApprovals
-      : insufficientProxyApprovals;
+  const useProxyForFulfiller = useFulfillerProxy({
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  });
 
-  const useFulfillerProxy = approvalsToUse === insufficientProxyApprovals;
+  const approvalsToUse = useProxyForFulfiller
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
 
   const basicOrderParameters = {
     offerer: orderParameters.offerer,
@@ -237,7 +258,7 @@ export function fulfillBasicOrder(
     startTime: orderParameters.startTime,
     endTime: orderParameters.endTime,
     salt: orderParameters.salt,
-    useFulfillerProxy,
+    useFulfillerProxy: useProxyForFulfiller,
     signature,
     additionalRecipients,
   };
@@ -293,7 +314,7 @@ export function fulfillBasicOrder(
             offerItem.token,
             offerItem.endAmount,
             basicOrderParameters,
-            useFulfillerProxy
+            useProxyForFulfiller
           );
         break;
       case BasicFulfillOrder.ERC1155_FOR_ERC20:
@@ -305,7 +326,7 @@ export function fulfillBasicOrder(
             // The order consideration is ERC1155
             forOfferer.endAmount,
             basicOrderParameters,
-            useFulfillerProxy
+            useProxyForFulfiller
           );
     }
 
@@ -314,6 +335,81 @@ export function fulfillBasicOrder(
         "There was an error finding the correct basic fulfillment method to execute"
       );
     }
+
+    yield { type: "exchange", transaction } as const;
+  }
+
+  return { insufficientApprovals: approvalsToUse, execute };
+}
+
+export function fulfillStandardOrder(
+  { parameters: orderParameters, signature }: Order,
+  {
+    considerationContract,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    provider,
+  }: {
+    considerationContract: Consideration;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams: TimeBasedItemParams;
+    provider: providers.JsonRpcProvider;
+  }
+): OrderUseCase<OrderExchangeYields> {
+  const { offer, consideration, orderType } = orderParameters;
+
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
+    ...timeBasedItemParams,
+    isConsiderationItem: true,
+  })[ethers.constants.AddressZero]["0"];
+
+  validateOfferBalancesAndApprovals(
+    { offer, orderType },
+    {
+      balancesAndApprovals: offererBalancesAndApprovals,
+      timeBasedItemParams,
+      throwOnInsufficientApprovals: true,
+    }
+  );
+
+  const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+    validateStandardFulfillBalancesAndApprovals(
+      {
+        offer,
+        orderType,
+        consideration,
+      },
+      {
+        offererBalancesAndApprovals,
+        fulfillerBalancesAndApprovals,
+        timeBasedItemParams,
+      }
+    );
+
+  const useProxyForFulfiller = useFulfillerProxy({
+    insufficientOwnerApprovals,
+    insufficientProxyApprovals,
+  });
+
+  const approvalsToUse = useProxyForFulfiller
+    ? insufficientProxyApprovals
+    : insufficientOwnerApprovals;
+
+  const payableOverrides = { value: totalNativeAmount };
+
+  async function* execute() {
+    yield* setNeededApprovals(approvalsToUse, { provider });
+
+    const transaction = await considerationContract.fulfillOrder(
+      {
+        parameters: orderParameters,
+        signature,
+      },
+      useProxyForFulfiller,
+      payableOverrides
+    );
 
     yield { type: "exchange", transaction } as const;
   }
