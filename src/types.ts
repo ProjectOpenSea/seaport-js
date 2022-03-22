@@ -149,3 +149,13 @@ export type OrderUseCase<T = OrderCreateYields | OrderExchangeYields> = {
 
   execute: () => AsyncGenerator<T>;
 };
+
+export type FulfillmentComponent = {
+  orderIndex: number;
+  itemIndex: number;
+};
+
+export type Fulfillment = {
+  offerComponents: FulfillmentComponent[];
+  considerationComponents: FulfillmentComponent[];
+};
