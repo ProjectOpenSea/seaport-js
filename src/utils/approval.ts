@@ -43,7 +43,12 @@ export async function* setNeededApprovals(
 ): AsyncGenerator<YieldedApproval> {
   const signer = provider.getSigner();
 
-  for (const { token, operator, itemType } of insufficientApprovals) {
+  for (const {
+    token,
+    operator,
+    itemType,
+    identifierOrCriteria,
+  } of insufficientApprovals) {
     // This is guaranteed to exist
 
     if (isErc721Item(itemType) || isErc1155Item(itemType)) {
@@ -53,6 +58,9 @@ export async function* setNeededApprovals(
 
       yield {
         type: "approval",
+        token,
+        identifierOrCriteria,
+        itemType,
         transaction,
       };
       await transaction.wait();
@@ -62,6 +70,9 @@ export async function* setNeededApprovals(
 
       yield {
         type: "approval",
+        token,
+        identifierOrCriteria,
+        itemType,
         transaction,
       };
       await transaction.wait();

@@ -122,6 +122,9 @@ export type CreatedOrder = OrderComponents & { signature: BytesLike };
 
 export type YieldedApproval = {
   type: "approval";
+  token: string;
+  identifierOrCriteria: BigNumberish;
+  itemType: ItemType;
   transaction: ContractTransaction;
 };
 
