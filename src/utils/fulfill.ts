@@ -1,7 +1,13 @@
-import { BigNumber, ethers, providers } from "ethers";
+import { BigNumber, ContractTransaction, ethers, providers } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
-import { Order, OrderParameters, OrderStatus } from "../types";
+import {
+  Order,
+  OrderExchangeYields,
+  OrderParameters,
+  OrderStatus,
+  OrderUseCase,
+} from "../types";
 import { setNeededApprovals } from "./approval";
 import {
   validateOfferBalancesAndApprovals,
@@ -154,7 +160,7 @@ const offerAndConsiderationFulfillmentMapping: {
  * @param order - Standard order object
  * @param contract - Consideration ethers contract
  */
-export const fulfillBasicOrder = async (
+export function fulfillBasicOrder(
   { parameters: orderParameters, signature }: Order,
   {
     considerationContract,
@@ -169,7 +175,7 @@ export const fulfillBasicOrder = async (
     timeBasedItemParams: TimeBasedItemParams;
     provider: providers.JsonRpcProvider;
   }
-) => {
+): OrderUseCase<OrderExchangeYields> {
   const { offer, consideration, orderType } = orderParameters;
 
   const offerItem = offer[0];
@@ -222,8 +228,6 @@ export const fulfillBasicOrder = async (
 
   const useFulfillerProxy = approvalsToUse === insufficientProxyApprovals;
 
-  await setNeededApprovals(approvalsToUse, { provider });
-
   const basicOrderParameters = {
     offerer: orderParameters.offerer,
     zone: orderParameters.zone,
@@ -240,54 +244,79 @@ export const fulfillBasicOrder = async (
 
   const payableOverrides = { value: totalNativeAmount };
 
-  switch (basicFulfillOrder) {
-    case BasicFulfillOrder.ETH_FOR_ERC721: {
-      return considerationContract.fulfillBasicEthForERC721Order(
-        totalNativeAmount,
-        basicOrderParameters,
-        payableOverrides
+  async function* execute() {
+    yield* setNeededApprovals(approvalsToUse, { provider });
+
+    let transaction: ContractTransaction | undefined;
+
+    switch (basicFulfillOrder) {
+      case BasicFulfillOrder.ETH_FOR_ERC721:
+        transaction = await considerationContract.fulfillBasicEthForERC721Order(
+          totalNativeAmount,
+          basicOrderParameters,
+          payableOverrides
+        );
+        break;
+      case BasicFulfillOrder.ETH_FOR_ERC1155:
+        transaction =
+          await considerationContract.fulfillBasicEthForERC1155Order(
+            totalNativeAmount,
+            // The order offer is ERC1155
+            offerItem.endAmount,
+            basicOrderParameters,
+            payableOverrides
+          );
+        break;
+      case BasicFulfillOrder.ERC20_FOR_ERC721:
+        transaction =
+          await considerationContract.fulfillBasicERC20ForERC721Order(
+            // The order consideration is ERC20
+            forOfferer.token,
+            forOfferer.endAmount,
+            basicOrderParameters
+          );
+        break;
+      case BasicFulfillOrder.ERC20_FOR_ERC1155:
+        transaction =
+          await considerationContract.fulfillBasicERC20ForERC1155Order(
+            // The order consideration is ERC20
+            forOfferer.token,
+            forOfferer.endAmount,
+            offerItem.endAmount,
+            basicOrderParameters
+          );
+        break;
+      case BasicFulfillOrder.ERC721_FOR_ERC20:
+        transaction =
+          await considerationContract.fulfillBasicERC721ForERC20Order(
+            // The order offer is ERC20
+            offerItem.token,
+            offerItem.endAmount,
+            basicOrderParameters,
+            useFulfillerProxy
+          );
+        break;
+      case BasicFulfillOrder.ERC1155_FOR_ERC20:
+        transaction =
+          await considerationContract.fulfillBasicERC1155ForERC20Order(
+            // The order offer is ERC20
+            offerItem.token,
+            offerItem.endAmount,
+            // The order consideration is ERC1155
+            forOfferer.endAmount,
+            basicOrderParameters,
+            useFulfillerProxy
+          );
+    }
+
+    if (transaction === undefined) {
+      throw new Error(
+        "There was an error finding the correct basic fulfillment method to execute"
       );
     }
-    case BasicFulfillOrder.ETH_FOR_ERC1155:
-      return considerationContract.fulfillBasicEthForERC1155Order(
-        totalNativeAmount,
-        // The order offer is ERC1155
-        offerItem.endAmount,
-        basicOrderParameters,
-        payableOverrides
-      );
-    case BasicFulfillOrder.ERC20_FOR_ERC721:
-      return considerationContract.fulfillBasicERC20ForERC721Order(
-        // The order consideration is ERC20
-        forOfferer.token,
-        forOfferer.endAmount,
-        basicOrderParameters
-      );
-    case BasicFulfillOrder.ERC20_FOR_ERC1155:
-      return considerationContract.fulfillBasicERC20ForERC1155Order(
-        // The order consideration is ERC20
-        forOfferer.token,
-        forOfferer.endAmount,
-        offerItem.endAmount,
-        basicOrderParameters
-      );
-    case BasicFulfillOrder.ERC721_FOR_ERC20:
-      return considerationContract.fulfillBasicERC721ForERC20Order(
-        // The order offer is ERC20
-        offerItem.token,
-        offerItem.endAmount,
-        basicOrderParameters,
-        useFulfillerProxy
-      );
-    case BasicFulfillOrder.ERC1155_FOR_ERC20:
-      return considerationContract.fulfillBasicERC1155ForERC20Order(
-        // The order offer is ERC20
-        offerItem.token,
-        offerItem.endAmount,
-        // The order consideration is ERC1155
-        forOfferer.endAmount,
-        basicOrderParameters,
-        useFulfillerProxy
-      );
+
+    yield { type: "exchange", transaction } as const;
   }
-};
+
+  return { insufficientApprovals: approvalsToUse, execute };
+}

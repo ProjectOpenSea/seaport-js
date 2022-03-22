@@ -12,6 +12,8 @@ import {
   CreateOrderInput,
   Order,
   OrderComponents,
+  OrderCreateYields,
+  OrderExchangeYields,
   OrderParameters,
   OrderUseCase,
 } from "./types";
@@ -111,7 +113,7 @@ export class Consideration {
     useProxy,
     fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Promise<OrderUseCase> {
+  }: CreateOrderInput): Promise<OrderUseCase<OrderCreateYields>> {
     const offerer = await this.provider.getSigner().getAddress();
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
@@ -183,7 +185,7 @@ export class Consideration {
       balancesAndApprovals,
     });
 
-    const signOrder = this.signOrder;
+    const signOrder = this.signOrder.bind(this);
 
     async function* execute() {
       yield* setNeededApprovals(insufficientApprovals, {
@@ -250,7 +252,9 @@ export class Consideration {
     return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 
-  public async fulfillOrder(order: Order) {
+  public async fulfillOrder(
+    order: Order
+  ): Promise<OrderUseCase<OrderExchangeYields>> {
     const { parameters: orderParameters } = order;
     const { orderType, offerer, zone, offer, consideration } = orderParameters;
 

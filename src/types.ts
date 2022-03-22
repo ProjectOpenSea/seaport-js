@@ -118,6 +118,8 @@ export type OrderStatus = {
   totalSize: BigNumber;
 };
 
+export type CreatedOrder = OrderComponents & { signature: BytesLike };
+
 export type YieldedApproval = {
   type: "approval";
   transaction: ContractTransaction;
@@ -128,8 +130,6 @@ export type YieldedExchange = {
   transaction: ContractTransaction;
 };
 
-export type CreatedOrder = OrderComponents & { signature: BytesLike };
-
 export type YieldedCreatedOrder = {
   type: "create";
   order: CreatedOrder;
@@ -137,10 +137,12 @@ export type YieldedCreatedOrder = {
 
 export type YieldedTransaction = YieldedApproval | YieldedExchange;
 
-export type OrderYields = YieldedTransaction | YieldedCreatedOrder;
+export type OrderCreateYields = YieldedApproval | YieldedCreatedOrder;
 
-export type OrderUseCase = {
+export type OrderExchangeYields = YieldedApproval | YieldedExchange;
+
+export type OrderUseCase<T = OrderCreateYields | OrderExchangeYields> = {
   insufficientApprovals: InsufficientApprovals;
 
-  execute: () => AsyncGenerator<OrderYields>;
+  execute: () => AsyncGenerator<T>;
 };
