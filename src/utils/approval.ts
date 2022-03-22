@@ -49,8 +49,6 @@ export async function* setNeededApprovals(
     itemType,
     identifierOrCriteria,
   } of insufficientApprovals) {
-    // This is guaranteed to exist
-
     if (isErc721Item(itemType) || isErc1155Item(itemType)) {
       // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
       const contract = new Contract(token, ERC721ABI, signer) as ERC721;
