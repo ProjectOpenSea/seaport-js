@@ -1,5 +1,11 @@
-import { BigNumber, BigNumberish, BytesLike } from "ethers";
+import {
+  BigNumber,
+  BigNumberish,
+  BytesLike,
+  ContractTransaction,
+} from "ethers";
 import { ItemType, OrderType } from "./constants";
+import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
@@ -110,4 +116,31 @@ export type OrderStatus = {
   isCancelled: boolean;
   totalFilled: BigNumber;
   totalSize: BigNumber;
+};
+
+export type YieldedApproval = {
+  type: "approval";
+  transaction: ContractTransaction;
+};
+
+export type YieldedExchange = {
+  type: "exchange";
+  transaction: ContractTransaction;
+};
+
+export type CreatedOrder = OrderComponents & { signature: BytesLike };
+
+export type YieldedCreatedOrder = {
+  type: "create";
+  order: CreatedOrder;
+};
+
+export type YieldedTransaction = YieldedApproval | YieldedExchange;
+
+export type OrderYields = YieldedTransaction | YieldedCreatedOrder;
+
+export type OrderUseCase = {
+  insufficientApprovals: InsufficientApprovals;
+
+  execute: () => AsyncGenerator<OrderYields>;
 };

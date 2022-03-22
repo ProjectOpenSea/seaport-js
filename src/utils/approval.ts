@@ -3,8 +3,8 @@ import { BigNumber, Contract, providers } from "ethers";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
 import { ERC20, ERC721 } from "../typechain";
-import { Item } from "../types";
-import { InsufficientBalancesAndApprovals } from "./balancesAndApprovals";
+import { Item, YieldedApproval } from "../types";
+import { InsufficientApprovals } from "./balancesAndApprovals";
 import { isErc1155Item, isErc721Item } from "./item";
 
 export const approvedItemAmount = async (
@@ -33,14 +33,14 @@ export const approvedItemAmount = async (
 /**
  * Set the appropriate approvals given a list of insufficent approvals.
  */
-export const setNeededApprovals = async (
-  insufficientApprovals: InsufficientBalancesAndApprovals,
+export async function* setNeededApprovals(
+  insufficientApprovals: InsufficientApprovals,
   {
     provider,
   }: {
     provider: providers.JsonRpcProvider;
   }
-) => {
+): AsyncGenerator<YieldedApproval> {
   const signer = provider.getSigner();
 
   for (const { token, operator, itemType } of insufficientApprovals) {
@@ -49,10 +49,22 @@ export const setNeededApprovals = async (
     if (isErc721Item(itemType) || isErc1155Item(itemType)) {
       // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
       const contract = new Contract(token, ERC721ABI, signer) as ERC721;
-      await contract.setApprovalForAll(operator, true);
+      const transaction = await contract.setApprovalForAll(operator, true);
+
+      yield {
+        type: "approval",
+        transaction,
+      };
+      await transaction.wait();
     } else if (itemType === ItemType.ERC20) {
       const contract = new Contract(token, ERC721ABI, signer) as ERC20;
-      await contract.approve(operator, MAX_INT);
+      const transaction = await contract.approve(operator, MAX_INT);
+
+      yield {
+        type: "approval",
+        transaction,
+      };
+      await transaction.wait();
     }
   }
-};
+}

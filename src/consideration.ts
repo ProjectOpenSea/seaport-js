@@ -1,4 +1,4 @@
-import { BigNumberish, BytesLike, Contract, ethers, providers } from "ethers";
+import { BigNumberish, Contract, ethers, providers } from "ethers";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { ConsiderationABI } from "./abi/Consideration";
 import {
@@ -13,6 +13,7 @@ import {
   Order,
   OrderComponents,
   OrderParameters,
+  OrderUseCase,
 } from "./types";
 import { setNeededApprovals } from "./utils/approval";
 import { fulfillBasicOrder, shouldUseBasicFulfill } from "./utils/fulfill";
@@ -110,7 +111,7 @@ export class Consideration {
     useProxy,
     fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Promise<OrderComponents & { signature: BytesLike }> {
+  }: CreateOrderInput): Promise<OrderUseCase> {
     const offerer = await this.provider.getSigner().getAddress();
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
@@ -182,17 +183,26 @@ export class Consideration {
       balancesAndApprovals,
     });
 
-    await setNeededApprovals(insufficientApprovals, {
-      provider: this.provider,
-    });
+    const signOrder = this.signOrder;
 
-    const signature = await this.signOrder(orderParameters, resolvedNonce);
+    async function* execute() {
+      yield* setNeededApprovals(insufficientApprovals, {
+        provider: this.provider,
+      });
 
-    return {
-      ...orderParameters,
-      nonce: resolvedNonce,
-      signature,
-    };
+      const signature = await signOrder(orderParameters, resolvedNonce);
+
+      yield {
+        type: "create",
+        order: {
+          ...orderParameters,
+          nonce: resolvedNonce,
+          signature,
+        },
+      } as const;
+    }
+
+    return { insufficientApprovals, execute };
   }
 
   public async signOrder(

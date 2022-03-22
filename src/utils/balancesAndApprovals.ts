@@ -24,11 +24,20 @@ export type BalancesAndApprovals = {
   itemType: ItemType;
 }[];
 
-export type InsufficientBalancesAndApprovals = {
+export type InsufficientBalances = {
   token: string;
   identifierOrCriteria: string;
-  amountNeeded: BigNumber;
+  requiredAmount: BigNumber;
   amountHave: BigNumber;
+  operator: string;
+  itemType: ItemType;
+}[];
+
+export type InsufficientApprovals = {
+  token: string;
+  identifierOrCriteria: string;
+  approvedAmount: BigNumber;
+  requiredApprovedAmount: BigNumber;
   operator: string;
   itemType: ItemType;
 }[];
@@ -106,9 +115,9 @@ export const getInsufficientBalanceAndApprovalAmounts = (
     typeof getSummedTokenAndIdentifierAmounts
   >
 ): {
-  insufficientBalances: InsufficientBalancesAndApprovals;
-  insufficientOwnerApprovals: InsufficientBalancesAndApprovals;
-  insufficientProxyApprovals: InsufficientBalancesAndApprovals;
+  insufficientBalances: InsufficientBalances;
+  insufficientOwnerApprovals: InsufficientApprovals;
+  insufficientProxyApprovals: InsufficientApprovals;
 } => {
   const tokenAndIdentifierAndAmountNeeded = [
     ...Object.entries(tokenAndIdentifierAmounts).map(
@@ -161,12 +170,23 @@ export const getInsufficientBalanceAndApprovalAmounts = (
         return {
           token,
           identifierOrCriteria,
-          amountNeeded: amount,
+          requiredAmount: amount,
           amountHave: balanceAndApproval[filterKey],
           operator: balanceAndApproval.operator,
           itemType: balanceAndApproval.itemType,
         };
       });
+
+  const mapToApproval = (
+    balanceAndApproval: ReturnType<typeof filterBalancesOrApprovals>[number]
+  ): InsufficientApprovals[number] => ({
+    token: balanceAndApproval.token,
+    identifierOrCriteria: balanceAndApproval.identifierOrCriteria,
+    approvedAmount: balanceAndApproval.amountHave,
+    requiredApprovedAmount: balanceAndApproval.requiredAmount,
+    operator: balanceAndApproval.token,
+    itemType: balanceAndApproval.itemType,
+  });
 
   const [
     insufficientBalances,
@@ -174,8 +194,8 @@ export const getInsufficientBalanceAndApprovalAmounts = (
     insufficientProxyApprovals,
   ] = [
     filterBalancesOrApprovals("balance"),
-    filterBalancesOrApprovals("ownerApprovedAmount"),
-    filterBalancesOrApprovals("proxyApprovedAmount"),
+    filterBalancesOrApprovals("ownerApprovedAmount").map(mapToApproval),
+    filterBalancesOrApprovals("proxyApprovedAmount").map(mapToApproval),
   ];
 
   return {
@@ -203,7 +223,7 @@ export const validateOfferBalancesAndApprovals = (
     timeBasedItemParams?: TimeBasedItemParams;
     throwOnInsufficientApprovals?: boolean;
   }
-): InsufficientBalancesAndApprovals => {
+): InsufficientApprovals => {
   const {
     insufficientBalances,
     insufficientOwnerApprovals,
