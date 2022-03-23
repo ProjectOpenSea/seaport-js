@@ -32,7 +32,7 @@ export type OfferItem = {
   endAmount: string;
 };
 
-export type ReceivedItem = {
+export type ConsiderationItem = {
   itemType: ItemType;
   token: string;
   identifierOrCriteria: BigNumberish;
@@ -41,7 +41,7 @@ export type ReceivedItem = {
   recipient: string;
 };
 
-export type Item = OfferItem | ReceivedItem;
+export type Item = OfferItem | ConsiderationItem;
 
 export type OrderParameters = {
   offerer: string;
@@ -51,7 +51,7 @@ export type OrderParameters = {
   endTime: BigNumberish;
   salt: BigNumberish;
   offer: OfferItem[];
-  consideration: ReceivedItem[];
+  consideration: ConsiderationItem[];
 };
 
 export type OrderComponents = OrderParameters & { nonce: BigNumberish };

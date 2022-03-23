@@ -1,6 +1,6 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { ItemType, NftItemType } from "../constants";
-import { Item, OfferItem, OrderParameters, ReceivedItem } from "../types";
+import { Item, OfferItem, OrderParameters, ConsiderationItem } from "../types";
 
 type ConstructItemParams = {
   itemType: BigNumberish;
@@ -12,7 +12,7 @@ type ConstructItemParams = {
 };
 
 type ConstructedItem<T> = T extends { recipient: string }
-  ? ReceivedItem
+  ? ConsiderationItem
   : OfferItem;
 
 const constructItem = <T extends ConstructItemParams>({
@@ -22,7 +22,7 @@ const constructItem = <T extends ConstructItemParams>({
   identifierOrCriteria,
   endAmount,
   recipient,
-}: T): T extends { recipient: string } ? ReceivedItem : OfferItem => {
+}: T): T extends { recipient: string } ? ConsiderationItem : OfferItem => {
   const item = {
     itemType,
     token,

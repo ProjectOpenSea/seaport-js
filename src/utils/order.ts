@@ -8,12 +8,11 @@ import {
   OfferItem,
   Order,
   OrderParameters,
-  ReceivedItem,
+  ConsiderationItem,
 } from "../types";
 import {
   BalancesAndApprovals,
   InsufficientApprovals,
-  InsufficientBalancesAndApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
 import { isCurrencyItem } from "./item";
@@ -52,7 +51,7 @@ export const feeToConsiderationItem = ({
   token: string;
   baseAmount: BigNumberish;
   baseEndAmount?: BigNumberish;
-}): ReceivedItem => {
+}): ConsiderationItem => {
   const multiplyBasisPoints = (amount: BigNumberish) =>
     BigNumber.from(amount).mul(BigNumber.from(fee.basisPoints).div(10000));
 
