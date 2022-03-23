@@ -1,40 +1,14 @@
 import { expect } from "chai";
 import { randomBytes } from "crypto";
 import { ethers } from "hardhat";
-import { Consideration } from "../consideration";
 import { OrderType } from "../constants";
-import type { Consideration as ConsiderationContract } from "../typechain";
-import { TestERC721 } from "../typechain/TestERC721";
 import { constructCurrencyItem, constructNftItem } from "./utils/item";
+import { describeWithFixture } from "./utils/setup";
 
-describe("Sign order", function () {
-  let considerationContract: ConsiderationContract;
-  let consideration: Consideration;
-  let testERC721: TestERC721;
+describeWithFixture("Sign order", (fixture) => {
+  it("should be a valid order", async () => {
+    const { considerationContract, consideration, testErc721 } = fixture;
 
-  before(async () => {
-    const ConsiderationFactory = await ethers.getContractFactory(
-      "Consideration"
-    );
-    considerationContract = await ConsiderationFactory.deploy(
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero
-    );
-    await considerationContract.deployed();
-
-    consideration = new Consideration(ethers.provider, {
-      overrides: {
-        contractAddress: considerationContract.address,
-        legacyProxyRegistryAddress: "",
-      },
-    });
-
-    const TestERC721 = await ethers.getContractFactory("TestERC721");
-    testERC721 = await TestERC721.deploy();
-    await testERC721.deployed();
-  });
-
-  it("should be a valid order", async function () {
     const [offerer, zone] = await ethers.getSigners();
     const startTime = 0;
     const endTime = ethers.BigNumber.from(
@@ -46,7 +20,7 @@ describe("Sign order", function () {
 
     const offer = [
       constructNftItem({
-        token: testERC721.address,
+        token: testErc721.address,
         identifierOrCriteria: nftId,
         amount: 1,
       }),
