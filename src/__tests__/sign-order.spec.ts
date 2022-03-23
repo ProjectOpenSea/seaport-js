@@ -4,7 +4,7 @@ import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
-import { constructCurrencyItem, constructNftItem } from "../utils/item";
+import { constructCurrencyItem, constructNftItem } from "./utils/item";
 
 describe("Sign order", function () {
   let considerationContract: ConsiderationContract;
