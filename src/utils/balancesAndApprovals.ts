@@ -1,8 +1,8 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
-import { Consideration } from "../typechain";
-import { Item, OrderParameters } from "../types";
+import type { Consideration } from "../typechain";
+import type { Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";
 import {

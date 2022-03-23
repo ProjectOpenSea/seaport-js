@@ -1,11 +1,10 @@
 import { expect } from "chai";
+import { randomBytes } from "crypto";
 import { ethers } from "hardhat";
+import { Consideration } from "../consideration";
 import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
-import { randomBytes } from "crypto";
-import { Consideration } from "../consideration";
-import { constructNftItem, constructCurrencyItem } from "../utils/item";
-import { BigNumber } from "ethers";
+import { constructCurrencyItem, constructNftItem } from "../utils/item";
 
 describe("Sign order", function () {
   let considerationContract: ConsiderationContract;

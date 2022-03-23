@@ -7,7 +7,7 @@ import {
   EIP_712_ORDER_TYPE,
 } from "./constants";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
-import {
+import type {
   ConsiderationConfig,
   CreateOrderInput,
   Order,

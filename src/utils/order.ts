@@ -1,8 +1,8 @@
 import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { ConsiderationABI } from "../abi/Consideration";
-import { Consideration } from "../typechain";
+import type { Consideration } from "../typechain";
 import { ItemType, ONE_HUNDRED_PERCENT_BP, OrderType } from "../constants";
-import {
+import type {
   Fee,
   InputItem,
   OfferItem,

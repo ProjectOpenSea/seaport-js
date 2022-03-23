@@ -3,8 +3,8 @@ import { BigNumber, Contract } from "ethers";
 import { ERC1155ABI } from "../abi/ERC1155";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType } from "../constants";
-import { ERC1155, ERC20, ERC721 } from "../typechain";
-import { Item } from "../types";
+import type { ERC1155, ERC20, ERC721 } from "../typechain";
+import type { Item } from "../types";
 import { isErc1155Item, isErc721Item } from "./item";
 
 export const balanceOf = async (

@@ -2,9 +2,9 @@ import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, Contract, providers } from "ethers";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
-import { ERC20, ERC721 } from "../typechain";
-import { Item, YieldedApproval } from "../types";
-import { InsufficientApprovals } from "./balancesAndApprovals";
+import type { ERC20, ERC721 } from "../typechain";
+import type { Item, YieldedApproval } from "../types";
+import type { InsufficientApprovals } from "./balancesAndApprovals";
 import { isErc1155Item, isErc721Item } from "./item";
 
 export const approvedItemAmount = async (

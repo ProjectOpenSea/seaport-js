@@ -7,7 +7,7 @@ import {
 } from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
-import {
+import type {
   AdvancedOrder,
   Order,
   OrderExchangeYields,

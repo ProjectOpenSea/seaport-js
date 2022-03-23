@@ -1,6 +1,6 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { ItemType, NftItemType } from "../constants";
-import {
+import type {
   Item,
   OfferItem,
   OrderParameters,
