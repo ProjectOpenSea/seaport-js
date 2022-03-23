@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { ConsiderationABI } from "../abi/Consideration";
 import { Consideration } from "../typechain";
-import { ItemType, OrderType } from "../constants";
+import { ItemType, ONE_HUNDRED_PERCENT_BP, OrderType } from "../constants";
 import {
   Fee,
   InputItem,
@@ -9,14 +9,17 @@ import {
   Order,
   OrderParameters,
   ConsiderationItem,
+  OrderComponents,
+  AdvancedOrder,
 } from "../types";
 import {
   BalancesAndApprovals,
   InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
-import { isCurrencyItem } from "./item";
+import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
+import { gcd } from "./gcd";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -53,7 +56,9 @@ export const feeToConsiderationItem = ({
   baseEndAmount?: BigNumberish;
 }): ConsiderationItem => {
   const multiplyBasisPoints = (amount: BigNumberish) =>
-    BigNumber.from(amount).mul(BigNumber.from(fee.basisPoints).div(10000));
+    BigNumber.from(amount).mul(
+      BigNumber.from(fee.basisPoints).div(ONE_HUNDRED_PERCENT_BP)
+    );
 
   return {
     itemType:
@@ -193,24 +198,116 @@ export const getOrderStatus = async (
   return contract.getOrderStatus(orderHash);
 };
 
-export const getOrderHash = async (
-  order: Order,
-  nonce: BigNumber,
-  {
-    considerationContract,
-    multicallProvider,
-  }: {
-    considerationContract: Consideration;
-    multicallProvider: multicallProviders.MulticallProvider;
-  }
-) => {
-  const contract = new Contract(
-    considerationContract.address,
-    ConsiderationABI,
-    multicallProvider
-  ) as Consideration;
+/**
+ * Calculates the order hash of order components so we can forgo executing a request to the contract
+ * This saves us RPC calls and latency.
+ */
+export const getOrderHash = (orderComponents: OrderComponents) => {
+  const offerItemTypeString =
+    "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
+  const considerationItemTypeString =
+    "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
+  const orderComponentsPartialTypeString =
+    "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,uint256 salt,uint256 nonce)";
+  const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
 
-  return contract.getOrderHash({ ...order.parameters, nonce });
+  const offerItemTypeHash = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(offerItemTypeString)
+  );
+  const considerationItemTypeHash = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(considerationItemTypeString)
+  );
+  const orderTypeHash = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes(orderTypeString)
+  );
+
+  const offerHash = ethers.utils.keccak256(
+    "0x" +
+      orderComponents.offer
+        .map((offerItem) => {
+          return ethers.utils
+            .keccak256(
+              "0x" +
+                [
+                  offerItemTypeHash.slice(2),
+                  offerItem.itemType.toString().padStart(64, "0"),
+                  offerItem.token.slice(2).padStart(64, "0"),
+                  ethers.BigNumber.from(offerItem.identifierOrCriteria)
+                    .toHexString()
+                    .slice(2)
+                    .padStart(64, "0"),
+                  ethers.BigNumber.from(offerItem.startAmount)
+                    .toHexString()
+                    .slice(2)
+                    .padStart(64, "0"),
+                  ethers.BigNumber.from(offerItem.endAmount)
+                    .toHexString()
+                    .slice(2)
+                    .padStart(64, "0"),
+                ].join("")
+            )
+            .slice(2);
+        })
+        .join("")
+  );
+
+  const considerationHash = ethers.utils.keccak256(
+    "0x" +
+      orderComponents.consideration
+        .map((considerationItem) => {
+          return ethers.utils
+            .keccak256(
+              "0x" +
+                [
+                  considerationItemTypeHash.slice(2),
+                  considerationItem.itemType.toString().padStart(64, "0"),
+                  considerationItem.token.slice(2).padStart(64, "0"),
+                  ethers.BigNumber.from(considerationItem.identifierOrCriteria)
+                    .toHexString()
+                    .slice(2)
+                    .padStart(64, "0"),
+                  ethers.BigNumber.from(considerationItem.startAmount)
+                    .toHexString()
+                    .slice(2)
+                    .padStart(64, "0"),
+                  ethers.BigNumber.from(considerationItem.endAmount)
+                    .toHexString()
+                    .slice(2)
+                    .padStart(64, "0"),
+                  considerationItem.recipient.slice(2).padStart(64, "0"),
+                ].join("")
+            )
+            .slice(2);
+        })
+        .join("")
+  );
+
+  const derivedOrderHash = ethers.utils.keccak256(
+    "0x" +
+      [
+        orderTypeHash.slice(2),
+        orderComponents.offerer.slice(2).padStart(64, "0"),
+        orderComponents.zone.slice(2).padStart(64, "0"),
+        offerHash.slice(2),
+        considerationHash.slice(2),
+        orderComponents.orderType.toString().padStart(64, "0"),
+        ethers.BigNumber.from(orderComponents.startTime)
+          .toHexString()
+          .slice(2)
+          .padStart(64, "0"),
+        ethers.BigNumber.from(orderComponents.endTime)
+          .toHexString()
+          .slice(2)
+          .padStart(64, "0"),
+        orderComponents.salt.toString().slice(2).padStart(64, "0"),
+        ethers.BigNumber.from(orderComponents.nonce)
+          .toHexString()
+          .slice(2)
+          .padStart(64, "0"),
+      ].join("")
+  );
+
+  return derivedOrderHash;
 };
 
 export const getNonce = (
@@ -230,6 +327,120 @@ export const getNonce = (
   ) as Consideration;
 
   return contract.getNonce(offerer, zone);
+};
+
+/**
+ * Maps order offer and consideration item amounts based on the order's filled status
+ * After applying the fraction, we can view this order as the "canonical" order for which we
+ * check approvals and balances
+ */
+export const mapOrderAmountsFromFilledStatus = (
+  order: Order,
+  { totalFilled, totalSize }: { totalFilled: BigNumber; totalSize: BigNumber }
+): Order => {
+  if (totalFilled.eq(0) || totalSize.eq(0)) {
+    return order;
+  }
+
+  // i.e if totalFilled is 3 and totalSize is 4, there are 1 / 4 order amounts left to fill.
+  const basisPoints = totalSize
+    .sub(totalFilled)
+    .mul(ONE_HUNDRED_PERCENT_BP)
+    .div(totalSize);
+
+  const mapAmountToPartialAmount = (amount: string) =>
+    BigNumber.from(amount)
+      .mul(basisPoints)
+      .div(ONE_HUNDRED_PERCENT_BP)
+      .toString();
+
+  return {
+    parameters: {
+      ...order.parameters,
+      offer: order.parameters.offer.map((item) => ({
+        ...item,
+        startAmount: mapAmountToPartialAmount(item.startAmount),
+        endAmount: mapAmountToPartialAmount(item.endAmount),
+      })),
+      consideration: order.parameters.consideration.map((item) => ({
+        ...item,
+        startAmount: mapAmountToPartialAmount(item.startAmount),
+        endAmount: mapAmountToPartialAmount(item.endAmount),
+      })),
+    },
+    signature: order.signature,
+  };
+};
+
+/**
+ * Maps order offer and consideration item amounts based on the units needed to fulfill
+ * After applying the fraction, we can view this order as the "canonical" order for which we
+ * check approvals and balances
+ * Returns the numerator and denominator as well, converting this to an AdvancedOrder
+ */
+export const mapOrderAmountsFromUnitsToFill = (
+  order: Order,
+  {
+    unitsToFill,
+    totalFilled,
+    totalSize,
+  }: { unitsToFill: BigNumberish; totalFilled: BigNumber; totalSize: BigNumber }
+): AdvancedOrder => {
+  const unitsToFillBn = BigNumber.from(unitsToFill);
+
+  if (unitsToFillBn.lte(0)) {
+    throw new Error("Units to fill must be greater than 1");
+  }
+
+  const maxUnits = getMaximumSizeForOrder(order);
+
+  // This is the percentage of the order that is left to be fulfilled, and therefore we can't fill more than that.
+  const remainingOrderPercentageToBeFilled = totalSize
+    .sub(totalFilled)
+    .mul(ONE_HUNDRED_PERCENT_BP)
+    .div(totalSize);
+
+  // i.e if totalSize is 8 and unitsToFill is 3, then we multiply every amount by 3 / 8
+  const unitsToFillBasisPoints = unitsToFillBn
+    .mul(ONE_HUNDRED_PERCENT_BP)
+    .div(maxUnits);
+
+  // We basically choose the lesser between the units requested to be filled and the actual remaining order amount left
+  // This is so that if a user tries to fulfill an order that is 1/2 filled, and supplies a fraction such as 3/4, the maximum
+  // amount to fulfill is 1/2 instead of 3/4
+  const basisPoints = remainingOrderPercentageToBeFilled.gt(
+    unitsToFillBasisPoints
+  )
+    ? unitsToFillBasisPoints
+    : remainingOrderPercentageToBeFilled;
+
+  const mapAmountToPartialAmount = (amount: string) =>
+    BigNumber.from(amount)
+      .mul(basisPoints)
+      .div(ONE_HUNDRED_PERCENT_BP)
+      .toString();
+
+  // Reduce the numerator/denominator as optimization
+  const unitsGcd = gcd(unitsToFillBn, maxUnits);
+
+  return {
+    parameters: {
+      ...order.parameters,
+      offer: order.parameters.offer.map((item) => ({
+        ...item,
+        startAmount: mapAmountToPartialAmount(item.startAmount),
+        endAmount: mapAmountToPartialAmount(item.endAmount),
+      })),
+      consideration: order.parameters.consideration.map((item) => ({
+        ...item,
+        startAmount: mapAmountToPartialAmount(item.startAmount),
+        endAmount: mapAmountToPartialAmount(item.endAmount),
+      })),
+    },
+    signature: order.signature,
+    numerator: unitsToFillBn.div(unitsGcd),
+    denominator: maxUnits.div(unitsGcd),
+  };
 };
 
 export const shouldUseMatchForFulfill = () => true;

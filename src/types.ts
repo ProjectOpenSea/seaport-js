@@ -62,8 +62,8 @@ export type Order = {
 };
 
 export type AdvancedOrder = Order & {
-  totalFilled: BigNumber;
-  totalSize: BigNumber;
+  numerator: BigNumber;
+  denominator: BigNumber;
 };
 
 export type Erc721Item = {

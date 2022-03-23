@@ -73,3 +73,5 @@ export enum BasicFulfillOrder {
 export const MAX_INT = BigNumber.from(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 );
+
+export const ONE_HUNDRED_PERCENT_BP = 10000;

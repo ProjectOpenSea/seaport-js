@@ -1,7 +1,14 @@
-import { BigNumber, ContractTransaction, ethers, providers } from "ethers";
+import {
+  BigNumber,
+  BigNumberish,
+  ContractTransaction,
+  ethers,
+  providers,
+} from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import {
+  AdvancedOrder,
   Order,
   OrderExchangeYields,
   OrderParameters,
@@ -22,6 +29,8 @@ import {
 } from "./item";
 import {
   areAllCurrenciesSame,
+  mapOrderAmountsFromFilledStatus,
+  mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
   useFulfillerProxy,
 } from "./order";
@@ -343,22 +352,49 @@ export function fulfillBasicOrder(
 }
 
 export function fulfillStandardOrder(
-  { parameters: orderParameters, signature }: Order,
+  order: Order,
+  {
+    unitsToFill,
+    totalFilled,
+    totalSize,
+  }: {
+    unitsToFill?: BigNumberish;
+    totalFilled: BigNumber;
+    totalSize: BigNumber;
+  },
   {
     considerationContract,
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
+
     provider,
   }: {
     considerationContract: Consideration;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
+    unitsToFill?: BigNumberish;
     provider: providers.JsonRpcProvider;
   }
 ): OrderUseCase<OrderExchangeYields> {
-  const { offer, consideration, orderType } = orderParameters;
+  // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
+  // the remaining order left to be fulfilled
+  const orderWithAdjustedFills: Order | AdvancedOrder = unitsToFill
+    ? mapOrderAmountsFromUnitsToFill(order, {
+        unitsToFill,
+        totalFilled,
+        totalSize,
+      })
+    : // Else, we adjust the order by the remaining order left to be fulfilled
+      mapOrderAmountsFromFilledStatus(order, {
+        totalFilled,
+        totalSize,
+      });
+
+  const {
+    parameters: { offer, consideration, orderType },
+  } = orderWithAdjustedFills;
 
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
     ...timeBasedItemParams,
@@ -402,14 +438,21 @@ export function fulfillStandardOrder(
   async function* execute() {
     yield* setNeededApprovals(approvalsToUse, { provider });
 
-    const transaction = await considerationContract.fulfillOrder(
-      {
-        parameters: orderParameters,
-        signature,
-      },
-      useProxyForFulfiller,
-      payableOverrides
-    );
+    const transaction = await (unitsToFill &&
+    // For typechecking
+    "numerator" in orderWithAdjustedFills
+      ? considerationContract.fulfillAdvancedOrder(
+          orderWithAdjustedFills,
+          // TODO: Criteria resolvers
+          [],
+          useProxyForFulfiller,
+          payableOverrides
+        )
+      : considerationContract.fulfillOrder(
+          orderWithAdjustedFills,
+          useProxyForFulfiller,
+          payableOverrides
+        ));
 
     yield { type: "exchange", transaction } as const;
   }

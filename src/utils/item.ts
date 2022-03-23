@@ -1,6 +1,13 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { ItemType, NftItemType } from "../constants";
-import { Item, OfferItem, OrderParameters, ConsiderationItem } from "../types";
+import {
+  Item,
+  OfferItem,
+  OrderParameters,
+  ConsiderationItem,
+  Order,
+} from "../types";
+import { findGcd } from "./gcd";
 
 type ConstructItemParams = {
   itemType: BigNumberish;
@@ -102,18 +109,25 @@ export type TimeBasedItemParams = {
   ascendingAmountTimestampBuffer: number;
 } & Pick<OrderParameters, "startTime" | "endTime">;
 
-export const getPresentItemAmount = ({
-  startAmount,
-  endAmount,
-  isConsiderationItem,
-  currentBlockTimestamp,
-  ascendingAmountTimestampBuffer,
-  startTime,
-  endTime,
-}: Pick<Item, "startAmount" | "endAmount"> &
-  TimeBasedItemParams): BigNumber => {
+export const getPresentItemAmount = (
+  { startAmount, endAmount }: Pick<Item, "startAmount" | "endAmount">,
+  timeBasedItemParams?: TimeBasedItemParams
+): BigNumber => {
   const startAmountBn = BigNumber.from(startAmount);
   const endAmountBn = BigNumber.from(endAmount);
+
+  if (!timeBasedItemParams) {
+    return startAmountBn.gt(endAmountBn) ? startAmountBn : endAmountBn;
+  }
+
+  const {
+    isConsiderationItem,
+    currentBlockTimestamp,
+    ascendingAmountTimestampBuffer,
+    startTime,
+    endTime,
+  } = timeBasedItemParams;
+
   const duration = BigNumber.from(endTime).sub(startTime);
   const isAscending = endAmountBn.gt(startAmount);
   const adjustedBlockTimestamp = BigNumber.from(
@@ -155,23 +169,6 @@ export const getSummedTokenAndIdentifierAmounts = (
       item.identifierOrCriteria
     ).toString();
 
-    const startAmount = BigNumber.from(item.startAmount);
-    const endAmount = BigNumber.from(item.endAmount);
-    const maxAmount = startAmount.gt(endAmount) ? startAmount : endAmount;
-
-    const amount = timeBasedItemParams
-      ? getPresentItemAmount({
-          startAmount: startAmount.toString(),
-          endAmount: endAmount.toString(),
-          isConsiderationItem: timeBasedItemParams.isConsiderationItem,
-          currentBlockTimestamp: timeBasedItemParams.currentBlockTimestamp,
-          ascendingAmountTimestampBuffer:
-            timeBasedItemParams.ascendingAmountTimestampBuffer,
-          startTime: timeBasedItemParams.startTime,
-          endTime: timeBasedItemParams.endTime,
-        })
-      : maxAmount;
-
     return {
       ...map,
       [item.token]: {
@@ -179,10 +176,37 @@ export const getSummedTokenAndIdentifierAmounts = (
         [identifierOrCriteria]: (
           (map[item.token][identifierOrCriteria] as BigNumber | undefined) ??
           BigNumber.from(0)
-        ).add(amount),
+        ).add(
+          getPresentItemAmount(
+            {
+              startAmount: item.startAmount,
+              endAmount: item.endAmount,
+            },
+            timeBasedItemParams
+          )
+        ),
       },
     };
   }, {});
 
   return tokenAndIdentifierToSummedAmount;
+};
+
+/**
+ * Returns the maximum size of units possible for the order
+ * If any of the items on a partially fillable order specify a different "startAmount" and "endAmount
+ * (e.g. they are ascending-amount or descending-amount items), the fraction will be applied to both amounts
+ * prior to determining the current price. This ensures that cleanly divisible amounts can be chosen when
+ * constructing the order without a dependency on the time when the order is ultimately fulfilled.
+ */
+export const getMaximumSizeForOrder = ({
+  parameters: { offer, consideration },
+}: Order) => {
+  const allItems = [...offer, ...consideration];
+
+  const amounts = allItems
+    .map(({ startAmount, endAmount }) => [startAmount, endAmount])
+    .flat();
+
+  return findGcd(amounts);
 };
