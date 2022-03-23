@@ -5,6 +5,8 @@ import type {
   TestERC20,
   TestERC1155,
   Consideration as ConsiderationContract,
+  OwnedUpgradeabilityProxy,
+  WyvernProxyRegistry,
 } from "../../typechain";
 
 type Fixture = {
@@ -13,6 +15,8 @@ type Fixture = {
   testErc721: TestERC721;
   testErc20: TestERC20;
   testErc1155: TestERC1155;
+  ownedUpgradeabilityProxy: OwnedUpgradeabilityProxy;
+  legacyProxyRegistry: WyvernProxyRegistry;
 };
 
 export const describeWithFixture = (
@@ -23,20 +27,40 @@ export const describeWithFixture = (
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {
+      const LegacyProxyRegistryFactory = await ethers.getContractFactory(
+        "WyvernProxyRegistry"
+      );
+      const legacyProxyRegistry = await LegacyProxyRegistryFactory.deploy();
+
+      const OwnedUpgradeabilityProxyFactory = await ethers.getContractFactory(
+        "OwnedUpgradeabilityProxy"
+      );
+
+      const ownedUpgradeabilityProxy =
+        await OwnedUpgradeabilityProxyFactory.deploy();
+
       const ConsiderationFactory = await ethers.getContractFactory(
         "Consideration"
       );
 
+      const legacyProxyImplementation =
+        await legacyProxyRegistry.delegateProxyImplementation();
+
       const considerationContract = await ConsiderationFactory.deploy(
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero
+        legacyProxyRegistry.address,
+        legacyProxyImplementation
       );
+
       await considerationContract.deployed();
+
+      await legacyProxyRegistry.grantInitialAuthentication(
+        considerationContract.address
+      );
 
       const consideration = new Consideration(ethers.provider, {
         overrides: {
           contractAddress: considerationContract.address,
-          legacyProxyRegistryAddress: "",
+          legacyProxyRegistryAddress: legacyProxyRegistry.address,
         },
       });
 
@@ -59,6 +83,8 @@ export const describeWithFixture = (
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;
       fixture.testErc20 = testErc20;
+      fixture.ownedUpgradeabilityProxy = ownedUpgradeabilityProxy;
+      fixture.legacyProxyRegistry = legacyProxyRegistry;
     });
 
     suiteCb(fixture as Fixture);
