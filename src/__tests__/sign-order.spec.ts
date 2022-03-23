@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { randomBytes } from "crypto";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
+import { OrderType } from "../constants";
 import type { Consideration as ConsiderationContract } from "../typechain";
 import { TestERC721 } from "../typechain/TestERC721";
 import { constructCurrencyItem, constructNftItem } from "./utils/item";
@@ -67,13 +68,18 @@ describe("Sign order", function () {
       zone: ethers.constants.AddressZero,
       offer,
       consideration: considerationData,
-      orderType: 0,
+      orderType: OrderType.FULL_OPEN,
       salt,
       startTime,
       endTime,
     };
 
-    const signature = await consideration.signOrder(orderParameters, 0);
+    const nonce = await considerationContract.getNonce(
+      offerer.address,
+      zone.address
+    );
+
+    const signature = await consideration.signOrder(orderParameters, nonce);
 
     const isValid = await considerationContract.callStatic.validate([
       { parameters: orderParameters, signature },

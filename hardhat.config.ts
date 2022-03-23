@@ -10,7 +10,28 @@ dotenv.config();
 
 // Go to https://hardhat.org/config/ to learn more
 const config: HardhatUserConfig = {
-  solidity: "0.8.12",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.12",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.4.23",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,

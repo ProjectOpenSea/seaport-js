@@ -208,7 +208,11 @@ export class Consideration {
       } as const;
     }
 
-    return { insufficientApprovals, execute };
+    return {
+      insufficientApprovals,
+      execute,
+      numExecutions: insufficientApprovals.length + 1,
+    };
   }
 
   public async signOrder(

@@ -348,7 +348,11 @@ export function fulfillBasicOrder(
     yield { type: "exchange", transaction } as const;
   }
 
-  return { insufficientApprovals: approvalsToUse, execute };
+  return {
+    insufficientApprovals: approvalsToUse,
+    execute,
+    numExecutions: approvalsToUse.length + 1,
+  };
 }
 
 export function fulfillStandardOrder(
@@ -457,5 +461,9 @@ export function fulfillStandardOrder(
     yield { type: "exchange", transaction } as const;
   }
 
-  return { insufficientApprovals: approvalsToUse, execute };
+  return {
+    insufficientApprovals: approvalsToUse,
+    execute,
+    numExecutions: approvalsToUse.length + 1,
+  };
 }

@@ -146,7 +146,7 @@ export type OrderExchangeYields = YieldedApproval | YieldedExchange;
 
 export type OrderUseCase<T = OrderCreateYields | OrderExchangeYields> = {
   insufficientApprovals: InsufficientApprovals;
-
+  numExecutions: number;
   execute: () => AsyncGenerator<T>;
 };
 
