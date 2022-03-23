@@ -1,7 +1,14 @@
-import { BigNumber, ContractTransaction, ethers, providers } from "ethers";
+import {
+  BigNumber,
+  BigNumberish,
+  ContractTransaction,
+  ethers,
+  providers,
+} from "ethers";
 import { BasicFulfillOrder, ItemType } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import {
+  AdvancedOrder,
   Order,
   OrderExchangeYields,
   OrderParameters,
@@ -22,6 +29,7 @@ import {
 } from "./item";
 import {
   areAllCurrenciesSame,
+  mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
   useFulfillerProxy,
 } from "./order";
@@ -343,22 +351,30 @@ export function fulfillBasicOrder(
 }
 
 export function fulfillStandardOrder(
-  { parameters: orderParameters, signature }: Order,
+  order: Order,
   {
     considerationContract,
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
+    unitsToFill,
     provider,
   }: {
     considerationContract: Consideration;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
+    unitsToFill?: BigNumberish;
     provider: providers.JsonRpcProvider;
   }
 ): OrderUseCase<OrderExchangeYields> {
-  const { offer, consideration, orderType } = orderParameters;
+  const orderWithRequestedFillAmounts: Order | AdvancedOrder = unitsToFill
+    ? mapOrderAmountsFromUnitsToFill(order, unitsToFill)
+    : order;
+
+  const {
+    parameters: { offer, consideration, orderType },
+  } = orderWithRequestedFillAmounts;
 
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
     ...timeBasedItemParams,
@@ -402,14 +418,21 @@ export function fulfillStandardOrder(
   async function* execute() {
     yield* setNeededApprovals(approvalsToUse, { provider });
 
-    const transaction = await considerationContract.fulfillOrder(
-      {
-        parameters: orderParameters,
-        signature,
-      },
-      useProxyForFulfiller,
-      payableOverrides
-    );
+    const transaction = await (unitsToFill &&
+    // For typechecking
+    "numerator" in orderWithRequestedFillAmounts
+      ? considerationContract.fulfillAdvancedOrder(
+          orderWithRequestedFillAmounts,
+          // TODO: Criteria resolvers
+          [],
+          useProxyForFulfiller,
+          payableOverrides
+        )
+      : considerationContract.fulfillOrder(
+          orderWithRequestedFillAmounts,
+          useProxyForFulfiller,
+          payableOverrides
+        ));
 
     yield { type: "exchange", transaction } as const;
   }

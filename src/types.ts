@@ -61,9 +61,11 @@ export type Order = {
   signature: BytesLike;
 };
 
-export type AdvancedOrder = Order & {
-  totalFilled: BigNumber;
-  totalSize: BigNumber;
+export type AdvancedOrder = {
+  parameters: OrderParameters;
+  signature: BytesLike;
+  numerator: BigNumber;
+  denominator: BigNumber;
 };
 
 export type Erc721Item = {

@@ -1,4 +1,4 @@
-import { BigNumberish, Contract, ethers, providers } from "ethers";
+import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { ConsiderationABI } from "./abi/Consideration";
 import {
@@ -30,6 +30,7 @@ import {
   getOrderHash,
   getOrderStatus,
   mapInputItemToOfferItem,
+  mapOrderAmountsFromFilledStatus,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   shouldUseMatchForFulfill,
   totalItemsAmount,
@@ -257,8 +258,15 @@ export class Consideration {
     return this.contract.incrementNonce(resolvedOfferer, zone);
   }
 
+  /**
+   * Fulfills an order through either the basic fulfill methods or the standard method
+   * Units to fill are denominated by the max possible size of the order, which is the greatest common denominator (GCD).
+   * We expose a helper to get this: getMaximumSizeForOrder
+   * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order
+   */
   public async fulfillOrder(
-    order: Order
+    order: Order,
+    { unitsToFill }: { unitsToFill?: BigNumberish }
   ): Promise<OrderUseCase<OrderExchangeYields>> {
     const { parameters: orderParameters } = order;
     const { orderType, offerer, zone, offer, consideration } = orderParameters;
@@ -292,7 +300,6 @@ export class Consideration {
     const [
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
-      orderHash,
       currentBlock,
     ] = await Promise.all([
       getBalancesAndApprovals(offerer, offer, {
@@ -307,17 +314,13 @@ export class Consideration {
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
-      getOrderHash(order, nonce, {
-        considerationContract: this.contract,
-        multicallProvider: this.multicallProvider,
-      }),
       this.multicallProvider.getBlock(latestBlock),
     ]);
 
     const currentBlockTimestamp = currentBlock.timestamp;
 
     const { isValidated, isCancelled, totalFilled, totalSize } =
-      await getOrderStatus(orderHash, {
+      await getOrderStatus(getOrderHash({ ...orderParameters, nonce }), {
         considerationContract: this.contract,
         provider: this.provider,
       });
@@ -331,8 +334,6 @@ export class Consideration {
       order.signature = "";
     }
 
-    const advancedOrder = { ...order, totalFilled, totalSize };
-
     const timeBasedItemParams = {
       startTime: order.parameters.startTime,
       endTime: order.parameters.endTime,
@@ -341,9 +342,23 @@ export class Consideration {
         this.config.ascendingAmountFulfillmentBuffer,
     };
 
-    if (shouldUseBasicFulfill(advancedOrder.parameters, totalFilled)) {
+    const orderWithFillAdjustedAmounts = mapOrderAmountsFromFilledStatus(
+      order,
+      {
+        totalFilled,
+        totalSize,
+      }
+    );
+
+    // We use basic fulfills as they are more optimal for simple and "hot" use cases
+    if (
+      shouldUseBasicFulfill(
+        orderWithFillAdjustedAmounts.parameters,
+        totalFilled
+      )
+    ) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder(order, {
+      return fulfillBasicOrder(orderWithFillAdjustedAmounts, {
         considerationContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
@@ -352,26 +367,13 @@ export class Consideration {
       });
     }
 
-    // Building fulfillments
-    // Can only match if everything about them is the same except for the amounts
-    // Bucket all the offers and considerations
-    // Look at item type, token, flatten every offer and every consideration into one array
-    // in process of flattening, keep track of indices
-    // If first time seen this item type, token, identifier combo and offerer/recipient, then goes into new bucket
-    // If i've seen it, put it into the bucket
-    // If only one possibility to match, then match
-    // i.e. 2 items in bucket. 1 offer 1 ETH, 1 offer 2 ETH. 2 consideration items, 1 expect 2 ETH, 1 expect 1 ETH
-    // Minimize number of fulfillments
-    // Most robust way is to go through every single permutation of both sides
-    if (shouldUseMatchForFulfill()) {
-      // pass
-    }
-
+    // Else, we fallback to the standard fulfill order
     return fulfillStandardOrder(order, {
       considerationContract: this.contract,
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       provider: this.provider,
+      unitsToFill,
       timeBasedItemParams,
     });
   }
