@@ -1,5 +1,5 @@
-import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { providers as multicallProviders } from "@0xsequence/multicall";
+import { BigNumberish, Contract, ethers, providers } from "ethers";
 import { ConsiderationABI } from "./abi/Consideration";
 import {
   CONSIDERATION_CONTRACT_NAME,
@@ -18,6 +18,7 @@ import {
   OrderUseCase,
 } from "./types";
 import { setNeededApprovals } from "./utils/approval";
+import { getBalancesAndApprovals } from "./utils/balancesAndApprovals";
 import {
   fulfillBasicOrder,
   fulfillStandardOrder,
@@ -30,14 +31,11 @@ import {
   getOrderHash,
   getOrderStatus,
   mapInputItemToOfferItem,
-  mapOrderAmountsFromFilledStatus,
   ORDER_OPTIONS_TO_ORDER_TYPE,
-  shouldUseMatchForFulfill,
   totalItemsAmount,
   useOffererProxy,
   validateOrderParameters,
 } from "./utils/order";
-import { getBalancesAndApprovals } from "./utils/balancesAndApprovals";
 import { getProxy } from "./utils/proxy";
 
 export class Consideration {
@@ -342,23 +340,10 @@ export class Consideration {
         this.config.ascendingAmountFulfillmentBuffer,
     };
 
-    const orderWithFillAdjustedAmounts = mapOrderAmountsFromFilledStatus(
-      order,
-      {
-        totalFilled,
-        totalSize,
-      }
-    );
-
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
-    if (
-      shouldUseBasicFulfill(
-        orderWithFillAdjustedAmounts.parameters,
-        totalFilled
-      )
-    ) {
+    if (shouldUseBasicFulfill(order.parameters, totalFilled)) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder(orderWithFillAdjustedAmounts, {
+      return fulfillBasicOrder(order, {
         considerationContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
@@ -368,13 +353,16 @@ export class Consideration {
     }
 
     // Else, we fallback to the standard fulfill order
-    return fulfillStandardOrder(order, {
-      considerationContract: this.contract,
-      offererBalancesAndApprovals,
-      fulfillerBalancesAndApprovals,
-      provider: this.provider,
-      unitsToFill,
-      timeBasedItemParams,
-    });
+    return fulfillStandardOrder(
+      order,
+      { unitsToFill, totalFilled, totalSize },
+      {
+        considerationContract: this.contract,
+        offererBalancesAndApprovals,
+        fulfillerBalancesAndApprovals,
+        provider: this.provider,
+        timeBasedItemParams,
+      }
+    );
   }
 }

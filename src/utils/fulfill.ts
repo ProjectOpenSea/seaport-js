@@ -29,6 +29,7 @@ import {
 } from "./item";
 import {
   areAllCurrenciesSame,
+  mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
   useFulfillerProxy,
@@ -353,11 +354,20 @@ export function fulfillBasicOrder(
 export function fulfillStandardOrder(
   order: Order,
   {
+    unitsToFill,
+    totalFilled,
+    totalSize,
+  }: {
+    unitsToFill?: BigNumberish;
+    totalFilled: BigNumber;
+    totalSize: BigNumber;
+  },
+  {
     considerationContract,
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
-    unitsToFill,
+
     provider,
   }: {
     considerationContract: Consideration;
@@ -368,13 +378,23 @@ export function fulfillStandardOrder(
     provider: providers.JsonRpcProvider;
   }
 ): OrderUseCase<OrderExchangeYields> {
-  const orderWithRequestedFillAmounts: Order | AdvancedOrder = unitsToFill
-    ? mapOrderAmountsFromUnitsToFill(order, unitsToFill)
-    : order;
+  // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
+  // the remaining order left to be fulfilled
+  const orderWithAdjustedFills: Order | AdvancedOrder = unitsToFill
+    ? mapOrderAmountsFromUnitsToFill(order, {
+        unitsToFill,
+        totalFilled,
+        totalSize,
+      })
+    : // Else, we adjust the order by the remaining order left to be fulfilled
+      mapOrderAmountsFromFilledStatus(order, {
+        totalFilled,
+        totalSize,
+      });
 
   const {
     parameters: { offer, consideration, orderType },
-  } = orderWithRequestedFillAmounts;
+  } = orderWithAdjustedFills;
 
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
     ...timeBasedItemParams,
@@ -420,16 +440,16 @@ export function fulfillStandardOrder(
 
     const transaction = await (unitsToFill &&
     // For typechecking
-    "numerator" in orderWithRequestedFillAmounts
+    "numerator" in orderWithAdjustedFills
       ? considerationContract.fulfillAdvancedOrder(
-          orderWithRequestedFillAmounts,
+          orderWithAdjustedFills,
           // TODO: Criteria resolvers
           [],
           useProxyForFulfiller,
           payableOverrides
         )
       : considerationContract.fulfillOrder(
-          orderWithRequestedFillAmounts,
+          orderWithAdjustedFills,
           useProxyForFulfiller,
           payableOverrides
         ));

@@ -373,14 +373,18 @@ export const mapOrderAmountsFromFilledStatus = (
 };
 
 /**
- * Maps order offer and consideration item amounts based on the order's filled status
+ * Maps order offer and consideration item amounts based on the units needed to fulfill
  * After applying the fraction, we can view this order as the "canonical" order for which we
  * check approvals and balances
  * Returns the numerator and denominator as well, converting this to an AdvancedOrder
  */
 export const mapOrderAmountsFromUnitsToFill = (
   order: Order,
-  unitsToFill: BigNumberish
+  {
+    unitsToFill,
+    totalFilled,
+    totalSize,
+  }: { unitsToFill: BigNumberish; totalFilled: BigNumber; totalSize: BigNumber }
 ): AdvancedOrder => {
   const unitsToFillBn = BigNumber.from(unitsToFill);
 
@@ -390,8 +394,25 @@ export const mapOrderAmountsFromUnitsToFill = (
 
   const maxUnits = getMaximumSizeForOrder(order);
 
+  // This is the percentage of the order that is left to be fulfilled, and therefore we can't fill more than that.
+  const remainingOrderPercentageToBeFilled = totalSize
+    .sub(totalFilled)
+    .mul(ONE_HUNDRED_PERCENT_BP)
+    .div(totalSize);
+
   // i.e if totalSize is 8 and unitsToFill is 3, then we multiply every amount by 3 / 8
-  const basisPoints = unitsToFillBn.mul(ONE_HUNDRED_PERCENT_BP).div(maxUnits);
+  const unitsToFillBasisPoints = unitsToFillBn
+    .mul(ONE_HUNDRED_PERCENT_BP)
+    .div(maxUnits);
+
+  // We basically choose the lesser between the units requested to be filled and the actual remaining order amount left
+  // This is so that if a user tries to fulfill an order that is 1/2 filled, and supplies a fraction such as 3/4, the maximum
+  // amount to fulfill is 1/2 instead of 3/4
+  const basisPoints = remainingOrderPercentageToBeFilled.gt(
+    unitsToFillBasisPoints
+  )
+    ? unitsToFillBasisPoints
+    : remainingOrderPercentageToBeFilled;
 
   const mapAmountToPartialAmount = (amount: string) =>
     BigNumber.from(amount)
