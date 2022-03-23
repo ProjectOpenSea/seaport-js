@@ -198,6 +198,10 @@ export const getOrderStatus = async (
   return contract.getOrderStatus(orderHash);
 };
 
+/**
+ * Calculates the order hash of order components so we can forgo executing a request to the contract
+ * This saves us RPC calls and latency.
+ */
 export const getOrderHash = (orderComponents: OrderComponents) => {
   const offerItemTypeString =
     "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";

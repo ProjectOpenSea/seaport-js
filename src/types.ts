@@ -61,9 +61,7 @@ export type Order = {
   signature: BytesLike;
 };
 
-export type AdvancedOrder = {
-  parameters: OrderParameters;
-  signature: BytesLike;
+export type AdvancedOrder = Order & {
   numerator: BigNumber;
   denominator: BigNumber;
 };
