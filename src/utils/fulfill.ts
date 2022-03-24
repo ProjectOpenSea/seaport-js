@@ -10,7 +10,7 @@ import type { Consideration } from "../typechain/Consideration";
 import type {
   AdvancedOrder,
   Order,
-  OrderExchangeYields,
+  OrderExchangeActions,
   OrderParameters,
   OrderStatus,
   OrderUseCase,
@@ -193,7 +193,7 @@ export function fulfillBasicOrder(
     timeBasedItemParams: TimeBasedItemParams;
     provider: providers.JsonRpcProvider;
   }
-): OrderUseCase<OrderExchangeYields> {
+): OrderUseCase<OrderExchangeActions> {
   const { offer, consideration, orderType } = orderParameters;
 
   const offerItem = offer[0];
@@ -274,7 +274,7 @@ export function fulfillBasicOrder(
 
   const payableOverrides = { value: totalNativeAmount };
 
-  async function* execute() {
+  async function* genActions() {
     yield* setNeededApprovals(approvalsToUse, { provider });
 
     let transaction: ContractTransaction | undefined;
@@ -341,17 +341,17 @@ export function fulfillBasicOrder(
 
     if (transaction === undefined) {
       throw new Error(
-        "There was an error finding the correct basic fulfillment method to execute"
+        "There was an error finding the correct basic fulfillment method to genActions"
       );
     }
 
-    yield { type: "exchange", transaction } as const;
+    return { type: "exchange", transaction } as const;
   }
 
   return {
     insufficientApprovals: approvalsToUse,
-    execute,
-    numExecutions: approvalsToUse.length + 1,
+    genActions,
+    numActions: approvalsToUse.length + 1,
   };
 }
 
@@ -381,7 +381,7 @@ export function fulfillStandardOrder(
     unitsToFill?: BigNumberish;
     provider: providers.JsonRpcProvider;
   }
-): OrderUseCase<OrderExchangeYields> {
+): OrderUseCase<OrderExchangeActions> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills: Order | AdvancedOrder = unitsToFill
@@ -439,7 +439,7 @@ export function fulfillStandardOrder(
 
   const payableOverrides = { value: totalNativeAmount };
 
-  async function* execute() {
+  async function* genActions() {
     yield* setNeededApprovals(approvalsToUse, { provider });
 
     const transaction = await (unitsToFill &&
@@ -458,12 +458,12 @@ export function fulfillStandardOrder(
           payableOverrides
         ));
 
-    yield { type: "exchange", transaction } as const;
+    return { type: "exchange", transaction } as const;
   }
 
   return {
     insufficientApprovals: approvalsToUse,
-    execute,
-    numExecutions: approvalsToUse.length + 1,
+    genActions,
+    numActions: approvalsToUse.length + 1,
   };
 }

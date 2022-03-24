@@ -124,34 +124,37 @@ export type OrderStatus = {
 
 export type CreatedOrder = OrderComponents & { signature: BytesLike };
 
-export type YieldedApproval = {
+export type ApprovalAction = {
   type: "approval";
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   itemType: ItemType;
   transaction: ContractTransaction;
 };
 
-export type YieldedExchange = {
+export type ExchangeAction = {
   type: "exchange";
   transaction: ContractTransaction;
 };
 
-export type YieldedCreatedOrder = {
+export type CreateOrderAction = {
   type: "create";
   order: CreatedOrder;
 };
 
-export type YieldedTransaction = YieldedApproval | YieldedExchange;
+export type TransactionAction = ApprovalAction | ExchangeAction;
 
-export type OrderCreateYields = YieldedApproval | YieldedCreatedOrder;
+export type CreateOrderActions = ApprovalAction | CreateOrderAction;
 
-export type OrderExchangeYields = YieldedApproval | YieldedExchange;
+export type OrderExchangeActions = ApprovalAction | ExchangeAction;
 
-export type OrderUseCase<T = OrderCreateYields | OrderExchangeYields> = {
+export type OrderUseCase<T = CreateOrderActions | OrderExchangeActions> = {
   insufficientApprovals: InsufficientApprovals;
-  numExecutions: number;
-  execute: () => AsyncGenerator<T>;
+  numActions: number;
+  genActions: () => AsyncGenerator<
+    ApprovalAction,
+    T extends CreateOrderActions ? CreateOrderAction : ExchangeAction
+  >;
 };
 
 export type FulfillmentComponent = {

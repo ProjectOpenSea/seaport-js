@@ -41,6 +41,7 @@
     "solidity-coverage": "^0.7.20",
     "ts-node": "^10.7.0",
     "typechain": "^7.0.1",
+    "typed-assert": "^1.0.9",
     "typescript": "^4.6.2"
   }
 }

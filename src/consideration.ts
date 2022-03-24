@@ -11,11 +11,11 @@ import {
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
   ConsiderationConfig,
+  CreateOrderActions,
   CreateOrderInput,
   Order,
   OrderComponents,
-  OrderCreateYields,
-  OrderExchangeYields,
+  OrderExchangeActions,
   OrderParameters,
   OrderUseCase,
 } from "./types";
@@ -124,7 +124,7 @@ export class Consideration {
     restrictedByZone,
     fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Promise<OrderUseCase<OrderCreateYields>> {
+  }: CreateOrderInput): Promise<OrderUseCase<CreateOrderActions>> {
     const offerer = await this.provider.getSigner().getAddress();
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
@@ -214,17 +214,18 @@ export class Consideration {
     });
 
     const signOrder = this.signOrder.bind(this);
+    const provider = this.provider;
 
-    async function* execute() {
+    async function* genActions() {
       if (checkBalancesAndApprovals) {
         yield* setNeededApprovals(insufficientApprovals, {
-          provider: this.provider,
+          provider,
         });
       }
 
       const signature = await signOrder(orderParameters, resolvedNonce);
 
-      yield {
+      return {
         type: "create",
         order: {
           ...orderParameters,
@@ -236,8 +237,8 @@ export class Consideration {
 
     return {
       insufficientApprovals,
-      execute,
-      numExecutions: checkBalancesAndApprovals
+      genActions,
+      numActions: checkBalancesAndApprovals
         ? insufficientApprovals.length + 1
         : 1,
     };
@@ -297,7 +298,7 @@ export class Consideration {
   public async fulfillOrder(
     order: Order,
     { unitsToFill }: { unitsToFill?: BigNumberish }
-  ): Promise<OrderUseCase<OrderExchangeYields>> {
+  ): Promise<OrderUseCase<OrderExchangeActions>> {
     const { parameters: orderParameters } = order;
     const { orderType, offerer, zone, offer, consideration } = orderParameters;
 

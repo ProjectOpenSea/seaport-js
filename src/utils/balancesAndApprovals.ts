@@ -188,7 +188,7 @@ export const getInsufficientBalanceAndApprovalAmounts = (
     identifierOrCriteria: balanceAndApproval.identifierOrCriteria,
     approvedAmount: balanceAndApproval.amountHave,
     requiredApprovedAmount: balanceAndApproval.requiredAmount,
-    operator: balanceAndApproval.token,
+    operator: balanceAndApproval.operator,
     itemType: balanceAndApproval.itemType,
   });
 
