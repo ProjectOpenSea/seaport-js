@@ -221,10 +221,12 @@ export const validateOfferBalancesAndApprovals = (
   {
     balancesAndApprovals,
     timeBasedItemParams,
+    throwOnInsufficientBalances = true,
     throwOnInsufficientApprovals,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams?: TimeBasedItemParams;
+    throwOnInsufficientBalances?: boolean;
     throwOnInsufficientApprovals?: boolean;
   }
 ): InsufficientApprovals => {
@@ -237,7 +239,7 @@ export const validateOfferBalancesAndApprovals = (
     getSummedTokenAndIdentifierAmounts(offer, timeBasedItemParams)
   );
 
-  if (insufficientBalances.length > 0) {
+  if (throwOnInsufficientBalances && insufficientBalances.length > 0) {
     throw new Error(
       "The offerer does not have the amount needed to create or fulfill."
     );

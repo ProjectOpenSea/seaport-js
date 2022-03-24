@@ -85,9 +85,9 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
   // Item is a currency
   return {
     itemType:
-      item.token === ethers.constants.AddressZero
-        ? ItemType.NATIVE
-        : ItemType.ERC20,
+      item.token && item.token !== ethers.constants.AddressZero
+        ? ItemType.ERC20
+        : ItemType.NATIVE,
     token: item.token ?? ethers.constants.AddressZero,
     identifierOrCriteria: 0,
     startAmount: item.amount,
@@ -113,9 +113,11 @@ export const validateOrderParameters = (
   orderParameters: OrderParameters,
   {
     balancesAndApprovals,
+    throwOnInsufficientBalances,
     throwOnInsufficientApprovals,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
+    throwOnInsufficientBalances?: boolean;
     throwOnInsufficientApprovals?: boolean;
   }
 ): InsufficientApprovals => {
@@ -126,7 +128,11 @@ export const validateOrderParameters = (
 
   return validateOfferBalancesAndApprovals(
     { offer, orderType },
-    { balancesAndApprovals, throwOnInsufficientApprovals }
+    {
+      balancesAndApprovals,
+      throwOnInsufficientBalances,
+      throwOnInsufficientApprovals,
+    }
   );
 };
 

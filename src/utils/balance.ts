@@ -23,8 +23,10 @@ export const balanceOf = async (
       return contract.balanceOf(owner);
     }
 
-    const isOwner = await contract.ownerOf(item.identifierOrCriteria);
-    return BigNumber.from(Number(isOwner));
+    const itemOwner = await contract.ownerOf(item.identifierOrCriteria);
+    return BigNumber.from(
+      Number(owner.toLowerCase() === itemOwner.toLowerCase())
+    );
   } else if (isErc1155Item(item.itemType)) {
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
       throw new Error("ERC1155 Criteria based offers are not supported");

@@ -70,6 +70,13 @@ export enum BasicFulfillOrder {
   ERC1155_FOR_ERC20,
 }
 
+export enum ProxyStrategy {
+  // Use the proxy if there are zero approvals needed for the proxy
+  IF_ZERO_APPROVALS_NEEDED,
+  NEVER,
+  ALWAYS,
+}
+
 export const MAX_INT = BigNumber.from(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 );

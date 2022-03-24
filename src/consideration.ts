@@ -5,6 +5,8 @@ import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
+  MAX_INT,
+  ProxyStrategy,
 } from "./constants";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
@@ -18,13 +20,19 @@ import type {
   OrderUseCase,
 } from "./types";
 import { setNeededApprovals } from "./utils/approval";
-import { getBalancesAndApprovals } from "./utils/balancesAndApprovals";
+import {
+  getBalancesAndApprovals,
+  getInsufficientBalanceAndApprovalAmounts,
+} from "./utils/balancesAndApprovals";
 import {
   fulfillBasicOrder,
   fulfillStandardOrder,
   shouldUseBasicFulfill,
 } from "./utils/fulfill";
-import { isCurrencyItem } from "./utils/item";
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isCurrencyItem,
+} from "./utils/item";
 import {
   feeToConsiderationItem,
   getNonce,
@@ -59,8 +67,9 @@ export class Consideration {
       overrides,
       ascendingAmountFulfillmentBuffer = 1800,
       approveExactAmount = false,
-      safetyChecksOnOrderCreation = true,
-      safetyChecksOnOrderFulfillment = true,
+      balanceAndApprovalChecksOnOrderCreation = true,
+      balanceAndApprovalChecksOnOrderFulfillment = true,
+      proxyStrategy = ProxyStrategy.IF_ZERO_APPROVALS_NEEDED,
     }: ConsiderationConfig
   ) {
     this.provider = provider;
@@ -75,8 +84,9 @@ export class Consideration {
     this.config = {
       ascendingAmountFulfillmentBuffer,
       approveExactAmount,
-      safetyChecksOnOrderCreation,
-      safetyChecksOnOrderFulfillment,
+      balanceAndApprovalChecksOnOrderCreation,
+      balanceAndApprovalChecksOnOrderFulfillment,
+      proxyStrategy,
     };
 
     this.legacyProxyRegistryAddress =
@@ -101,31 +111,22 @@ export class Consideration {
     return orderType;
   }
 
-  // Check if single offer 721/1155 - if so do NOT use proxy
-  // Check to see if theres sufficient approvals on consideration. if so use it
-  // If not, check if theres proxies, and then check in proxy for approvals. If it has enough approvals, then use proxy
   public async createOrder({
     zone = ethers.constants.AddressZero,
-    startTime,
-    endTime,
+    // Default to current unix time.
+    startTime = Math.floor(Date.now() / 1000),
+    // Defaulting to "never end". We HIGHLY recommend passing in an explicit end time
+    endTime = MAX_INT,
     offer,
     consideration,
     nonce,
     allowPartialFills,
     restrictedByZone,
-    // TODO: abstract
-    useProxy,
     fees,
     salt = ethers.utils.randomBytes(16),
   }: CreateOrderInput): Promise<OrderUseCase<OrderCreateYields>> {
     const offerer = await this.provider.getSigner().getAddress();
-    const orderType = this._getOrderTypeFromOrderOptions({
-      allowPartialFills,
-      restrictedByZone,
-      useProxy,
-    });
     const offerItems = offer.map(mapInputItemToOfferItem);
-
     const considerationItems = [
       ...consideration.map((consideration) => ({
         ...mapInputItemToOfferItem(consideration),
@@ -138,27 +139,6 @@ export class Consideration {
     );
 
     const totalCurrencyAmount = totalItemsAmount(currencies);
-
-    const orderParameters: OrderParameters = {
-      offerer,
-      zone,
-      startTime,
-      endTime,
-      orderType,
-      offer: offer.map(mapInputItemToOfferItem),
-      consideration: [
-        ...considerationItems,
-        ...(fees?.map((fee) =>
-          feeToConsiderationItem({
-            fee,
-            token: currencies[0].token,
-            baseAmount: totalCurrencyAmount.startAmount,
-            baseEndAmount: totalCurrencyAmount.endAmount,
-          })
-        ) ?? []),
-      ],
-      salt,
-    };
 
     const [proxy, resolvedNonce] = await Promise.all([
       getProxy(offerer, {
@@ -177,7 +157,7 @@ export class Consideration {
 
     const balancesAndApprovals = await getBalancesAndApprovals(
       offerer,
-      orderParameters.offer,
+      offerItems,
       {
         proxy,
         considerationContract: this.contract,
@@ -185,16 +165,62 @@ export class Consideration {
       }
     );
 
+    const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+      getInsufficientBalanceAndApprovalAmounts(
+        balancesAndApprovals,
+        getSummedTokenAndIdentifierAmounts(offerItems)
+      );
+
+    const useProxy =
+      this.config.proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED
+        ? insufficientProxyApprovals.length <
+            insufficientOwnerApprovals.length &&
+          insufficientOwnerApprovals.length !== 0
+        : this.config.proxyStrategy === ProxyStrategy.ALWAYS;
+
+    const orderType = this._getOrderTypeFromOrderOptions({
+      allowPartialFills,
+      restrictedByZone,
+      useProxy,
+    });
+
+    const orderParameters: OrderParameters = {
+      offerer,
+      zone,
+      startTime,
+      endTime,
+      orderType,
+      offer: offerItems,
+      consideration: [
+        ...considerationItems,
+        ...(fees?.map((fee) =>
+          feeToConsiderationItem({
+            fee,
+            token: currencies[0].token,
+            baseAmount: totalCurrencyAmount.startAmount,
+            baseEndAmount: totalCurrencyAmount.endAmount,
+          })
+        ) ?? []),
+      ],
+      salt,
+    };
+
+    const checkBalancesAndApprovals =
+      this.config.balanceAndApprovalChecksOnOrderCreation;
+
     const insufficientApprovals = validateOrderParameters(orderParameters, {
       balancesAndApprovals,
+      throwOnInsufficientBalances: checkBalancesAndApprovals,
     });
 
     const signOrder = this.signOrder.bind(this);
 
     async function* execute() {
-      yield* setNeededApprovals(insufficientApprovals, {
-        provider: this.provider,
-      });
+      if (checkBalancesAndApprovals) {
+        yield* setNeededApprovals(insufficientApprovals, {
+          provider: this.provider,
+        });
+      }
 
       const signature = await signOrder(orderParameters, resolvedNonce);
 
@@ -211,7 +237,9 @@ export class Consideration {
     return {
       insufficientApprovals,
       execute,
-      numExecutions: insufficientApprovals.length + 1,
+      numExecutions: checkBalancesAndApprovals
+        ? insufficientApprovals.length + 1
+        : 1,
     };
   }
 

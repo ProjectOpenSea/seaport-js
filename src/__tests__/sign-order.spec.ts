@@ -1,21 +1,18 @@
 import { expect } from "chai";
 import { randomBytes } from "crypto";
 import { ethers } from "hardhat";
-import { OrderType } from "../constants";
+import { MAX_INT, OrderType } from "../constants";
 import { constructCurrencyItem, constructNftItem } from "./utils/item";
 import { describeWithFixture } from "./utils/setup";
 
-describeWithFixture("Sign order", (fixture) => {
+describeWithFixture("As a user I want to sign an order", (fixture) => {
   it("should be a valid order", async () => {
     const { considerationContract, consideration, testErc721 } = fixture;
-
     const [offerer, zone] = await ethers.getSigners();
-    const startTime = 0;
-    const endTime = ethers.BigNumber.from(
-      "0xff00000000000000000000000000000000000000000000000000000000000000"
-    );
-    const salt = randomBytes(32);
 
+    const startTime = 0;
+    const endTime = MAX_INT;
+    const salt = randomBytes(32);
     const nftId = 0;
 
     const offer = [

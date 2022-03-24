@@ -4,19 +4,23 @@ import {
   BytesLike,
   ContractTransaction,
 } from "ethers";
-import { ItemType, OrderType } from "./constants";
+import { ItemType, OrderType, ProxyStrategy } from "./constants";
 import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
   ascendingAmountFulfillmentBuffer?: number;
 
-  // Used for ERC-20 approvals. Defaults to false (thus, approving the max amount)
+  // Defaults to false (thus, approving the max amount)
   approveExactAmount?: boolean;
 
-  // Skip approvals for consumers who wish to create orders beforehand.
-  safetyChecksOnOrderCreation?: boolean;
-  safetyChecksOnOrderFulfillment?: boolean;
+  // allow users to optionally skip balance and approval checks
+  balanceAndApprovalChecksOnOrderCreation?: boolean;
+  balanceAndApprovalChecksOnOrderFulfillment?: boolean;
+
+  // Defaults to use proxy if it would result in less approvals. Otherwise, users can specify the proxy strategy
+  // they want to use, relevant for creating orders or fulfilling orders
+  proxyStrategy?: ProxyStrategy;
 
   overrides?: {
     contractAddress?: string;
@@ -90,7 +94,7 @@ export type CurrencyItem = {
 };
 
 export type InputItem = Erc721Item | Erc1155Item | CurrencyItem;
-export type ReceivedInputItem = InputItem & { recipient?: string };
+export type ConsiderationInputItem = InputItem & { recipient?: string };
 
 export type Fee = {
   recipient: string;
@@ -99,10 +103,10 @@ export type Fee = {
 
 export type CreateOrderInput = {
   zone?: string;
-  startTime: BigNumberish;
-  endTime: BigNumberish;
+  startTime?: BigNumberish;
+  endTime?: BigNumberish;
   offer: InputItem[];
-  consideration: ReceivedInputItem[];
+  consideration: ConsiderationInputItem[];
   nonce?: BigNumberish;
   fees?: Fee[];
   allowPartialFills?: boolean;
