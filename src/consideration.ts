@@ -114,9 +114,9 @@ export class Consideration {
   public async createOrder({
     zone = ethers.constants.AddressZero,
     // Default to current unix time.
-    startTime = Math.floor(Date.now() / 1000),
+    startTime = Math.floor(Date.now() / 1000).toString(),
     // Defaulting to "never end". We HIGHLY recommend passing in an explicit end time
-    endTime = MAX_INT,
+    endTime = MAX_INT.toString(),
     offer,
     consideration,
     nonce,
@@ -244,10 +244,7 @@ export class Consideration {
     };
   }
 
-  public async signOrder(
-    orderParameters: OrderParameters,
-    nonce: BigNumberish
-  ) {
+  public async signOrder(orderParameters: OrderParameters, nonce: number) {
     const signer = this.provider.getSigner();
     const { chainId } = await this.provider.getNetwork();
 
@@ -255,6 +252,7 @@ export class Consideration {
       name: CONSIDERATION_CONTRACT_NAME,
       version: CONSIDERATION_CONTRACT_VERSION,
       chainId,
+      verifyingContract: this.contract.address,
     };
 
     const orderComponents: OrderComponents = {
@@ -270,6 +268,7 @@ export class Consideration {
 
     // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
     return ethers.utils.splitSignature(signature).compact;
+    // return signature;
   }
 
   public async cancelOrders(orders: OrderComponents[]) {

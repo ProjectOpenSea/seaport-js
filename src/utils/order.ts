@@ -56,15 +56,15 @@ export const feeToConsiderationItem = ({
   baseEndAmount?: BigNumberish;
 }): ConsiderationItem => {
   const multiplyBasisPoints = (amount: BigNumberish) =>
-    BigNumber.from(amount).mul(
-      BigNumber.from(fee.basisPoints).div(ONE_HUNDRED_PERCENT_BP)
-    );
+    BigNumber.from(amount)
+      .mul(BigNumber.from(fee.basisPoints))
+      .div(ONE_HUNDRED_PERCENT_BP);
 
   return {
     itemType:
       token === ethers.constants.AddressZero ? ItemType.NATIVE : ItemType.ERC20,
     token,
-    identifierOrCriteria: 0,
+    identifierOrCriteria: "0",
     startAmount: multiplyBasisPoints(baseAmount).toString(),
     endAmount: multiplyBasisPoints(baseEndAmount).toString(),
     recipient: fee.recipient,
@@ -89,7 +89,7 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
         ? ItemType.ERC20
         : ItemType.NATIVE,
     token: item.token ?? ethers.constants.AddressZero,
-    identifierOrCriteria: 0,
+    identifierOrCriteria: "0",
     startAmount: item.amount,
     endAmount: item.endAmount ?? item.amount,
   };
@@ -332,7 +332,7 @@ export const getNonce = (
     multicallProvider
   ) as Consideration;
 
-  return contract.getNonce(offerer, zone);
+  return contract.getNonce(offerer, zone).then((nonce) => nonce.toNumber());
 };
 
 /**

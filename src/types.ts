@@ -31,7 +31,7 @@ export type ConsiderationConfig = {
 export type OfferItem = {
   itemType: ItemType;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   startAmount: string;
   endAmount: string;
 };
@@ -39,7 +39,7 @@ export type OfferItem = {
 export type ConsiderationItem = {
   itemType: ItemType;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   startAmount: string;
   endAmount: string;
   recipient: string;
@@ -53,12 +53,12 @@ export type OrderParameters = {
   orderType: OrderType;
   startTime: BigNumberish;
   endTime: BigNumberish;
-  salt: BigNumberish;
+  salt: BytesLike;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
 };
 
-export type OrderComponents = OrderParameters & { nonce: BigNumberish };
+export type OrderComponents = OrderParameters & { nonce: number };
 
 export type Order = {
   parameters: OrderParameters;
@@ -73,7 +73,7 @@ export type AdvancedOrder = Order & {
 export type Erc721Item = {
   itemType: ItemType.ERC721 | ItemType.ERC721_WITH_CRITERIA;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   // Used for criteria based items i.e. offering to buy 5 NFTs for a collection
   amount?: string;
   endAmount?: string;
@@ -82,7 +82,7 @@ export type Erc721Item = {
 export type Erc1155Item = {
   itemType: ItemType.ERC1155 | ItemType.ERC1155_WITH_CRITERIA;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   amount: string;
   endAmount?: string;
 };
@@ -98,21 +98,21 @@ export type ConsiderationInputItem = InputItem & { recipient?: string };
 
 export type Fee = {
   recipient: string;
-  basisPoints: BigNumberish;
+  basisPoints: number;
 };
 
 export type CreateOrderInput = {
   zone?: string;
-  startTime?: BigNumberish;
-  endTime?: BigNumberish;
+  startTime?: string;
+  endTime?: string;
   offer: InputItem[];
   consideration: ConsiderationInputItem[];
-  nonce?: BigNumberish;
+  nonce?: number;
   fees?: Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
   useProxy?: boolean;
-  salt?: BigNumberish;
+  salt?: BytesLike;
 };
 
 export type OrderStatus = {

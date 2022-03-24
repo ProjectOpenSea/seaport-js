@@ -5,12 +5,9 @@ export const CONSIDERATION_CONTRACT_NAME = "Consideration";
 export const CONSIDERATION_CONTRACT_VERSION = "1";
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
-    {
-      name: "offerer",
-      type: "address",
-    },
+    { name: "offerer", type: "address" },
     { name: "zone", type: "address" },
-    { name: "offer", type: "OfferedItem[]" },
+    { name: "offer", type: "OfferItem[]" },
     { name: "consideration", type: "ConsiderationItem[]" },
     { name: "orderType", type: "uint8" },
     { name: "startTime", type: "uint256" },
@@ -18,7 +15,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "salt", type: "uint256" },
     { name: "nonce", type: "uint256" },
   ],
-  OfferedItem: [
+  OfferItem: [
     { name: "itemType", type: "uint8" },
     { name: "token", type: "address" },
     { name: "identifierOrCriteria", type: "uint256" },

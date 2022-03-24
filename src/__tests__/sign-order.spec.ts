@@ -8,7 +8,7 @@ import { describeWithFixture } from "./utils/setup";
 describeWithFixture("As a user I want to sign an order", (fixture) => {
   it("should be a valid order", async () => {
     const { considerationContract, consideration, testErc721 } = fixture;
-    const [offerer, zone] = await ethers.getSigners();
+    const [offerer, zone, randomSigner] = await ethers.getSigners();
 
     const startTime = 0;
     const endTime = MAX_INT;
@@ -50,11 +50,17 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       zone.address
     );
 
-    const signature = await consideration.signOrder(orderParameters, nonce);
+    const signature = await consideration.signOrder(
+      orderParameters,
+      nonce.toNumber()
+    );
 
-    const isValid = await considerationContract.callStatic.validate([
-      { parameters: orderParameters, signature },
-    ]);
+    const order = { parameters: orderParameters, signature };
+
+    // Use a random address to verify that the signature is valid
+    const isValid = await considerationContract
+      .connect(randomSigner)
+      .callStatic.validate([order]);
 
     expect(isValid).to.be.true;
   });
