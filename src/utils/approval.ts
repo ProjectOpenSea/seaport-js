@@ -1,5 +1,6 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, Contract, providers } from "ethers";
+import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
 import type { ERC20, ERC721 } from "../typechain";
@@ -21,7 +22,7 @@ export const approvedItemAmount = async (
       isApprovedForAll ? MAX_INT : BigNumber.from(0)
     );
   } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC20;
+    const contract = new Contract(item.token, ERC20ABI, provider) as ERC20;
 
     return contract.allowance(owner, operator);
   }

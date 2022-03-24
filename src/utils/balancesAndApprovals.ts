@@ -250,7 +250,7 @@ export const validateOfferBalancesAndApprovals = (
     : insufficientOwnerApprovals;
 
   if (throwOnInsufficientApprovals && approvalsToCheck.length > 0) {
-    throw new Error("The offer does not have the sufficient approvals.");
+    throw new Error("The offerer does not have the sufficient approvals.");
   }
 
   return approvalsToCheck;

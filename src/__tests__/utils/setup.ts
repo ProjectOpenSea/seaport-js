@@ -8,6 +8,8 @@ import type {
   OwnedUpgradeabilityProxy,
   WyvernProxyRegistry,
 } from "../../typechain";
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
 
 type Fixture = {
   considerationContract: ConsiderationContract;
@@ -24,6 +26,7 @@ export const describeWithFixture = (
   suiteCb: (fixture: Fixture) => unknown
 ) => {
   describe(name, () => {
+    chai.use(chaiAsPromised);
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {

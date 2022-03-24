@@ -105,10 +105,10 @@ export type CreateOrderInput = {
   zone?: string;
   startTime?: string;
   endTime?: string;
-  offer: InputItem[];
-  consideration: ConsiderationInputItem[];
+  offer: readonly InputItem[];
+  consideration: readonly ConsiderationInputItem[];
   nonce?: number;
-  fees?: Fee[];
+  fees?: readonly Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
   useProxy?: boolean;

@@ -123,7 +123,7 @@ export const validateOrderParameters = (
 ): InsufficientApprovals => {
   const { offer, consideration, orderType } = orderParameters;
   if (!areAllCurrenciesSame({ offer, consideration })) {
-    throw new Error("All currency tokens in the order must be the same");
+    throw new Error("All currency tokens in the order must be the same token");
   }
 
   return validateOfferBalancesAndApprovals(
