@@ -1,7 +1,12 @@
 import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { ConsiderationABI } from "../abi/Consideration";
 import type { Consideration } from "../typechain";
-import { ItemType, ONE_HUNDRED_PERCENT_BP, OrderType } from "../constants";
+import {
+  ItemType,
+  ONE_HUNDRED_PERCENT_BP,
+  OrderType,
+  ProxyStrategy,
+} from "../constants";
 import type {
   Fee,
   InputItem,
@@ -115,10 +120,16 @@ export const validateOrderParameters = (
     balancesAndApprovals,
     throwOnInsufficientBalances,
     throwOnInsufficientApprovals,
+    considerationContract,
+    proxy,
+    proxyStrategy,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
     throwOnInsufficientBalances?: boolean;
     throwOnInsufficientApprovals?: boolean;
+    considerationContract: Consideration;
+    proxy: string;
+    proxyStrategy: ProxyStrategy;
   }
 ): InsufficientApprovals => {
   const { offer, consideration, orderType } = orderParameters;
@@ -132,6 +143,9 @@ export const validateOrderParameters = (
       balancesAndApprovals,
       throwOnInsufficientBalances,
       throwOnInsufficientApprovals,
+      considerationContract,
+      proxy,
+      proxyStrategy,
     }
   );
 };
@@ -170,19 +184,19 @@ export const useOffererProxy = (orderType: OrderType) =>
     OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
   ].includes(orderType);
 
-export const useFulfillerProxy = ({
+export const useProxyFromApprovals = ({
   insufficientOwnerApprovals,
   insufficientProxyApprovals,
+  proxyStrategy,
 }: {
   insufficientOwnerApprovals: InsufficientApprovals;
   insufficientProxyApprovals: InsufficientApprovals;
+  proxyStrategy: ProxyStrategy;
 }) => {
-  const approvalsToUse =
-    insufficientOwnerApprovals.length === 0
-      ? insufficientOwnerApprovals
-      : insufficientProxyApprovals;
-
-  return approvalsToUse === insufficientProxyApprovals;
+  return proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED
+    ? insufficientProxyApprovals.length < insufficientOwnerApprovals.length &&
+        insufficientOwnerApprovals.length !== 0
+    : proxyStrategy === ProxyStrategy.ALWAYS;
 };
 
 export const getOrderStatus = async (

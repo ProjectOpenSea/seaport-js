@@ -42,11 +42,11 @@ import {
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
-  useOffererProxy,
+  useProxyFromApprovals,
   validateOrderParameters,
 } from "./utils/order";
 import { getProxy } from "./utils/proxy";
-import { executeAllActions } from "./utils/yield";
+import { executeAllActions } from "./utils/usecase";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -170,15 +170,19 @@ export class Consideration {
     const { insufficientOwnerApprovals, insufficientProxyApprovals } =
       getInsufficientBalanceAndApprovalAmounts(
         balancesAndApprovals,
-        getSummedTokenAndIdentifierAmounts(offerItems)
+        getSummedTokenAndIdentifierAmounts(offerItems),
+        {
+          considerationContract: this.contract,
+          proxy,
+          proxyStrategy: this.config.proxyStrategy,
+        }
       );
 
-    const useProxy =
-      this.config.proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED
-        ? insufficientProxyApprovals.length <
-            insufficientOwnerApprovals.length &&
-          insufficientOwnerApprovals.length !== 0
-        : this.config.proxyStrategy === ProxyStrategy.ALWAYS;
+    const useProxy = useProxyFromApprovals({
+      insufficientOwnerApprovals,
+      insufficientProxyApprovals,
+      proxyStrategy: this.config.proxyStrategy,
+    });
 
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
@@ -213,6 +217,9 @@ export class Consideration {
     const insufficientApprovals = validateOrderParameters(orderParameters, {
       balancesAndApprovals,
       throwOnInsufficientBalances: checkBalancesAndApprovals,
+      considerationContract: this.contract,
+      proxy,
+      proxyStrategy: this.config.proxyStrategy,
     });
 
     const signOrder = this.signOrder.bind(this);
@@ -236,9 +243,6 @@ export class Consideration {
         },
       } as const;
     }
-
-    const execute = () =>
-      executeAllActions(genActions) as Promise<CreatedOrder>;
 
     return {
       insufficientApprovals,
@@ -305,20 +309,16 @@ export class Consideration {
     { unitsToFill }: { unitsToFill?: BigNumberish }
   ): Promise<OrderUseCase<OrderExchangeActions>> {
     const { parameters: orderParameters } = order;
-    const { orderType, offerer, zone, offer, consideration } = orderParameters;
+    const { offerer, zone, offer, consideration } = orderParameters;
 
     const fulfiller = await this.provider.getSigner().getAddress();
 
-    const shouldUseOffererProxy = useOffererProxy(orderType);
-
     const [offererProxy, fulfillerProxy, nonce, latestBlock] =
       await Promise.all([
-        shouldUseOffererProxy
-          ? getProxy(offerer, {
-              legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-              multicallProvider: this.multicallProvider,
-            })
-          : undefined,
+        getProxy(offerer, {
+          legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+          multicallProvider: this.multicallProvider,
+        }),
         getProxy(fulfiller, {
           legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
           multicallProvider: this.multicallProvider,
@@ -387,6 +387,8 @@ export class Consideration {
         fulfillerBalancesAndApprovals,
         provider: this.provider,
         timeBasedItemParams,
+        proxy: fulfillerProxy,
+        proxyStrategy: this.config.proxyStrategy,
       });
     }
 
@@ -400,6 +402,8 @@ export class Consideration {
         fulfillerBalancesAndApprovals,
         provider: this.provider,
         timeBasedItemParams,
+        proxy: fulfillerProxy,
+        proxyStrategy: this.config.proxyStrategy,
       }
     );
   }

@@ -130,6 +130,7 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   transaction: ContractTransaction;
+  operator: string;
 };
 
 export type ExchangeAction = {

@@ -61,6 +61,7 @@ export async function* setNeededApprovals(
         identifierOrCriteria,
         itemType,
         transaction,
+        operator,
       };
       await transaction.wait();
     } else if (itemType === ItemType.ERC20) {
@@ -73,6 +74,7 @@ export async function* setNeededApprovals(
         identifierOrCriteria,
         itemType,
         transaction,
+        operator,
       };
       await transaction.wait();
     }

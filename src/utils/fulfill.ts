@@ -5,7 +5,7 @@ import {
   ethers,
   providers,
 } from "ethers";
-import { BasicFulfillOrder, ItemType } from "../constants";
+import { BasicFulfillOrder, ItemType, ProxyStrategy } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import type {
   AdvancedOrder,
@@ -32,9 +32,9 @@ import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
-  useFulfillerProxy,
+  useProxyFromApprovals,
 } from "./order";
-import { executeAllActions } from "./yield";
+import { executeAllActions } from "./usecase";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -187,12 +187,16 @@ export function fulfillBasicOrder(
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
     provider,
+    proxy,
+    proxyStrategy,
   }: {
     considerationContract: Consideration;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
     provider: providers.JsonRpcProvider;
+    proxy: string;
+    proxyStrategy: ProxyStrategy;
   }
 ): OrderUseCase<OrderExchangeActions> {
   const { offer, consideration, orderType } = orderParameters;
@@ -233,6 +237,9 @@ export function fulfillBasicOrder(
       balancesAndApprovals: offererBalancesAndApprovals,
       timeBasedItemParams,
       throwOnInsufficientApprovals: true,
+      considerationContract,
+      proxy,
+      proxyStrategy,
     }
   );
 
@@ -247,12 +254,16 @@ export function fulfillBasicOrder(
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
+        considerationContract,
+        proxy,
+        proxyStrategy,
       }
     );
 
-  const useProxyForFulfiller = useFulfillerProxy({
+  const useProxyForFulfiller = useProxyFromApprovals({
     insufficientOwnerApprovals,
     insufficientProxyApprovals,
+    proxyStrategy,
   });
 
   const approvalsToUse = useProxyForFulfiller
@@ -374,8 +385,9 @@ export function fulfillStandardOrder(
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
-
     provider,
+    proxy,
+    proxyStrategy,
   }: {
     considerationContract: Consideration;
     offererBalancesAndApprovals: BalancesAndApprovals;
@@ -383,6 +395,8 @@ export function fulfillStandardOrder(
     timeBasedItemParams: TimeBasedItemParams;
     unitsToFill?: BigNumberish;
     provider: providers.JsonRpcProvider;
+    proxy: string;
+    proxyStrategy: ProxyStrategy;
   }
 ): OrderUseCase<OrderExchangeActions> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
@@ -414,6 +428,9 @@ export function fulfillStandardOrder(
       balancesAndApprovals: offererBalancesAndApprovals,
       timeBasedItemParams,
       throwOnInsufficientApprovals: true,
+      considerationContract,
+      proxy,
+      proxyStrategy,
     }
   );
 
@@ -428,12 +445,16 @@ export function fulfillStandardOrder(
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
+        considerationContract,
+        proxy,
+        proxyStrategy,
       }
     );
 
-  const useProxyForFulfiller = useFulfillerProxy({
+  const useProxyForFulfiller = useProxyFromApprovals({
     insufficientOwnerApprovals,
     insufficientProxyApprovals,
+    proxyStrategy,
   });
 
   const approvalsToUse = useProxyForFulfiller
