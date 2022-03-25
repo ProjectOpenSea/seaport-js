@@ -155,6 +155,9 @@ export type OrderUseCase<T = CreateOrderActions | OrderExchangeActions> = {
     ApprovalAction,
     T extends CreateOrderActions ? CreateOrderAction : ExchangeAction
   >;
+  executeAllActions: () => Promise<
+    T extends CreateOrderActions ? CreatedOrder : ContractTransaction
+  >;
 };
 
 export type FulfillmentComponent = {

@@ -34,6 +34,7 @@ import {
   totalItemsAmount,
   useFulfillerProxy,
 } from "./order";
+import { executeAllActions } from "./yield";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -352,6 +353,8 @@ export function fulfillBasicOrder(
     insufficientApprovals: approvalsToUse,
     genActions,
     numActions: approvalsToUse.length + 1,
+    executeAllActions: () =>
+      executeAllActions(genActions) as Promise<ContractTransaction>,
   };
 }
 
@@ -465,5 +468,7 @@ export function fulfillStandardOrder(
     insufficientApprovals: approvalsToUse,
     genActions,
     numActions: approvalsToUse.length + 1,
+    executeAllActions: () =>
+      executeAllActions(genActions) as Promise<ContractTransaction>,
   };
 }

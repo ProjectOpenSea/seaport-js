@@ -11,6 +11,7 @@ import {
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
   ConsiderationConfig,
+  CreatedOrder,
   CreateOrderActions,
   CreateOrderInput,
   Order,
@@ -45,6 +46,7 @@ import {
   validateOrderParameters,
 } from "./utils/order";
 import { getProxy } from "./utils/proxy";
+import { executeAllActions } from "./utils/yield";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -235,12 +237,17 @@ export class Consideration {
       } as const;
     }
 
+    const execute = () =>
+      executeAllActions(genActions) as Promise<CreatedOrder>;
+
     return {
       insufficientApprovals,
       genActions,
       numActions: checkBalancesAndApprovals
         ? insufficientApprovals.length + 1
         : 1,
+      executeAllActions: () =>
+        executeAllActions(genActions) as Promise<CreatedOrder>,
     };
   }
 
@@ -268,7 +275,6 @@ export class Consideration {
 
     // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
     return ethers.utils.splitSignature(signature).compact;
-    // return signature;
   }
 
   public async cancelOrders(orders: OrderComponents[]) {
