@@ -1,5 +1,5 @@
 {
-  "name": "consideration",
+  "name": "consideration-js",
   "license": "MIT",
   "scripts": {
     "build": "yarn hardhat compile && yarn tsc -p tsconfig-build.json",
@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@0xsequence/multicall": "^0.36.7",
-    "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git",
+    "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git#c29bb528bd803d44fe8d9d679833ca5f4b3b0fe8",
     "ethers": "^5.6.0"
   },
   "engines": {
@@ -19,11 +19,13 @@
     "@typechain/ethers-v5": "^9.0.0",
     "@typechain/hardhat": "^5.0.0",
     "@types/chai": "^4.3.0",
+    "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^9.1.0",
     "@types/node": "^12.20.47",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
     "dotenv": "^10.0.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.5.0",
@@ -41,6 +43,7 @@
     "solidity-coverage": "^0.7.20",
     "ts-node": "^10.7.0",
     "typechain": "^7.0.1",
+    "typed-assert": "^1.0.9",
     "typescript": "^4.6.2"
   }
 }

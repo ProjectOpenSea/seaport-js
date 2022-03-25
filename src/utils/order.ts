@@ -1,7 +1,12 @@
 import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
 import { ConsiderationABI } from "../abi/Consideration";
 import type { Consideration } from "../typechain";
-import { ItemType, ONE_HUNDRED_PERCENT_BP, OrderType } from "../constants";
+import {
+  ItemType,
+  ONE_HUNDRED_PERCENT_BP,
+  OrderType,
+  ProxyStrategy,
+} from "../constants";
 import type {
   Fee,
   InputItem,
@@ -56,15 +61,15 @@ export const feeToConsiderationItem = ({
   baseEndAmount?: BigNumberish;
 }): ConsiderationItem => {
   const multiplyBasisPoints = (amount: BigNumberish) =>
-    BigNumber.from(amount).mul(
-      BigNumber.from(fee.basisPoints).div(ONE_HUNDRED_PERCENT_BP)
-    );
+    BigNumber.from(amount)
+      .mul(BigNumber.from(fee.basisPoints))
+      .div(ONE_HUNDRED_PERCENT_BP);
 
   return {
     itemType:
       token === ethers.constants.AddressZero ? ItemType.NATIVE : ItemType.ERC20,
     token,
-    identifierOrCriteria: 0,
+    identifierOrCriteria: "0",
     startAmount: multiplyBasisPoints(baseAmount).toString(),
     endAmount: multiplyBasisPoints(baseEndAmount).toString(),
     recipient: fee.recipient,
@@ -85,11 +90,11 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
   // Item is a currency
   return {
     itemType:
-      item.token === ethers.constants.AddressZero
-        ? ItemType.NATIVE
-        : ItemType.ERC20,
+      item.token && item.token !== ethers.constants.AddressZero
+        ? ItemType.ERC20
+        : ItemType.NATIVE,
     token: item.token ?? ethers.constants.AddressZero,
-    identifierOrCriteria: 0,
+    identifierOrCriteria: "0",
     startAmount: item.amount,
     endAmount: item.endAmount ?? item.amount,
   };
@@ -113,20 +118,35 @@ export const validateOrderParameters = (
   orderParameters: OrderParameters,
   {
     balancesAndApprovals,
+    throwOnInsufficientBalances,
     throwOnInsufficientApprovals,
+    considerationContract,
+    proxy,
+    proxyStrategy,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
+    throwOnInsufficientBalances?: boolean;
     throwOnInsufficientApprovals?: boolean;
+    considerationContract: Consideration;
+    proxy: string;
+    proxyStrategy: ProxyStrategy;
   }
 ): InsufficientApprovals => {
   const { offer, consideration, orderType } = orderParameters;
   if (!areAllCurrenciesSame({ offer, consideration })) {
-    throw new Error("All currency tokens in the order must be the same");
+    throw new Error("All currency tokens in the order must be the same token");
   }
 
   return validateOfferBalancesAndApprovals(
     { offer, orderType },
-    { balancesAndApprovals, throwOnInsufficientApprovals }
+    {
+      balancesAndApprovals,
+      throwOnInsufficientBalances,
+      throwOnInsufficientApprovals,
+      considerationContract,
+      proxy,
+      proxyStrategy,
+    }
   );
 };
 
@@ -164,19 +184,19 @@ export const useOffererProxy = (orderType: OrderType) =>
     OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
   ].includes(orderType);
 
-export const useFulfillerProxy = ({
+export const useProxyFromApprovals = ({
   insufficientOwnerApprovals,
   insufficientProxyApprovals,
+  proxyStrategy,
 }: {
   insufficientOwnerApprovals: InsufficientApprovals;
   insufficientProxyApprovals: InsufficientApprovals;
+  proxyStrategy: ProxyStrategy;
 }) => {
-  const approvalsToUse =
-    insufficientOwnerApprovals.length === 0
-      ? insufficientOwnerApprovals
-      : insufficientProxyApprovals;
-
-  return approvalsToUse === insufficientProxyApprovals;
+  return proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED
+    ? insufficientProxyApprovals.length < insufficientOwnerApprovals.length &&
+        insufficientOwnerApprovals.length !== 0
+    : proxyStrategy === ProxyStrategy.ALWAYS;
 };
 
 export const getOrderStatus = async (
@@ -326,7 +346,7 @@ export const getNonce = (
     multicallProvider
   ) as Consideration;
 
-  return contract.getNonce(offerer, zone);
+  return contract.getNonce(offerer, zone).then((nonce) => nonce.toNumber());
 };
 
 /**

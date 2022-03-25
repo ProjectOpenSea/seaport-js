@@ -5,26 +5,35 @@ import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
+  MAX_INT,
+  ProxyStrategy,
 } from "./constants";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
   ConsiderationConfig,
+  CreatedOrder,
+  CreateOrderActions,
   CreateOrderInput,
   Order,
   OrderComponents,
-  OrderCreateYields,
-  OrderExchangeYields,
+  OrderExchangeActions,
   OrderParameters,
   OrderUseCase,
 } from "./types";
 import { setNeededApprovals } from "./utils/approval";
-import { getBalancesAndApprovals } from "./utils/balancesAndApprovals";
+import {
+  getBalancesAndApprovals,
+  getInsufficientBalanceAndApprovalAmounts,
+} from "./utils/balancesAndApprovals";
 import {
   fulfillBasicOrder,
   fulfillStandardOrder,
   shouldUseBasicFulfill,
 } from "./utils/fulfill";
-import { isCurrencyItem } from "./utils/item";
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isCurrencyItem,
+} from "./utils/item";
 import {
   feeToConsiderationItem,
   getNonce,
@@ -33,10 +42,11 @@ import {
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
-  useOffererProxy,
+  useProxyFromApprovals,
   validateOrderParameters,
 } from "./utils/order";
 import { getProxy } from "./utils/proxy";
+import { executeAllActions } from "./utils/usecase";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -59,8 +69,9 @@ export class Consideration {
       overrides,
       ascendingAmountFulfillmentBuffer = 1800,
       approveExactAmount = false,
-      safetyChecksOnOrderCreation = true,
-      safetyChecksOnOrderFulfillment = true,
+      balanceAndApprovalChecksOnOrderCreation = true,
+      balanceAndApprovalChecksOnOrderFulfillment = true,
+      proxyStrategy = ProxyStrategy.IF_ZERO_APPROVALS_NEEDED,
     }: ConsiderationConfig
   ) {
     this.provider = provider;
@@ -75,8 +86,9 @@ export class Consideration {
     this.config = {
       ascendingAmountFulfillmentBuffer,
       approveExactAmount,
-      safetyChecksOnOrderCreation,
-      safetyChecksOnOrderFulfillment,
+      balanceAndApprovalChecksOnOrderCreation,
+      balanceAndApprovalChecksOnOrderFulfillment,
+      proxyStrategy,
     };
 
     this.legacyProxyRegistryAddress =
@@ -101,31 +113,22 @@ export class Consideration {
     return orderType;
   }
 
-  // Check if single offer 721/1155 - if so do NOT use proxy
-  // Check to see if theres sufficient approvals on consideration. if so use it
-  // If not, check if theres proxies, and then check in proxy for approvals. If it has enough approvals, then use proxy
   public async createOrder({
     zone = ethers.constants.AddressZero,
-    startTime,
-    endTime,
+    // Default to current unix time.
+    startTime = Math.floor(Date.now() / 1000).toString(),
+    // Defaulting to "never end". We HIGHLY recommend passing in an explicit end time
+    endTime = MAX_INT.toString(),
     offer,
     consideration,
     nonce,
     allowPartialFills,
     restrictedByZone,
-    // TODO: abstract
-    useProxy,
     fees,
     salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Promise<OrderUseCase<OrderCreateYields>> {
+  }: CreateOrderInput): Promise<OrderUseCase<CreateOrderActions>> {
     const offerer = await this.provider.getSigner().getAddress();
-    const orderType = this._getOrderTypeFromOrderOptions({
-      allowPartialFills,
-      restrictedByZone,
-      useProxy,
-    });
     const offerItems = offer.map(mapInputItemToOfferItem);
-
     const considerationItems = [
       ...consideration.map((consideration) => ({
         ...mapInputItemToOfferItem(consideration),
@@ -138,27 +141,6 @@ export class Consideration {
     );
 
     const totalCurrencyAmount = totalItemsAmount(currencies);
-
-    const orderParameters: OrderParameters = {
-      offerer,
-      zone,
-      startTime,
-      endTime,
-      orderType,
-      offer: offer.map(mapInputItemToOfferItem),
-      consideration: [
-        ...considerationItems,
-        ...(fees?.map((fee) =>
-          feeToConsiderationItem({
-            fee,
-            token: currencies[0].token,
-            baseAmount: totalCurrencyAmount.startAmount,
-            baseEndAmount: totalCurrencyAmount.endAmount,
-          })
-        ) ?? []),
-      ],
-      salt,
-    };
 
     const [proxy, resolvedNonce] = await Promise.all([
       getProxy(offerer, {
@@ -177,7 +159,7 @@ export class Consideration {
 
     const balancesAndApprovals = await getBalancesAndApprovals(
       offerer,
-      orderParameters.offer,
+      offerItems,
       {
         proxy,
         considerationContract: this.contract,
@@ -185,20 +167,74 @@ export class Consideration {
       }
     );
 
+    const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+      getInsufficientBalanceAndApprovalAmounts(
+        balancesAndApprovals,
+        getSummedTokenAndIdentifierAmounts(offerItems),
+        {
+          considerationContract: this.contract,
+          proxy,
+          proxyStrategy: this.config.proxyStrategy,
+        }
+      );
+
+    const useProxy = useProxyFromApprovals({
+      insufficientOwnerApprovals,
+      insufficientProxyApprovals,
+      proxyStrategy: this.config.proxyStrategy,
+    });
+
+    const orderType = this._getOrderTypeFromOrderOptions({
+      allowPartialFills,
+      restrictedByZone,
+      useProxy,
+    });
+
+    const orderParameters: OrderParameters = {
+      offerer,
+      zone,
+      startTime,
+      endTime,
+      orderType,
+      offer: offerItems,
+      consideration: [
+        ...considerationItems,
+        ...(fees?.map((fee) =>
+          feeToConsiderationItem({
+            fee,
+            token: currencies[0].token,
+            baseAmount: totalCurrencyAmount.startAmount,
+            baseEndAmount: totalCurrencyAmount.endAmount,
+          })
+        ) ?? []),
+      ],
+      salt,
+    };
+
+    const checkBalancesAndApprovals =
+      this.config.balanceAndApprovalChecksOnOrderCreation;
+
     const insufficientApprovals = validateOrderParameters(orderParameters, {
       balancesAndApprovals,
+      throwOnInsufficientBalances: checkBalancesAndApprovals,
+      considerationContract: this.contract,
+      proxy,
+      proxyStrategy: this.config.proxyStrategy,
     });
 
     const signOrder = this.signOrder.bind(this);
+    const provider = this.provider;
 
-    async function* execute() {
-      yield* setNeededApprovals(insufficientApprovals, {
-        provider: this.provider,
-      });
+    async function* genActions() {
+      if (checkBalancesAndApprovals) {
+        yield* setNeededApprovals(insufficientApprovals, {
+          provider,
+        });
+      }
 
       const signature = await signOrder(orderParameters, resolvedNonce);
 
-      yield {
+      return {
         type: "create",
         order: {
           ...orderParameters,
@@ -210,15 +246,16 @@ export class Consideration {
 
     return {
       insufficientApprovals,
-      execute,
-      numExecutions: insufficientApprovals.length + 1,
+      genActions,
+      numActions: checkBalancesAndApprovals
+        ? insufficientApprovals.length + 1
+        : 1,
+      executeAllActions: () =>
+        executeAllActions(genActions) as Promise<CreatedOrder>,
     };
   }
 
-  public async signOrder(
-    orderParameters: OrderParameters,
-    nonce: BigNumberish
-  ) {
+  public async signOrder(orderParameters: OrderParameters, nonce: number) {
     const signer = this.provider.getSigner();
     const { chainId } = await this.provider.getNetwork();
 
@@ -226,6 +263,7 @@ export class Consideration {
       name: CONSIDERATION_CONTRACT_NAME,
       version: CONSIDERATION_CONTRACT_VERSION,
       chainId,
+      verifyingContract: this.contract.address,
     };
 
     const orderComponents: OrderComponents = {
@@ -269,22 +307,18 @@ export class Consideration {
   public async fulfillOrder(
     order: Order,
     { unitsToFill }: { unitsToFill?: BigNumberish }
-  ): Promise<OrderUseCase<OrderExchangeYields>> {
+  ): Promise<OrderUseCase<OrderExchangeActions>> {
     const { parameters: orderParameters } = order;
-    const { orderType, offerer, zone, offer, consideration } = orderParameters;
+    const { offerer, zone, offer, consideration } = orderParameters;
 
     const fulfiller = await this.provider.getSigner().getAddress();
 
-    const shouldUseOffererProxy = useOffererProxy(orderType);
-
     const [offererProxy, fulfillerProxy, nonce, latestBlock] =
       await Promise.all([
-        shouldUseOffererProxy
-          ? getProxy(offerer, {
-              legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-              multicallProvider: this.multicallProvider,
-            })
-          : undefined,
+        getProxy(offerer, {
+          legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+          multicallProvider: this.multicallProvider,
+        }),
         getProxy(fulfiller, {
           legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
           multicallProvider: this.multicallProvider,
@@ -353,6 +387,8 @@ export class Consideration {
         fulfillerBalancesAndApprovals,
         provider: this.provider,
         timeBasedItemParams,
+        proxy: fulfillerProxy,
+        proxyStrategy: this.config.proxyStrategy,
       });
     }
 
@@ -366,6 +402,8 @@ export class Consideration {
         fulfillerBalancesAndApprovals,
         provider: this.provider,
         timeBasedItemParams,
+        proxy: fulfillerProxy,
+        proxyStrategy: this.config.proxyStrategy,
       }
     );
   }

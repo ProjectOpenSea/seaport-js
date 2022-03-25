@@ -4,19 +4,23 @@ import {
   BytesLike,
   ContractTransaction,
 } from "ethers";
-import { ItemType, OrderType } from "./constants";
+import { ItemType, OrderType, ProxyStrategy } from "./constants";
 import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
   ascendingAmountFulfillmentBuffer?: number;
 
-  // Used for ERC-20 approvals. Defaults to false (thus, approving the max amount)
+  // Defaults to false (thus, approving the max amount)
   approveExactAmount?: boolean;
 
-  // Skip approvals for consumers who wish to create orders beforehand.
-  safetyChecksOnOrderCreation?: boolean;
-  safetyChecksOnOrderFulfillment?: boolean;
+  // allow users to optionally skip balance and approval checks
+  balanceAndApprovalChecksOnOrderCreation?: boolean;
+  balanceAndApprovalChecksOnOrderFulfillment?: boolean;
+
+  // Defaults to use proxy if it would result in less approvals. Otherwise, users can specify the proxy strategy
+  // they want to use, relevant for creating orders or fulfilling orders
+  proxyStrategy?: ProxyStrategy;
 
   overrides?: {
     contractAddress?: string;
@@ -27,7 +31,7 @@ export type ConsiderationConfig = {
 export type OfferItem = {
   itemType: ItemType;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   startAmount: string;
   endAmount: string;
 };
@@ -35,7 +39,7 @@ export type OfferItem = {
 export type ConsiderationItem = {
   itemType: ItemType;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   startAmount: string;
   endAmount: string;
   recipient: string;
@@ -49,12 +53,12 @@ export type OrderParameters = {
   orderType: OrderType;
   startTime: BigNumberish;
   endTime: BigNumberish;
-  salt: BigNumberish;
+  salt: BytesLike;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
 };
 
-export type OrderComponents = OrderParameters & { nonce: BigNumberish };
+export type OrderComponents = OrderParameters & { nonce: number };
 
 export type Order = {
   parameters: OrderParameters;
@@ -69,7 +73,7 @@ export type AdvancedOrder = Order & {
 export type Erc721Item = {
   itemType: ItemType.ERC721 | ItemType.ERC721_WITH_CRITERIA;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   // Used for criteria based items i.e. offering to buy 5 NFTs for a collection
   amount?: string;
   endAmount?: string;
@@ -78,7 +82,7 @@ export type Erc721Item = {
 export type Erc1155Item = {
   itemType: ItemType.ERC1155 | ItemType.ERC1155_WITH_CRITERIA;
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   amount: string;
   endAmount?: string;
 };
@@ -90,25 +94,25 @@ export type CurrencyItem = {
 };
 
 export type InputItem = Erc721Item | Erc1155Item | CurrencyItem;
-export type ReceivedInputItem = InputItem & { recipient?: string };
+export type ConsiderationInputItem = InputItem & { recipient?: string };
 
 export type Fee = {
   recipient: string;
-  basisPoints: BigNumberish;
+  basisPoints: number;
 };
 
 export type CreateOrderInput = {
   zone?: string;
-  startTime: BigNumberish;
-  endTime: BigNumberish;
-  offer: InputItem[];
-  consideration: ReceivedInputItem[];
-  nonce?: BigNumberish;
-  fees?: Fee[];
+  startTime?: string;
+  endTime?: string;
+  offer: readonly InputItem[];
+  consideration: readonly ConsiderationInputItem[];
+  nonce?: number;
+  fees?: readonly Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
   useProxy?: boolean;
-  salt?: BigNumberish;
+  salt?: BytesLike;
 };
 
 export type OrderStatus = {
@@ -120,34 +124,41 @@ export type OrderStatus = {
 
 export type CreatedOrder = OrderComponents & { signature: BytesLike };
 
-export type YieldedApproval = {
+export type ApprovalAction = {
   type: "approval";
   token: string;
-  identifierOrCriteria: BigNumberish;
+  identifierOrCriteria: string;
   itemType: ItemType;
   transaction: ContractTransaction;
+  operator: string;
 };
 
-export type YieldedExchange = {
+export type ExchangeAction = {
   type: "exchange";
   transaction: ContractTransaction;
 };
 
-export type YieldedCreatedOrder = {
+export type CreateOrderAction = {
   type: "create";
   order: CreatedOrder;
 };
 
-export type YieldedTransaction = YieldedApproval | YieldedExchange;
+export type TransactionAction = ApprovalAction | ExchangeAction;
 
-export type OrderCreateYields = YieldedApproval | YieldedCreatedOrder;
+export type CreateOrderActions = ApprovalAction | CreateOrderAction;
 
-export type OrderExchangeYields = YieldedApproval | YieldedExchange;
+export type OrderExchangeActions = ApprovalAction | ExchangeAction;
 
-export type OrderUseCase<T = OrderCreateYields | OrderExchangeYields> = {
+export type OrderUseCase<T = CreateOrderActions | OrderExchangeActions> = {
   insufficientApprovals: InsufficientApprovals;
-  numExecutions: number;
-  execute: () => AsyncGenerator<T>;
+  numActions: number;
+  genActions: () => AsyncGenerator<
+    ApprovalAction,
+    T extends CreateOrderActions ? CreateOrderAction : ExchangeAction
+  >;
+  executeAllActions: () => Promise<
+    T extends CreateOrderActions ? CreatedOrder : ContractTransaction
+  >;
 };
 
 export type FulfillmentComponent = {

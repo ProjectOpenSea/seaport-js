@@ -904,6 +904,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/chai-as-promised@^7.1.5":
+  version "7.1.5"
+  resolved "https://registry.yarnpkg.com/@types/chai-as-promised/-/chai-as-promised-7.1.5.tgz#6e016811f6c7a64f2eed823191c3a6955094e255"
+  integrity sha512-jStwss93SITGBwt/niYrkf2C+/1KTeZCZl1LaeezTlqppAKeoQC7jxyqYuP72sxBGKCIbw7oHgbYssIRzT5FCQ==
+  dependencies:
+    "@types/chai" "*"
+
 "@types/chai@*", "@types/chai@^4.3.0":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.3.0.tgz#23509ebc1fa32f1b4d50d6a66c4032d5b8eaabdc"
@@ -2722,6 +2729,13 @@ caseless@^0.12.0, caseless@~0.12.0:
   resolved "https://registry.yarnpkg.com/caseless/-/caseless-0.12.0.tgz#1b681c21ff84033c826543090689420d187151dc"
   integrity sha1-G2gcIf+EAzyCZUMJBolCDRhxUdw=
 
+chai-as-promised@^7.1.1:
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/chai-as-promised/-/chai-as-promised-7.1.1.tgz#08645d825deb8696ee61725dbf590c012eb00ca0"
+  integrity sha512-azL6xMoi+uxu6z4rhWQ1jbdUhOMhis2PvscD/xjLqNMkv3BPPp2JyyuTHOrf9BOosGpNQ11v6BKv/g57RXbiaA==
+  dependencies:
+    check-error "^1.0.2"
+
 chai@^4.3.6:
   version "4.3.6"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.3.6.tgz#ffe4ba2d9fa9d6680cc0b370adae709ec9011e9c"
@@ -3060,9 +3074,9 @@ concat-stream@^1.5.1, concat-stream@^1.6.0, concat-stream@^1.6.2:
     readable-stream "^2.2.2"
     typedarray "^0.0.6"
 
-"consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git":
+"consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git#c29bb528bd803d44fe8d9d679833ca5f4b3b0fe8":
   version "0.0.1"
-  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#34b434dd7ef8d7c7f01bd6dfb443e666211532c1"
+  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#c29bb528bd803d44fe8d9d679833ca5f4b3b0fe8"
   dependencies:
     "@openzeppelin/contracts" "^4.4.2"
     eip-712 "^0.4.3"
@@ -10048,6 +10062,11 @@ typechain@^7.0.1:
     prettier "^2.1.2"
     ts-command-line-args "^2.2.0"
     ts-essentials "^7.0.1"
+
+typed-assert@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/typed-assert/-/typed-assert-1.0.9.tgz#8af9d4f93432c4970ec717e3006f33f135b06213"
+  integrity sha512-KNNZtayBCtmnNmbo5mG47p1XsCyrx6iVqomjcZnec/1Y5GGARaxPs6r49RnSPeUP3YjNYiU9sQHAtY4BBvnZwg==
 
 typedarray-to-buffer@^3.1.5:
   version "3.1.5"

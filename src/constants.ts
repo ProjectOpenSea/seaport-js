@@ -5,12 +5,9 @@ export const CONSIDERATION_CONTRACT_NAME = "Consideration";
 export const CONSIDERATION_CONTRACT_VERSION = "1";
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
-    {
-      name: "offerer",
-      type: "address",
-    },
+    { name: "offerer", type: "address" },
     { name: "zone", type: "address" },
-    { name: "offer", type: "OfferedItem[]" },
+    { name: "offer", type: "OfferItem[]" },
     { name: "consideration", type: "ConsiderationItem[]" },
     { name: "orderType", type: "uint8" },
     { name: "startTime", type: "uint256" },
@@ -18,7 +15,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "salt", type: "uint256" },
     { name: "nonce", type: "uint256" },
   ],
-  OfferedItem: [
+  OfferItem: [
     { name: "itemType", type: "uint8" },
     { name: "token", type: "address" },
     { name: "identifierOrCriteria", type: "uint256" },
@@ -68,6 +65,13 @@ export enum BasicFulfillOrder {
   ERC20_FOR_ERC1155,
   ERC721_FOR_ERC20,
   ERC1155_FOR_ERC20,
+}
+
+export enum ProxyStrategy {
+  // Use the proxy if there are zero approvals needed for the proxy
+  IF_ZERO_APPROVALS_NEEDED,
+  NEVER,
+  ALWAYS,
 }
 
 export const MAX_INT = BigNumber.from(
