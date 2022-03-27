@@ -1,8 +1,10 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
+import { CreateOrderInput } from "../types";
 import { isExactlyNotTrue, isExactlyTrue } from "./utils/assert";
 import { describeWithFixture } from "./utils/setup";
 
@@ -11,7 +13,67 @@ describeWithFixture(
   (fixture) => {
     describe("A single ERC721 is to be transferred", async () => {
       describe("[Buy now] I want to buy a single ERC721", async () => {
-        it("ERC721 <=> ETH", async () => {});
+        let offerer: SignerWithAddress;
+        let zone: SignerWithAddress;
+        let fulfiller: SignerWithAddress;
+        let standardCreateOrderInput: CreateOrderInput;
+        const nftId = "1";
+
+        beforeEach(async () => {
+          [offerer, zone, fulfiller] = await ethers.getSigners();
+          const { testErc721, legacyProxyRegistry, considerationContract } =
+            fixture;
+
+          await testErc721.mint(offerer.address, nftId);
+
+          // Register the proxy on the offerer
+          await legacyProxyRegistry.connect(offerer).registerProxy();
+
+          const offererProxy = await legacyProxyRegistry.proxies(
+            offerer.address
+          );
+
+          // Approving both proxy and consideration contract for convenience
+          await testErc721
+            .connect(offerer)
+            .setApprovalForAll(offererProxy, true);
+
+          await testErc721
+            .connect(offerer)
+            .setApprovalForAll(considerationContract.address, true);
+
+          standardCreateOrderInput = {
+            startTime: "0",
+            endTime: MAX_INT.toString(),
+            salt: ethers.utils.randomBytes(16),
+            offer: [
+              {
+                itemType: ItemType.ERC721,
+                token: testErc721.address,
+                identifierOrCriteria: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: ethers.utils.parseEther("10").toString(),
+                recipient: offerer.address,
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: zone.address, basisPoints: 250 }],
+          };
+        });
+
+        it("ERC721 <=> ETH", async () => {
+          const { consideration } = fixture;
+          const { executeAllActions } = await consideration.createOrder(
+            standardCreateOrderInput
+          );
+
+          const order = await executeAllActions();
+
+          const fulfillActions = await consideration.fulfillOrder(order);
+        });
         it("ERC721 <=> ETH (offer via proxy)", async () => {});
         it("ERC721 <=> ETH (already validated order)", async () => {});
         it("ERC721 <=> ETH (extra ether supplied and returned to caller)", async () => {});

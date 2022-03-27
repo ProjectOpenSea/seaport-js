@@ -81,48 +81,51 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     isExactlyTrue(createOrderAction.done);
     expect(createOrderAction.value.type).to.equal("create");
     expect(createOrderAction.value.order).to.deep.equal({
-      consideration: [
-        {
-          endAmount: ethers.utils.parseEther("10").toString(),
-          identifierOrCriteria: "0",
-          itemType: ItemType.NATIVE,
-          recipient: offerer.address,
-          startAmount: ethers.utils.parseEther("10").toString(),
-          token: ethers.constants.AddressZero,
-        },
-        {
-          endAmount: ethers.utils.parseEther(".25").toString(),
-          identifierOrCriteria: "0",
-          itemType: ItemType.NATIVE,
-          recipient: zone.address,
-          startAmount: ethers.utils.parseEther(".25").toString(),
-          token: ethers.constants.AddressZero,
-        },
-      ],
-      endTime,
-      nonce: 0,
-      offer: [
-        {
-          endAmount: "1",
-          identifierOrCriteria: nftId,
-          itemType: ItemType.ERC721,
-          startAmount: "1",
-          token: testErc721.address,
-        },
-      ],
-      offerer: offerer.address,
-      orderType: OrderType.FULL_OPEN,
-      salt,
+      parameters: {
+        consideration: [
+          {
+            // Fees were deducted
+            endAmount: ethers.utils.parseEther("9.75").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.NATIVE,
+            recipient: offerer.address,
+            startAmount: ethers.utils.parseEther("9.75").toString(),
+            token: ethers.constants.AddressZero,
+          },
+          {
+            endAmount: ethers.utils.parseEther(".25").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.NATIVE,
+            recipient: zone.address,
+            startAmount: ethers.utils.parseEther(".25").toString(),
+            token: ethers.constants.AddressZero,
+          },
+        ],
+        endTime,
+        offer: [
+          {
+            endAmount: "1",
+            identifierOrCriteria: nftId,
+            itemType: ItemType.ERC721,
+            startAmount: "1",
+            token: testErc721.address,
+          },
+        ],
+        offerer: offerer.address,
+        orderType: OrderType.FULL_OPEN,
+        salt,
+        startTime,
+        zone: ethers.constants.AddressZero,
+      },
       signature: createOrderAction.value.order.signature,
-      startTime,
-      zone: ethers.constants.AddressZero,
+      nonce: 0,
     });
 
     const isValid = await considerationContract
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: createOrderAction.value.order,
+          parameters: createOrderAction.value.order.parameters,
           signature: createOrderAction.value.order.signature,
         },
       ]);
@@ -255,55 +258,58 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     isExactlyTrue(createOrderAction.done);
     expect(createOrderAction.value.type).to.equal("create");
     expect(createOrderAction.value.order).to.deep.equal({
-      consideration: [
-        {
-          endAmount: ethers.utils.parseEther("10").toString(),
-          identifierOrCriteria: "0",
-          itemType: ItemType.NATIVE,
-          recipient: offerer.address,
-          startAmount: ethers.utils.parseEther("10").toString(),
-          token: ethers.constants.AddressZero,
-        },
-        {
-          endAmount: ethers.utils.parseEther(".25").toString(),
-          identifierOrCriteria: "0",
-          itemType: ItemType.NATIVE,
-          recipient: zone.address,
-          startAmount: ethers.utils.parseEther(".25").toString(),
-          token: ethers.constants.AddressZero,
-        },
-      ],
-      endTime,
-      nonce: 0,
-      offer: [
-        {
-          endAmount: "1",
-          identifierOrCriteria: nftId,
-          itemType: ItemType.ERC721,
-          startAmount: "1",
-          token: testErc721.address,
-        },
-        {
-          endAmount: "1",
-          identifierOrCriteria: nftId,
-          itemType: ItemType.ERC1155,
-          startAmount: "1",
-          token: testErc1155.address,
-        },
-      ],
-      offerer: offerer.address,
-      orderType: OrderType.FULL_OPEN,
-      salt,
+      parameters: {
+        consideration: [
+          {
+            // Fees were deducted
+            endAmount: ethers.utils.parseEther("9.75").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.NATIVE,
+            recipient: offerer.address,
+            startAmount: ethers.utils.parseEther("9.75").toString(),
+            token: ethers.constants.AddressZero,
+          },
+          {
+            endAmount: ethers.utils.parseEther(".25").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.NATIVE,
+            recipient: zone.address,
+            startAmount: ethers.utils.parseEther(".25").toString(),
+            token: ethers.constants.AddressZero,
+          },
+        ],
+        endTime,
+        offer: [
+          {
+            endAmount: "1",
+            identifierOrCriteria: nftId,
+            itemType: ItemType.ERC721,
+            startAmount: "1",
+            token: testErc721.address,
+          },
+          {
+            endAmount: "1",
+            identifierOrCriteria: nftId,
+            itemType: ItemType.ERC1155,
+            startAmount: "1",
+            token: testErc1155.address,
+          },
+        ],
+        offerer: offerer.address,
+        orderType: OrderType.FULL_OPEN,
+        salt,
+        startTime,
+        zone: ethers.constants.AddressZero,
+      },
       signature: createOrderAction.value.order.signature,
-      startTime,
-      zone: ethers.constants.AddressZero,
+      nonce: 0,
     });
 
     const isValid = await considerationContract
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: createOrderAction.value.order,
+          parameters: createOrderAction.value.order.parameters,
           signature: createOrderAction.value.order.signature,
         },
       ]);
@@ -351,6 +357,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         "All currency tokens in the order must be the same token"
       );
     });
+
     it("throws if offerer does not have sufficient balances", async () => {
       const { consideration, testErc721, testErc20 } = fixture;
 
@@ -421,6 +428,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         "The offerer does not have the amount needed to create or fulfill."
       );
     });
+
     it("skips balance and approval validation if consideration config is set to skip on order creation", async () => {
       const { considerationContract, testErc721, legacyProxyRegistry } =
         fixture;
@@ -488,48 +496,50 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       isExactlyTrue(createOrderAction.done);
       expect(createOrderAction.value.type).to.equal("create");
       expect(createOrderAction.value.order).to.deep.equal({
-        consideration: [
-          {
-            endAmount: ethers.utils.parseEther("10").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("10").toString(),
-            token: ethers.constants.AddressZero,
-          },
-          {
-            endAmount: ethers.utils.parseEther(".25").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
-            token: ethers.constants.AddressZero,
-          },
-        ],
-        endTime,
-        nonce: 0,
-        offer: [
-          {
-            endAmount: "1",
-            identifierOrCriteria: nftId,
-            itemType: ItemType.ERC721,
-            startAmount: "1",
-            token: testErc721.address,
-          },
-        ],
-        offerer: offerer.address,
-        orderType: OrderType.FULL_OPEN,
-        salt,
+        parameters: {
+          consideration: [
+            {
+              endAmount: ethers.utils.parseEther("9.75").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: offerer.address,
+              startAmount: ethers.utils.parseEther("9.75").toString(),
+              token: ethers.constants.AddressZero,
+            },
+            {
+              endAmount: ethers.utils.parseEther(".25").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: zone.address,
+              startAmount: ethers.utils.parseEther(".25").toString(),
+              token: ethers.constants.AddressZero,
+            },
+          ],
+          endTime,
+          offer: [
+            {
+              endAmount: "1",
+              identifierOrCriteria: nftId,
+              itemType: ItemType.ERC721,
+              startAmount: "1",
+              token: testErc721.address,
+            },
+          ],
+          offerer: offerer.address,
+          orderType: OrderType.FULL_OPEN,
+          salt,
+          startTime,
+          zone: ethers.constants.AddressZero,
+        },
         signature: createOrderAction.value.order.signature,
-        startTime,
-        zone: ethers.constants.AddressZero,
+        nonce: 0,
       });
 
       const isValid = await considerationContract
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order,
+            parameters: createOrderAction.value.order.parameters,
             signature: createOrderAction.value.order.signature,
           },
         ]);
@@ -594,48 +604,50 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       isExactlyTrue(createOrderAction.done);
       expect(createOrderAction.value.type).to.equal("create");
       expect(createOrderAction.value.order).to.deep.equal({
-        consideration: [
-          {
-            endAmount: ethers.utils.parseEther("10").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("10").toString(),
-            token: ethers.constants.AddressZero,
-          },
-          {
-            endAmount: ethers.utils.parseEther(".25").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
-            token: ethers.constants.AddressZero,
-          },
-        ],
-        endTime,
-        nonce: 0,
-        offer: [
-          {
-            endAmount: "1",
-            identifierOrCriteria: nftId,
-            itemType: ItemType.ERC721,
-            startAmount: "1",
-            token: testErc721.address,
-          },
-        ],
-        offerer: offerer.address,
-        orderType: OrderType.FULL_OPEN_VIA_PROXY,
-        salt,
+        parameters: {
+          consideration: [
+            {
+              endAmount: ethers.utils.parseEther("9.75").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: offerer.address,
+              startAmount: ethers.utils.parseEther("9.75").toString(),
+              token: ethers.constants.AddressZero,
+            },
+            {
+              endAmount: ethers.utils.parseEther(".25").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: zone.address,
+              startAmount: ethers.utils.parseEther(".25").toString(),
+              token: ethers.constants.AddressZero,
+            },
+          ],
+          endTime,
+          offer: [
+            {
+              endAmount: "1",
+              identifierOrCriteria: nftId,
+              itemType: ItemType.ERC721,
+              startAmount: "1",
+              token: testErc721.address,
+            },
+          ],
+          offerer: offerer.address,
+          orderType: OrderType.FULL_OPEN_VIA_PROXY,
+          salt,
+          startTime,
+          zone: ethers.constants.AddressZero,
+        },
         signature: createOrderAction.value.order.signature,
-        startTime,
-        zone: ethers.constants.AddressZero,
+        nonce: 0,
       });
 
       const isValid = await considerationContract
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order,
+            parameters: createOrderAction.value.order.parameters,
             signature: createOrderAction.value.order.signature,
           },
         ]);
@@ -701,48 +713,50 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       isExactlyTrue(createOrderAction.done);
       expect(createOrderAction.value.type).to.equal("create");
       expect(createOrderAction.value.order).to.deep.equal({
-        consideration: [
-          {
-            endAmount: ethers.utils.parseEther("10").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("10").toString(),
-            token: ethers.constants.AddressZero,
-          },
-          {
-            endAmount: ethers.utils.parseEther(".25").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
-            token: ethers.constants.AddressZero,
-          },
-        ],
-        endTime,
-        nonce: 0,
-        offer: [
-          {
-            endAmount: "1",
-            identifierOrCriteria: nftId,
-            itemType: ItemType.ERC721,
-            startAmount: "1",
-            token: testErc721.address,
-          },
-        ],
-        offerer: offerer.address,
-        orderType: OrderType.FULL_OPEN,
-        salt,
+        parameters: {
+          consideration: [
+            {
+              endAmount: ethers.utils.parseEther("9.75").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: offerer.address,
+              startAmount: ethers.utils.parseEther("9.75").toString(),
+              token: ethers.constants.AddressZero,
+            },
+            {
+              endAmount: ethers.utils.parseEther(".25").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: zone.address,
+              startAmount: ethers.utils.parseEther(".25").toString(),
+              token: ethers.constants.AddressZero,
+            },
+          ],
+          endTime,
+          offer: [
+            {
+              endAmount: "1",
+              identifierOrCriteria: nftId,
+              itemType: ItemType.ERC721,
+              startAmount: "1",
+              token: testErc721.address,
+            },
+          ],
+          offerer: offerer.address,
+          orderType: OrderType.FULL_OPEN,
+          salt,
+          startTime,
+          zone: ethers.constants.AddressZero,
+        },
         signature: createOrderAction.value.order.signature,
-        startTime,
-        zone: ethers.constants.AddressZero,
+        nonce: 0,
       });
 
       const isValid = await considerationContract
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order,
+            parameters: createOrderAction.value.order.parameters,
             signature: createOrderAction.value.order.signature,
           },
         ]);
@@ -841,48 +855,50 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       isExactlyTrue(createOrderAction.done);
       expect(createOrderAction.value.type).to.equal("create");
       expect(createOrderAction.value.order).to.deep.equal({
-        consideration: [
-          {
-            endAmount: ethers.utils.parseEther("10").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("10").toString(),
-            token: ethers.constants.AddressZero,
-          },
-          {
-            endAmount: ethers.utils.parseEther(".25").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
-            token: ethers.constants.AddressZero,
-          },
-        ],
-        endTime,
-        nonce: 0,
-        offer: [
-          {
-            endAmount: "1",
-            identifierOrCriteria: nftId,
-            itemType: ItemType.ERC721,
-            startAmount: "1",
-            token: testErc721.address,
-          },
-        ],
-        offerer: offerer.address,
-        orderType: OrderType.FULL_OPEN,
-        salt,
+        parameters: {
+          consideration: [
+            {
+              endAmount: ethers.utils.parseEther("9.75").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: offerer.address,
+              startAmount: ethers.utils.parseEther("9.75").toString(),
+              token: ethers.constants.AddressZero,
+            },
+            {
+              endAmount: ethers.utils.parseEther(".25").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: zone.address,
+              startAmount: ethers.utils.parseEther(".25").toString(),
+              token: ethers.constants.AddressZero,
+            },
+          ],
+          endTime,
+          offer: [
+            {
+              endAmount: "1",
+              identifierOrCriteria: nftId,
+              itemType: ItemType.ERC721,
+              startAmount: "1",
+              token: testErc721.address,
+            },
+          ],
+          offerer: offerer.address,
+          orderType: OrderType.FULL_OPEN,
+          salt,
+          startTime,
+          zone: ethers.constants.AddressZero,
+        },
         signature: createOrderAction.value.order.signature,
-        startTime,
-        zone: ethers.constants.AddressZero,
+        nonce: 0,
       });
 
       const isValid = await considerationContract
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order,
+            parameters: createOrderAction.value.order.parameters,
             signature: createOrderAction.value.order.signature,
           },
         ]);
@@ -979,48 +995,50 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       isExactlyTrue(createOrderAction.done);
       expect(createOrderAction.value.type).to.equal("create");
       expect(createOrderAction.value.order).to.deep.equal({
-        consideration: [
-          {
-            endAmount: ethers.utils.parseEther("10").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("10").toString(),
-            token: ethers.constants.AddressZero,
-          },
-          {
-            endAmount: ethers.utils.parseEther(".25").toString(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.NATIVE,
-            recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
-            token: ethers.constants.AddressZero,
-          },
-        ],
-        endTime,
-        nonce: 0,
-        offer: [
-          {
-            endAmount: "1",
-            identifierOrCriteria: nftId,
-            itemType: ItemType.ERC721,
-            startAmount: "1",
-            token: testErc721.address,
-          },
-        ],
-        offerer: offerer.address,
-        orderType: OrderType.FULL_OPEN_VIA_PROXY,
-        salt,
+        parameters: {
+          consideration: [
+            {
+              endAmount: ethers.utils.parseEther("9.75").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: offerer.address,
+              startAmount: ethers.utils.parseEther("9.75").toString(),
+              token: ethers.constants.AddressZero,
+            },
+            {
+              endAmount: ethers.utils.parseEther(".25").toString(),
+              identifierOrCriteria: "0",
+              itemType: ItemType.NATIVE,
+              recipient: zone.address,
+              startAmount: ethers.utils.parseEther(".25").toString(),
+              token: ethers.constants.AddressZero,
+            },
+          ],
+          endTime,
+          offer: [
+            {
+              endAmount: "1",
+              identifierOrCriteria: nftId,
+              itemType: ItemType.ERC721,
+              startAmount: "1",
+              token: testErc721.address,
+            },
+          ],
+          offerer: offerer.address,
+          orderType: OrderType.FULL_OPEN_VIA_PROXY,
+          salt,
+          startTime,
+          zone: ethers.constants.AddressZero,
+        },
         signature: createOrderAction.value.order.signature,
-        startTime,
-        zone: ethers.constants.AddressZero,
+        nonce: 0,
       });
 
       const isValid = await considerationContract
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order,
+            parameters: createOrderAction.value.order.parameters,
             signature: createOrderAction.value.order.signature,
           },
         ]);

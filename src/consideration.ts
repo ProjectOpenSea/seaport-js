@@ -35,6 +35,7 @@ import {
   isCurrencyItem,
 } from "./utils/item";
 import {
+  deductFees,
   feeToConsiderationItem,
   getNonce,
   getOrderHash,
@@ -196,9 +197,9 @@ export class Consideration {
       startTime,
       endTime,
       orderType,
-      offer: offerItems,
+      offer: deductFees(offerItems, fees),
       consideration: [
-        ...considerationItems,
+        ...deductFees(considerationItems, fees),
         ...(fees?.map((fee) =>
           feeToConsiderationItem({
             fee,
@@ -237,7 +238,7 @@ export class Consideration {
       return {
         type: "create",
         order: {
-          ...orderParameters,
+          parameters: orderParameters,
           nonce: resolvedNonce,
           signature,
         },
@@ -306,7 +307,7 @@ export class Consideration {
    */
   public async fulfillOrder(
     order: Order,
-    { unitsToFill }: { unitsToFill?: BigNumberish }
+    { unitsToFill }: { unitsToFill?: BigNumberish } = {}
   ): Promise<OrderUseCase<OrderExchangeActions>> {
     const { parameters: orderParameters } = order;
     const { offerer, zone, offer, consideration } = orderParameters;

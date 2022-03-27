@@ -16,6 +16,7 @@ import type {
   ConsiderationItem,
   OrderComponents,
   AdvancedOrder,
+  Item,
 } from "../types";
 import {
   BalancesAndApprovals,
@@ -48,6 +49,10 @@ export const ORDER_OPTIONS_TO_ORDER_TYPE = {
     },
   },
 } as const;
+const multiplyBasisPoints = (amount: BigNumberish, basisPoints: number) =>
+  BigNumber.from(amount)
+    .mul(BigNumber.from(basisPoints))
+    .div(ONE_HUNDRED_PERCENT_BP);
 
 export const feeToConsiderationItem = ({
   fee,
@@ -60,20 +65,43 @@ export const feeToConsiderationItem = ({
   baseAmount: BigNumberish;
   baseEndAmount?: BigNumberish;
 }): ConsiderationItem => {
-  const multiplyBasisPoints = (amount: BigNumberish) =>
-    BigNumber.from(amount)
-      .mul(BigNumber.from(fee.basisPoints))
-      .div(ONE_HUNDRED_PERCENT_BP);
-
   return {
     itemType:
       token === ethers.constants.AddressZero ? ItemType.NATIVE : ItemType.ERC20,
     token,
     identifierOrCriteria: "0",
-    startAmount: multiplyBasisPoints(baseAmount).toString(),
-    endAmount: multiplyBasisPoints(baseEndAmount).toString(),
+    startAmount: multiplyBasisPoints(baseAmount, fee.basisPoints).toString(),
+    endAmount: multiplyBasisPoints(baseEndAmount, fee.basisPoints).toString(),
     recipient: fee.recipient,
   };
+};
+
+export const deductFees = <T extends Item>(
+  items: T[],
+  fees?: readonly Fee[]
+): T[] => {
+  if (!fees) {
+    return items;
+  }
+
+  const totalBasisPoints = fees.reduce(
+    (accBasisPoints, fee) => accBasisPoints + fee.basisPoints,
+    0
+  );
+
+  return items.map((item) => ({
+    ...item,
+    startAmount: isCurrencyItem(item)
+      ? BigNumber.from(item.startAmount)
+          .sub(multiplyBasisPoints(item.startAmount, totalBasisPoints))
+          .toString()
+      : item.startAmount,
+    endAmount: isCurrencyItem(item)
+      ? BigNumber.from(item.endAmount)
+          .sub(multiplyBasisPoints(item.startAmount, totalBasisPoints))
+          .toString()
+      : item.endAmount,
+  }));
 };
 
 export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {

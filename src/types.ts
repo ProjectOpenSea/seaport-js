@@ -122,7 +122,9 @@ export type OrderStatus = {
   totalSize: BigNumber;
 };
 
-export type CreatedOrder = OrderComponents & { signature: BytesLike };
+export type CreatedOrder = Order & {
+  nonce: number;
+};
 
 export type ApprovalAction = {
   type: "approval";
