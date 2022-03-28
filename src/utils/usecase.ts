@@ -1,17 +1,14 @@
-import {
-  CreateOrderActions,
-  OrderExchangeActions,
-  OrderUseCase,
-} from "../types";
+import { CreateOrderAction, ExchangeAction, OrderUseCase } from "../types";
 
 export const executeAllActions = async <
-  T = CreateOrderActions | OrderExchangeActions
+  T extends CreateOrderAction | ExchangeAction
 >(
   genActions: OrderUseCase<T>["genActions"]
 ) => {
   const actions = await genActions();
 
   let action = await actions.next();
+  action.value;
 
   while (!action.done) {
     console.log(action);

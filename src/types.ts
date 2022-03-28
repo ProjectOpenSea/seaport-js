@@ -53,7 +53,7 @@ export type OrderParameters = {
   orderType: OrderType;
   startTime: BigNumberish;
   endTime: BigNumberish;
-  salt: BytesLike;
+  salt: string;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
 };
@@ -62,7 +62,7 @@ export type OrderComponents = OrderParameters & { nonce: number };
 
 export type Order = {
   parameters: OrderParameters;
-  signature: BytesLike;
+  signature: string;
 };
 
 export type AdvancedOrder = Order & {
@@ -112,7 +112,7 @@ export type CreateOrderInput = {
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
   useProxy?: boolean;
-  salt?: BytesLike;
+  salt?: string;
 };
 
 export type OrderStatus = {
@@ -151,15 +151,15 @@ export type CreateOrderActions = ApprovalAction | CreateOrderAction;
 
 export type OrderExchangeActions = ApprovalAction | ExchangeAction;
 
-export type OrderUseCase<T = CreateOrderActions | OrderExchangeActions> = {
+export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
   insufficientApprovals: InsufficientApprovals;
   numActions: number;
   genActions: () => AsyncGenerator<
     ApprovalAction,
-    T extends CreateOrderActions ? CreateOrderAction : ExchangeAction
+    T extends CreateOrderAction ? CreateOrderAction : ExchangeAction
   >;
   executeAllActions: () => Promise<
-    T extends CreateOrderActions ? CreatedOrder : ContractTransaction
+    T extends CreateOrderAction ? CreatedOrder : ContractTransaction
   >;
 };
 

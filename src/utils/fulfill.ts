@@ -9,8 +9,8 @@ import { BasicFulfillOrder, ItemType, ProxyStrategy } from "../constants";
 import type { Consideration } from "../typechain/Consideration";
 import type {
   AdvancedOrder,
+  ExchangeAction,
   Order,
-  OrderExchangeActions,
   OrderParameters,
   OrderStatus,
   OrderUseCase,
@@ -110,7 +110,7 @@ export const shouldUseBasicFulfill = (
   const firstConsiderationRecipientIsNotOfferer =
     firstConsideration.recipient.toLowerCase() !== offerer.toLowerCase();
 
-  if (!firstConsiderationRecipientIsNotOfferer) {
+  if (firstConsiderationRecipientIsNotOfferer) {
     return false;
   }
 
@@ -118,10 +118,12 @@ export const shouldUseBasicFulfill = (
   // first consideration item have the same item type as the offered item, the offered item
   // amount is not less than the sum of all consideration item amounts excluding the
   // first consideration item amount
-  if (consideration.length > 1) {
-    if (totalItemsAmount(restConsideration).endAmount.gt(offer[0].endAmount)) {
-      return false;
-    }
+  if (
+    consideration.length > 1 &&
+    restConsideration.every((item) => item.itemType === offer[0].itemType) &&
+    totalItemsAmount(restConsideration).endAmount.gt(offer[0].endAmount)
+  ) {
+    return false;
   }
 
   const currencies = allItems.filter(({ itemType }) =>
@@ -152,19 +154,17 @@ export const shouldUseBasicFulfill = (
 const offerAndConsiderationFulfillmentMapping: {
   [_key in ItemType]?: { [_key in ItemType]?: BasicFulfillOrder };
 } = {
-  [ItemType.NATIVE]: {
-    [ItemType.ERC721]: BasicFulfillOrder.ETH_FOR_ERC721,
-    [ItemType.ERC1155]: BasicFulfillOrder.ETH_FOR_ERC1155,
-  },
   [ItemType.ERC20]: {
-    [ItemType.ERC721]: BasicFulfillOrder.ERC20_FOR_ERC721,
-    [ItemType.ERC1155]: BasicFulfillOrder.ERC20_FOR_ERC1155,
+    [ItemType.ERC721]: BasicFulfillOrder.ERC721_FOR_ERC20,
+    [ItemType.ERC1155]: BasicFulfillOrder.ERC1155_FOR_ERC20,
   },
   [ItemType.ERC721]: {
-    [ItemType.ERC20]: BasicFulfillOrder.ERC721_FOR_ERC20,
+    [ItemType.NATIVE]: BasicFulfillOrder.ETH_FOR_ERC721,
+    [ItemType.ERC20]: BasicFulfillOrder.ERC20_FOR_ERC721,
   },
   [ItemType.ERC1155]: {
-    [ItemType.ERC20]: BasicFulfillOrder.ERC1155_FOR_ERC20,
+    [ItemType.NATIVE]: BasicFulfillOrder.ETH_FOR_ERC1155,
+    [ItemType.ERC20]: BasicFulfillOrder.ERC20_FOR_ERC1155,
   },
 } as const;
 
@@ -186,19 +186,19 @@ export function fulfillBasicOrder(
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
-    provider,
     proxy,
     proxyStrategy,
+    signer,
   }: {
     considerationContract: Consideration;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
-    provider: providers.JsonRpcProvider;
     proxy: string;
     proxyStrategy: ProxyStrategy;
+    signer: providers.JsonRpcSigner;
   }
-): OrderUseCase<OrderExchangeActions> {
+): OrderUseCase<ExchangeAction> {
   const { offer, consideration, orderType } = orderParameters;
 
   const offerItem = offer[0];
@@ -287,21 +287,24 @@ export function fulfillBasicOrder(
   const payableOverrides = { value: totalNativeAmount };
 
   async function* genActions() {
-    yield* setNeededApprovals(approvalsToUse, { provider });
+    yield* setNeededApprovals(approvalsToUse, { signer });
 
     let transaction: ContractTransaction | undefined;
 
     switch (basicFulfillOrder) {
       case BasicFulfillOrder.ETH_FOR_ERC721:
-        transaction = await considerationContract.fulfillBasicEthForERC721Order(
-          totalNativeAmount,
-          basicOrderParameters,
-          payableOverrides
-        );
+        transaction = await considerationContract
+          .connect(signer)
+          .fulfillBasicEthForERC721Order(
+            totalNativeAmount,
+            basicOrderParameters,
+            payableOverrides
+          );
         break;
       case BasicFulfillOrder.ETH_FOR_ERC1155:
-        transaction =
-          await considerationContract.fulfillBasicEthForERC1155Order(
+        transaction = await considerationContract
+          .connect(signer)
+          .fulfillBasicEthForERC1155Order(
             totalNativeAmount,
             // The order offer is ERC1155
             offerItem.endAmount,
@@ -310,8 +313,9 @@ export function fulfillBasicOrder(
           );
         break;
       case BasicFulfillOrder.ERC20_FOR_ERC721:
-        transaction =
-          await considerationContract.fulfillBasicERC20ForERC721Order(
+        transaction = await considerationContract
+          .connect(signer)
+          .fulfillBasicERC20ForERC721Order(
             // The order consideration is ERC20
             forOfferer.token,
             forOfferer.endAmount,
@@ -319,8 +323,9 @@ export function fulfillBasicOrder(
           );
         break;
       case BasicFulfillOrder.ERC20_FOR_ERC1155:
-        transaction =
-          await considerationContract.fulfillBasicERC20ForERC1155Order(
+        transaction = await considerationContract
+          .connect(signer)
+          .fulfillBasicERC20ForERC1155Order(
             // The order consideration is ERC20
             forOfferer.token,
             forOfferer.endAmount,
@@ -329,8 +334,9 @@ export function fulfillBasicOrder(
           );
         break;
       case BasicFulfillOrder.ERC721_FOR_ERC20:
-        transaction =
-          await considerationContract.fulfillBasicERC721ForERC20Order(
+        transaction = await considerationContract
+          .connect(signer)
+          .fulfillBasicERC721ForERC20Order(
             // The order offer is ERC20
             offerItem.token,
             offerItem.endAmount,
@@ -339,8 +345,9 @@ export function fulfillBasicOrder(
           );
         break;
       case BasicFulfillOrder.ERC1155_FOR_ERC20:
-        transaction =
-          await considerationContract.fulfillBasicERC1155ForERC20Order(
+        transaction = await considerationContract
+          .connect(signer)
+          .fulfillBasicERC1155ForERC20Order(
             // The order offer is ERC20
             offerItem.token,
             offerItem.endAmount,
@@ -385,20 +392,20 @@ export function fulfillStandardOrder(
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
-    provider,
     proxy,
     proxyStrategy,
+    signer,
   }: {
     considerationContract: Consideration;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
     unitsToFill?: BigNumberish;
-    provider: providers.JsonRpcProvider;
     proxy: string;
     proxyStrategy: ProxyStrategy;
+    signer: providers.JsonRpcSigner;
   }
-): OrderUseCase<OrderExchangeActions> {
+): OrderUseCase<ExchangeAction> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills: Order | AdvancedOrder = unitsToFill
@@ -464,23 +471,25 @@ export function fulfillStandardOrder(
   const payableOverrides = { value: totalNativeAmount };
 
   async function* genActions() {
-    yield* setNeededApprovals(approvalsToUse, { provider });
+    yield* setNeededApprovals(approvalsToUse, { signer });
 
     const transaction = await (unitsToFill &&
     // For typechecking
     "numerator" in orderWithAdjustedFills
-      ? considerationContract.fulfillAdvancedOrder(
+      ? considerationContract.connect(signer).fulfillAdvancedOrder(
           orderWithAdjustedFills,
           // TODO: Criteria resolvers
           [],
           useProxyForFulfiller,
           payableOverrides
         )
-      : considerationContract.fulfillOrder(
-          orderWithAdjustedFills,
-          useProxyForFulfiller,
-          payableOverrides
-        ));
+      : considerationContract
+          .connect(signer)
+          .fulfillOrder(
+            orderWithAdjustedFills,
+            useProxyForFulfiller,
+            payableOverrides
+          ));
 
     return { type: "exchange", transaction } as const;
   }

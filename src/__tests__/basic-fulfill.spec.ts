@@ -1,3 +1,4 @@
+import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
@@ -5,7 +6,12 @@ import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
 import { CreateOrderInput } from "../types";
+import { generateRandomSalt } from "../utils/order";
 import { isExactlyNotTrue, isExactlyTrue } from "./utils/assert";
+import {
+  getBalancesForFulfillOrder,
+  verifyBalancesAfterFulfill,
+} from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(
@@ -17,12 +23,15 @@ describeWithFixture(
         let zone: SignerWithAddress;
         let fulfiller: SignerWithAddress;
         let standardCreateOrderInput: CreateOrderInput;
+        let multicallProvider: providers.MulticallProvider;
+
         const nftId = "1";
 
         beforeEach(async () => {
           [offerer, zone, fulfiller] = await ethers.getSigners();
           const { testErc721, legacyProxyRegistry, considerationContract } =
             fixture;
+          multicallProvider = new providers.MulticallProvider(ethers.provider);
 
           await testErc721.mint(offerer.address, nftId);
 
@@ -45,7 +54,7 @@ describeWithFixture(
           standardCreateOrderInput = {
             startTime: "0",
             endTime: MAX_INT.toString(),
-            salt: ethers.utils.randomBytes(16),
+            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -64,7 +73,7 @@ describeWithFixture(
           };
         });
 
-        it("ERC721 <=> ETH", async () => {
+        it.only("ERC721 <=> ETH", async () => {
           const { consideration } = fixture;
           const { executeAllActions } = await consideration.createOrder(
             standardCreateOrderInput
@@ -72,7 +81,36 @@ describeWithFixture(
 
           const order = await executeAllActions();
 
-          const fulfillActions = await consideration.fulfillOrder(order);
+          const initialBalances = await getBalancesForFulfillOrder(
+            order,
+            fulfiller.address,
+            multicallProvider
+          );
+
+          const { insufficientApprovals, genActions, numActions } =
+            await consideration.fulfillOrder(order);
+
+          expect(insufficientApprovals.length).to.eq(0);
+          expect(numActions).to.eq(1);
+
+          const actions = await genActions();
+          const fulfillAction = await actions.next();
+
+          isExactlyTrue(fulfillAction.done);
+
+          expect(fulfillAction.value).to.be.deep.equal({
+            type: "exchange",
+            transaction: fulfillAction.value.transaction,
+          });
+
+          await fulfillAction.value.transaction.wait();
+
+          await verifyBalancesAfterFulfill(
+            initialBalances,
+            order,
+            fulfiller.address,
+            multicallProvider
+          );
         });
         it("ERC721 <=> ETH (offer via proxy)", async () => {});
         it("ERC721 <=> ETH (already validated order)", async () => {});

@@ -37,6 +37,7 @@ export const balanceOf = async (
       ERC1155ABI,
       multicallProvider
     ) as ERC1155;
+
     return contract.balanceOf(owner, item.identifierOrCriteria);
   }
 

@@ -3,6 +3,7 @@ import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
+import { generateRandomSalt } from "../utils/order";
 import { isExactlyNotTrue, isExactlyTrue } from "./utils/assert";
 import { describeWithFixture } from "./utils/setup";
 
@@ -15,7 +16,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     await testErc721.mint(offerer.address, nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
-    const salt = ethers.utils.randomBytes(16);
+    const salt = generateRandomSalt();
 
     const { insufficientApprovals, genActions, numActions } =
       await consideration.createOrder({
@@ -143,7 +144,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     await testErc1155.mint(offerer.address, nftId, 1);
     const startTime = "0";
     const endTime = MAX_INT.toString();
-    const salt = ethers.utils.randomBytes(16);
+    const salt = generateRandomSalt();
 
     const { insufficientApprovals, genActions, numActions } =
       await consideration.createOrder({
@@ -317,7 +318,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(isValid).to.be.true;
   });
 
-  describe("validations", () => {
+  describe("check validations", () => {
     it("throws if currencies are different", async () => {
       const { consideration, testErc721, testErc20 } = fixture;
 
@@ -326,7 +327,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc721.mint(offerer.address, nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
       await testErc20.mint(offerer.address, 1);
 
       await expect(
@@ -366,7 +367,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc721.mint(zone.address, nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
 
       const createOrderInput = {
         startTime,
@@ -445,7 +446,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       const nftId = "1";
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
       await testErc721.mint(randomSigner.address, nftId);
 
       const { insufficientApprovals, genActions, numActions } =
@@ -562,7 +563,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc721.mint(offerer.address, nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
 
       // Register the proxy on the user
       await legacyProxyRegistry.connect(offerer).registerProxy();
@@ -668,7 +669,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc721.mint(offerer.address, nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
 
       // Register the proxy on the user
       await legacyProxyRegistry.connect(offerer).registerProxy();
@@ -781,7 +782,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc721.mint(offerer.address, nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
 
       // Register the proxy on the user
       await legacyProxyRegistry.connect(offerer).registerProxy();
@@ -923,7 +924,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc721.mint(offerer.address, nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
-      const salt = ethers.utils.randomBytes(16);
+      const salt = generateRandomSalt();
 
       // Register the proxy on the user
       await legacyProxyRegistry.connect(offerer).registerProxy();

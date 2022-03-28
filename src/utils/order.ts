@@ -347,7 +347,7 @@ export const getOrderHash = (orderComponents: OrderComponents) => {
           .toHexString()
           .slice(2)
           .padStart(64, "0"),
-        orderComponents.salt.toString().slice(2).padStart(64, "0"),
+        orderComponents.salt.slice(2).padStart(64, "0"),
         ethers.BigNumber.from(orderComponents.nonce)
           .toHexString()
           .slice(2)
@@ -489,6 +489,10 @@ export const mapOrderAmountsFromUnitsToFill = (
     numerator: unitsToFillBn.div(unitsGcd),
     denominator: maxUnits.div(unitsGcd),
   };
+};
+
+export const generateRandomSalt = () => {
+  return `0x${Buffer.from(ethers.utils.randomBytes(16)).toString("hex")}`;
 };
 
 export const shouldUseMatchForFulfill = () => true;
