@@ -229,7 +229,6 @@ describeWithFixture(
             fulfillReceipt: receipt,
           });
         });
-        it("ERC721 <=> ETH (extra ether supplied and returned to caller)", async () => {});
         it("ERC721 <=> ETH (fulfilled via proxy)", async () => {});
         it("ERC721 <=> ERC20", async () => {});
         it("ERC721 <=> ERC20 (offer via proxy)", async () => {});

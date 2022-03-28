@@ -44,6 +44,7 @@ export const getBalancesForFulfillOrder = async (
     ownerToTokenToIdentifierBalances[address] = {};
   });
 
+  // Just prepopulate all the keys so we can do an async map
   for (const item of [...offer, ...consideration]) {
     for (const address of relevantAddresses) {
       ownerToTokenToIdentifierBalances[address] = {
@@ -51,12 +52,27 @@ export const getBalancesForFulfillOrder = async (
         [item.token]: {
           [item.identifierOrCriteria]: {
             item,
-            balance: await balanceOf(address, item, multicallProvider),
+            balance: BigNumber.from(0),
           },
         },
       };
     }
   }
+
+  await Promise.all(
+    [...offer, ...consideration].map((item) =>
+      Promise.all([
+        ...relevantAddresses.map(async (address) => {
+          ownerToTokenToIdentifierBalances[address][item.token][
+            item.identifierOrCriteria
+          ] = {
+            item,
+            balance: await balanceOf(address, item, multicallProvider),
+          };
+        }),
+      ])
+    )
+  );
 
   return ownerToTokenToIdentifierBalances;
 };
@@ -162,17 +178,41 @@ export const verifyBalancesAfterFulfill = async ({
     };
   }
 
-  for (const [owner, tokenToIdentifierBalances] of Object.entries(
-    ownerToTokenToIdentifierBalances
-  )) {
-    for (const identifierToBalance of Object.values(
-      tokenToIdentifierBalances
-    )) {
-      for (const { balance, item } of Object.values(identifierToBalance)) {
-        const actualBalance = await balanceOf(owner, item, multicallProvider);
+  await Promise.all([
+    ...Object.entries(ownerToTokenToIdentifierBalances).map(
+      ([owner, tokenToIdentifierBalances]) =>
+        Promise.all([
+          ...Object.values(tokenToIdentifierBalances).map(
+            (identifierToBalance) =>
+              Promise.all([
+                ...Object.values(identifierToBalance).map(
+                  async ({ balance, item }) => {
+                    const actualBalance = await balanceOf(
+                      owner,
+                      item,
+                      multicallProvider
+                    );
 
-        expect(balance).equal(actualBalance);
-      }
-    }
-  }
+                    expect(balance).equal(actualBalance);
+                  }
+                ),
+              ])
+          ),
+        ])
+    ),
+  ]);
+
+  // for (const [owner, tokenToIdentifierBalances] of Object.entries(
+  //   ownerToTokenToIdentifierBalances
+  // )) {
+  //   for (const identifierToBalance of Object.values(
+  //     tokenToIdentifierBalances
+  //   )) {
+  //     for (const { balance, item } of Object.values(identifierToBalance)) {
+  //       const actualBalance = await balanceOf(owner, item, multicallProvider);
+
+  //       expect(balance).equal(actualBalance);
+  //     }
+  //   }
+  // }
 };
