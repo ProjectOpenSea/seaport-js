@@ -18,7 +18,7 @@ describeWithFixture(
   "As a user I want to buy now or accept an offer",
   (fixture) => {
     describe("A single ERC721 is to be transferred", async () => {
-      describe("[Buy now] I want to buy a single ERC721", async () => {
+      describe.only("[Buy now] I want to buy a single ERC721", async () => {
         let offerer: SignerWithAddress;
         let zone: SignerWithAddress;
         let fulfiller: SignerWithAddress;
@@ -73,7 +73,7 @@ describeWithFixture(
           };
         });
 
-        it.only("ERC721 <=> ETH", async () => {
+        it("ERC721 <=> ETH", async () => {
           const { consideration } = fixture;
           const { executeAllActions } = await consideration.createOrder(
             standardCreateOrderInput
@@ -81,14 +81,19 @@ describeWithFixture(
 
           const order = await executeAllActions();
 
-          const initialBalances = await getBalancesForFulfillOrder(
-            order,
-            fulfiller.address,
-            multicallProvider
-          );
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              fulfiller.address,
+              multicallProvider
+            );
 
           const { insufficientApprovals, genActions, numActions } =
-            await consideration.fulfillOrder(order);
+            await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
           expect(insufficientApprovals.length).to.eq(0);
           expect(numActions).to.eq(1);
@@ -103,17 +108,127 @@ describeWithFixture(
             transaction: fulfillAction.value.transaction,
           });
 
-          await fulfillAction.value.transaction.wait();
+          const receipt = await fulfillAction.value.transaction.wait();
 
-          await verifyBalancesAfterFulfill(
-            initialBalances,
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
             order,
-            fulfiller.address,
-            multicallProvider
-          );
+            fulfillerAddress: fulfiller.address,
+            multicallProvider,
+            fulfillReceipt: receipt,
+          });
         });
-        it("ERC721 <=> ETH (offer via proxy)", async () => {});
-        it("ERC721 <=> ETH (already validated order)", async () => {});
+
+        it("ERC721 <=> ETH (offer via proxy)", async () => {
+          const { testErc721, considerationContract } = fixture;
+
+          await testErc721
+            .connect(offerer)
+            .setApprovalForAll(considerationContract.address, false);
+
+          const { consideration } = fixture;
+          const { executeAllActions } = await consideration.createOrder(
+            standardCreateOrderInput
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.FULL_OPEN_VIA_PROXY);
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              fulfiller.address,
+              multicallProvider
+            );
+
+          const { insufficientApprovals, genActions, numActions } =
+            await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
+
+          expect(insufficientApprovals.length).to.eq(0);
+          expect(numActions).to.eq(1);
+
+          const actions = await genActions();
+          const fulfillAction = await actions.next();
+
+          isExactlyTrue(fulfillAction.done);
+
+          expect(fulfillAction.value).to.be.deep.equal({
+            type: "exchange",
+            transaction: fulfillAction.value.transaction,
+          });
+
+          const receipt = await fulfillAction.value.transaction.wait();
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            fulfillerAddress: fulfiller.address,
+            multicallProvider,
+            fulfillReceipt: receipt,
+          });
+        });
+
+        it("ERC721 <=> ETH (already validated order)", async () => {
+          const { consideration } = fixture;
+          const { executeAllActions } = await consideration.createOrder(
+            standardCreateOrderInput
+          );
+
+          const order = await executeAllActions();
+
+          // Remove signature
+          order.signature = "0x";
+
+          const { insufficientApprovals, genActions, numActions } =
+            await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
+
+          expect(insufficientApprovals.length).to.eq(0);
+          expect(numActions).to.eq(1);
+
+          // Should revert because signature is empty
+          const revertedActions = await genActions();
+          await expect(revertedActions.next()).to.be.revertedWith(
+            "BadSignatureLength"
+          );
+
+          await consideration.approveOrders([order], offerer.address);
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              fulfiller.address,
+              multicallProvider
+            );
+
+          const actions = await genActions();
+          const fulfillAction = await actions.next();
+
+          isExactlyTrue(fulfillAction.done);
+
+          expect(fulfillAction.value).to.be.deep.equal({
+            type: "exchange",
+            transaction: fulfillAction.value.transaction,
+          });
+
+          const receipt = await fulfillAction.value.transaction.wait();
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            fulfillerAddress: fulfiller.address,
+            multicallProvider,
+            fulfillReceipt: receipt,
+          });
+        });
         it("ERC721 <=> ETH (extra ether supplied and returned to caller)", async () => {});
         it("ERC721 <=> ETH (fulfilled via proxy)", async () => {});
         it("ERC721 <=> ERC20", async () => {});

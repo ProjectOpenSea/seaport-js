@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { JsonRpcProvider } from "ethers/node_modules/@ethersproject/providers";
 import { Item, Order } from "../../types";
@@ -7,6 +7,7 @@ import { balanceOf } from "../../utils/balance";
 import { getPresentItemAmount, TimeBasedItemParams } from "../../utils/item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { expect } from "chai";
+import { ethers } from "hardhat";
 
 export const setBalance = async (
   address: string,
@@ -60,16 +61,24 @@ export const getBalancesForFulfillOrder = async (
   return ownerToTokenToIdentifierBalances;
 };
 
-export const verifyBalancesAfterFulfill = async (
+export const verifyBalancesAfterFulfill = async ({
+  ownerToTokenToIdentifierBalances,
+  order,
+  fulfillReceipt,
+  fulfillerAddress,
+  multicallProvider,
+  timeBasedItemParams,
+}: {
   ownerToTokenToIdentifierBalances: Record<
     string,
     Record<string, Record<string, { balance: BigNumber; item: Item }>>
-  >,
-  order: Order,
-  fulfillerAddress: string,
-  multicallProvider: multicallProviders.MulticallProvider,
-  timeBasedItemParams?: TimeBasedItemParams
-) => {
+  >;
+  order: Order;
+  fulfillReceipt: ContractReceipt;
+  fulfillerAddress: string;
+  multicallProvider: multicallProviders.MulticallProvider;
+  timeBasedItemParams?: TimeBasedItemParams;
+}) => {
   const { offer, consideration, offerer } = order.parameters;
 
   // Offer items are depleted
@@ -132,6 +141,26 @@ export const verifyBalancesAfterFulfill = async (
         ].balance.add(exchangedAmount),
     };
   });
+
+  // Take into account gas costs
+  if (
+    ownerToTokenToIdentifierBalances[fulfillerAddress][
+      ethers.constants.AddressZero
+    ]
+  ) {
+    ownerToTokenToIdentifierBalances[fulfillerAddress][
+      ethers.constants.AddressZero
+    ][0] = {
+      ...ownerToTokenToIdentifierBalances[fulfillerAddress][
+        ethers.constants.AddressZero
+      ][0],
+      balance: ownerToTokenToIdentifierBalances[fulfillerAddress][
+        ethers.constants.AddressZero
+      ][0].balance.sub(
+        fulfillReceipt.gasUsed.mul(fulfillReceipt.effectiveGasPrice)
+      ),
+    };
+  }
 
   for (const [owner, tokenToIdentifierBalances] of Object.entries(
     ownerToTokenToIdentifierBalances

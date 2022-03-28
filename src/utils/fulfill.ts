@@ -296,7 +296,7 @@ export function fulfillBasicOrder(
         transaction = await considerationContract
           .connect(signer)
           .fulfillBasicEthForERC721Order(
-            totalNativeAmount,
+            forOfferer.endAmount,
             basicOrderParameters,
             payableOverrides
           );

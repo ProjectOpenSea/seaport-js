@@ -311,6 +311,12 @@ export class Consideration {
     return this.contract.connect(signer).incrementNonce(resolvedOfferer, zone);
   }
 
+  public async approveOrders(orders: Order[], accountAddress?: string) {
+    const signer = this.provider.getSigner(accountAddress);
+
+    return this.contract.connect(signer).validate(orders);
+  }
+
   /**
    * Fulfills an order through either the basic fulfill methods or the standard method
    * Units to fill are denominated by the max possible size of the order, which is the greatest common denominator (GCD).
