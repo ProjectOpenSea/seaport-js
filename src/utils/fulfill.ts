@@ -312,7 +312,7 @@ export function fulfillBasicOrder(
         transaction = await considerationContract
           .connect(signer)
           .fulfillBasicEthForERC1155Order(
-            totalNativeAmount,
+            forOfferer.endAmount,
             // The order offer is ERC1155
             offerItem.endAmount,
             {

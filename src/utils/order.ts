@@ -112,7 +112,7 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
       token: item.token,
       identifierOrCriteria: item.identifierOrCriteria,
       startAmount: item.amount ?? "1",
-      endAmount: item.amount ?? "1",
+      endAmount: item.endAmount ?? item.amount ?? "1",
     };
   }
   // Item is a currency
