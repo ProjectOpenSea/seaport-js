@@ -261,11 +261,7 @@ export class Consideration {
     }
 
     return {
-      insufficientApprovals,
       genActions,
-      numActions: checkBalancesAndApprovals
-        ? insufficientApprovals.length + 1
-        : 1,
       executeAllActions: () =>
         executeAllActions(genActions) as Promise<CreatedOrder>,
     };

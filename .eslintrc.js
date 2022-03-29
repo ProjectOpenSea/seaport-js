@@ -28,5 +28,6 @@ module.exports = {
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
     ],
     "object-shorthand": ["error", "always"],
+    "no-unexpected-multiline": "off",
   },
 };

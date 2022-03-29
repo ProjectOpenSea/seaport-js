@@ -1,9 +1,5 @@
-import {
-  BigNumber,
-  BigNumberish,
-  BytesLike,
-  ContractTransaction,
-} from "ethers";
+import { BigNumber, BigNumberish, ContractTransaction } from "ethers";
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
 import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
@@ -126,18 +122,22 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
+export type TransactionRequest = EthersTransactionRequest;
+
 export type ApprovalAction = {
   type: "approval";
   token: string;
   identifierOrCriteria: string;
   itemType: ItemType;
-  transaction: ContractTransaction;
   operator: string;
+  sendTransaction: () => Promise<ContractTransaction>;
+  transactionRequest: TransactionRequest;
 };
 
 export type ExchangeAction = {
   type: "exchange";
-  transaction: ContractTransaction;
+  sendTransaction: () => Promise<ContractTransaction>;
+  transactionRequest: TransactionRequest;
 };
 
 export type CreateOrderAction = {
@@ -152,12 +152,9 @@ export type CreateOrderActions = ApprovalAction | CreateOrderAction;
 export type OrderExchangeActions = ApprovalAction | ExchangeAction;
 
 export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
-  insufficientApprovals: InsufficientApprovals;
-  numActions: number;
-  genActions: () => AsyncGenerator<
-    ApprovalAction,
-    T extends CreateOrderAction ? CreateOrderAction : ExchangeAction
-  >;
+  actions: T extends CreateOrderAction
+    ? readonly [...ApprovalAction[], CreateOrderAction]
+    : readonly [...ApprovalAction[], ExchangeAction];
   executeAllActions: () => Promise<
     T extends CreateOrderAction ? CreatedOrder : ContractTransaction
   >;
