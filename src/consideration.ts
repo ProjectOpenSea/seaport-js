@@ -202,18 +202,8 @@ export class Consideration {
       startTime,
       endTime,
       orderType,
-      offer: deductFees(offerItems, fees),
-      consideration: [
-        ...deductFees(considerationItems, fees),
-        ...(fees?.map((fee) =>
-          feeToConsiderationItem({
-            fee,
-            token: currencies[0].token,
-            baseAmount: totalCurrencyAmount.startAmount,
-            baseEndAmount: totalCurrencyAmount.endAmount,
-          })
-        ) ?? []),
-      ],
+      offer: offerItems,
+      consideration: considerationItems,
       salt,
     };
 
@@ -228,6 +218,23 @@ export class Consideration {
       proxyStrategy: this.config.proxyStrategy,
     });
 
+    // Construct the order such that fees are deducted from the original offer and consideration amounts
+    const orderParametersWithDeductedFees = {
+      ...orderParameters,
+      offer: deductFees(offerItems, fees),
+      consideration: [
+        ...deductFees(considerationItems, fees),
+        ...(fees?.map((fee) =>
+          feeToConsiderationItem({
+            fee,
+            token: currencies[0].token,
+            baseAmount: totalCurrencyAmount.startAmount,
+            baseEndAmount: totalCurrencyAmount.endAmount,
+          })
+        ) ?? []),
+      ],
+    };
+
     const signOrder = this.signOrder.bind(this);
 
     async function* genActions() {
@@ -237,12 +244,16 @@ export class Consideration {
         });
       }
 
-      const signature = await signOrder(orderParameters, resolvedNonce);
+      const signature = await signOrder(
+        orderParametersWithDeductedFees,
+        resolvedNonce,
+        accountAddress
+      );
 
       return {
         type: "create",
         order: {
-          parameters: orderParameters,
+          parameters: orderParametersWithDeductedFees,
           nonce: resolvedNonce,
           signature,
         },
@@ -389,7 +400,7 @@ export class Consideration {
 
     if (isValidated) {
       // If the order is already validated, manually wipe the signature off of the order to save gas
-      order.signature = "";
+      order.signature = "0x";
     }
 
     const timeBasedItemParams = {

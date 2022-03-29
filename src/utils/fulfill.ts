@@ -6,7 +6,10 @@ import {
   providers,
 } from "ethers";
 import { BasicFulfillOrder, ItemType, ProxyStrategy } from "../constants";
-import type { Consideration } from "../typechain/Consideration";
+import type {
+  BasicOrderParametersStruct,
+  Consideration,
+} from "../typechain/Consideration";
 import type {
   AdvancedOrder,
   ExchangeAction,
@@ -229,7 +232,7 @@ export function fulfillBasicOrder(
       ...timeBasedItemParams,
       isConsiderationItem: true,
     }
-  )[ethers.constants.AddressZero]["0"];
+  )[ethers.constants.AddressZero]?.["0"];
 
   validateOfferBalancesAndApprovals(
     { offer, orderType },
@@ -270,16 +273,16 @@ export function fulfillBasicOrder(
     ? insufficientProxyApprovals
     : insufficientOwnerApprovals;
 
-  const basicOrderParameters = {
+  const basicOrderParameters: Omit<
+    BasicOrderParametersStruct,
+    "token" | "identifier"
+  > = {
     offerer: orderParameters.offerer,
     zone: orderParameters.zone,
     orderType,
-    token: offerItem.token,
-    identifier: offerItem.identifierOrCriteria,
     startTime: orderParameters.startTime,
     endTime: orderParameters.endTime,
     salt: orderParameters.salt,
-    useFulfillerProxy: useProxyForFulfiller,
     signature,
     additionalRecipients,
   };
@@ -297,7 +300,11 @@ export function fulfillBasicOrder(
           .connect(signer)
           .fulfillBasicEthForERC721Order(
             forOfferer.endAmount,
-            basicOrderParameters,
+            {
+              ...basicOrderParameters,
+              token: offerItem.token,
+              identifier: offerItem.identifierOrCriteria,
+            },
             payableOverrides
           );
         break;
@@ -308,7 +315,11 @@ export function fulfillBasicOrder(
             totalNativeAmount,
             // The order offer is ERC1155
             offerItem.endAmount,
-            basicOrderParameters,
+            {
+              ...basicOrderParameters,
+              token: offerItem.token,
+              identifier: offerItem.identifierOrCriteria,
+            },
             payableOverrides
           );
         break;
@@ -319,7 +330,11 @@ export function fulfillBasicOrder(
             // The order consideration is ERC20
             forOfferer.token,
             forOfferer.endAmount,
-            basicOrderParameters
+            {
+              ...basicOrderParameters,
+              token: offerItem.token,
+              identifier: offerItem.identifierOrCriteria,
+            }
           );
         break;
       case BasicFulfillOrder.ERC20_FOR_ERC1155:
@@ -330,7 +345,11 @@ export function fulfillBasicOrder(
             forOfferer.token,
             forOfferer.endAmount,
             offerItem.endAmount,
-            basicOrderParameters
+            {
+              ...basicOrderParameters,
+              token: offerItem.token,
+              identifier: offerItem.identifierOrCriteria,
+            }
           );
         break;
       case BasicFulfillOrder.ERC721_FOR_ERC20:
@@ -340,7 +359,11 @@ export function fulfillBasicOrder(
             // The order offer is ERC20
             offerItem.token,
             offerItem.endAmount,
-            basicOrderParameters,
+            {
+              ...basicOrderParameters,
+              token: forOfferer.token,
+              identifier: forOfferer.identifierOrCriteria,
+            },
             useProxyForFulfiller
           );
         break;
@@ -353,7 +376,11 @@ export function fulfillBasicOrder(
             offerItem.endAmount,
             // The order consideration is ERC1155
             forOfferer.endAmount,
-            basicOrderParameters,
+            {
+              ...basicOrderParameters,
+              token: forOfferer.token,
+              identifier: forOfferer.identifierOrCriteria,
+            },
             useProxyForFulfiller
           );
     }

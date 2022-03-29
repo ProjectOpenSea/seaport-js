@@ -1,6 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, Contract } from "ethers";
 import { ERC1155ABI } from "../abi/ERC1155";
+import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType } from "../constants";
 import type { ERC1155, ERC20, ERC721 } from "../typechain";
@@ -44,7 +45,7 @@ export const balanceOf = async (
   if (item.itemType === ItemType.ERC20) {
     const contract = new Contract(
       item.token,
-      ERC721ABI,
+      ERC20ABI,
       multicallProvider
     ) as ERC20;
     return contract.balanceOf(owner);

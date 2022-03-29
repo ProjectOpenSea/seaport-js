@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
+import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
@@ -110,6 +111,132 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             itemType: ItemType.ERC721,
             startAmount: "1",
             token: testErc721.address,
+          },
+        ],
+        offerer: offerer.address,
+        orderType: OrderType.FULL_OPEN,
+        salt,
+        startTime,
+        zone: ethers.constants.AddressZero,
+      },
+      signature: createOrderAction.value.order.signature,
+      nonce: 0,
+    });
+
+    const isValid = await considerationContract
+      .connect(randomSigner)
+      .callStatic.validate([
+        {
+          parameters: createOrderAction.value.order.parameters,
+          signature: createOrderAction.value.order.signature,
+        },
+      ]);
+
+    expect(isValid).to.be.true;
+  });
+
+  it("should create an order that offers ERC20 for ERC721", async () => {
+    const { considerationContract, consideration, testErc20, testErc721 } =
+      fixture;
+
+    const [offerer, zone, randomSigner] = await ethers.getSigners();
+    const nftId = "1";
+    await testErc20.mint(offerer.address, parseEther("10").toString());
+    await testErc721.mint(randomSigner.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const salt = generateRandomSalt();
+
+    const { insufficientApprovals, genActions, numActions } =
+      await consideration.createOrder({
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            token: testErc20.address,
+            amount: parseEther("10").toString(),
+          },
+        ],
+        consideration: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifierOrCriteria: nftId,
+            recipient: offerer.address,
+          },
+        ],
+        // 2.5% fee
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      });
+
+    expect(insufficientApprovals).to.be.deep.equal([
+      {
+        token: testErc20.address,
+        identifierOrCriteria: "0",
+        approvedAmount: BigNumber.from(0),
+        requiredApprovedAmount: BigNumber.from(parseEther("10").toString()),
+        operator: considerationContract.address,
+        itemType: ItemType.ERC20,
+      },
+    ]);
+    expect(numActions).to.equal(2);
+
+    const actions = await genActions();
+
+    const approvalAction = await actions.next();
+
+    isExactlyNotTrue(approvalAction.done);
+
+    expect(approvalAction.value).to.be.deep.equal({
+      type: "approval",
+      token: testErc20.address,
+      identifierOrCriteria: "0",
+      itemType: ItemType.ERC20,
+      transaction: approvalAction.value.transaction,
+      operator: considerationContract.address,
+    });
+
+    await approvalAction.value.transaction.wait();
+
+    // NFT should now be approved
+    expect(
+      await testErc20.allowance(offerer.address, considerationContract.address)
+    ).to.equal(MAX_INT);
+
+    const createOrderAction = await actions.next();
+
+    isExactlyTrue(createOrderAction.done);
+    expect(createOrderAction.value.type).to.equal("create");
+    expect(createOrderAction.value.order).to.deep.equal({
+      parameters: {
+        consideration: [
+          {
+            endAmount: "1",
+            identifierOrCriteria: nftId,
+            itemType: ItemType.ERC721,
+            startAmount: "1",
+            token: testErc721.address,
+            recipient: offerer.address,
+          },
+          {
+            endAmount: ethers.utils.parseEther(".25").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            recipient: zone.address,
+            startAmount: ethers.utils.parseEther(".25").toString(),
+            token: testErc20.address,
+          },
+        ],
+        endTime,
+        offer: [
+          {
+            // Fees were deducted
+            endAmount: ethers.utils.parseEther("9.75").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            startAmount: ethers.utils.parseEther("9.75").toString(),
+            token: testErc20.address,
           },
         ],
         offerer: offerer.address,

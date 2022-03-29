@@ -364,18 +364,6 @@ export const validateBasicFulfillBalancesAndApprovals = (
     );
   }
 
-  const approvalsToCheck = useProxyFromApprovals({
-    insufficientOwnerApprovals,
-    insufficientProxyApprovals,
-    proxyStrategy,
-  })
-    ? insufficientProxyApprovals
-    : insufficientOwnerApprovals;
-
-  if (approvalsToCheck.length > 0) {
-    throw new Error("The fulfiller does not have the sufficient approvals.");
-  }
-
   return { insufficientOwnerApprovals, insufficientProxyApprovals };
 };
 
@@ -484,18 +472,6 @@ export const validateStandardFulfillBalancesAndApprovals = (
     throw new Error(
       "The fulfiller does not have the balances needed to fulfill."
     );
-  }
-
-  const approvalsToCheck = useProxyFromApprovals({
-    insufficientOwnerApprovals,
-    insufficientProxyApprovals,
-    proxyStrategy,
-  })
-    ? insufficientProxyApprovals
-    : insufficientOwnerApprovals;
-
-  if (approvalsToCheck.length > 0) {
-    throw new Error("The fulfiller does not have the sufficient approvals.");
   }
 
   return { insufficientOwnerApprovals, insufficientProxyApprovals };
