@@ -10,6 +10,10 @@ import type {
 } from "../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
+import sinonChai from "sinon-chai";
+
+chai.use(chaiAsPromised);
+chai.use(sinonChai);
 
 type Fixture = {
   considerationContract: ConsiderationContract;
@@ -26,7 +30,6 @@ export const describeWithFixture = (
   suiteCb: (fixture: Fixture) => unknown
 ) => {
   describe(name, () => {
-    chai.use(chaiAsPromised);
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {

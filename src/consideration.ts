@@ -12,11 +12,11 @@ import type { Consideration as ConsiderationContract } from "./typechain/Conside
 import type {
   ConsiderationConfig,
   CreatedOrder,
-  CreateOrderActions,
+  CreateOrderAction,
   CreateOrderInput,
+  ExchangeAction,
   Order,
   OrderComponents,
-  OrderExchangeActions,
   OrderParameters,
   OrderUseCase,
 } from "./types";
@@ -35,7 +35,9 @@ import {
   isCurrencyItem,
 } from "./utils/item";
 import {
+  deductFees,
   feeToConsiderationItem,
+  generateRandomSalt,
   getNonce,
   getOrderHash,
   getOrderStatus,
@@ -113,21 +115,25 @@ export class Consideration {
     return orderType;
   }
 
-  public async createOrder({
-    zone = ethers.constants.AddressZero,
-    // Default to current unix time.
-    startTime = Math.floor(Date.now() / 1000).toString(),
-    // Defaulting to "never end". We HIGHLY recommend passing in an explicit end time
-    endTime = MAX_INT.toString(),
-    offer,
-    consideration,
-    nonce,
-    allowPartialFills,
-    restrictedByZone,
-    fees,
-    salt = ethers.utils.randomBytes(16),
-  }: CreateOrderInput): Promise<OrderUseCase<CreateOrderActions>> {
-    const offerer = await this.provider.getSigner().getAddress();
+  public async createOrder(
+    {
+      zone = ethers.constants.AddressZero,
+      // Default to current unix time.
+      startTime = Math.floor(Date.now() / 1000).toString(),
+      // Defaulting to "never end". We HIGHLY recommend passing in an explicit end time
+      endTime = MAX_INT.toString(),
+      offer,
+      consideration,
+      nonce,
+      allowPartialFills,
+      restrictedByZone,
+      fees,
+      salt = generateRandomSalt(),
+    }: CreateOrderInput,
+    accountAddress?: string
+  ): Promise<OrderUseCase<CreateOrderAction>> {
+    const signer = await this.provider.getSigner(accountAddress);
+    const offerer = await signer.getAddress();
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
       ...consideration.map((consideration) => ({
@@ -197,17 +203,7 @@ export class Consideration {
       endTime,
       orderType,
       offer: offerItems,
-      consideration: [
-        ...considerationItems,
-        ...(fees?.map((fee) =>
-          feeToConsiderationItem({
-            fee,
-            token: currencies[0].token,
-            baseAmount: totalCurrencyAmount.startAmount,
-            baseEndAmount: totalCurrencyAmount.endAmount,
-          })
-        ) ?? []),
-      ],
+      consideration: considerationItems,
       salt,
     };
 
@@ -222,22 +218,42 @@ export class Consideration {
       proxyStrategy: this.config.proxyStrategy,
     });
 
+    // Construct the order such that fees are deducted from the original offer and consideration amounts
+    const orderParametersWithDeductedFees = {
+      ...orderParameters,
+      offer: deductFees(offerItems, fees),
+      consideration: [
+        ...deductFees(considerationItems, fees),
+        ...(fees?.map((fee) =>
+          feeToConsiderationItem({
+            fee,
+            token: currencies[0].token,
+            baseAmount: totalCurrencyAmount.startAmount,
+            baseEndAmount: totalCurrencyAmount.endAmount,
+          })
+        ) ?? []),
+      ],
+    };
+
     const signOrder = this.signOrder.bind(this);
-    const provider = this.provider;
 
     async function* genActions() {
       if (checkBalancesAndApprovals) {
         yield* setNeededApprovals(insufficientApprovals, {
-          provider,
+          signer,
         });
       }
 
-      const signature = await signOrder(orderParameters, resolvedNonce);
+      const signature = await signOrder(
+        orderParametersWithDeductedFees,
+        resolvedNonce,
+        accountAddress
+      );
 
       return {
         type: "create",
         order: {
-          ...orderParameters,
+          parameters: orderParametersWithDeductedFees,
           nonce: resolvedNonce,
           signature,
         },
@@ -255,8 +271,12 @@ export class Consideration {
     };
   }
 
-  public async signOrder(orderParameters: OrderParameters, nonce: number) {
-    const signer = this.provider.getSigner();
+  public async signOrder(
+    orderParameters: OrderParameters,
+    nonce: number,
+    accountAddress?: string
+  ) {
+    const signer = this.provider.getSigner(accountAddress);
     const { chainId } = await this.provider.getNetwork();
 
     const domainData = {
@@ -281,8 +301,12 @@ export class Consideration {
     return ethers.utils.splitSignature(signature).compact;
   }
 
-  public async cancelOrders(orders: OrderComponents[]) {
-    return this.contract.cancel(orders);
+  public async cancelOrders(
+    orders: OrderComponents[],
+    accountAddress?: string
+  ) {
+    const signer = this.provider.getSigner(accountAddress);
+    return this.contract.connect(signer).cancel(orders);
   }
 
   public async bulkCancelOrders({
@@ -292,10 +316,16 @@ export class Consideration {
     offerer?: string;
     zone: string;
   }) {
-    const resolvedOfferer =
-      offerer ?? (await this.provider.getSigner().getAddress());
+    const signer = this.provider.getSigner(offerer);
+    const resolvedOfferer = offerer ?? (await signer.getAddress());
 
-    return this.contract.incrementNonce(resolvedOfferer, zone);
+    return this.contract.connect(signer).incrementNonce(resolvedOfferer, zone);
+  }
+
+  public async approveOrders(orders: Order[], accountAddress?: string) {
+    const signer = this.provider.getSigner(accountAddress);
+
+    return this.contract.connect(signer).validate(orders);
   }
 
   /**
@@ -306,12 +336,15 @@ export class Consideration {
    */
   public async fulfillOrder(
     order: Order,
-    { unitsToFill }: { unitsToFill?: BigNumberish }
-  ): Promise<OrderUseCase<OrderExchangeActions>> {
+    { unitsToFill }: { unitsToFill?: BigNumberish } = {},
+    accountAddress?: string
+  ): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
     const { offerer, zone, offer, consideration } = orderParameters;
 
-    const fulfiller = await this.provider.getSigner().getAddress();
+    const fulfiller = await this.provider.getSigner(accountAddress);
+
+    const fulfillerAddress = await fulfiller.getAddress();
 
     const [offererProxy, fulfillerProxy, nonce, latestBlock] =
       await Promise.all([
@@ -319,7 +352,7 @@ export class Consideration {
           legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
           multicallProvider: this.multicallProvider,
         }),
-        getProxy(fulfiller, {
+        getProxy(fulfillerAddress, {
           legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
           multicallProvider: this.multicallProvider,
         }),
@@ -345,7 +378,7 @@ export class Consideration {
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
-      getBalancesAndApprovals(fulfiller, [...offer, ...consideration], {
+      getBalancesAndApprovals(fulfillerAddress, [...offer, ...consideration], {
         proxy: fulfillerProxy,
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
@@ -367,7 +400,7 @@ export class Consideration {
 
     if (isValidated) {
       // If the order is already validated, manually wipe the signature off of the order to save gas
-      order.signature = "";
+      order.signature = "0x";
     }
 
     const timeBasedItemParams = {
@@ -385,10 +418,10 @@ export class Consideration {
         considerationContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
-        provider: this.provider,
         timeBasedItemParams,
         proxy: fulfillerProxy,
         proxyStrategy: this.config.proxyStrategy,
+        signer: fulfiller,
       });
     }
 
@@ -400,10 +433,10 @@ export class Consideration {
         considerationContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
-        provider: this.provider,
         timeBasedItemParams,
         proxy: fulfillerProxy,
         proxyStrategy: this.config.proxyStrategy,
+        signer: fulfiller,
       }
     );
   }

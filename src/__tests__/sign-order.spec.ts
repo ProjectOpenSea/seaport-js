@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { randomBytes } from "crypto";
 import { ethers } from "hardhat";
 import { MAX_INT, OrderType } from "../constants";
+import { generateRandomSalt } from "../utils/order";
 import { constructCurrencyItem, constructNftItem } from "./utils/item";
 import { describeWithFixture } from "./utils/setup";
 
@@ -12,7 +12,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
 
     const startTime = 0;
     const endTime = MAX_INT;
-    const salt = randomBytes(32);
+    const salt = generateRandomSalt();
     const nftId = 0;
 
     const offer = [
