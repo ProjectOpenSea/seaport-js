@@ -21,7 +21,7 @@ import type {
   OrderStatus,
   OrderUseCase,
 } from "../types";
-import { getApprovalActions, setNeededApprovals } from "./approval";
+import { getApprovalActions } from "./approval";
 import {
   validateOfferBalancesAndApprovals,
   BalancesAndApprovals,
@@ -204,7 +204,7 @@ export async function fulfillBasicOrder(
     proxyStrategy: ProxyStrategy;
     signer: providers.JsonRpcSigner;
   }
-): OrderUseCase<ExchangeAction> {
+): Promise<OrderUseCase<ExchangeAction>> {
   const { offer, consideration, orderType } = orderParameters;
 
   const offerItem = offer[0];
@@ -470,12 +470,14 @@ export async function fulfillBasicOrder(
 
   const exchangeAction = {
     type: "exchange",
-    sendTransaction,
-    transactionRequest: {
-      from: signerAddress,
-      to: considerationContract.address,
-      value: totalNativeAmount,
-      data,
+    transactionDetails: {
+      send: sendTransaction,
+      requestDetails: {
+        from: signerAddress,
+        to: considerationContract.address,
+        value: totalNativeAmount,
+        data,
+      },
     },
   } as ExchangeAction;
 
@@ -488,7 +490,7 @@ export async function fulfillBasicOrder(
   };
 }
 
-export function fulfillStandardOrder(
+export async function fulfillStandardOrder(
   order: Order,
   {
     unitsToFill,
@@ -517,7 +519,7 @@ export function fulfillStandardOrder(
     proxyStrategy: ProxyStrategy;
     signer: providers.JsonRpcSigner;
   }
-): OrderUseCase<ExchangeAction> {
+): Promise<OrderUseCase<ExchangeAction>> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills: Order | AdvancedOrder = unitsToFill
@@ -582,12 +584,14 @@ export function fulfillStandardOrder(
 
   const payableOverrides = { value: totalNativeAmount };
 
-  async function* genActions() {
-    yield* setNeededApprovals(approvalsToUse, { signer });
+  const approvalActions = await getApprovalActions(approvalsToUse, { signer });
 
-    const transaction = await (unitsToFill &&
-    // For typechecking
-    "numerator" in orderWithAdjustedFills
+  const signerAddress = await signer.getAddress();
+
+  const useAdvanced = unitsToFill && "numerator" in orderWithAdjustedFills;
+
+  const sendTransaction = async () =>
+    useAdvanced
       ? considerationContract.connect(signer).fulfillAdvancedOrder(
           orderWithAdjustedFills,
           // TODO: Criteria resolvers
@@ -601,15 +605,27 @@ export function fulfillStandardOrder(
             orderWithAdjustedFills,
             useProxyForFulfiller,
             payableOverrides
-          ));
+          );
+  // const data = useAdvanced ? new Interface(ConsiderationABI).encodeFunctionData("fulfillAdvancedOrder",
 
-    return { type: "exchange", transaction } as const;
-  }
+  const exchangeAction = {
+    type: "exchange",
+    transactionDetails: {
+      send: sendTransaction,
+      requestDetails: {
+        from: signerAddress,
+        to: considerationContract.address,
+        value: totalNativeAmount,
+        data: new Interface(ConsiderationABI).encodeFunctionData(useAdvanced ? ),
+      },
+    },
+  } as const;
+
+  const actions = [...approvalActions, exchangeAction] as const;
 
   return {
-    genActions,
-    numActions: approvalsToUse.length + 1,
+    actions,
     executeAllActions: () =>
-      executeAllActions(genActions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<ContractTransaction>,
   };
 }

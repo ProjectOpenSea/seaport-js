@@ -122,7 +122,12 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
-export type TransactionRequest = EthersTransactionRequest;
+type TransactionRequest = EthersTransactionRequest;
+
+type TransactionDetails = {
+  send: () => Promise<ContractTransaction>;
+  requestDetails: TransactionRequest;
+};
 
 export type ApprovalAction = {
   type: "approval";
@@ -130,14 +135,12 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   operator: string;
-  sendTransaction: () => Promise<ContractTransaction>;
-  transactionRequest: TransactionRequest;
+  transactionDetails: TransactionDetails;
 };
 
 export type ExchangeAction = {
   type: "exchange";
-  sendTransaction: () => Promise<ContractTransaction>;
-  transactionRequest: TransactionRequest;
+  transactionDetails: TransactionDetails;
 };
 
 export type CreateOrderAction = {
@@ -147,14 +150,20 @@ export type CreateOrderAction = {
 
 export type TransactionAction = ApprovalAction | ExchangeAction;
 
-export type CreateOrderActions = ApprovalAction | CreateOrderAction;
+export type CreateOrderActions = readonly [
+  ...ApprovalAction[],
+  CreateOrderAction
+];
 
-export type OrderExchangeActions = ApprovalAction | ExchangeAction;
+export type OrderExchangeActions = readonly [
+  ...ApprovalAction[],
+  ExchangeAction
+];
 
 export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
   actions: T extends CreateOrderAction
-    ? readonly [...ApprovalAction[], CreateOrderAction]
-    : readonly [...ApprovalAction[], ExchangeAction];
+    ? CreateOrderActions
+    : OrderExchangeActions;
   executeAllActions: () => Promise<
     T extends CreateOrderAction ? CreatedOrder : ContractTransaction
   >;
