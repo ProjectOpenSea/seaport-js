@@ -424,24 +424,30 @@ export const mapOrderAmountsFromFilledStatus = (
     .mul(ONE_HUNDRED_PERCENT_BP)
     .div(totalSize);
 
-  const mapAmountToPartialAmount = (amount: string) =>
-    BigNumber.from(amount)
-      .mul(basisPoints)
-      .div(ONE_HUNDRED_PERCENT_BP)
-      .toString();
-
   return {
     parameters: {
       ...order.parameters,
       offer: order.parameters.offer.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
     },
     signature: order.signature,
