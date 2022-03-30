@@ -10,7 +10,6 @@ import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
 import { CreateOrderInput } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
-import { isExactlyNotTrue, isExactlyTrue } from "./utils/assert";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
