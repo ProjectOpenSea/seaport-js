@@ -26,6 +26,7 @@ import {
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { gcd } from "./gcd";
+import { MerkleTree } from "merkletreejs";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -49,6 +50,7 @@ export const ORDER_OPTIONS_TO_ORDER_TYPE = {
     },
   },
 } as const;
+
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: number) =>
   BigNumber.from(amount)
     .mul(BigNumber.from(basisPoints))
@@ -107,12 +109,38 @@ export const deductFees = <T extends Item>(
 export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
   // Item is an NFT
   if ("itemType" in item) {
+    // Convert this to a criteria based item
+    if ("identifiers" in item) {
+      const tree = new MerkleTree(item.identifiers);
+
+      return {
+        itemType:
+          item.itemType === ItemType.ERC721
+            ? ItemType.ERC721_WITH_CRITERIA
+            : ItemType.ERC1155_WITH_CRITERIA,
+        token: item.token,
+        identifierOrCriteria: tree.getRoot().toString("hex"),
+        startAmount: item.amount ?? "1",
+        endAmount: item.endAmount ?? item.amount ?? "1",
+      };
+    }
+
+    if ("amount" in item || "endAmount" in item) {
+      return {
+        itemType: item.itemType,
+        token: item.token,
+        identifierOrCriteria: item.identifier,
+        startAmount: item.amount,
+        endAmount: item.endAmount ?? item.amount ?? "1",
+      };
+    }
+
     return {
       itemType: item.itemType,
       token: item.token,
-      identifierOrCriteria: item.identifierOrCriteria,
-      startAmount: item.amount ?? "1",
-      endAmount: item.endAmount ?? item.amount ?? "1",
+      identifierOrCriteria: item.identifier,
+      startAmount: "1",
+      endAmount: "1",
     };
   }
   // Item is a currency
@@ -161,6 +189,7 @@ export const validateOrderParameters = (
   }
 ): InsufficientApprovals => {
   const { offer, consideration, orderType } = orderParameters;
+
   if (!areAllCurrenciesSame({ offer, consideration })) {
     throw new Error("All currency tokens in the order must be the same token");
   }
@@ -396,24 +425,30 @@ export const mapOrderAmountsFromFilledStatus = (
     .mul(ONE_HUNDRED_PERCENT_BP)
     .div(totalSize);
 
-  const mapAmountToPartialAmount = (amount: string) =>
-    BigNumber.from(amount)
-      .mul(basisPoints)
-      .div(ONE_HUNDRED_PERCENT_BP)
-      .toString();
-
   return {
     parameters: {
       ...order.parameters,
       offer: order.parameters.offer.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
     },
     signature: order.signature,
@@ -462,12 +497,6 @@ export const mapOrderAmountsFromUnitsToFill = (
     ? unitsToFillBasisPoints
     : remainingOrderPercentageToBeFilled;
 
-  const mapAmountToPartialAmount = (amount: string) =>
-    BigNumber.from(amount)
-      .mul(basisPoints)
-      .div(ONE_HUNDRED_PERCENT_BP)
-      .toString();
-
   // Reduce the numerator/denominator as optimization
   const unitsGcd = gcd(unitsToFillBn, maxUnits);
 
@@ -476,13 +505,25 @@ export const mapOrderAmountsFromUnitsToFill = (
       ...order.parameters,
       offer: order.parameters.offer.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
     },
     signature: order.signature,

@@ -218,20 +218,22 @@ export class Consideration {
       proxyStrategy: this.config.proxyStrategy,
     });
 
-    // Construct the order such that fees are deducted from the original offer and consideration amounts
+    // Construct the order such that fees are deducted from the consideration amounts
     const orderParametersWithDeductedFees = {
       ...orderParameters,
-      offer: deductFees(offerItems, fees),
+      offer: offerItems,
       consideration: [
         ...deductFees(considerationItems, fees),
-        ...(fees?.map((fee) =>
-          feeToConsiderationItem({
-            fee,
-            token: currencies[0].token,
-            baseAmount: totalCurrencyAmount.startAmount,
-            baseEndAmount: totalCurrencyAmount.endAmount,
-          })
-        ) ?? []),
+        ...(currencies.length
+          ? fees?.map((fee) =>
+              feeToConsiderationItem({
+                fee,
+                token: currencies[0].token,
+                baseAmount: totalCurrencyAmount.startAmount,
+                baseEndAmount: totalCurrencyAmount.endAmount,
+              })
+            ) ?? []
+          : []),
       ],
     };
 

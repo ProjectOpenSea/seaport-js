@@ -92,7 +92,7 @@ export const shouldUseBasicFulfill = (
   }
 
   // 4. The order only contains a single ERC721 or ERC1155 item and that item is not criteria-based
-  if (nfts.length !== 1 && nftsWithCriteria.length !== 0) {
+  if (nfts.length !== 1 || nftsWithCriteria.length !== 0) {
     return false;
   }
 
@@ -541,7 +541,7 @@ export async function fulfillStandardOrder(
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
     ...timeBasedItemParams,
     isConsiderationItem: true,
-  })[ethers.constants.AddressZero]["0"];
+  })[ethers.constants.AddressZero]?.["0"];
 
   validateOfferBalancesAndApprovals(
     { offer, orderType },
@@ -621,9 +621,8 @@ export async function fulfillStandardOrder(
                 // TODO: Criteria resolvers
                 [],
                 useProxyForFulfiller,
-                payableOverrides,
               ]
-            : [orderWithAdjustedFills, useProxyForFulfiller, payableOverrides]
+            : [orderWithAdjustedFills, useProxyForFulfiller]
         ),
       },
     },

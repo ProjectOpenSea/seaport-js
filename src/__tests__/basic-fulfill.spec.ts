@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 import sinon from "sinon";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
-import { CreateOrderInput } from "../types";
+import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
 import {
@@ -19,10 +19,21 @@ import { describeWithFixture } from "./utils/setup";
 describeWithFixture(
   "As a user I want to buy now or accept an offer",
   (fixture) => {
+    let offerer: SignerWithAddress;
+    let zone: SignerWithAddress;
+    let fulfiller: SignerWithAddress;
+    let standardCreateOrderInput: CreateOrderInput;
+    let multicallProvider: providers.MulticallProvider;
     let fulfillBasicOrderSpy: sinon.SinonSpy;
+    const nftId = "1";
+    const erc1155Amount = "3";
 
-    beforeEach(() => {
+    beforeEach(async () => {
       fulfillBasicOrderSpy = sinon.spy(fulfill, "fulfillBasicOrder");
+
+      [offerer, zone, fulfiller] = await ethers.getSigners();
+
+      multicallProvider = new providers.MulticallProvider(ethers.provider);
     });
 
     afterEach(() => {
@@ -31,19 +42,9 @@ describeWithFixture(
 
     describe("A single ERC721 is to be transferred", async () => {
       describe("[Buy now] I want to buy a single ERC721", async () => {
-        let offerer: SignerWithAddress;
-        let zone: SignerWithAddress;
-        let fulfiller: SignerWithAddress;
-        let standardCreateOrderInput: CreateOrderInput;
-        let multicallProvider: providers.MulticallProvider;
-
-        const nftId = "1";
-
         beforeEach(async () => {
-          [offerer, zone, fulfiller] = await ethers.getSigners();
           const { testErc721, legacyProxyRegistry, considerationContract } =
             fixture;
-          multicallProvider = new providers.MulticallProvider(ethers.provider);
 
           await testErc721.mint(offerer.address, nftId);
 
@@ -71,7 +72,7 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC721,
                 token: testErc721.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
               },
             ],
             consideration: [
@@ -238,7 +239,10 @@ describeWithFixture(
             };
             testErc20.mint(
               fulfiller.address,
-              BigNumber.from(standardCreateOrderInput.consideration[0].amount)
+              BigNumber.from(
+                (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                  .amount
+              )
             );
           });
 
@@ -527,18 +531,8 @@ describeWithFixture(
       });
 
       describe("[Accept offer] I want to accept an offer for my single ERC721", async () => {
-        let offerer: SignerWithAddress;
-        let zone: SignerWithAddress;
-        let fulfiller: SignerWithAddress;
-        let standardCreateOrderInput: CreateOrderInput;
-        let multicallProvider: providers.MulticallProvider;
-
-        const nftId = "1";
-
         beforeEach(async () => {
-          [offerer, zone, fulfiller] = await ethers.getSigners();
           const { testErc721, considerationContract, testErc20 } = fixture;
-          multicallProvider = new providers.MulticallProvider(ethers.provider);
 
           await testErc721.mint(fulfiller.address, nftId);
           await testErc20.mint(offerer.address, parseEther("10").toString());
@@ -562,7 +556,7 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC721,
                 token: testErc721.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
                 recipient: offerer.address,
               },
             ],
@@ -694,22 +688,11 @@ describeWithFixture(
 
     describe("A single ERC1155 is to be transferred", async () => {
       describe("[Buy now] I want to buy a single ERC1155", async () => {
-        let offerer: SignerWithAddress;
-        let zone: SignerWithAddress;
-        let fulfiller: SignerWithAddress;
-        let standardCreateOrderInput: CreateOrderInput;
-        let multicallProvider: providers.MulticallProvider;
-
-        const nftId = "1";
-        const amount = "3";
-
         beforeEach(async () => {
-          [offerer, zone, fulfiller] = await ethers.getSigners();
           const { testErc1155, legacyProxyRegistry, considerationContract } =
             fixture;
-          multicallProvider = new providers.MulticallProvider(ethers.provider);
 
-          await testErc1155.mint(offerer.address, nftId, amount);
+          await testErc1155.mint(offerer.address, nftId, erc1155Amount);
 
           // Register the proxy on the offerer
           await legacyProxyRegistry.connect(offerer).registerProxy();
@@ -735,8 +718,8 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC1155,
                 token: testErc1155.address,
-                identifierOrCriteria: nftId,
-                amount,
+                identifier: nftId,
+                amount: erc1155Amount,
               },
             ],
             consideration: [
@@ -913,7 +896,10 @@ describeWithFixture(
             };
             testErc20.mint(
               fulfiller.address,
-              BigNumber.from(standardCreateOrderInput.consideration[0].amount)
+              BigNumber.from(
+                (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                  .amount
+              )
             );
           });
 
@@ -1200,21 +1186,10 @@ describeWithFixture(
       });
 
       describe("[Accept offer] I want to accept an offer for my single ERC1155", async () => {
-        let offerer: SignerWithAddress;
-        let zone: SignerWithAddress;
-        let fulfiller: SignerWithAddress;
-        let standardCreateOrderInput: CreateOrderInput;
-        let multicallProvider: providers.MulticallProvider;
-
-        const nftId = "1";
-        const amount = "3";
-
         beforeEach(async () => {
-          [offerer, zone, fulfiller] = await ethers.getSigners();
           const { testErc1155, considerationContract, testErc20 } = fixture;
-          multicallProvider = new providers.MulticallProvider(ethers.provider);
 
-          await testErc1155.mint(fulfiller.address, nftId, amount);
+          await testErc1155.mint(fulfiller.address, nftId, erc1155Amount);
           await testErc20.mint(offerer.address, parseEther("10").toString());
 
           // Approving offerer amount for convenience
@@ -1236,9 +1211,9 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC1155,
                 token: testErc1155.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
                 recipient: offerer.address,
-                amount,
+                amount: erc1155Amount,
               },
             ],
             // 2.5% fee
@@ -1367,18 +1342,8 @@ describeWithFixture(
     });
 
     describe("with proxy strategy", () => {
-      let offerer: SignerWithAddress;
-      let zone: SignerWithAddress;
-      let fulfiller: SignerWithAddress;
-      let standardCreateOrderInput: CreateOrderInput;
-      let multicallProvider: providers.MulticallProvider;
-
-      const nftId = "1";
-
       beforeEach(async () => {
-        [offerer, zone, fulfiller] = await ethers.getSigners();
         const { testErc721, considerationContract, testErc20 } = fixture;
-        multicallProvider = new providers.MulticallProvider(ethers.provider);
 
         await testErc721.mint(fulfiller.address, nftId);
         await testErc20.mint(offerer.address, parseEther("10").toString());
@@ -1402,7 +1367,7 @@ describeWithFixture(
             {
               itemType: ItemType.ERC721,
               token: testErc721.address,
-              identifierOrCriteria: nftId,
+              identifier: nftId,
               recipient: offerer.address,
             },
           ],
