@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 import sinon from "sinon";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
-import { CreateOrderInput } from "../types";
+import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
 import {
@@ -71,7 +71,7 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC721,
                 token: testErc721.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
               },
             ],
             consideration: [
@@ -238,7 +238,10 @@ describeWithFixture(
             };
             testErc20.mint(
               fulfiller.address,
-              BigNumber.from(standardCreateOrderInput.consideration[0].amount)
+              BigNumber.from(
+                (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                  .amount
+              )
             );
           });
 
@@ -562,7 +565,7 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC721,
                 token: testErc721.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
                 recipient: offerer.address,
               },
             ],
@@ -735,7 +738,7 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC1155,
                 token: testErc1155.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
                 amount,
               },
             ],
@@ -913,7 +916,10 @@ describeWithFixture(
             };
             testErc20.mint(
               fulfiller.address,
-              BigNumber.from(standardCreateOrderInput.consideration[0].amount)
+              BigNumber.from(
+                (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                  .amount
+              )
             );
           });
 
@@ -1236,7 +1242,7 @@ describeWithFixture(
               {
                 itemType: ItemType.ERC1155,
                 token: testErc1155.address,
-                identifierOrCriteria: nftId,
+                identifier: nftId,
                 recipient: offerer.address,
                 amount,
               },
@@ -1402,7 +1408,7 @@ describeWithFixture(
             {
               itemType: ItemType.ERC721,
               token: testErc721.address,
-              identifierOrCriteria: nftId,
+              identifier: nftId,
               recipient: offerer.address,
             },
           ],

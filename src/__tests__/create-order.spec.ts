@@ -26,7 +26,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         {
           itemType: ItemType.ERC721,
           token: testErc721.address,
-          identifierOrCriteria: nftId,
+          identifier: nftId,
         },
       ],
       consideration: [
@@ -143,7 +143,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         {
           itemType: ItemType.ERC721,
           token: testErc721.address,
-          identifierOrCriteria: nftId,
+          identifier: nftId,
           recipient: offerer.address,
         },
       ],
@@ -246,12 +246,12 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         {
           itemType: ItemType.ERC721,
           token: testErc721.address,
-          identifierOrCriteria: nftId,
+          identifier: nftId,
         },
         {
           itemType: ItemType.ERC1155,
           token: testErc1155.address,
-          identifierOrCriteria: nftId,
+          identifier: nftId,
           amount: "1",
         },
       ],
@@ -405,7 +405,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             {
               itemType: ItemType.ERC721,
               token: testErc721.address,
-              identifierOrCriteria: nftId,
+              identifier: nftId,
             },
           ],
           consideration: [
@@ -443,7 +443,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           {
             itemType: ItemType.ERC721,
             token: testErc721.address,
-            identifierOrCriteria: nftId,
+            identifier: nftId,
           },
         ],
         consideration: [
@@ -476,7 +476,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             {
               itemType: ItemType.ERC721,
               token: testErc721.address,
-              identifierOrCriteria: nftId,
+              identifier: nftId,
             },
             {
               token: testErc20.address,
@@ -523,7 +523,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           {
             itemType: ItemType.ERC721,
             token: testErc721.address,
-            identifierOrCriteria: nftId,
+            identifier: nftId,
           },
         ],
         consideration: [
@@ -626,7 +626,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           {
             itemType: ItemType.ERC721,
             token: testErc721.address,
-            identifierOrCriteria: nftId,
+            identifier: nftId,
           },
         ],
         consideration: [
@@ -729,7 +729,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           {
             itemType: ItemType.ERC721,
             token: testErc721.address,
-            identifierOrCriteria: nftId,
+            identifier: nftId,
           },
         ],
         consideration: [
@@ -833,7 +833,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           {
             itemType: ItemType.ERC721,
             token: testErc721.address,
-            identifierOrCriteria: nftId,
+            identifier: nftId,
           },
         ],
         consideration: [
@@ -960,7 +960,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           {
             itemType: ItemType.ERC721,
             token: testErc721.address,
-            identifierOrCriteria: nftId,
+            identifier: nftId,
           },
         ],
         consideration: [
