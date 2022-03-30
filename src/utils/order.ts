@@ -50,6 +50,7 @@ export const ORDER_OPTIONS_TO_ORDER_TYPE = {
     },
   },
 } as const;
+
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: number) =>
   BigNumber.from(amount)
     .mul(BigNumber.from(basisPoints))
@@ -489,12 +490,6 @@ export const mapOrderAmountsFromUnitsToFill = (
     ? unitsToFillBasisPoints
     : remainingOrderPercentageToBeFilled;
 
-  const mapAmountToPartialAmount = (amount: string) =>
-    BigNumber.from(amount)
-      .mul(basisPoints)
-      .div(ONE_HUNDRED_PERCENT_BP)
-      .toString();
-
   // Reduce the numerator/denominator as optimization
   const unitsGcd = gcd(unitsToFillBn, maxUnits);
 
@@ -503,13 +498,25 @@ export const mapOrderAmountsFromUnitsToFill = (
       ...order.parameters,
       offer: order.parameters.offer.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
-        startAmount: mapAmountToPartialAmount(item.startAmount),
-        endAmount: mapAmountToPartialAmount(item.endAmount),
+        startAmount: multiplyBasisPoints(
+          item.startAmount,
+          basisPoints.toNumber()
+        ).toString(),
+        endAmount: multiplyBasisPoints(
+          item.endAmount,
+          basisPoints.toNumber()
+        ).toString(),
       })),
     },
     signature: order.signature,
