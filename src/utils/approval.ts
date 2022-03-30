@@ -57,16 +57,18 @@ export function getApprovalActions(
             token,
             identifierOrCriteria,
             itemType,
-            sendTransaction: () =>
-              contract.connect(signer).setApprovalForAll(operator, true),
             operator,
             transactionRequest: {
-              to: token,
-              from: signerAddress,
-              data: new Interface(ERC721ABI).encodeFunctionData(
-                "setApprovalForAll",
-                [operator, true]
-              ),
+              send: () =>
+                contract.connect(signer).setApprovalForAll(operator, true),
+              details: {
+                to: token,
+                from: signerAddress,
+                data: new Interface(ERC721ABI).encodeFunctionData(
+                  "setApprovalForAll",
+                  [operator, true]
+                ),
+              },
             },
           };
         } else {
@@ -77,17 +79,18 @@ export function getApprovalActions(
             token,
             identifierOrCriteria,
             itemType,
-            sendTransaction: () =>
-              contract.connect(signer).approve(operator, MAX_INT),
-            operator,
             transactionRequest: {
-              to: token,
-              from: signerAddress,
-              data: new Interface(ERC20ABI).encodeFunctionData("approve", [
-                operator,
-                MAX_INT,
-              ]),
+              send: () => contract.connect(signer).approve(operator, MAX_INT),
+              details: {
+                to: token,
+                from: signerAddress,
+                data: new Interface(ERC20ABI).encodeFunctionData("approve", [
+                  operator,
+                  MAX_INT,
+                ]),
+              },
             },
+            operator,
           };
         }
       }

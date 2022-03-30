@@ -103,27 +103,20 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
+            expect(actions.length).to.eq(1);
 
-            const actions = await genActions();
-            const fulfillAction = await actions.next();
+            const action = actions[0];
 
-            isExactlyTrue(fulfillAction.done);
+            expect(action.type).eq("exchange");
 
-            expect(fulfillAction.value).to.be.deep.equal({
-              type: "exchange",
-              transaction: fulfillAction.value.transaction,
-            });
-
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await action.transactionRequest.send();
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -160,27 +153,20 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
+            expect(actions.length).to.eq(1);
 
-            const actions = await genActions();
-            const fulfillAction = await actions.next();
+            const action = actions[0];
 
-            isExactlyTrue(fulfillAction.done);
+            expect(action.type).eq("exchange");
 
-            expect(fulfillAction.value).to.be.deep.equal({
-              type: "exchange",
-              transaction: fulfillAction.value.transaction,
-            });
-
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await action.transactionRequest.send();
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -203,19 +189,16 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
+            const action = actions[0];
 
             // Should revert because signature is empty
-            const revertedActions = await genActions();
-            await expect(revertedActions.next()).to.be.revertedWith(
+            await expect(action.transactionRequest.send()).to.be.revertedWith(
               "BadSignatureLength"
             );
 
@@ -228,17 +211,9 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const actions = await genActions();
-            const fulfillAction = await actions.next();
+            const transaction = await action.transactionRequest.send();
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
-              type: "exchange",
-              transaction: fulfillAction.value.transaction,
-            });
-
-            const receipt = await fulfillAction.value.transaction.wait();
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -284,30 +259,24 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(1);
-            expect(numActions).to.eq(2);
+            const approvalAction = actions[0];
 
-            const actions = await genActions();
-
-            const approvalAction = await actions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -316,16 +285,16 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            const fulfillAction = await actions.next();
+            const fulfillAction = actions[1];
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -361,30 +330,24 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(1);
-            expect(numActions).to.eq(2);
+            const approvalAction = actions[0];
 
-            const actions = await genActions();
-
-            const approvalAction = await actions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -393,16 +356,16 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            const fulfillAction = await actions.next();
+            const fulfillAction = actions[1];
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -439,23 +402,20 @@ describeWithFixture(
               fulfiller.address
             );
 
-            expect(revertedUseCase.insufficientApprovals.length).to.eq(1);
-            expect(revertedUseCase.numActions).to.eq(2);
+            const actions = revertedUseCase.actions;
 
-            const revertedActions = await revertedUseCase.genActions();
+            const approvalAction = actions[0];
 
-            const approvalAction = await revertedActions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -464,34 +424,22 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            await expect(revertedActions.next()).to.be.revertedWith(
-              "BadSignatureLength"
-            );
+            const fulfillAction = actions[1];
+
+            expect(fulfillAction).to.be.deep.equal({
+              type: "exchange",
+              transactionRequest: fulfillAction.transactionRequest,
+            });
+
+            await expect(
+              fulfillAction.transactionRequest.send()
+            ).to.be.revertedWith("BadSignatureLength");
 
             await consideration.approveOrders([order], offerer.address);
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const transaction = await fulfillAction.transactionRequest.send();
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
-
-            const actions = await genActions();
-
-            const fulfillAction = await actions.next();
-
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
-              type: "exchange",
-              transaction: fulfillAction.value.transaction,
-            });
-
-            const receipt = await fulfillAction.value.transaction.wait();
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -500,7 +448,7 @@ describeWithFixture(
               multicallProvider,
               fulfillReceipt: receipt,
             });
-            expect(fulfillBasicOrderSpy).calledTwice;
+            expect(fulfillBasicOrderSpy).calledOnce;
           });
 
           it("ERC721 <=> ERC20 (cannot be fulfilled via proxy)", async () => {
@@ -528,31 +476,26 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
             // Even though the proxy has approval, we still check approvals on consideration contract
-            expect(insufficientApprovals.length).to.eq(1);
-            expect(numActions).to.eq(2);
 
-            const actions = await genActions();
+            const approvalAction = actions[0];
 
-            const approvalAction = await actions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -561,16 +504,16 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            const fulfillAction = await actions.next();
+            const fulfillAction = actions[1];
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -646,30 +589,24 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { insufficientApprovals, genActions, numActions } =
-            await consideration.fulfillOrder(
-              order,
-              undefined,
-              fulfiller.address
-            );
+          const { actions } = await consideration.fulfillOrder(
+            order,
+            undefined,
+            fulfiller.address
+          );
 
-          expect(insufficientApprovals.length).to.eq(1);
-          expect(numActions).to.eq(2);
+          const approvalAction = actions[0];
 
-          const actions = await genActions();
-
-          const approvalAction = await actions.next();
-
-          isExactlyNotTrue(approvalAction.done);
-
-          expect(approvalAction.value).to.deep.equal({
+          expect(approvalAction).to.deep.equal({
             type: "approval",
             token: testErc721.address,
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC721,
-            transaction: approvalAction.value.transaction,
+            transactionRequest: approvalAction.transactionRequest,
             operator: consideration.contract.address,
           });
+
+          await approvalAction.transactionRequest.send();
 
           expect(
             await testErc721.isApprovedForAll(
@@ -678,16 +615,16 @@ describeWithFixture(
             )
           ).to.be.true;
 
-          const fulfillAction = await actions.next();
+          const fulfillAction = actions[1];
 
-          isExactlyTrue(fulfillAction.done);
-
-          expect(fulfillAction.value).to.be.deep.equal({
+          expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transaction: fulfillAction.value.transaction,
+            transactionRequest: fulfillAction.transactionRequest,
           });
 
-          const receipt = await fulfillAction.value.transaction.wait();
+          const transaction = await fulfillAction.transactionRequest.send();
+
+          const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -727,28 +664,22 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { insufficientApprovals, genActions, numActions } =
-            await consideration.fulfillOrder(
-              order,
-              undefined,
-              fulfiller.address
-            );
+          const { actions } = await consideration.fulfillOrder(
+            order,
+            undefined,
+            fulfiller.address
+          );
 
-          expect(insufficientApprovals.length).to.eq(0);
-          expect(numActions).to.eq(1);
+          const fulfillAction = actions[0];
 
-          const actions = await genActions();
-
-          const fulfillAction = await actions.next();
-
-          isExactlyTrue(fulfillAction.done);
-
-          expect(fulfillAction.value).to.be.deep.equal({
+          expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transaction: fulfillAction.value.transaction,
+            transactionRequest: fulfillAction.transactionRequest,
           });
 
-          const receipt = await fulfillAction.value.transaction.wait();
+          const transaction = await fulfillAction.transactionRequest.send();
+
+          const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -838,27 +769,22 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
+            const fulfillAction = actions[0];
 
-            const actions = await genActions();
-            const fulfillAction = await actions.next();
-
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -895,27 +821,22 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
+            const fulfillAction = actions[0];
 
-            const actions = await genActions();
-            const fulfillAction = await actions.next();
-
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -938,21 +859,18 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
+            const fulfillAction = actions[0];
 
             // Should revert because signature is empty
-            const revertedActions = await genActions();
-            await expect(revertedActions.next()).to.be.revertedWith(
-              "BadSignatureLength"
-            );
+            await expect(
+              fulfillAction.transactionRequest.send()
+            ).to.be.revertedWith("BadSignatureLength");
 
             await consideration.approveOrders([order], offerer.address);
 
@@ -963,17 +881,14 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const actions = await genActions();
-            const fulfillAction = await actions.next();
-
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -1019,30 +934,24 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(1);
-            expect(numActions).to.eq(2);
+            const approvalAction = actions[0];
 
-            const actions = await genActions();
-
-            const approvalAction = await actions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -1051,16 +960,16 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            const fulfillAction = await actions.next();
+            const fulfillAction = actions[1];
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -1096,30 +1005,24 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
-            expect(insufficientApprovals.length).to.eq(1);
-            expect(numActions).to.eq(2);
+            const approvalAction = actions[0];
 
-            const actions = await genActions();
-
-            const approvalAction = await actions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -1128,16 +1031,16 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            const fulfillAction = await actions.next();
+            const fulfillAction = actions[1];
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -1168,29 +1071,24 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const revertedUseCase = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder(
               order,
               undefined,
               fulfiller.address
             );
 
-            expect(revertedUseCase.insufficientApprovals.length).to.eq(1);
-            expect(revertedUseCase.numActions).to.eq(2);
+            const approvalAction = actions[0];
 
-            const revertedActions = await revertedUseCase.genActions();
-
-            const approvalAction = await revertedActions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -1199,34 +1097,22 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            await expect(revertedActions.next()).to.be.revertedWith(
-              "BadSignatureLength"
-            );
+            const fulfillAction = actions[1];
+
+            await expect(
+              fulfillAction.transactionRequest.send()
+            ).to.be.revertedWith("BadSignatureLength");
 
             await consideration.approveOrders([order], offerer.address);
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
-
-            expect(insufficientApprovals.length).to.eq(0);
-            expect(numActions).to.eq(1);
-
-            const actions = await genActions();
-
-            const fulfillAction = await actions.next();
-
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -1235,7 +1121,7 @@ describeWithFixture(
               multicallProvider,
               fulfillReceipt: receipt,
             });
-            expect(fulfillBasicOrderSpy).calledTwice;
+            expect(fulfillBasicOrderSpy).calledOnce;
           });
 
           it("ERC1155 <=> ERC20 (cannot be fulfilled via proxy)", async () => {
@@ -1263,31 +1149,26 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { insufficientApprovals, genActions, numActions } =
-              await consideration.fulfillOrder(
-                order,
-                undefined,
-                fulfiller.address
-              );
+            const { actions } = await consideration.fulfillOrder(
+              order,
+              undefined,
+              fulfiller.address
+            );
 
             // Even though the proxy has approval, we still check approvals on consideration contract
-            expect(insufficientApprovals.length).to.eq(1);
-            expect(numActions).to.eq(2);
 
-            const actions = await genActions();
+            const approvalAction = actions[0];
 
-            const approvalAction = await actions.next();
-
-            isExactlyNotTrue(approvalAction.done);
-
-            expect(approvalAction.value).to.deep.equal({
+            expect(approvalAction).to.deep.equal({
               type: "approval",
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transaction: approvalAction.value.transaction,
+              transactionRequest: approvalAction.transactionRequest,
               operator: consideration.contract.address,
             });
+
+            await approvalAction.transactionRequest.send();
 
             expect(
               await testErc20.allowance(
@@ -1296,16 +1177,16 @@ describeWithFixture(
               )
             ).to.equal(MAX_INT);
 
-            const fulfillAction = await actions.next();
+            const fulfillAction = actions[1];
 
-            isExactlyTrue(fulfillAction.done);
-
-            expect(fulfillAction.value).to.be.deep.equal({
+            expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transaction: fulfillAction.value.transaction,
+              transactionRequest: fulfillAction.transactionRequest,
             });
 
-            const receipt = await fulfillAction.value.transaction.wait();
+            const transaction = await fulfillAction.transactionRequest.send();
+
+            const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
@@ -1383,30 +1264,24 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { insufficientApprovals, genActions, numActions } =
-            await consideration.fulfillOrder(
-              order,
-              undefined,
-              fulfiller.address
-            );
+          const { actions } = await consideration.fulfillOrder(
+            order,
+            undefined,
+            fulfiller.address
+          );
 
-          expect(insufficientApprovals.length).to.eq(1);
-          expect(numActions).to.eq(2);
+          const approvalAction = actions[0];
 
-          const actions = await genActions();
-
-          const approvalAction = await actions.next();
-
-          isExactlyNotTrue(approvalAction.done);
-
-          expect(approvalAction.value).to.deep.equal({
+          expect(approvalAction).to.deep.equal({
             type: "approval",
             token: testErc1155.address,
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC1155,
-            transaction: approvalAction.value.transaction,
+            transactionRequest: approvalAction.transactionRequest,
             operator: consideration.contract.address,
           });
+
+          await approvalAction.transactionRequest.send();
 
           expect(
             await testErc1155.isApprovedForAll(
@@ -1415,16 +1290,16 @@ describeWithFixture(
             )
           ).to.be.true;
 
-          const fulfillAction = await actions.next();
+          const fulfillAction = actions[1];
 
-          isExactlyTrue(fulfillAction.done);
-
-          expect(fulfillAction.value).to.be.deep.equal({
+          expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transaction: fulfillAction.value.transaction,
+            transactionRequest: fulfillAction.transactionRequest,
           });
 
-          const receipt = await fulfillAction.value.transaction.wait();
+          const transaction = await fulfillAction.transactionRequest.send();
+
+          const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -1464,28 +1339,21 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { insufficientApprovals, genActions, numActions } =
-            await consideration.fulfillOrder(
-              order,
-              undefined,
-              fulfiller.address
-            );
+          const { actions } = await consideration.fulfillOrder(
+            order,
+            undefined,
+            fulfiller.address
+          );
+          const fulfillAction = actions[0];
 
-          expect(insufficientApprovals.length).to.eq(0);
-          expect(numActions).to.eq(1);
-
-          const actions = await genActions();
-
-          const fulfillAction = await actions.next();
-
-          isExactlyTrue(fulfillAction.done);
-
-          expect(fulfillAction.value).to.be.deep.equal({
+          expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transaction: fulfillAction.value.transaction,
+            transactionRequest: fulfillAction.transactionRequest,
           });
 
-          const receipt = await fulfillAction.value.transaction.wait();
+          const transaction = await fulfillAction.transactionRequest.send();
+
+          const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -1572,25 +1440,23 @@ describeWithFixture(
           .connect(fulfiller)
           .setApprovalForAll(fulfillerProxy, true);
 
-        const { insufficientApprovals, genActions, numActions } =
-          await consideration.fulfillOrder(order, undefined, fulfiller.address);
+        const { actions } = await consideration.fulfillOrder(
+          order,
+          undefined,
+          fulfiller.address
+        );
 
         // I should have sufficient approvals because it automatically uses my proxy
-        expect(insufficientApprovals.length).to.eq(0);
-        expect(numActions).to.eq(1);
+        const fulfillAction = actions[0];
 
-        const actions = await genActions();
-
-        const fulfillAction = await actions.next();
-
-        isExactlyTrue(fulfillAction.done);
-
-        expect(fulfillAction.value).to.be.deep.equal({
+        expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.value.transaction,
+          transactionRequest: fulfillAction.transactionRequest,
         });
 
-        const receipt = await fulfillAction.value.transaction.wait();
+        const transaction = await fulfillAction.transactionRequest.send();
+
+        const receipt = await transaction.wait();
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -1639,38 +1505,37 @@ describeWithFixture(
           .connect(fulfiller)
           .setApprovalForAll(fulfillerProxy, true);
 
-        const { insufficientApprovals, genActions, numActions } =
-          await consideration.fulfillOrder(order, undefined, fulfiller.address);
+        const { actions } = await consideration.fulfillOrder(
+          order,
+          undefined,
+          fulfiller.address
+        );
 
         // I should not have sufficient approvals because it does not use my proxy
-        expect(insufficientApprovals.length).to.eq(1);
-        expect(numActions).to.eq(2);
 
-        const actions = await genActions();
+        const approvalAction = actions[0];
 
-        const approvalAction = await actions.next();
-
-        isExactlyNotTrue(approvalAction.done);
-
-        expect(approvalAction.value).to.deep.equal({
+        expect(approvalAction).to.deep.equal({
           type: "approval",
           token: testErc721.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
-          transaction: approvalAction.value.transaction,
+          transactionRequest: approvalAction.transactionRequest,
           operator: consideration.contract.address,
         });
 
-        const fulfillAction = await actions.next();
+        await approvalAction.transactionRequest.send();
 
-        isExactlyTrue(fulfillAction.done);
+        const fulfillAction = actions[1];
 
-        expect(fulfillAction.value).to.be.deep.equal({
+        expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.value.transaction,
+          transactionRequest: fulfillAction.transactionRequest,
         });
 
-        const receipt = await fulfillAction.value.transaction.wait();
+        const transaction = await fulfillAction.transactionRequest.send();
+
+        const receipt = await transaction.wait();
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -1719,38 +1584,36 @@ describeWithFixture(
           .connect(fulfiller)
           .setApprovalForAll(considerationContract.address, true);
 
-        const { insufficientApprovals, genActions, numActions } =
-          await consideration.fulfillOrder(order, undefined, fulfiller.address);
+        const { actions } = await consideration.fulfillOrder(
+          order,
+          undefined,
+          fulfiller.address
+        );
 
         // I should not have sufficient approvals because it always uses my proxy
-        expect(insufficientApprovals.length).to.eq(1);
-        expect(numActions).to.eq(2);
+        const approvalAction = actions[0];
 
-        const actions = await genActions();
-
-        const approvalAction = await actions.next();
-
-        isExactlyNotTrue(approvalAction.done);
-
-        expect(approvalAction.value).to.deep.equal({
+        expect(approvalAction).to.deep.equal({
           type: "approval",
           token: testErc721.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
-          transaction: approvalAction.value.transaction,
+          transactionRequest: approvalAction.transactionRequest,
           operator: fulfillerProxy,
         });
 
-        const fulfillAction = await actions.next();
+        await approvalAction.transactionRequest.send();
 
-        isExactlyTrue(fulfillAction.done);
+        const fulfillAction = actions[1];
 
-        expect(fulfillAction.value).to.be.deep.equal({
+        expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.value.transaction,
+          transactionRequest: fulfillAction.transactionRequest,
         });
 
-        const receipt = await fulfillAction.value.transaction.wait();
+        const transaction = await fulfillAction.transactionRequest.send();
+
+        const receipt = await transaction.wait();
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,

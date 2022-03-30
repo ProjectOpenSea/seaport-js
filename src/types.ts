@@ -1,7 +1,6 @@
 import { BigNumber, BigNumberish, ContractTransaction } from "ethers";
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
-import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
@@ -122,11 +121,11 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
-type TransactionRequest = EthersTransactionRequest;
+type TransactionRequestDetails = EthersTransactionRequest;
 
-type TransactionDetails = {
+type TransactionRequest = {
   send: () => Promise<ContractTransaction>;
-  requestDetails: TransactionRequest;
+  details: TransactionRequestDetails;
 };
 
 export type ApprovalAction = {
@@ -135,17 +134,17 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   operator: string;
-  transactionDetails: TransactionDetails;
+  transactionRequest: TransactionRequest;
 };
 
 export type ExchangeAction = {
   type: "exchange";
-  transactionDetails: TransactionDetails;
+  transactionRequest: TransactionRequest;
 };
 
 export type CreateOrderAction = {
   type: "create";
-  order: CreatedOrder;
+  createOrder: () => Promise<CreatedOrder>;
 };
 
 export type TransactionAction = ApprovalAction | ExchangeAction;

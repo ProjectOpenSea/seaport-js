@@ -470,9 +470,9 @@ export async function fulfillBasicOrder(
 
   const exchangeAction = {
     type: "exchange",
-    transactionDetails: {
+    transactionRequest: {
       send: sendTransaction,
-      requestDetails: {
+      details: {
         from: signerAddress,
         to: considerationContract.address,
         value: totalNativeAmount,
@@ -590,33 +590,41 @@ export async function fulfillStandardOrder(
 
   const useAdvanced = unitsToFill && "numerator" in orderWithAdjustedFills;
 
-  const sendTransaction = async () =>
-    useAdvanced
-      ? considerationContract.connect(signer).fulfillAdvancedOrder(
-          orderWithAdjustedFills,
-          // TODO: Criteria resolvers
-          [],
-          useProxyForFulfiller,
-          payableOverrides
-        )
-      : considerationContract
-          .connect(signer)
-          .fulfillOrder(
-            orderWithAdjustedFills,
-            useProxyForFulfiller,
-            payableOverrides
-          );
-  // const data = useAdvanced ? new Interface(ConsiderationABI).encodeFunctionData("fulfillAdvancedOrder",
-
   const exchangeAction = {
     type: "exchange",
-    transactionDetails: {
-      send: sendTransaction,
-      requestDetails: {
+    transactionRequest: {
+      send: () =>
+        useAdvanced
+          ? considerationContract.connect(signer).fulfillAdvancedOrder(
+              orderWithAdjustedFills,
+              // TODO: Criteria resolvers
+              [],
+              useProxyForFulfiller,
+              payableOverrides
+            )
+          : considerationContract
+              .connect(signer)
+              .fulfillOrder(
+                orderWithAdjustedFills,
+                useProxyForFulfiller,
+                payableOverrides
+              ),
+      details: {
         from: signerAddress,
         to: considerationContract.address,
         value: totalNativeAmount,
-        data: new Interface(ConsiderationABI).encodeFunctionData(useAdvanced ? ),
+        data: new Interface(ConsiderationABI).encodeFunctionData(
+          useAdvanced ? "fulfillAdvancedOrder" : "fulfillOrder",
+          useAdvanced
+            ? [
+                orderWithAdjustedFills,
+                // TODO: Criteria resolvers
+                [],
+                useProxyForFulfiller,
+                payableOverrides,
+              ]
+            : [orderWithAdjustedFills, useProxyForFulfiller, payableOverrides]
+        ),
       },
     },
   } as const;
