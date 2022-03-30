@@ -20,7 +20,7 @@ import type {
   OrderParameters,
   OrderUseCase,
 } from "./types";
-import { setNeededApprovals } from "./utils/approval";
+import { getApprovalActions } from "./utils/approval";
 import {
   getBalancesAndApprovals,
   getInsufficientBalanceAndApprovalAmounts,
@@ -237,37 +237,35 @@ export class Consideration {
 
     const signOrder = this.signOrder.bind(this);
 
-    async function* genActions() {
-      if (checkBalancesAndApprovals) {
-        yield* setNeededApprovals(insufficientApprovals, {
+    const approvalActions = checkBalancesAndApprovals
+      ? await getApprovalActions(insufficientApprovals, {
           signer,
-        });
-      }
+        })
+      : [];
 
-      const signature = await signOrder(
-        orderParametersWithDeductedFees,
-        resolvedNonce,
-        accountAddress
-      );
+    const createOrderAction = {
+      type: "create",
+      createOrder: async () => {
+        const signature = await signOrder(
+          orderParametersWithDeductedFees,
+          resolvedNonce,
+          accountAddress
+        );
 
-      return {
-        type: "create",
-        order: {
+        return {
           parameters: orderParametersWithDeductedFees,
           nonce: resolvedNonce,
           signature,
-        },
-      } as const;
-    }
+        };
+      },
+    } as const;
+
+    const actions = [...approvalActions, createOrderAction] as const;
 
     return {
-      insufficientApprovals,
-      genActions,
-      numActions: checkBalancesAndApprovals
-        ? insufficientApprovals.length + 1
-        : 1,
+      actions,
       executeAllActions: () =>
-        executeAllActions(genActions) as Promise<CreatedOrder>,
+        executeAllActions(actions) as Promise<CreatedOrder>,
     };
   }
 

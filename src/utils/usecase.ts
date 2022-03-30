@@ -3,21 +3,18 @@ import { CreateOrderAction, ExchangeAction, OrderUseCase } from "../types";
 export const executeAllActions = async <
   T extends CreateOrderAction | ExchangeAction
 >(
-  genActions: OrderUseCase<T>["genActions"]
+  actions: OrderUseCase<T>["actions"]
 ) => {
-  const actions = await genActions();
-
-  let action = await actions.next();
-  action.value;
-
-  while (!action.done) {
-    console.log(action);
-    action = await actions.next();
+  for (let i = 0; i < actions.length - 1; i++) {
+    const action = actions[i];
+    if (action.type === "approval") {
+      await action.transactionRequest.send();
+    }
   }
 
-  if (action.value.type === "create") {
-    return action.value.order;
-  }
+  const finalAction = actions[actions.length - 1] as T;
 
-  return action.value.transaction;
+  return finalAction.type === "create"
+    ? await finalAction.createOrder()
+    : await finalAction.transactionRequest.send();
 };

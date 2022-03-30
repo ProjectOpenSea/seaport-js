@@ -1,11 +1,6 @@
-import {
-  BigNumber,
-  BigNumberish,
-  BytesLike,
-  ContractTransaction,
-} from "ethers";
+import { BigNumber, BigNumberish, ContractTransaction } from "ethers";
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
-import { InsufficientApprovals } from "./utils/balancesAndApprovals";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
@@ -126,38 +121,48 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
+type TransactionRequestDetails = EthersTransactionRequest;
+
+type TransactionRequest = {
+  send: () => Promise<ContractTransaction>;
+  details: TransactionRequestDetails;
+};
+
 export type ApprovalAction = {
   type: "approval";
   token: string;
   identifierOrCriteria: string;
   itemType: ItemType;
-  transaction: ContractTransaction;
   operator: string;
+  transactionRequest: TransactionRequest;
 };
 
 export type ExchangeAction = {
   type: "exchange";
-  transaction: ContractTransaction;
+  transactionRequest: TransactionRequest;
 };
 
 export type CreateOrderAction = {
   type: "create";
-  order: CreatedOrder;
+  createOrder: () => Promise<CreatedOrder>;
 };
 
 export type TransactionAction = ApprovalAction | ExchangeAction;
 
-export type CreateOrderActions = ApprovalAction | CreateOrderAction;
+export type CreateOrderActions = readonly [
+  ...ApprovalAction[],
+  CreateOrderAction
+];
 
-export type OrderExchangeActions = ApprovalAction | ExchangeAction;
+export type OrderExchangeActions = readonly [
+  ...ApprovalAction[],
+  ExchangeAction
+];
 
 export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
-  insufficientApprovals: InsufficientApprovals;
-  numActions: number;
-  genActions: () => AsyncGenerator<
-    ApprovalAction,
-    T extends CreateOrderAction ? CreateOrderAction : ExchangeAction
-  >;
+  actions: T extends CreateOrderAction
+    ? CreateOrderActions
+    : OrderExchangeActions;
   executeAllActions: () => Promise<
     T extends CreateOrderAction ? CreatedOrder : ContractTransaction
   >;

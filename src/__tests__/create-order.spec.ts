@@ -1,11 +1,10 @@
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
+import { ApprovalAction, CreateOrderAction } from "../types";
 import { generateRandomSalt } from "../utils/order";
-import { isExactlyNotTrue, isExactlyTrue } from "./utils/assert";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
@@ -19,56 +18,39 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { insufficientApprovals, genActions, numActions } =
-      await consideration.createOrder({
-        startTime,
-        endTime,
-        salt,
-        offer: [
-          {
-            itemType: ItemType.ERC721,
-            token: testErc721.address,
-            identifierOrCriteria: nftId,
-          },
-        ],
-        consideration: [
-          {
-            amount: ethers.utils.parseEther("10").toString(),
-            recipient: offerer.address,
-          },
-        ],
-        // 2.5% fee
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
-      });
+    const { actions } = await consideration.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifierOrCriteria: nftId,
+        },
+      ],
+      consideration: [
+        {
+          amount: ethers.utils.parseEther("10").toString(),
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
 
-    expect(insufficientApprovals).to.be.deep.equal([
-      {
-        token: testErc721.address,
-        identifierOrCriteria: nftId,
-        approvedAmount: BigNumber.from(0),
-        requiredApprovedAmount: BigNumber.from(1),
-        operator: considerationContract.address,
-        itemType: ItemType.ERC721,
-      },
-    ]);
-    expect(numActions).to.equal(2);
+    const approvalAction = actions[0] as ApprovalAction;
 
-    const actions = await genActions();
-
-    const approvalAction = await actions.next();
-
-    isExactlyNotTrue(approvalAction.done);
-
-    expect(approvalAction.value).to.be.deep.equal({
+    expect(approvalAction).to.be.deep.equal({
       type: "approval",
       token: testErc721.address,
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
-      transaction: approvalAction.value.transaction,
+      transactionRequest: approvalAction.transactionRequest,
       operator: considerationContract.address,
     });
 
-    await approvalAction.value.transaction.wait();
+    await approvalAction.transactionRequest.send();
 
     // NFT should now be approved
     expect(
@@ -78,11 +60,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       )
     ).to.be.true;
 
-    const createOrderAction = await actions.next();
+    const createOrderAction = actions[1] as CreateOrderAction;
+    const order = await createOrderAction.createOrder();
 
-    isExactlyTrue(createOrderAction.done);
-    expect(createOrderAction.value.type).to.equal("create");
-    expect(createOrderAction.value.order).to.deep.equal({
+    expect(createOrderAction.type).to.equal("create");
+    expect(order).to.deep.equal({
       parameters: {
         consideration: [
           {
@@ -119,7 +101,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         zone: ethers.constants.AddressZero,
       },
-      signature: createOrderAction.value.order.signature,
+      signature: order.signature,
       nonce: 0,
     });
 
@@ -127,8 +109,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: createOrderAction.value.order.parameters,
-          signature: createOrderAction.value.order.signature,
+          parameters: order.parameters,
+          signature: order.signature,
         },
       ]);
 
@@ -147,68 +129,51 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { insufficientApprovals, genActions, numActions } =
-      await consideration.createOrder({
-        startTime,
-        endTime,
-        salt,
-        offer: [
-          {
-            token: testErc20.address,
-            amount: parseEther("10").toString(),
-          },
-        ],
-        consideration: [
-          {
-            itemType: ItemType.ERC721,
-            token: testErc721.address,
-            identifierOrCriteria: nftId,
-            recipient: offerer.address,
-          },
-        ],
-        // 2.5% fee
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
-      });
+    const { actions } = await consideration.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          token: testErc20.address,
+          amount: parseEther("10").toString(),
+        },
+      ],
+      consideration: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifierOrCriteria: nftId,
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
 
-    expect(insufficientApprovals).to.be.deep.equal([
-      {
-        token: testErc20.address,
-        identifierOrCriteria: "0",
-        approvedAmount: BigNumber.from(0),
-        requiredApprovedAmount: BigNumber.from(parseEther("10").toString()),
-        operator: considerationContract.address,
-        itemType: ItemType.ERC20,
-      },
-    ]);
-    expect(numActions).to.equal(2);
+    const approvalAction = actions[0] as ApprovalAction;
 
-    const actions = await genActions();
-
-    const approvalAction = await actions.next();
-
-    isExactlyNotTrue(approvalAction.done);
-
-    expect(approvalAction.value).to.be.deep.equal({
+    expect(approvalAction).to.be.deep.equal({
       type: "approval",
       token: testErc20.address,
       identifierOrCriteria: "0",
       itemType: ItemType.ERC20,
-      transaction: approvalAction.value.transaction,
+      transactionRequest: approvalAction.transactionRequest,
       operator: considerationContract.address,
     });
 
-    await approvalAction.value.transaction.wait();
+    await approvalAction.transactionRequest.send();
 
     // NFT should now be approved
     expect(
       await testErc20.allowance(offerer.address, considerationContract.address)
     ).to.equal(MAX_INT);
 
-    const createOrderAction = await actions.next();
+    const createOrderAction = actions[1] as CreateOrderAction;
+    const order = await createOrderAction.createOrder();
 
-    isExactlyTrue(createOrderAction.done);
-    expect(createOrderAction.value.type).to.equal("create");
-    expect(createOrderAction.value.order).to.deep.equal({
+    expect(createOrderAction.type).to.equal("create");
+    expect(order).to.deep.equal({
       parameters: {
         consideration: [
           {
@@ -245,7 +210,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         zone: ethers.constants.AddressZero,
       },
-      signature: createOrderAction.value.order.signature,
+      signature: order.signature,
       nonce: 0,
     });
 
@@ -253,8 +218,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: createOrderAction.value.order.parameters,
-          signature: createOrderAction.value.order.signature,
+          parameters: order.parameters,
+          signature: order.signature,
         },
       ]);
 
@@ -273,53 +238,33 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { insufficientApprovals, genActions, numActions } =
-      await consideration.createOrder({
-        startTime,
-        endTime,
-        salt,
-        offer: [
-          {
-            itemType: ItemType.ERC721,
-            token: testErc721.address,
-            identifierOrCriteria: nftId,
-          },
-          {
-            itemType: ItemType.ERC1155,
-            token: testErc1155.address,
-            identifierOrCriteria: nftId,
-            amount: "1",
-          },
-        ],
-        consideration: [
-          {
-            amount: ethers.utils.parseEther("10").toString(),
-            recipient: offerer.address,
-          },
-        ],
-        // 2.5% fee
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
-      });
+    const { actions } = await consideration.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifierOrCriteria: nftId,
+        },
+        {
+          itemType: ItemType.ERC1155,
+          token: testErc1155.address,
+          identifierOrCriteria: nftId,
+          amount: "1",
+        },
+      ],
+      consideration: [
+        {
+          amount: ethers.utils.parseEther("10").toString(),
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
 
-    expect(insufficientApprovals).to.be.deep.equal([
-      {
-        token: testErc721.address,
-        identifierOrCriteria: nftId,
-        approvedAmount: BigNumber.from(0),
-        requiredApprovedAmount: BigNumber.from(1),
-        operator: considerationContract.address,
-        itemType: ItemType.ERC721,
-      },
-      {
-        token: testErc1155.address,
-        identifierOrCriteria: nftId,
-        approvedAmount: BigNumber.from(0),
-        requiredApprovedAmount: BigNumber.from(1),
-        operator: considerationContract.address,
-        itemType: ItemType.ERC1155,
-      },
-    ]);
-    expect(numActions).to.equal(3);
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
@@ -333,22 +278,18 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       )
     ).to.be.false;
 
-    const actions = await genActions();
+    const approvalAction = actions[0] as ApprovalAction;
 
-    const approvalAction = await actions.next();
-
-    isExactlyNotTrue(approvalAction.done);
-
-    expect(approvalAction.value).to.be.deep.equal({
+    expect(approvalAction).to.be.deep.equal({
       type: "approval",
       token: testErc721.address,
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
-      transaction: approvalAction.value.transaction,
+      transactionRequest: approvalAction.transactionRequest,
       operator: considerationContract.address,
     });
 
-    await approvalAction.value.transaction.wait();
+    await approvalAction.transactionRequest.send();
 
     // NFT should now be approved
     expect(
@@ -358,20 +299,18 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       )
     ).to.be.true;
 
-    const erc1155ApprovalAction = await actions.next();
+    const erc1155ApprovalAction = actions[1] as ApprovalAction;
 
-    isExactlyNotTrue(erc1155ApprovalAction.done);
-
-    expect(erc1155ApprovalAction.value).to.be.deep.equal({
+    expect(erc1155ApprovalAction).to.be.deep.equal({
       type: "approval",
       token: testErc1155.address,
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC1155,
-      transaction: erc1155ApprovalAction.value.transaction,
+      transactionRequest: erc1155ApprovalAction.transactionRequest,
       operator: considerationContract.address,
     });
 
-    await erc1155ApprovalAction.value.transaction.wait();
+    await erc1155ApprovalAction.transactionRequest.send();
 
     // NFT should now be approved
     expect(
@@ -381,11 +320,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       )
     ).to.be.true;
 
-    const createOrderAction = await actions.next();
+    const createOrderAction = actions[2] as CreateOrderAction;
+    const order = await createOrderAction.createOrder();
 
-    isExactlyTrue(createOrderAction.done);
-    expect(createOrderAction.value.type).to.equal("create");
-    expect(createOrderAction.value.order).to.deep.equal({
+    expect(createOrderAction.type).to.equal("create");
+    expect(order).to.deep.equal({
       parameters: {
         consideration: [
           {
@@ -429,7 +368,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         zone: ethers.constants.AddressZero,
       },
-      signature: createOrderAction.value.order.signature,
+      signature: order.signature,
       nonce: 0,
     });
 
@@ -437,8 +376,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: createOrderAction.value.order.parameters,
-          signature: createOrderAction.value.order.signature,
+          parameters: order.parameters,
+          signature: order.signature,
         },
       ]);
 
@@ -576,54 +515,33 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       const salt = generateRandomSalt();
       await testErc721.mint(randomSigner.address, nftId);
 
-      const { insufficientApprovals, genActions, numActions } =
-        await consideration.createOrder({
-          startTime,
-          endTime,
-          salt,
-          offer: [
-            {
-              itemType: ItemType.ERC721,
-              token: testErc721.address,
-              identifierOrCriteria: nftId,
-            },
-          ],
-          consideration: [
-            {
-              amount: ethers.utils.parseEther("10").toString(),
-              recipient: offerer.address,
-            },
-          ],
-          // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
-        });
+      const { actions } = await consideration.createOrder({
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifierOrCriteria: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: ethers.utils.parseEther("10").toString(),
+            recipient: offerer.address,
+          },
+        ],
+        // 2.5% fee
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      });
 
-      expect(insufficientApprovals).to.be.deep.equal([
-        {
-          token: testErc721.address,
-          identifierOrCriteria: nftId,
-          approvedAmount: BigNumber.from(0),
-          requiredApprovedAmount: BigNumber.from(1),
-          operator: considerationContract.address,
-          itemType: ItemType.ERC721,
-        },
-      ]);
-      // We don't count approval as an action since we skip it.
-      expect(numActions).to.equal(1);
-      expect(
-        await testErc721.isApprovedForAll(
-          offerer.address,
-          considerationContract.address
-        )
-      ).to.be.false;
+      const createOrderAction = actions[0] as CreateOrderAction;
 
-      const actions = await genActions();
+      const order = await createOrderAction.createOrder();
 
-      const createOrderAction = await actions.next();
-
-      isExactlyTrue(createOrderAction.done);
-      expect(createOrderAction.value.type).to.equal("create");
-      expect(createOrderAction.value.order).to.deep.equal({
+      expect(createOrderAction.type).to.equal("create");
+      expect(order).to.deep.equal({
         parameters: {
           consideration: [
             {
@@ -659,7 +577,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           zone: ethers.constants.AddressZero,
         },
-        signature: createOrderAction.value.order.signature,
+        signature: order.signature,
         nonce: 0,
       });
 
@@ -667,8 +585,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order.parameters,
-            signature: createOrderAction.value.order.signature,
+            parameters: order.parameters,
+            signature: order.signature,
           },
         ]);
 
@@ -700,38 +618,32 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       // NFT should now be approved
       await testErc721.connect(offerer).setApprovalForAll(offererProxy, true);
 
-      const { insufficientApprovals, genActions, numActions } =
-        await consideration.createOrder({
-          startTime,
-          endTime,
-          salt,
-          offer: [
-            {
-              itemType: ItemType.ERC721,
-              token: testErc721.address,
-              identifierOrCriteria: nftId,
-            },
-          ],
-          consideration: [
-            {
-              amount: ethers.utils.parseEther("10").toString(),
-              recipient: offerer.address,
-            },
-          ],
-          // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
-        });
+      const { actions } = await consideration.createOrder({
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifierOrCriteria: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: ethers.utils.parseEther("10").toString(),
+            recipient: offerer.address,
+          },
+        ],
+        // 2.5% fee
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      });
 
-      expect(insufficientApprovals.length).to.equal(0);
-      expect(numActions).to.equal(1);
+      const createOrderAction = actions[0] as CreateOrderAction;
+      const createdOrder = await createOrderAction.createOrder();
 
-      const actions = await genActions();
-
-      const createOrderAction = await actions.next();
-
-      isExactlyTrue(createOrderAction.done);
-      expect(createOrderAction.value.type).to.equal("create");
-      expect(createOrderAction.value.order).to.deep.equal({
+      expect(createOrderAction.type).to.equal("create");
+      expect(createdOrder).to.deep.equal({
         parameters: {
           consideration: [
             {
@@ -767,7 +679,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           zone: ethers.constants.AddressZero,
         },
-        signature: createOrderAction.value.order.signature,
+        signature: createdOrder.signature,
         nonce: 0,
       });
 
@@ -775,8 +687,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order.parameters,
-            signature: createOrderAction.value.order.signature,
+            parameters: createdOrder.parameters,
+            signature: createdOrder.signature,
           },
         ]);
 
@@ -809,38 +721,32 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(offerer)
         .setApprovalForAll(considerationContract.address, true);
 
-      const { insufficientApprovals, genActions, numActions } =
-        await consideration.createOrder({
-          startTime,
-          endTime,
-          salt,
-          offer: [
-            {
-              itemType: ItemType.ERC721,
-              token: testErc721.address,
-              identifierOrCriteria: nftId,
-            },
-          ],
-          consideration: [
-            {
-              amount: ethers.utils.parseEther("10").toString(),
-              recipient: offerer.address,
-            },
-          ],
-          // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
-        });
+      const { actions } = await consideration.createOrder({
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifierOrCriteria: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: ethers.utils.parseEther("10").toString(),
+            recipient: offerer.address,
+          },
+        ],
+        // 2.5% fee
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      });
 
-      expect(insufficientApprovals.length).to.equal(0);
-      expect(numActions).to.equal(1);
+      const createOrderAction = actions[0] as CreateOrderAction;
+      const order = await createOrderAction.createOrder();
 
-      const actions = await genActions();
-
-      const createOrderAction = await actions.next();
-
-      isExactlyTrue(createOrderAction.done);
-      expect(createOrderAction.value.type).to.equal("create");
-      expect(createOrderAction.value.order).to.deep.equal({
+      expect(createOrderAction.type).to.equal("create");
+      expect(order).to.deep.equal({
         parameters: {
           consideration: [
             {
@@ -876,7 +782,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           zone: ethers.constants.AddressZero,
         },
-        signature: createOrderAction.value.order.signature,
+        signature: order.signature,
         nonce: 0,
       });
 
@@ -884,8 +790,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order.parameters,
-            signature: createOrderAction.value.order.signature,
+            parameters: order.parameters,
+            signature: order.signature,
           },
         ]);
 
@@ -919,56 +825,39 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       // NFT approved on proxy
       await testErc721.connect(offerer).setApprovalForAll(offererProxy, true);
 
-      const { insufficientApprovals, genActions, numActions } =
-        await consideration.createOrder({
-          startTime,
-          endTime,
-          salt,
-          offer: [
-            {
-              itemType: ItemType.ERC721,
-              token: testErc721.address,
-              identifierOrCriteria: nftId,
-            },
-          ],
-          consideration: [
-            {
-              amount: ethers.utils.parseEther("10").toString(),
-              recipient: offerer.address,
-            },
-          ],
-          // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
-        });
+      const { actions } = await consideration.createOrder({
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifierOrCriteria: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: ethers.utils.parseEther("10").toString(),
+            recipient: offerer.address,
+          },
+        ],
+        // 2.5% fee
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      });
 
-      expect(insufficientApprovals).to.be.deep.equal([
-        {
-          token: testErc721.address,
-          identifierOrCriteria: nftId,
-          approvedAmount: BigNumber.from(0),
-          requiredApprovedAmount: BigNumber.from(1),
-          itemType: ItemType.ERC721,
-          operator: considerationContract.address,
-        },
-      ]);
-      expect(numActions).to.equal(2);
+      const approvalAction = actions[0] as ApprovalAction;
 
-      const actions = await genActions();
-
-      const approvalAction = await actions.next();
-
-      isExactlyNotTrue(approvalAction.done);
-
-      expect(approvalAction.value).to.be.deep.equal({
+      expect(approvalAction).to.be.deep.equal({
         type: "approval",
         token: testErc721.address,
         identifierOrCriteria: nftId,
         itemType: ItemType.ERC721,
-        transaction: approvalAction.value.transaction,
+        transactionRequest: approvalAction.transactionRequest,
         operator: considerationContract.address,
       });
 
-      await approvalAction.value.transaction.wait();
+      await approvalAction.transactionRequest.send();
 
       // NFT should now be approved
       expect(
@@ -978,11 +867,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         )
       ).to.be.true;
 
-      const createOrderAction = await actions.next();
+      const createOrderAction = actions[1] as CreateOrderAction;
+      const order = await createOrderAction.createOrder();
 
-      isExactlyTrue(createOrderAction.done);
-      expect(createOrderAction.value.type).to.equal("create");
-      expect(createOrderAction.value.order).to.deep.equal({
+      expect(createOrderAction.type).to.equal("create");
+      expect(order).to.deep.equal({
         parameters: {
           consideration: [
             {
@@ -1018,7 +907,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           zone: ethers.constants.AddressZero,
         },
-        signature: createOrderAction.value.order.signature,
+        signature: order.signature,
         nonce: 0,
       });
 
@@ -1026,8 +915,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order.parameters,
-            signature: createOrderAction.value.order.signature,
+            parameters: order.parameters,
+            signature: order.signature,
           },
         ]);
 
@@ -1063,66 +952,49 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(offerer)
         .setApprovalForAll(considerationContract.address, true);
 
-      const { insufficientApprovals, genActions, numActions } =
-        await consideration.createOrder({
-          startTime,
-          endTime,
-          salt,
-          offer: [
-            {
-              itemType: ItemType.ERC721,
-              token: testErc721.address,
-              identifierOrCriteria: nftId,
-            },
-          ],
-          consideration: [
-            {
-              amount: ethers.utils.parseEther("10").toString(),
-              recipient: offerer.address,
-            },
-          ],
-          // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
-        });
+      const { actions } = await consideration.createOrder({
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifierOrCriteria: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: ethers.utils.parseEther("10").toString(),
+            recipient: offerer.address,
+          },
+        ],
+        // 2.5% fee
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      });
 
-      expect(insufficientApprovals).to.be.deep.equal([
-        {
-          token: testErc721.address,
-          identifierOrCriteria: nftId,
-          approvedAmount: BigNumber.from(0),
-          requiredApprovedAmount: BigNumber.from(1),
-          itemType: ItemType.ERC721,
-          operator: offererProxy,
-        },
-      ]);
-      expect(numActions).to.equal(2);
+      const approvalAction = actions[0] as ApprovalAction;
 
-      const actions = await genActions();
-
-      const approvalAction = await actions.next();
-
-      isExactlyNotTrue(approvalAction.done);
-
-      expect(approvalAction.value).to.be.deep.equal({
+      expect(approvalAction).to.be.deep.equal({
         type: "approval",
         token: testErc721.address,
         identifierOrCriteria: nftId,
         itemType: ItemType.ERC721,
-        transaction: approvalAction.value.transaction,
+        transactionRequest: approvalAction.transactionRequest,
         operator: offererProxy,
       });
 
-      await approvalAction.value.transaction.wait();
+      await approvalAction.transactionRequest.send();
 
       // NFT should now be approved
       expect(await testErc721.isApprovedForAll(offerer.address, offererProxy))
         .to.be.true;
 
-      const createOrderAction = await actions.next();
+      const createOrderAction = actions[1] as CreateOrderAction;
+      const order = await createOrderAction.createOrder();
 
-      isExactlyTrue(createOrderAction.done);
-      expect(createOrderAction.value.type).to.equal("create");
-      expect(createOrderAction.value.order).to.deep.equal({
+      expect(createOrderAction.type).to.equal("create");
+      expect(order).to.deep.equal({
         parameters: {
           consideration: [
             {
@@ -1158,7 +1030,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           zone: ethers.constants.AddressZero,
         },
-        signature: createOrderAction.value.order.signature,
+        signature: order.signature,
         nonce: 0,
       });
 
@@ -1166,8 +1038,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createOrderAction.value.order.parameters,
-            signature: createOrderAction.value.order.signature,
+            parameters: order.parameters,
+            signature: order.signature,
           },
         ]);
 
