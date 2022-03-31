@@ -31,6 +31,7 @@ import {
   shouldUseBasicFulfill,
 } from "./utils/fulfill";
 import {
+  getMaximumSizeForOrder,
   getSummedTokenAndIdentifierAmounts,
   isCurrencyItem,
 } from "./utils/item";
@@ -38,9 +39,6 @@ import {
   deductFees,
   feeToConsiderationItem,
   generateRandomSalt,
-  getNonce,
-  getOrderHash,
-  getOrderStatus,
   mapInputItemToOfferItem,
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
@@ -72,7 +70,6 @@ export class Consideration {
       ascendingAmountFulfillmentBuffer = 1800,
       approveExactAmount = false,
       balanceAndApprovalChecksOnOrderCreation = true,
-      balanceAndApprovalChecksOnOrderFulfillment = true,
       proxyStrategy = ProxyStrategy.IF_ZERO_APPROVALS_NEEDED,
     }: ConsiderationConfig
   ) {
@@ -89,7 +86,6 @@ export class Consideration {
       ascendingAmountFulfillmentBuffer,
       approveExactAmount,
       balanceAndApprovalChecksOnOrderCreation,
-      balanceAndApprovalChecksOnOrderFulfillment,
       proxyStrategy,
     };
 
@@ -153,14 +149,7 @@ export class Consideration {
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
         multicallProvider: this.multicallProvider,
       }),
-      nonce ??
-        getNonce(
-          { offerer, zone },
-          {
-            considerationContract: this.contract,
-            multicallProvider: this.multicallProvider,
-          }
-        ),
+      nonce ?? this.getNonce(offerer, zone),
     ]);
 
     const balancesAndApprovals = await getBalancesAndApprovals(
@@ -328,6 +317,130 @@ export class Consideration {
     return this.contract.connect(signer).validate(orders);
   }
 
+  public getOrderStatus(orderHash: string) {
+    return this.contract.getOrderStatus(orderHash);
+  }
+
+  public getNonce(offerer: string, zone: string) {
+    return this.contract
+      .getNonce(offerer, zone)
+      .then((nonce) => nonce.toNumber());
+  }
+
+  /**
+   * Calculates the order hash of order components so we can forgo executing a request to the contract
+   * This saves us RPC calls and latency.
+   */
+  public getOrderHash = (orderComponents: OrderComponents) => {
+    const offerItemTypeString =
+      "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
+    const considerationItemTypeString =
+      "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
+    const orderComponentsPartialTypeString =
+      "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,uint256 salt,uint256 nonce)";
+    const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
+
+    const offerItemTypeHash = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes(offerItemTypeString)
+    );
+    const considerationItemTypeHash = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes(considerationItemTypeString)
+    );
+    const orderTypeHash = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes(orderTypeString)
+    );
+
+    const offerHash = ethers.utils.keccak256(
+      "0x" +
+        orderComponents.offer
+          .map((offerItem) => {
+            return ethers.utils
+              .keccak256(
+                "0x" +
+                  [
+                    offerItemTypeHash.slice(2),
+                    offerItem.itemType.toString().padStart(64, "0"),
+                    offerItem.token.slice(2).padStart(64, "0"),
+                    ethers.BigNumber.from(offerItem.identifierOrCriteria)
+                      .toHexString()
+                      .slice(2)
+                      .padStart(64, "0"),
+                    ethers.BigNumber.from(offerItem.startAmount)
+                      .toHexString()
+                      .slice(2)
+                      .padStart(64, "0"),
+                    ethers.BigNumber.from(offerItem.endAmount)
+                      .toHexString()
+                      .slice(2)
+                      .padStart(64, "0"),
+                  ].join("")
+              )
+              .slice(2);
+          })
+          .join("")
+    );
+
+    const considerationHash = ethers.utils.keccak256(
+      "0x" +
+        orderComponents.consideration
+          .map((considerationItem) => {
+            return ethers.utils
+              .keccak256(
+                "0x" +
+                  [
+                    considerationItemTypeHash.slice(2),
+                    considerationItem.itemType.toString().padStart(64, "0"),
+                    considerationItem.token.slice(2).padStart(64, "0"),
+                    ethers.BigNumber.from(
+                      considerationItem.identifierOrCriteria
+                    )
+                      .toHexString()
+                      .slice(2)
+                      .padStart(64, "0"),
+                    ethers.BigNumber.from(considerationItem.startAmount)
+                      .toHexString()
+                      .slice(2)
+                      .padStart(64, "0"),
+                    ethers.BigNumber.from(considerationItem.endAmount)
+                      .toHexString()
+                      .slice(2)
+                      .padStart(64, "0"),
+                    considerationItem.recipient.slice(2).padStart(64, "0"),
+                  ].join("")
+              )
+              .slice(2);
+          })
+          .join("")
+    );
+
+    const derivedOrderHash = ethers.utils.keccak256(
+      "0x" +
+        [
+          orderTypeHash.slice(2),
+          orderComponents.offerer.slice(2).padStart(64, "0"),
+          orderComponents.zone.slice(2).padStart(64, "0"),
+          offerHash.slice(2),
+          considerationHash.slice(2),
+          orderComponents.orderType.toString().padStart(64, "0"),
+          ethers.BigNumber.from(orderComponents.startTime)
+            .toHexString()
+            .slice(2)
+            .padStart(64, "0"),
+          ethers.BigNumber.from(orderComponents.endTime)
+            .toHexString()
+            .slice(2)
+            .padStart(64, "0"),
+          orderComponents.salt.slice(2).padStart(64, "0"),
+          ethers.BigNumber.from(orderComponents.nonce)
+            .toHexString()
+            .slice(2)
+            .padStart(64, "0"),
+        ].join("")
+    );
+
+    return derivedOrderHash;
+  };
+
   /**
    * Fulfills an order through either the basic fulfill methods or the standard method
    * Units to fill are denominated by the max possible size of the order, which is the greatest common denominator (GCD).
@@ -356,13 +469,7 @@ export class Consideration {
           legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
           multicallProvider: this.multicallProvider,
         }),
-        getNonce(
-          { offerer, zone },
-          {
-            considerationContract: this.contract,
-            multicallProvider: this.multicallProvider,
-          }
-        ),
+        this.getNonce(offerer, zone),
         this.multicallProvider.getBlockNumber(),
       ]);
 
@@ -389,10 +496,9 @@ export class Consideration {
     const currentBlockTimestamp = currentBlock.timestamp;
 
     const { isValidated, isCancelled, totalFilled, totalSize } =
-      await getOrderStatus(getOrderHash({ ...orderParameters, nonce }), {
-        considerationContract: this.contract,
-        provider: this.provider,
-      });
+      await this.getOrderStatus(
+        this.getOrderHash({ ...orderParameters, nonce })
+      );
 
     if (isCancelled) {
       throw new Error("The order you are trying to fulfill is cancelled");
@@ -412,7 +518,8 @@ export class Consideration {
     };
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
-    if (shouldUseBasicFulfill(order.parameters, totalFilled)) {
+    // We cannot use basic fulfill if user is trying to partially fill though.
+    if (!unitsToFill && shouldUseBasicFulfill(order.parameters, totalFilled)) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
       return fulfillBasicOrder(order, {
         considerationContract: this.contract,
@@ -428,7 +535,11 @@ export class Consideration {
     // Else, we fallback to the standard fulfill order
     return fulfillStandardOrder(
       order,
-      { unitsToFill, totalFilled, totalSize },
+      {
+        unitsToFill,
+        totalFilled,
+        totalSize: totalSize.eq(0) ? getMaximumSizeForOrder(order) : totalSize,
+      },
       {
         considerationContract: this.contract,
         offererBalancesAndApprovals,

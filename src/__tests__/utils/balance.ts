@@ -1,13 +1,17 @@
-import { BigNumber, ContractReceipt } from "ethers";
+import { BigNumber, BigNumberish, ContractReceipt } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { JsonRpcProvider } from "ethers/node_modules/@ethersproject/providers";
-import { Item, Order } from "../../types";
+import { Item, Order, OrderStatus } from "../../types";
 import { balanceOf } from "../../utils/balance";
 
 import { getPresentItemAmount, TimeBasedItemParams } from "../../utils/item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import {
+  mapOrderAmountsFromFilledStatus,
+  mapOrderAmountsFromUnitsToFill,
+} from "../../utils/order";
 
 export const setBalance = async (
   address: string,
@@ -80,6 +84,8 @@ export const getBalancesForFulfillOrder = async (
 export const verifyBalancesAfterFulfill = async ({
   ownerToTokenToIdentifierBalances,
   order,
+  unitsToFill,
+  orderStatus,
   fulfillReceipt,
   fulfillerAddress,
   multicallProvider,
@@ -90,12 +96,28 @@ export const verifyBalancesAfterFulfill = async ({
     Record<string, Record<string, { balance: BigNumber; item: Item }>>
   >;
   order: Order;
+  orderStatus?: OrderStatus;
+  unitsToFill?: BigNumberish;
   fulfillReceipt: ContractReceipt;
   fulfillerAddress: string;
   multicallProvider: multicallProviders.MulticallProvider;
   timeBasedItemParams?: TimeBasedItemParams;
 }) => {
-  const { offer, consideration, offerer } = order.parameters;
+  const totalFilled = orderStatus?.totalFilled ?? BigNumber.from(0);
+  const totalSize = orderStatus?.totalSize ?? BigNumber.from(0);
+
+  const orderWithAdjustedFills = unitsToFill
+    ? mapOrderAmountsFromUnitsToFill(order, {
+        unitsToFill,
+        totalFilled,
+        totalSize,
+      })
+    : mapOrderAmountsFromFilledStatus(order, {
+        totalFilled,
+        totalSize,
+      });
+
+  const { offer, consideration, offerer } = orderWithAdjustedFills.parameters;
 
   // Offer items are depleted
   offer.forEach((item) => {

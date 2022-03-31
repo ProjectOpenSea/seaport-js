@@ -28,7 +28,9 @@ import {
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balancesAndApprovals";
+import { gcd } from "./gcd";
 import {
+  getMaximumSizeForOrder,
   getSummedTokenAndIdentifierAmounts,
   isNativeCurrencyItem,
   TimeBasedItemParams,
@@ -493,7 +495,7 @@ export async function fulfillBasicOrder(
 export async function fulfillStandardOrder(
   order: Order,
   {
-    unitsToFill,
+    unitsToFill = 0,
     totalFilled,
     totalSize,
   }: {
@@ -522,7 +524,7 @@ export async function fulfillStandardOrder(
 ): Promise<OrderUseCase<ExchangeAction>> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
-  const orderWithAdjustedFills: Order | AdvancedOrder = unitsToFill
+  const orderWithAdjustedFills = unitsToFill
     ? mapOrderAmountsFromUnitsToFill(order, {
         unitsToFill,
         totalFilled,
@@ -588,7 +590,17 @@ export async function fulfillStandardOrder(
 
   const signerAddress = await signer.getAddress();
 
-  const useAdvanced = unitsToFill && "numerator" in orderWithAdjustedFills;
+  const useAdvanced = Boolean(unitsToFill);
+
+  // Used for advanced order cases
+  const maxUnits = getMaximumSizeForOrder(order);
+  const unitsToFillBn = BigNumber.from(unitsToFill);
+
+  // Reduce the numerator/denominator as optimization
+  const unitsGcd = gcd(unitsToFillBn, maxUnits);
+
+  const numerator = unitsToFillBn.div(unitsGcd);
+  const denominator = maxUnits.div(unitsGcd);
 
   const exchangeAction = {
     type: "exchange",
@@ -596,7 +608,7 @@ export async function fulfillStandardOrder(
       send: () =>
         useAdvanced
           ? considerationContract.connect(signer).fulfillAdvancedOrder(
-              orderWithAdjustedFills,
+              { ...order, numerator, denominator },
               // TODO: Criteria resolvers
               [],
               useProxyForFulfiller,
@@ -604,11 +616,7 @@ export async function fulfillStandardOrder(
             )
           : considerationContract
               .connect(signer)
-              .fulfillOrder(
-                orderWithAdjustedFills,
-                useProxyForFulfiller,
-                payableOverrides
-              ),
+              .fulfillOrder(order, useProxyForFulfiller, payableOverrides),
       details: {
         from: signerAddress,
         to: considerationContract.address,
@@ -617,12 +625,12 @@ export async function fulfillStandardOrder(
           useAdvanced ? "fulfillAdvancedOrder" : "fulfillOrder",
           useAdvanced
             ? [
-                orderWithAdjustedFills,
+                { ...order, numerator, denominator },
                 // TODO: Criteria resolvers
                 [],
                 useProxyForFulfiller,
               ]
-            : [orderWithAdjustedFills, useProxyForFulfiller]
+            : [order, useProxyForFulfiller]
         ),
       },
     },

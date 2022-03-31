@@ -11,9 +11,8 @@ export type ConsiderationConfig = {
 
   // allow users to optionally skip balance and approval checks
   balanceAndApprovalChecksOnOrderCreation?: boolean;
-  balanceAndApprovalChecksOnOrderFulfillment?: boolean;
 
-  // Defaults to use proxy if it would result in less approvals. Otherwise, users can specify the proxy strategy
+  // Defaults to use proxy if it would result in zero approvals needed. Otherwise, users can specify the proxy strategy
   // they want to use, relevant for creating orders or fulfilling orders
   proxyStrategy?: ProxyStrategy;
 

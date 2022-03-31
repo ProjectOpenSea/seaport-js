@@ -256,156 +256,6 @@ export const useProxyFromApprovals = ({
     : proxyStrategy === ProxyStrategy.ALWAYS;
 };
 
-export const getOrderStatus = async (
-  orderHash: string,
-  {
-    considerationContract,
-    provider,
-  }: {
-    considerationContract: Consideration;
-    provider: providers.JsonRpcProvider;
-  }
-) => {
-  const contract = new Contract(
-    considerationContract.address,
-    ConsiderationABI,
-    provider
-  ) as Consideration;
-
-  return contract.getOrderStatus(orderHash);
-};
-
-/**
- * Calculates the order hash of order components so we can forgo executing a request to the contract
- * This saves us RPC calls and latency.
- */
-export const getOrderHash = (orderComponents: OrderComponents) => {
-  const offerItemTypeString =
-    "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
-  const considerationItemTypeString =
-    "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
-  const orderComponentsPartialTypeString =
-    "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,uint256 salt,uint256 nonce)";
-  const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
-
-  const offerItemTypeHash = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(offerItemTypeString)
-  );
-  const considerationItemTypeHash = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(considerationItemTypeString)
-  );
-  const orderTypeHash = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(orderTypeString)
-  );
-
-  const offerHash = ethers.utils.keccak256(
-    "0x" +
-      orderComponents.offer
-        .map((offerItem) => {
-          return ethers.utils
-            .keccak256(
-              "0x" +
-                [
-                  offerItemTypeHash.slice(2),
-                  offerItem.itemType.toString().padStart(64, "0"),
-                  offerItem.token.slice(2).padStart(64, "0"),
-                  ethers.BigNumber.from(offerItem.identifierOrCriteria)
-                    .toHexString()
-                    .slice(2)
-                    .padStart(64, "0"),
-                  ethers.BigNumber.from(offerItem.startAmount)
-                    .toHexString()
-                    .slice(2)
-                    .padStart(64, "0"),
-                  ethers.BigNumber.from(offerItem.endAmount)
-                    .toHexString()
-                    .slice(2)
-                    .padStart(64, "0"),
-                ].join("")
-            )
-            .slice(2);
-        })
-        .join("")
-  );
-
-  const considerationHash = ethers.utils.keccak256(
-    "0x" +
-      orderComponents.consideration
-        .map((considerationItem) => {
-          return ethers.utils
-            .keccak256(
-              "0x" +
-                [
-                  considerationItemTypeHash.slice(2),
-                  considerationItem.itemType.toString().padStart(64, "0"),
-                  considerationItem.token.slice(2).padStart(64, "0"),
-                  ethers.BigNumber.from(considerationItem.identifierOrCriteria)
-                    .toHexString()
-                    .slice(2)
-                    .padStart(64, "0"),
-                  ethers.BigNumber.from(considerationItem.startAmount)
-                    .toHexString()
-                    .slice(2)
-                    .padStart(64, "0"),
-                  ethers.BigNumber.from(considerationItem.endAmount)
-                    .toHexString()
-                    .slice(2)
-                    .padStart(64, "0"),
-                  considerationItem.recipient.slice(2).padStart(64, "0"),
-                ].join("")
-            )
-            .slice(2);
-        })
-        .join("")
-  );
-
-  const derivedOrderHash = ethers.utils.keccak256(
-    "0x" +
-      [
-        orderTypeHash.slice(2),
-        orderComponents.offerer.slice(2).padStart(64, "0"),
-        orderComponents.zone.slice(2).padStart(64, "0"),
-        offerHash.slice(2),
-        considerationHash.slice(2),
-        orderComponents.orderType.toString().padStart(64, "0"),
-        ethers.BigNumber.from(orderComponents.startTime)
-          .toHexString()
-          .slice(2)
-          .padStart(64, "0"),
-        ethers.BigNumber.from(orderComponents.endTime)
-          .toHexString()
-          .slice(2)
-          .padStart(64, "0"),
-        orderComponents.salt.slice(2).padStart(64, "0"),
-        ethers.BigNumber.from(orderComponents.nonce)
-          .toHexString()
-          .slice(2)
-          .padStart(64, "0"),
-      ].join("")
-  );
-
-  return derivedOrderHash;
-};
-
-export const getNonce = (
-  { offerer, zone }: { offerer: string; zone: string },
-  {
-    considerationContract,
-    multicallProvider,
-  }: {
-    considerationContract: Consideration;
-    multicallProvider: multicallProviders.MulticallProvider;
-  }
-) => {
-  const contract = new Contract(
-    considerationContract.address,
-    ConsiderationABI,
-    multicallProvider
-  ) as Consideration;
-
-  return contract.getNonce(offerer, zone).then((nonce) => nonce.toNumber());
-};
-
 /**
  * Maps order offer and consideration item amounts based on the order's filled status
  * After applying the fraction, we can view this order as the "canonical" order for which we
@@ -468,7 +318,7 @@ export const mapOrderAmountsFromUnitsToFill = (
     totalFilled,
     totalSize,
   }: { unitsToFill: BigNumberish; totalFilled: BigNumber; totalSize: BigNumber }
-): AdvancedOrder => {
+): Order => {
   const unitsToFillBn = BigNumber.from(unitsToFill);
 
   if (unitsToFillBn.lte(0)) {
@@ -476,6 +326,10 @@ export const mapOrderAmountsFromUnitsToFill = (
   }
 
   const maxUnits = getMaximumSizeForOrder(order);
+
+  if (totalSize.eq(0)) {
+    totalSize = maxUnits;
+  }
 
   // This is the percentage of the order that is left to be fulfilled, and therefore we can't fill more than that.
   const remainingOrderPercentageToBeFilled = totalSize
@@ -527,8 +381,6 @@ export const mapOrderAmountsFromUnitsToFill = (
       })),
     },
     signature: order.signature,
-    numerator: unitsToFillBn.div(unitsGcd),
-    denominator: maxUnits.div(unitsGcd),
   };
 };
 
