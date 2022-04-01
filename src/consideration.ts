@@ -459,19 +459,17 @@ export class Consideration {
 
     const fulfillerAddress = await fulfiller.getAddress();
 
-    const [offererProxy, fulfillerProxy, nonce, latestBlock] =
-      await Promise.all([
-        getProxy(offerer, {
-          legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-          multicallProvider: this.multicallProvider,
-        }),
-        getProxy(fulfillerAddress, {
-          legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-          multicallProvider: this.multicallProvider,
-        }),
-        this.getNonce(offerer, zone),
-        this.multicallProvider.getBlockNumber(),
-      ]);
+    const [offererProxy, fulfillerProxy, nonce] = await Promise.all([
+      getProxy(offerer, {
+        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+        multicallProvider: this.multicallProvider,
+      }),
+      getProxy(fulfillerAddress, {
+        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+        multicallProvider: this.multicallProvider,
+      }),
+      this.getNonce(offerer, zone),
+    ]);
 
     const [
       offererBalancesAndApprovals,
@@ -490,7 +488,7 @@ export class Consideration {
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
-      this.multicallProvider.getBlock(latestBlock),
+      this.multicallProvider.getBlock("latest"),
     ]);
 
     const currentBlockTimestamp = currentBlock.timestamp;
