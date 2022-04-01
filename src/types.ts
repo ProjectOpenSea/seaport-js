@@ -1,5 +1,9 @@
-import { BigNumber, BigNumberish, ContractTransaction } from "ethers";
-import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider";
+import {
+  BigNumber,
+  BigNumberish,
+  ContractTransaction,
+  PopulatedTransaction,
+} from "ethers";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
 
 export type ConsiderationConfig = {
@@ -163,11 +167,9 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
-type TransactionRequestDetails = EthersTransactionRequest;
-
 type TransactionRequest = {
   send: () => Promise<ContractTransaction>;
-  details: TransactionRequestDetails;
+  populatedTransaction: Promise<PopulatedTransaction>;
 };
 
 export type ApprovalAction = {

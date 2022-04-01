@@ -14,11 +14,25 @@ export const generateCriteriaResolvers = (orders: OrderWithCriteria[]) => {
       ...[
         ...order.parameters.offer.map(
           (item, index) =>
-            ({ orderIndex, item, index, side: Side.OFFER } as const)
+            ({
+              orderIndex,
+              item: item as
+                | FulfillInputErc721ItemWithCriteria<OfferItem>
+                | FulfillInputErc1155ItemWithCriteria<OfferItem>,
+              index,
+              side: Side.OFFER,
+            } as const)
         ),
         ...order.parameters.consideration.map(
           (item, index) =>
-            ({ orderIndex, item, index, side: Side.CONSIDERATION } as const)
+            ({
+              orderIndex,
+              item: item as
+                | FulfillInputErc721ItemWithCriteria<ConsiderationItem>
+                | FulfillInputErc1155ItemWithCriteria<ConsiderationItem>,
+              index,
+              side: Side.CONSIDERATION,
+            } as const)
         ),
       ].filter(
         ({ item }) =>
@@ -26,24 +40,7 @@ export const generateCriteriaResolvers = (orders: OrderWithCriteria[]) => {
           item.itemType === ItemType.ERC1155_WITH_CRITERIA
       ),
     ])
-    .flat() as (
-    | {
-        orderIndex: number;
-        item:
-          | FulfillInputErc721ItemWithCriteria<OfferItem>
-          | FulfillInputErc1155ItemWithCriteria<OfferItem>;
-        index: number;
-        side: Side.OFFER;
-      }
-    | {
-        orderIndex: number;
-        item:
-          | FulfillInputErc721ItemWithCriteria<ConsiderationItem>
-          | FulfillInputErc1155ItemWithCriteria<ConsiderationItem>;
-        index: number;
-        side: Side.CONSIDERATION;
-      }
-  )[];
+    .flat();
 
   return itemsWithCriteria.map(({ orderIndex, item, index, side }) => {
     const merkleRoot = item.identifierOrCriteria || "0";
@@ -54,6 +51,7 @@ export const generateCriteriaResolvers = (orders: OrderWithCriteria[]) => {
       orderIndex,
       index,
       side,
+      identifier: item.criteria.identifier,
       criteriaProof: merkleRoot === "0" ? [] : criteriaProof,
     };
   });

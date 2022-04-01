@@ -9,8 +9,8 @@ import {
 import type { Consideration } from "../typechain";
 import type {
   ConsiderationItem,
-  Fee,
   CreateInputItem,
+  Fee,
   Item,
   OfferItem,
   Order,
@@ -21,7 +21,6 @@ import {
   InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
-import { gcd } from "./gcd";
 import {
   getMaximumSizeForOrder,
   isCurrencyItem,

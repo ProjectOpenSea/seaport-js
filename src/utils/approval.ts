@@ -1,6 +1,5 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, Contract, providers } from "ethers";
-import { Interface } from "ethers/lib/utils";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
@@ -46,8 +45,6 @@ export function getApprovalActions(
   return Promise.all(
     insufficientApprovals.map(
       async ({ token, operator, itemType, identifierOrCriteria }) => {
-        const signerAddress = await signer.getAddress();
-
         if (isErc721Item(itemType) || isErc1155Item(itemType)) {
           // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
           const contract = new Contract(token, ERC721ABI, signer) as ERC721;
@@ -61,14 +58,9 @@ export function getApprovalActions(
             transactionRequest: {
               send: () =>
                 contract.connect(signer).setApprovalForAll(operator, true),
-              details: {
-                to: token,
-                from: signerAddress,
-                data: new Interface(ERC721ABI).encodeFunctionData(
-                  "setApprovalForAll",
-                  [operator, true]
-                ),
-              },
+              populatedTransaction: contract
+                .connect(signer)
+                .populateTransaction.setApprovalForAll(operator, true),
             },
           };
         } else {
@@ -81,14 +73,9 @@ export function getApprovalActions(
             itemType,
             transactionRequest: {
               send: () => contract.connect(signer).approve(operator, MAX_INT),
-              details: {
-                to: token,
-                from: signerAddress,
-                data: new Interface(ERC20ABI).encodeFunctionData("approve", [
-                  operator,
-                  MAX_INT,
-                ]),
-              },
+              populatedTransaction: contract
+                .connect(signer)
+                .populateTransaction.approve(operator, MAX_INT),
             },
             operator,
           };

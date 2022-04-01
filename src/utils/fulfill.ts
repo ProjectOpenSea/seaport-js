@@ -1,13 +1,11 @@
 import {
   BigNumber,
   BigNumberish,
-  BytesLike,
   ContractTransaction,
   ethers,
+  PopulatedTransaction,
   providers,
 } from "ethers";
-import { Interface } from "ethers/lib/utils";
-import { ConsiderationABI } from "../abi/Consideration";
 import { BasicFulfillOrder, ItemType, ProxyStrategy } from "../constants";
 import type {
   BasicOrderParametersStruct,
@@ -26,6 +24,7 @@ import {
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balancesAndApprovals";
+import { generateCriteriaResolvers } from "./criteria";
 import { gcd } from "./gcd";
 import {
   getMaximumSizeForOrder,
@@ -294,9 +293,8 @@ export async function fulfillBasicOrder(
     signer,
   });
 
-  const considerationInterface = new Interface(ConsiderationABI);
   let sendTransaction: () => Promise<ContractTransaction>;
-  let data: BytesLike;
+  let populatedTransaction: Promise<PopulatedTransaction>;
 
   switch (basicFulfillOrder) {
     case BasicFulfillOrder.ETH_FOR_ERC721:
@@ -310,17 +308,17 @@ export async function fulfillBasicOrder(
           },
           payableOverrides
         );
-      data = considerationInterface.encodeFunctionData(
-        "fulfillBasicEthForERC721Order",
-        [
+      populatedTransaction = considerationContract
+        .connect(signer)
+        .populateTransaction.fulfillBasicEthForERC721Order(
           forOfferer.endAmount,
           {
             ...basicOrderParameters,
             token: offerItem.token,
             identifier: offerItem.identifierOrCriteria,
           },
-        ]
-      );
+          payableOverrides
+        );
       break;
     case BasicFulfillOrder.ETH_FOR_ERC1155:
       sendTransaction = () =>
@@ -335,18 +333,19 @@ export async function fulfillBasicOrder(
           },
           payableOverrides
         );
-      data = considerationInterface.encodeFunctionData(
-        "fulfillBasicEthForERC1155Order",
-        [
+      populatedTransaction = considerationContract
+        .connect(signer)
+        .populateTransaction.fulfillBasicEthForERC1155Order(
           forOfferer.endAmount,
+          // The order offer is ERC1155
           offerItem.endAmount,
           {
             ...basicOrderParameters,
             token: offerItem.token,
             identifier: offerItem.identifierOrCriteria,
           },
-        ]
-      );
+          payableOverrides
+        );
       break;
     case BasicFulfillOrder.ERC20_FOR_ERC721:
       sendTransaction = () =>
@@ -360,18 +359,18 @@ export async function fulfillBasicOrder(
             identifier: offerItem.identifierOrCriteria,
           }
         );
-      data = considerationInterface.encodeFunctionData(
-        "fulfillBasicERC20ForERC721Order",
-        [
+      populatedTransaction = considerationContract
+        .connect(signer)
+        .populateTransaction.fulfillBasicERC20ForERC721Order(
+          // The order consideration is ERC20
           forOfferer.token,
           forOfferer.endAmount,
           {
             ...basicOrderParameters,
             token: offerItem.token,
             identifier: offerItem.identifierOrCriteria,
-          },
-        ]
-      );
+          }
+        );
       break;
     case BasicFulfillOrder.ERC20_FOR_ERC1155:
       sendTransaction = () =>
@@ -386,9 +385,10 @@ export async function fulfillBasicOrder(
             identifier: offerItem.identifierOrCriteria,
           }
         );
-      data = considerationInterface.encodeFunctionData(
-        "fulfillBasicERC20ForERC1155Order",
-        [
+      populatedTransaction = considerationContract
+        .connect(signer)
+        .populateTransaction.fulfillBasicERC20ForERC1155Order(
+          // The order consideration is ERC20
           forOfferer.token,
           forOfferer.endAmount,
           offerItem.endAmount,
@@ -396,9 +396,8 @@ export async function fulfillBasicOrder(
             ...basicOrderParameters,
             token: offerItem.token,
             identifier: offerItem.identifierOrCriteria,
-          },
-        ]
-      );
+          }
+        );
       break;
     case BasicFulfillOrder.ERC721_FOR_ERC20:
       sendTransaction = () =>
@@ -413,9 +412,10 @@ export async function fulfillBasicOrder(
           },
           useProxyForFulfiller
         );
-      data = considerationInterface.encodeFunctionData(
-        "fulfillBasicERC721ForERC20Order",
-        [
+      populatedTransaction = considerationContract
+        .connect(signer)
+        .populateTransaction.fulfillBasicERC721ForERC20Order(
+          // The order offer is ERC20
           offerItem.token,
           offerItem.endAmount,
           {
@@ -423,9 +423,8 @@ export async function fulfillBasicOrder(
             token: forOfferer.token,
             identifier: forOfferer.identifierOrCriteria,
           },
-          useProxyForFulfiller,
-        ]
-      );
+          useProxyForFulfiller
+        );
       break;
     case BasicFulfillOrder.ERC1155_FOR_ERC20:
       sendTransaction = () =>
@@ -442,20 +441,21 @@ export async function fulfillBasicOrder(
           },
           useProxyForFulfiller
         );
-      data = considerationInterface.encodeFunctionData(
-        "fulfillBasicERC1155ForERC20Order",
-        [
+      populatedTransaction = considerationContract
+        .connect(signer)
+        .populateTransaction.fulfillBasicERC1155ForERC20Order(
+          // The order offer is ERC20
           offerItem.token,
           offerItem.endAmount,
+          // The order consideration is ERC1155
           forOfferer.endAmount,
           {
             ...basicOrderParameters,
             token: forOfferer.token,
             identifier: forOfferer.identifierOrCriteria,
           },
-          useProxyForFulfiller,
-        ]
-      );
+          useProxyForFulfiller
+        );
   }
 
   if (sendTransaction === undefined) {
@@ -464,18 +464,11 @@ export async function fulfillBasicOrder(
     );
   }
 
-  const signerAddress = await signer.getAddress();
-
   const exchangeAction = {
     type: "exchange",
     transactionRequest: {
       send: sendTransaction,
-      details: {
-        from: signerAddress,
-        to: considerationContract.address,
-        value: totalNativeAmount,
-        data,
-      },
+      populatedTransaction,
     },
   } as ExchangeAction;
 
@@ -581,9 +574,13 @@ export async function fulfillStandardOrder(
 
   const approvalActions = await getApprovalActions(approvalsToUse, { signer });
 
-  const signerAddress = await signer.getAddress();
+  const hasCriteriaItems = [...offer, ...consideration].some(
+    ({ itemType }) =>
+      itemType === ItemType.ERC1155_WITH_CRITERIA ||
+      itemType === ItemType.ERC721_WITH_CRITERIA
+  );
 
-  const useAdvanced = Boolean(unitsToFill);
+  const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems;
 
   // Used for advanced order cases
   const maxUnits = getMaximumSizeForOrder(order);
@@ -600,32 +597,33 @@ export async function fulfillStandardOrder(
     transactionRequest: {
       send: () =>
         useAdvanced
-          ? considerationContract.connect(signer).fulfillAdvancedOrder(
-              { ...order, numerator, denominator },
-              // TODO: Criteria resolvers
-              [],
-              useProxyForFulfiller,
-              payableOverrides
-            )
+          ? considerationContract
+              .connect(signer)
+              .fulfillAdvancedOrder(
+                { ...order, numerator, denominator },
+                hasCriteriaItems ? generateCriteriaResolvers([order]) : [],
+                useProxyForFulfiller,
+                payableOverrides
+              )
           : considerationContract
               .connect(signer)
               .fulfillOrder(order, useProxyForFulfiller, payableOverrides),
-      details: {
-        from: signerAddress,
-        to: considerationContract.address,
-        value: totalNativeAmount,
-        data: new Interface(ConsiderationABI).encodeFunctionData(
-          useAdvanced ? "fulfillAdvancedOrder" : "fulfillOrder",
-          useAdvanced
-            ? [
-                { ...order, numerator, denominator },
-                // TODO: Criteria resolvers
-                [],
-                useProxyForFulfiller,
-              ]
-            : [order, useProxyForFulfiller]
-        ),
-      },
+      populatedTransaction: useAdvanced
+        ? considerationContract
+            .connect(signer)
+            .populateTransaction.fulfillAdvancedOrder(
+              { ...order, numerator, denominator },
+              hasCriteriaItems ? generateCriteriaResolvers([order]) : [],
+              useProxyForFulfiller,
+              payableOverrides
+            )
+        : considerationContract
+            .connect(signer)
+            .populateTransaction.fulfillOrder(
+              order,
+              useProxyForFulfiller,
+              payableOverrides
+            ),
     },
   } as const;
 
