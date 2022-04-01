@@ -1,10 +1,10 @@
 import {
   BigNumber,
   BigNumberish,
+  BytesLike,
   ContractTransaction,
   ethers,
   providers,
-  BytesLike,
 } from "ethers";
 import { Interface } from "ethers/lib/utils";
 import { ConsiderationABI } from "../abi/Consideration";
@@ -14,7 +14,6 @@ import type {
   Consideration,
 } from "../typechain/Consideration";
 import type {
-  AdvancedOrder,
   ExchangeAction,
   Order,
   OrderParameters,
@@ -23,9 +22,9 @@ import type {
 } from "../types";
 import { getApprovalActions } from "./approval";
 import {
-  validateOfferBalancesAndApprovals,
   BalancesAndApprovals,
   validateBasicFulfillBalancesAndApprovals,
+  validateOfferBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balancesAndApprovals";
 import { gcd } from "./gcd";

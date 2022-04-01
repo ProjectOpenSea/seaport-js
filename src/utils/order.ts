@@ -100,7 +100,7 @@ export const deductFees = <T extends Item>(
       : item.startAmount,
     endAmount: isCurrencyItem(item)
       ? BigNumber.from(item.endAmount)
-          .sub(multiplyBasisPoints(item.startAmount, totalBasisPoints))
+          .sub(multiplyBasisPoints(item.endAmount, totalBasisPoints))
           .toString()
       : item.endAmount,
   }));

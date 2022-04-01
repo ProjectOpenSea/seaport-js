@@ -127,6 +127,8 @@ export const verifyBalancesAfterFulfill = async ({
         endAmount: item.endAmount,
       },
       timeBasedItemParams
+        ? { ...timeBasedItemParams, isConsiderationItem: false }
+        : undefined
     );
 
     ownerToTokenToIdentifierBalances[offerer][item.token][
@@ -157,6 +159,8 @@ export const verifyBalancesAfterFulfill = async ({
         endAmount: item.endAmount,
       },
       timeBasedItemParams
+        ? { ...timeBasedItemParams, isConsiderationItem: true }
+        : undefined
     );
 
     ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
@@ -223,18 +227,4 @@ export const verifyBalancesAfterFulfill = async ({
         ])
     ),
   ]);
-
-  // for (const [owner, tokenToIdentifierBalances] of Object.entries(
-  //   ownerToTokenToIdentifierBalances
-  // )) {
-  //   for (const identifierToBalance of Object.values(
-  //     tokenToIdentifierBalances
-  //   )) {
-  //     for (const { balance, item } of Object.values(identifierToBalance)) {
-  //       const actualBalance = await balanceOf(owner, item, multicallProvider);
-
-  //       expect(balance).equal(actualBalance);
-  //     }
-  //   }
-  // }
 };

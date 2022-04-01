@@ -265,7 +265,12 @@ export const validateOfferBalancesAndApprovals = (
     insufficientProxyApprovals,
   } = getInsufficientBalanceAndApprovalAmounts(
     balancesAndApprovals,
-    getSummedTokenAndIdentifierAmounts(offer, timeBasedItemParams),
+    getSummedTokenAndIdentifierAmounts(
+      offer,
+      timeBasedItemParams
+        ? { ...timeBasedItemParams, isConsiderationItem: false }
+        : undefined
+    ),
     { considerationContract, proxy, proxyStrategy }
   );
 
@@ -330,10 +335,7 @@ export const validateBasicFulfillBalancesAndApprovals = (
     { offer, orderType },
     {
       balancesAndApprovals: offererBalancesAndApprovals,
-      timeBasedItemParams: {
-        ...timeBasedItemParams,
-        isConsiderationItem: false,
-      },
+      timeBasedItemParams,
       throwOnInsufficientApprovals: true,
       considerationContract,
       proxy,
@@ -409,10 +411,7 @@ export const validateStandardFulfillBalancesAndApprovals = (
     { offer, orderType },
     {
       balancesAndApprovals: offererBalancesAndApprovals,
-      timeBasedItemParams: {
-        ...timeBasedItemParams,
-        isConsiderationItem: false,
-      },
+      timeBasedItemParams,
       throwOnInsufficientApprovals: true,
       considerationContract,
       proxy,
@@ -420,10 +419,10 @@ export const validateStandardFulfillBalancesAndApprovals = (
     }
   );
 
-  const summedOfferAmounts = getSummedTokenAndIdentifierAmounts(
-    offer,
-    timeBasedItemParams
-  );
+  const summedOfferAmounts = getSummedTokenAndIdentifierAmounts(offer, {
+    ...timeBasedItemParams,
+    isConsiderationItem: false,
+  });
 
   // Deep clone existing balances
   const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
