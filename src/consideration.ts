@@ -15,7 +15,7 @@ import type {
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
-  IdentifiersToMatch,
+  OrderWithCriteria,
   Order,
   OrderComponents,
   OrderParameters,
@@ -449,13 +449,11 @@ export class Consideration {
    * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order
    */
   public async fulfillOrder(
-    order: Order,
+    order: OrderWithCriteria,
     {
       unitsToFill,
-      identifiersToMatch,
     }: {
       unitsToFill?: BigNumberish;
-      identifiersToMatch?: IdentifiersToMatch[];
     } = {},
     accountAddress?: string
   ): Promise<OrderUseCase<ExchangeAction>> {

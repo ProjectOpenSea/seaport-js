@@ -10,7 +10,7 @@ import type { Consideration } from "../typechain";
 import type {
   ConsiderationItem,
   Fee,
-  InputItem,
+  CreateInputItem,
   Item,
   OfferItem,
   Order,
@@ -106,7 +106,7 @@ export const deductFees = <T extends Item>(
   }));
 };
 
-export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
+export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   // Item is an NFT
   if ("itemType" in item) {
     // Convert this to a criteria based item
@@ -354,9 +354,6 @@ export const mapOrderAmountsFromUnitsToFill = (
   )
     ? unitsToFillBasisPoints
     : remainingOrderPercentageToBeFilled;
-
-  // Reduce the numerator/denominator as optimization
-  const unitsGcd = gcd(unitsToFillBn, maxUnits);
 
   return {
     parameters: {

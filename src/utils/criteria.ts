@@ -1,54 +1,60 @@
 import MerkleTree from "merkletreejs";
 import { ItemType, Side } from "../constants";
-import { CriteriaResolverStruct } from "../typechain/Consideration";
-import { IdentifiersToMatch, IdentifierWithCriteria, Order } from "../types";
+import {
+  ConsiderationItem,
+  FulfillInputErc1155ItemWithCriteria,
+  FulfillInputErc721ItemWithCriteria,
+  OfferItem,
+  OrderWithCriteria,
+} from "../types";
 
-export const generateCriteriaResolvers = (
-  orders: Order[],
-  identifiersWithCriteria: IdentifierWithCriteria[]
-) => {
-  const itemIndicesAndSides = orders
+export const generateCriteriaResolvers = (orders: OrderWithCriteria[]) => {
+  const itemsWithCriteria = orders
     .map((order, orderIndex) => [
       ...[
         ...order.parameters.offer.map(
-          (item, index) => [orderIndex, item, index, Side.OFFER] as const
+          (item, index) =>
+            ({ orderIndex, item, index, side: Side.OFFER } as const)
         ),
         ...order.parameters.consideration.map(
           (item, index) =>
-            [orderIndex, item, index, Side.CONSIDERATION] as const
+            ({ orderIndex, item, index, side: Side.CONSIDERATION } as const)
         ),
       ].filter(
-        ([_, item]) =>
+        ({ item }) =>
           item.itemType === ItemType.ERC721_WITH_CRITERIA ||
           item.itemType === ItemType.ERC1155_WITH_CRITERIA
       ),
     ])
-    .flat();
-
-  return itemIndicesAndSides.map(([orderIndex, item, index, side]) => {
-    const merkleRoot = item.identifierOrCriteria || "0";
-
-    for (let i = 0; i < identifiersWithCriteria.length; i++) {
-      const { token, identifier, validIdentifiersForMerkleRoot } =
-        identifiersWithCriteria[i];
-
-      const tree = new MerkleTree(validIdentifiersForMerkleRoot);
-      const criteriaProof = tree.getProof(identifier);
-
-      if (
-        (item.token.toLowerCase() === token.toLowerCase() &&
-          merkleRoot === tree.getRoot().toString("hex")) ||
-        merkleRoot === "0"
-      ) {
-        //
-        return {
-          orderIndex,
-          side,
-          index,
-          identifier,
-          criteriaProof,
-        };
+    .flat() as (
+    | {
+        orderIndex: number;
+        item:
+          | FulfillInputErc721ItemWithCriteria<OfferItem>
+          | FulfillInputErc1155ItemWithCriteria<OfferItem>;
+        index: number;
+        side: Side.OFFER;
       }
-    }
+    | {
+        orderIndex: number;
+        item:
+          | FulfillInputErc721ItemWithCriteria<ConsiderationItem>
+          | FulfillInputErc1155ItemWithCriteria<ConsiderationItem>;
+        index: number;
+        side: Side.CONSIDERATION;
+      }
+  )[];
+
+  return itemsWithCriteria.map(({ orderIndex, item, index, side }) => {
+    const merkleRoot = item.identifierOrCriteria || "0";
+    const tree = new MerkleTree(item.criteria.identifiers);
+    const criteriaProof = tree.getProof(item.criteria.identifier);
+
+    return {
+      orderIndex,
+      index,
+      side,
+      criteriaProof: merkleRoot === "0" ? [] : criteriaProof,
+    };
   });
 };

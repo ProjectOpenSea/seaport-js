@@ -73,7 +73,6 @@ export type BasicErc721Item = {
 export type Erc721ItemWithCriteria = {
   itemType: ItemType.ERC721;
   token: string;
-  identifier?: undefined;
   identifiers: string[];
   // Used for criteria based items i.e. offering to buy 5 NFTs for a collection
   amount?: string;
@@ -93,10 +92,13 @@ export type BasicErc1155Item = {
 export type Erc1155ItemWithCriteria = {
   itemType: ItemType.ERC1155;
   token: string;
-  identifier?: undefined;
   identifiers: string[];
   amount: string;
   endAmount?: string;
+};
+
+type InputCriteria = {
+  criteria: { identifier: string; identifiers: string[] };
 };
 
 type Erc1155Item = BasicErc1155Item | Erc1155ItemWithCriteria;
@@ -107,8 +109,22 @@ export type CurrencyItem = {
   endAmount?: string;
 };
 
-export type InputItem = Erc721Item | Erc1155Item | CurrencyItem;
-export type ConsiderationInputItem = InputItem & { recipient?: string };
+export type CreateInputItem = Erc721Item | Erc1155Item | CurrencyItem;
+
+export type FulfillInputErc721ItemWithCriteria<T extends Item> = T & {
+  itemType: ItemType.ERC721_WITH_CRITERIA;
+} & InputCriteria;
+
+export type FulfillInputErc1155ItemWithCriteria<T extends Item> = T & {
+  itemType: ItemType.ERC1155_WITH_CRITERIA;
+} & InputCriteria;
+
+export type CriteriaInputItem<T extends Item> =
+  | Item
+  | FulfillInputErc1155ItemWithCriteria<T>
+  | FulfillInputErc721ItemWithCriteria<T>;
+
+export type ConsiderationInputItem = CreateInputItem & { recipient?: string };
 
 export type Fee = {
   recipient: string;
@@ -119,7 +135,7 @@ export type CreateOrderInput = {
   zone?: string;
   startTime?: string;
   endTime?: string;
-  offer: readonly InputItem[];
+  offer: readonly CreateInputItem[];
   consideration: readonly ConsiderationInputItem[];
   nonce?: number;
   fees?: readonly Fee[];
@@ -127,6 +143,13 @@ export type CreateOrderInput = {
   restrictedByZone?: boolean;
   useProxy?: boolean;
   salt?: string;
+};
+
+export type OrderWithCriteria = Order & {
+  parameters: OrderParameters & {
+    offer: CriteriaInputItem<OfferItem>[];
+    consideration: CriteriaInputItem<ConsiderationItem>[];
+  };
 };
 
 export type OrderStatus = {
