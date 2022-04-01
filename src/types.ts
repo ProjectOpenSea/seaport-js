@@ -196,3 +196,9 @@ export type Fulfillment = {
   offerComponents: FulfillmentComponent[];
   considerationComponents: FulfillmentComponent[];
 };
+
+export type IdentifierWithCriteria = {
+  token: string;
+  identifier: string;
+  validIdentifiersForMerkleRoot: string[];
+};

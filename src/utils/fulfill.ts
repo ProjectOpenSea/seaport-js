@@ -24,7 +24,6 @@ import { getApprovalActions } from "./approval";
 import {
   BalancesAndApprovals,
   validateBasicFulfillBalancesAndApprovals,
-  validateOfferBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balancesAndApprovals";
 import { gcd } from "./gcd";
@@ -40,6 +39,7 @@ import {
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
   useProxyFromApprovals,
+  validateOrderParameters,
 } from "./order";
 import { executeAllActions } from "./usecase";
 
@@ -238,17 +238,14 @@ export async function fulfillBasicOrder(
     }
   )[ethers.constants.AddressZero]?.["0"];
 
-  validateOfferBalancesAndApprovals(
-    { offer, orderType },
-    {
-      balancesAndApprovals: offererBalancesAndApprovals,
-      timeBasedItemParams,
-      throwOnInsufficientApprovals: true,
-      considerationContract,
-      proxy,
-      proxyStrategy,
-    }
-  );
+  validateOrderParameters(orderParameters, {
+    balancesAndApprovals: offererBalancesAndApprovals,
+    timeBasedItemParams,
+    throwOnInsufficientApprovals: true,
+    considerationContract,
+    proxy,
+    proxyStrategy,
+  });
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
     validateBasicFulfillBalancesAndApprovals(
@@ -544,17 +541,14 @@ export async function fulfillStandardOrder(
     isConsiderationItem: true,
   })[ethers.constants.AddressZero]?.["0"];
 
-  validateOfferBalancesAndApprovals(
-    { offer, orderType },
-    {
-      balancesAndApprovals: offererBalancesAndApprovals,
-      timeBasedItemParams,
-      throwOnInsufficientApprovals: true,
-      considerationContract,
-      proxy,
-      proxyStrategy,
-    }
-  );
+  validateOrderParameters(order.parameters, {
+    balancesAndApprovals: offererBalancesAndApprovals,
+    timeBasedItemParams,
+    throwOnInsufficientApprovals: true,
+    considerationContract,
+    proxy,
+    proxyStrategy,
+  });
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
     validateStandardFulfillBalancesAndApprovals(

@@ -1,32 +1,32 @@
-import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
-import { ConsiderationABI } from "../abi/Consideration";
-import type { Consideration } from "../typechain";
+import { BigNumber, BigNumberish, ethers } from "ethers";
+import { MerkleTree } from "merkletreejs";
 import {
   ItemType,
   ONE_HUNDRED_PERCENT_BP,
   OrderType,
   ProxyStrategy,
 } from "../constants";
+import type { Consideration } from "../typechain";
 import type {
+  ConsiderationItem,
   Fee,
   InputItem,
+  Item,
   OfferItem,
   Order,
   OrderParameters,
-  ConsiderationItem,
-  OrderComponents,
-  AdvancedOrder,
-  Item,
 } from "../types";
 import {
   BalancesAndApprovals,
   InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
-import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
-import { providers as multicallProviders } from "@0xsequence/multicall";
 import { gcd } from "./gcd";
-import { MerkleTree } from "merkletreejs";
+import {
+  getMaximumSizeForOrder,
+  isCurrencyItem,
+  TimeBasedItemParams,
+} from "./item";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -143,6 +143,7 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
       endAmount: "1",
     };
   }
+
   // Item is a currency
   return {
     itemType:
@@ -179,6 +180,7 @@ export const validateOrderParameters = (
     considerationContract,
     proxy,
     proxyStrategy,
+    timeBasedItemParams,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
     throwOnInsufficientBalances?: boolean;
@@ -186,6 +188,7 @@ export const validateOrderParameters = (
     considerationContract: Consideration;
     proxy: string;
     proxyStrategy: ProxyStrategy;
+    timeBasedItemParams?: TimeBasedItemParams;
   }
 ): InsufficientApprovals => {
   const { offer, consideration, orderType } = orderParameters;
@@ -203,6 +206,7 @@ export const validateOrderParameters = (
       considerationContract,
       proxy,
       proxyStrategy,
+      timeBasedItemParams,
     }
   );
 };

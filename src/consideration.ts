@@ -15,6 +15,7 @@ import type {
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
+  IdentifiersToMatch,
   Order,
   OrderComponents,
   OrderParameters,
@@ -449,7 +450,13 @@ export class Consideration {
    */
   public async fulfillOrder(
     order: Order,
-    { unitsToFill }: { unitsToFill?: BigNumberish } = {},
+    {
+      unitsToFill,
+      identifiersToMatch,
+    }: {
+      unitsToFill?: BigNumberish;
+      identifiersToMatch?: IdentifiersToMatch[];
+    } = {},
     accountAddress?: string
   ): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
