@@ -101,10 +101,6 @@ export type Erc1155ItemWithCriteria = {
   endAmount?: string;
 };
 
-type InputCriteria = {
-  criteria: { identifier: string; identifiers: string[] };
-};
-
 type Erc1155Item = BasicErc1155Item | Erc1155ItemWithCriteria;
 
 export type CurrencyItem = {
@@ -114,19 +110,6 @@ export type CurrencyItem = {
 };
 
 export type CreateInputItem = Erc721Item | Erc1155Item | CurrencyItem;
-
-export type FulfillInputErc721ItemWithCriteria<T extends Item> = T & {
-  itemType: ItemType.ERC721_WITH_CRITERIA;
-} & InputCriteria;
-
-export type FulfillInputErc1155ItemWithCriteria<T extends Item> = T & {
-  itemType: ItemType.ERC1155_WITH_CRITERIA;
-} & InputCriteria;
-
-export type CriteriaInputItem<T extends Item> =
-  | Item
-  | FulfillInputErc1155ItemWithCriteria<T>
-  | FulfillInputErc721ItemWithCriteria<T>;
 
 export type ConsiderationInputItem = CreateInputItem & { recipient?: string };
 
@@ -149,11 +132,9 @@ export type CreateOrderInput = {
   salt?: string;
 };
 
-export type OrderWithCriteria = Order & {
-  parameters: OrderParameters & {
-    offer: CriteriaInputItem<OfferItem>[];
-    consideration: CriteriaInputItem<ConsiderationItem>[];
-  };
+export type InputCriteria = {
+  identifier: string;
+  validIdentifiers?: string[];
 };
 
 export type OrderStatus = {
@@ -220,10 +201,4 @@ export type FulfillmentComponent = {
 export type Fulfillment = {
   offerComponents: FulfillmentComponent[];
   considerationComponents: FulfillmentComponent[];
-};
-
-export type IdentifierWithCriteria = {
-  token: string;
-  identifier: string;
-  validIdentifiersForMerkleRoot: string[];
 };

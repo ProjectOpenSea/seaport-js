@@ -4,7 +4,7 @@ import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
 import type { ERC20, ERC721 } from "../typechain";
-import type { ApprovalAction, Item } from "../types";
+import type { ApprovalAction, InputCriteria, Item } from "../types";
 import type { InsufficientApprovals } from "./balancesAndApprovals";
 import { isErc1155Item, isErc721Item } from "./item";
 
@@ -58,9 +58,8 @@ export function getApprovalActions(
             transactionRequest: {
               send: () =>
                 contract.connect(signer).setApprovalForAll(operator, true),
-              populatedTransaction: contract
-                .connect(signer)
-                .populateTransaction.setApprovalForAll(operator, true),
+              populatedTransaction:
+                contract.populateTransaction.setApprovalForAll(operator, true),
             },
           };
         } else {
@@ -73,9 +72,10 @@ export function getApprovalActions(
             itemType,
             transactionRequest: {
               send: () => contract.connect(signer).approve(operator, MAX_INT),
-              populatedTransaction: contract
-                .connect(signer)
-                .populateTransaction.approve(operator, MAX_INT),
+              populatedTransaction: contract.populateTransaction.approve(
+                operator,
+                MAX_INT
+              ),
             },
             operator,
           };

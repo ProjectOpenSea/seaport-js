@@ -5,13 +5,14 @@ import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType } from "../constants";
 import type { ERC1155, ERC20, ERC721 } from "../typechain";
-import type { Item } from "../types";
+import type { InputCriteria, Item } from "../types";
 import { isErc1155Item, isErc721Item } from "./item";
 
 export const balanceOf = async (
   owner: string,
   item: Item,
-  multicallProvider: multicallProviders.MulticallProvider
+  multicallProvider: multicallProviders.MulticallProvider,
+  criteria?: InputCriteria
 ): Promise<BigNumber> => {
   if (isErc721Item(item.itemType)) {
     const contract = new Contract(
@@ -21,23 +22,35 @@ export const balanceOf = async (
     ) as ERC721;
 
     if (item.itemType === ItemType.ERC721_WITH_CRITERIA) {
-      return contract.balanceOf(owner);
+      return criteria
+        ? contract
+            .ownerOf(criteria.identifier)
+            .then((ownerOf) =>
+              BigNumber.from(
+                Number(ownerOf.toLowerCase() === owner.toLowerCase())
+              )
+            )
+        : contract.balanceOf(owner);
     }
 
-    const itemOwner = await contract.ownerOf(item.identifierOrCriteria);
-    return BigNumber.from(
-      Number(owner.toLowerCase() === itemOwner.toLowerCase())
-    );
+    return contract
+      .ownerOf(item.identifierOrCriteria)
+      .then((ownerOf) =>
+        BigNumber.from(Number(ownerOf.toLowerCase() === owner.toLowerCase()))
+      );
   } else if (isErc1155Item(item.itemType)) {
-    if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
-      throw new Error("ERC1155 Criteria based offers are not supported");
-    }
-
     const contract = new Contract(
       item.token,
       ERC1155ABI,
       multicallProvider
     ) as ERC1155;
+
+    if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
+      if (!criteria) {
+        throw new Error("ERC1155 Criteria based offers are not supported");
+      }
+      return contract.balanceOf(owner, criteria.identifier);
+    }
 
     return contract.balanceOf(owner, item.identifierOrCriteria);
   }

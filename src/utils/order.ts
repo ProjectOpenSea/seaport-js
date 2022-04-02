@@ -110,7 +110,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   if ("itemType" in item) {
     // Convert this to a criteria based item
     if ("identifiers" in item) {
-      const tree = new MerkleTree(item.identifiers);
+      const tree = new MerkleTree(item.identifiers ?? []);
 
       return {
         itemType:
@@ -118,7 +118,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
             ? ItemType.ERC721_WITH_CRITERIA
             : ItemType.ERC1155_WITH_CRITERIA,
         token: item.token,
-        identifierOrCriteria: tree.getRoot().toString("hex"),
+        identifierOrCriteria: tree.getRoot().toString("hex") || "0",
         startAmount: item.amount ?? "1",
         endAmount: item.endAmount ?? item.amount ?? "1",
       };

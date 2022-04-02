@@ -2,11 +2,12 @@ import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, ethers } from "ethers";
 import { ItemType, MAX_INT, ProxyStrategy } from "../constants";
 import type { Consideration } from "../typechain";
-import type { Item, OrderParameters } from "../types";
+import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";
 import {
   getSummedTokenAndIdentifierAmounts,
+  isCriteriaItem,
   isErc1155Item,
   isErc20Item,
   isErc721Item,
@@ -67,6 +68,7 @@ const findBalanceAndApproval = (
 export const getBalancesAndApprovals = async (
   owner: string,
   items: Item[],
+  criterias: InputCriteria[],
   {
     considerationContract,
     proxy,
@@ -76,8 +78,17 @@ export const getBalancesAndApprovals = async (
     proxy: string;
     multicallProvider: multicallProviders.MulticallProvider;
   }
-): Promise<BalancesAndApprovals> =>
-  Promise.all(
+): Promise<BalancesAndApprovals> => {
+  const criteriasCopy = [...criterias];
+
+  const itemToCriteria = items.reduce((map, item) => {
+    if (isCriteriaItem(item.itemType)) {
+      map.set(item, criteriasCopy.shift() as InputCriteria);
+    }
+    return map;
+  }, new Map<Item, InputCriteria>());
+
+  return Promise.all(
     items.map(async (item) => {
       let ownerApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
       let proxyApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
@@ -125,13 +136,19 @@ export const getBalancesAndApprovals = async (
         identifierOrCriteria: BigNumber.from(
           item.identifierOrCriteria
         ).toString(),
-        balance: await balanceOf(owner, item, multicallProvider),
+        balance: await balanceOf(
+          owner,
+          item,
+          multicallProvider,
+          itemToCriteria.get(item)
+        ),
         ownerApprovedAmount: await ownerApprovedAmountPromise,
         proxyApprovedAmount: await proxyApprovedAmountPromise,
         itemType: item.itemType,
       };
     })
   );
+};
 
 export const getInsufficientBalanceAndApprovalAmounts = (
   balancesAndApprovals: BalancesAndApprovals,

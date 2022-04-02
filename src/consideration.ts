@@ -15,11 +15,11 @@ import type {
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
-  OrderWithCriteria,
   Order,
   OrderComponents,
   OrderParameters,
   OrderUseCase,
+  InputCriteria,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -156,6 +156,7 @@ export class Consideration {
     const balancesAndApprovals = await getBalancesAndApprovals(
       offerer,
       offerItems,
+      [],
       {
         proxy,
         considerationContract: this.contract,
@@ -449,11 +450,15 @@ export class Consideration {
    * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order
    */
   public async fulfillOrder(
-    order: OrderWithCriteria,
+    order: Order,
     {
       unitsToFill,
+      offerCriteria = [],
+      considerationCriteria = [],
     }: {
       unitsToFill?: BigNumberish;
+      offerCriteria?: InputCriteria[];
+      considerationCriteria?: InputCriteria[];
     } = {},
     accountAddress?: string
   ): Promise<OrderUseCase<ExchangeAction>> {
@@ -481,18 +486,23 @@ export class Consideration {
       fulfillerBalancesAndApprovals,
       currentBlock,
     ] = await Promise.all([
-      getBalancesAndApprovals(offerer, offer, {
+      getBalancesAndApprovals(offerer, offer, offerCriteria, {
         proxy: offererProxy,
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
-      getBalancesAndApprovals(fulfillerAddress, [...offer, ...consideration], {
-        proxy: fulfillerProxy,
-        considerationContract: this.contract,
-        multicallProvider: this.multicallProvider,
-      }),
+      getBalancesAndApprovals(
+        fulfillerAddress,
+        [...offer, ...consideration],
+        [...offerCriteria, ...considerationCriteria],
+        {
+          proxy: fulfillerProxy,
+          considerationContract: this.contract,
+          multicallProvider: this.multicallProvider,
+        }
+      ),
       this.multicallProvider.getBlock("latest"),
     ]);
 
@@ -542,6 +552,8 @@ export class Consideration {
         unitsToFill,
         totalFilled,
         totalSize: totalSize.eq(0) ? getMaximumSizeForOrder(order) : totalSize,
+        offerCriteria,
+        considerationCriteria,
       },
       {
         considerationContract: this.contract,

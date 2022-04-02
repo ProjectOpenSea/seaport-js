@@ -18,6 +18,11 @@ export const isErc721Item = (itemType: Item["itemType"]) =>
 export const isErc1155Item = (itemType: Item["itemType"]) =>
   [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType);
 
+export const isCriteriaItem = (itemType: Item["itemType"]) =>
+  [ItemType.ERC721_WITH_CRITERIA, ItemType.ERC1155_WITH_CRITERIA].includes(
+    itemType
+  );
+
 export type TimeBasedItemParams = {
   isConsiderationItem?: boolean;
   currentBlockTimestamp: number;
