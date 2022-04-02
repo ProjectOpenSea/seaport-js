@@ -26,7 +26,6 @@ describeWithFixture(
 
     let fulfillStandardOrderSpy: sinon.SinonSpy;
     let standardCreateOrderInput: CreateOrderInput;
-    let secondTestErc1155: TestERC1155;
 
     const nftId = "1";
 
@@ -35,10 +34,6 @@ describeWithFixture(
       multicallProvider = new providers.MulticallProvider(ethers.provider);
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
-
-      const TestERC1155 = await ethers.getContractFactory("TestERC1155");
-      secondTestErc1155 = await TestERC1155.deploy();
-      await secondTestErc1155.deployed();
     });
 
     afterEach(() => {
@@ -221,7 +216,36 @@ describeWithFixture(
             expect(fulfillStandardOrderSpy).calledOnce;
           });
         });
-        describe("[Accept offer] I want to accept a collection based offer", () => {});
+        describe.only("[Accept offer] I want to accept a collection based offer", () => {
+          beforeEach(async () => {
+            const { testErc721, testErc20 } = fixture;
+
+            await testErc721.mint(fulfiller.address, nftId);
+            await testErc20.mint(offerer.address, parseEther("10").toString());
+
+            standardCreateOrderInput = {
+              allowPartialFills: true,
+              startTime: "0",
+              endTime: MAX_INT.toString(),
+              salt: generateRandomSalt(),
+              offer: [
+                {
+                  amount: parseEther("10").toString(),
+                },
+              ],
+              consideration: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: testErc721.address,
+                  identifiers: [],
+                  recipient: offerer.address,
+                },
+              ],
+              // 2.5% fee
+              fees: [{ recipient: zone.address, basisPoints: 250 }],
+            };
+          });
+        });
       });
       describe("Trait-based offers trades", () => {
         describe("[Buy now] I want to buy a collection based listing", () => {});
