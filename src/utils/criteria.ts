@@ -1,8 +1,9 @@
+import { BigNumber } from "ethers";
+import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import MerkleTree from "merkletreejs";
-import { ItemType, Side } from "../constants";
+import { Side } from "../constants";
 import { InputCriteria, Item, Order } from "../types";
 import { isCriteriaItem } from "./item";
-import keccak256 from "keccak256";
 
 export const generateCriteriaResolvers = (
   orders: Order[],
@@ -55,17 +56,30 @@ export const generateCriteriaResolvers = (
     criteriaItems.map(({ orderIndex, item, index, side }, i) => {
       const merkleRoot = item.identifierOrCriteria || "0";
       const inputCriteria = criterias[orderIndex][i];
-      const leaves = (inputCriteria.validIdentifiers ?? []).map(keccak256);
-      const tree = new MerkleTree(leaves, keccak256, { sort: true });
+      const leaves = (inputCriteria.validIdentifiers ?? []).map((identifier) =>
+        Buffer.from(
+          BigNumber.from(identifier).toHexString().slice(2).padStart(64, "0"),
+          "hex"
+        )
+      );
+      const tree = new MerkleTree(leaves, keccak256, {
+        sort: true,
+      });
       const criteriaProof = tree.getHexProof(
-        keccak256(inputCriteria.identifier)
+        Buffer.from(
+          BigNumber.from(inputCriteria.identifier)
+            .toHexString()
+            .slice(2)
+            .padStart(64, "0"),
+          "hex"
+        )
       );
 
       return {
         orderIndex,
         index,
         side,
-        identifier: keccak256(inputCriteria.identifier),
+        identifier: inputCriteria.identifier,
         criteriaProof: merkleRoot === "0" ? [] : criteriaProof,
       };
     });

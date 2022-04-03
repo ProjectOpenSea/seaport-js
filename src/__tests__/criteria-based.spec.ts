@@ -203,7 +203,6 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              unitsToFill: 2,
               orderStatus,
               fulfillerAddress: fulfiller.address,
               multicallProvider,
@@ -358,7 +357,7 @@ describeWithFixture(
                   itemType: ItemType.ERC721,
                   token: testErc721.address,
                   // The offerer is willing to sell either token ID 1 or 3, but not 2
-                  identifiers: [nftId, nftId2, nftId3],
+                  identifiers: [nftId, nftId3],
                 },
               ],
               consideration: [
@@ -409,9 +408,9 @@ describeWithFixture(
             });
 
             // Nft with ID 2 was not in the initial set of valid identifiers
-            // await expect(
-            //   revertedFulfill.transactionRequest.send()
-            // ).to.be.revertedWith("InvalidProof()");
+            await expect(
+              revertedFulfill.transactionRequest.send()
+            ).to.be.revertedWith("InvalidProof()");
 
             const { actions } = await consideration.fulfillOrder(
               order,
@@ -419,7 +418,7 @@ describeWithFixture(
                 offerCriteria: [
                   {
                     identifier: nftId3,
-                    validIdentifiers: [nftId, nftId2, nftId3],
+                    validIdentifiers: [nftId, nftId3],
                   },
                 ],
               },
@@ -451,7 +450,7 @@ describeWithFixture(
 
             expect(ownerOfErc721).to.eq(fulfiller.address);
 
-            expect(fulfillStandardOrderSpy).calledOnce;
+            expect(fulfillStandardOrderSpy).calledTwice;
           });
 
           it("ERC721 <=> ERC20", async () => {
@@ -535,7 +534,6 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              unitsToFill: 2,
               orderStatus,
               fulfillerAddress: fulfiller.address,
               multicallProvider,
@@ -546,7 +544,7 @@ describeWithFixture(
 
             expect(ownerOfErc721).to.eq(fulfiller.address);
 
-            expect(fulfillStandardOrderSpy).calledOnce;
+            expect(fulfillStandardOrderSpy).calledTwice;
           });
         });
 
