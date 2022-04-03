@@ -167,7 +167,7 @@ export class Consideration {
     const { insufficientOwnerApprovals, insufficientProxyApprovals } =
       getInsufficientBalanceAndApprovalAmounts(
         balancesAndApprovals,
-        getSummedTokenAndIdentifierAmounts(offerItems),
+        getSummedTokenAndIdentifierAmounts(offerItems, { criterias: [] }),
         {
           considerationContract: this.contract,
           proxy,
@@ -201,7 +201,7 @@ export class Consideration {
     const checkBalancesAndApprovals =
       this.config.balanceAndApprovalChecksOnOrderCreation;
 
-    const insufficientApprovals = validateOrderParameters(orderParameters, {
+    const insufficientApprovals = validateOrderParameters(orderParameters, [], {
       balancesAndApprovals,
       throwOnInsufficientBalances: checkBalancesAndApprovals,
       considerationContract: this.contract,

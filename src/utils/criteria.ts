@@ -1,6 +1,7 @@
 import MerkleTree from "merkletreejs";
 import { ItemType, Side } from "../constants";
-import { InputCriteria, Order } from "../types";
+import { InputCriteria, Item, Order } from "../types";
+import { isCriteriaItem } from "./item";
 
 export const generateCriteriaResolvers = (
   orders: Order[],
@@ -12,38 +13,42 @@ export const generateCriteriaResolvers = (
     considerationCriterias?: InputCriteria[][];
   }
 ) => {
-  const itemsWithCriteria = orders.map((order, orderIndex) => [
-    ...[
-      ...order.parameters.offer.map(
-        (item, index) =>
-          ({
-            orderIndex,
-            item,
-            index,
-            side: Side.OFFER,
-          } as const)
-      ),
-      ...order.parameters.consideration.map(
-        (item, index) =>
-          ({
-            orderIndex,
-            item,
-            index,
-            side: Side.CONSIDERATION,
-          } as const)
-      ),
-    ].filter(
-      ({ item }) =>
-        item.itemType === ItemType.ERC721_WITH_CRITERIA ||
-        item.itemType === ItemType.ERC1155_WITH_CRITERIA
-    ),
-  ]);
+  const offerCriteriaItems = orders
+    .map((order, orderIndex) =>
+      order.parameters.offer
+        .map(
+          (item, index) =>
+            ({
+              orderIndex,
+              item,
+              index,
+              side: Side.OFFER,
+            } as const)
+        )
+        .filter(({ item }) => isCriteriaItem(item.itemType))
+    )
+    .flat();
 
-  const [offerCriteriaItems = [], considerationCriteriaItems = []] =
-    itemsWithCriteria;
+  const considerationCriteriaItems = orders
+    .map((order, orderIndex) =>
+      order.parameters.consideration
+        .map(
+          (item, index) =>
+            ({
+              orderIndex,
+              item,
+              index,
+              side: Side.CONSIDERATION,
+            } as const)
+        )
+        .filter(({ item }) => isCriteriaItem(item.itemType))
+    )
+    .flat();
 
   const mapCriteriaItemsToResolver = (
-    criteriaItems: typeof itemsWithCriteria[number],
+    criteriaItems:
+      | typeof offerCriteriaItems
+      | typeof considerationCriteriaItems,
     criterias: InputCriteria[][]
   ) =>
     criteriaItems.map(({ orderIndex, item, index, side }, i) => {
@@ -70,4 +75,18 @@ export const generateCriteriaResolvers = (
   ];
 
   return criteriaResolvers;
+};
+
+export const getItemToCriteriaMap = (
+  items: Item[],
+  criterias: InputCriteria[]
+) => {
+  const criteriasCopy = [...criterias];
+
+  return items.reduce((map, item) => {
+    if (isCriteriaItem(item.itemType)) {
+      map.set(item, criteriasCopy.shift() as InputCriteria);
+    }
+    return map;
+  }, new Map<Item, InputCriteria>());
 };

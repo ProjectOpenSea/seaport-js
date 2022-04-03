@@ -11,6 +11,7 @@ import type {
   ConsiderationItem,
   CreateInputItem,
   Fee,
+  InputCriteria,
   Item,
   OfferItem,
   Order,
@@ -172,6 +173,7 @@ export const areAllCurrenciesSame = ({
 
 export const validateOrderParameters = (
   orderParameters: OrderParameters,
+  offerCriteria: InputCriteria[],
   {
     balancesAndApprovals,
     throwOnInsufficientBalances,
@@ -197,7 +199,7 @@ export const validateOrderParameters = (
   }
 
   return validateOfferBalancesAndApprovals(
-    { offer, orderType },
+    { offer, orderType, criterias: offerCriteria },
     {
       balancesAndApprovals,
       throwOnInsufficientBalances,

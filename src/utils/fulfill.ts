@@ -233,12 +233,15 @@ export async function fulfillBasicOrder(
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
     considerationWithoutOfferItemType,
     {
-      ...timeBasedItemParams,
-      isConsiderationItem: true,
+      criterias: [],
+      timeBasedItemParams: {
+        ...timeBasedItemParams,
+        isConsiderationItem: true,
+      },
     }
   )[ethers.constants.AddressZero]?.["0"];
 
-  validateOrderParameters(orderParameters, {
+  validateOrderParameters(orderParameters, [], {
     balancesAndApprovals: offererBalancesAndApprovals,
     timeBasedItemParams,
     throwOnInsufficientApprovals: true,
@@ -529,11 +532,14 @@ export async function fulfillStandardOrder(
   } = orderWithAdjustedFills;
 
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
-    ...timeBasedItemParams,
-    isConsiderationItem: true,
+    criterias: considerationCriteria,
+    timeBasedItemParams: {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    },
   })[ethers.constants.AddressZero]?.["0"];
 
-  validateOrderParameters(order.parameters, {
+  validateOrderParameters(order.parameters, offerCriteria, {
     balancesAndApprovals: offererBalancesAndApprovals,
     timeBasedItemParams,
     throwOnInsufficientApprovals: true,
@@ -548,6 +554,8 @@ export async function fulfillStandardOrder(
         offer,
         orderType,
         consideration,
+        offerCriteria,
+        considerationCriteria,
       },
       {
         offererBalancesAndApprovals,
