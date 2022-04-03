@@ -2,6 +2,7 @@ import MerkleTree from "merkletreejs";
 import { ItemType, Side } from "../constants";
 import { InputCriteria, Item, Order } from "../types";
 import { isCriteriaItem } from "./item";
+import keccak256 from "keccak256";
 
 export const generateCriteriaResolvers = (
   orders: Order[],
@@ -54,14 +55,17 @@ export const generateCriteriaResolvers = (
     criteriaItems.map(({ orderIndex, item, index, side }, i) => {
       const merkleRoot = item.identifierOrCriteria || "0";
       const inputCriteria = criterias[orderIndex][i];
-      const tree = new MerkleTree(inputCriteria.validIdentifiers ?? []);
-      const criteriaProof = tree.getProof(inputCriteria.identifier);
+      const leaves = (inputCriteria.validIdentifiers ?? []).map(keccak256);
+      const tree = new MerkleTree(leaves, keccak256, { sort: true });
+      const criteriaProof = tree.getHexProof(
+        keccak256(inputCriteria.identifier)
+      );
 
       return {
         orderIndex,
         index,
         side,
-        identifier: inputCriteria.identifier,
+        identifier: keccak256(inputCriteria.identifier),
         criteriaProof: merkleRoot === "0" ? [] : criteriaProof,
       };
     });

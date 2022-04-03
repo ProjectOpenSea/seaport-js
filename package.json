@@ -9,6 +9,7 @@
     "@0xsequence/multicall": "^0.36.7",
     "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git#c29bb528bd803d44fe8d9d679833ca5f4b3b0fe8",
     "ethers": "^5.6.0",
+    "keccak256": "^1.0.6",
     "merkletreejs": "^0.2.31"
   },
   "engines": {

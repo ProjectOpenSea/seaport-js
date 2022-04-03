@@ -27,6 +27,7 @@ import {
   isCurrencyItem,
   TimeBasedItemParams,
 } from "./item";
+import keccak256 from "keccak256";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -111,7 +112,8 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   if ("itemType" in item) {
     // Convert this to a criteria based item
     if ("identifiers" in item) {
-      const tree = new MerkleTree(item.identifiers ?? []);
+      const leaves = (item.identifiers ?? []).map(keccak256);
+      const tree = new MerkleTree(leaves, keccak256, { sort: true });
 
       return {
         itemType:
@@ -119,7 +121,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
             ? ItemType.ERC721_WITH_CRITERIA
             : ItemType.ERC1155_WITH_CRITERIA,
         token: item.token,
-        identifierOrCriteria: tree.getRoot().toString("hex") || "0",
+        identifierOrCriteria: tree.getHexRoot(),
         startAmount: item.amount ?? "1",
         endAmount: item.endAmount ?? item.amount ?? "1",
       };
