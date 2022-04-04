@@ -52,6 +52,11 @@ export enum ItemType {
   ERC1155_WITH_CRITERIA = 5,
 }
 
+export enum Side {
+  OFFER = 0,
+  CONSIDERATION = 1,
+}
+
 export type NftItemType =
   | ItemType.ERC721
   | ItemType.ERC1155

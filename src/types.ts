@@ -1,5 +1,9 @@
-import { BigNumber, BigNumberish, ContractTransaction } from "ethers";
-import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider";
+import {
+  BigNumber,
+  BigNumberish,
+  ContractTransaction,
+  PopulatedTransaction,
+} from "ethers";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
 
 export type ConsiderationConfig = {
@@ -73,7 +77,6 @@ export type BasicErc721Item = {
 export type Erc721ItemWithCriteria = {
   itemType: ItemType.ERC721;
   token: string;
-  identifier?: undefined;
   identifiers: string[];
   // Used for criteria based items i.e. offering to buy 5 NFTs for a collection
   amount?: string;
@@ -93,7 +96,6 @@ export type BasicErc1155Item = {
 export type Erc1155ItemWithCriteria = {
   itemType: ItemType.ERC1155;
   token: string;
-  identifier?: undefined;
   identifiers: string[];
   amount: string;
   endAmount?: string;
@@ -107,8 +109,9 @@ export type CurrencyItem = {
   endAmount?: string;
 };
 
-export type InputItem = Erc721Item | Erc1155Item | CurrencyItem;
-export type ConsiderationInputItem = InputItem & { recipient?: string };
+export type CreateInputItem = Erc721Item | Erc1155Item | CurrencyItem;
+
+export type ConsiderationInputItem = CreateInputItem & { recipient?: string };
 
 export type Fee = {
   recipient: string;
@@ -119,7 +122,7 @@ export type CreateOrderInput = {
   zone?: string;
   startTime?: string;
   endTime?: string;
-  offer: readonly InputItem[];
+  offer: readonly CreateInputItem[];
   consideration: readonly ConsiderationInputItem[];
   nonce?: number;
   fees?: readonly Fee[];
@@ -127,6 +130,11 @@ export type CreateOrderInput = {
   restrictedByZone?: boolean;
   useProxy?: boolean;
   salt?: string;
+};
+
+export type InputCriteria = {
+  identifier: string;
+  validIdentifiers: string[];
 };
 
 export type OrderStatus = {
@@ -140,11 +148,9 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
-type TransactionRequestDetails = EthersTransactionRequest;
-
 type TransactionRequest = {
   send: () => Promise<ContractTransaction>;
-  details: TransactionRequestDetails;
+  populatedTransaction: Promise<PopulatedTransaction>;
 };
 
 export type ApprovalAction = {

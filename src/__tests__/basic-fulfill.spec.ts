@@ -532,15 +532,10 @@ describeWithFixture(
 
       describe("[Accept offer] I want to accept an offer for my single ERC721", async () => {
         beforeEach(async () => {
-          const { testErc721, considerationContract, testErc20 } = fixture;
+          const { testErc721, testErc20 } = fixture;
 
           await testErc721.mint(fulfiller.address, nftId);
           await testErc20.mint(offerer.address, parseEther("10").toString());
-
-          // Approving offerer amount for convenience
-          await testErc20
-            .connect(offerer)
-            .approve(considerationContract.address, MAX_INT);
 
           standardCreateOrderInput = {
             startTime: "0",

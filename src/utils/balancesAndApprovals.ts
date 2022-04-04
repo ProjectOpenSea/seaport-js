@@ -2,11 +2,13 @@ import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, ethers } from "ethers";
 import { ItemType, MAX_INT, ProxyStrategy } from "../constants";
 import type { Consideration } from "../typechain";
-import type { Item, OrderParameters } from "../types";
+import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";
+import { getItemToCriteriaMap } from "./criteria";
 import {
   getSummedTokenAndIdentifierAmounts,
+  isCriteriaItem,
   isErc1155Item,
   isErc20Item,
   isErc721Item,
@@ -67,6 +69,7 @@ const findBalanceAndApproval = (
 export const getBalancesAndApprovals = async (
   owner: string,
   items: Item[],
+  criterias: InputCriteria[],
   {
     considerationContract,
     proxy,
@@ -76,8 +79,10 @@ export const getBalancesAndApprovals = async (
     proxy: string;
     multicallProvider: multicallProviders.MulticallProvider;
   }
-): Promise<BalancesAndApprovals> =>
-  Promise.all(
+): Promise<BalancesAndApprovals> => {
+  const itemToCriteria = getItemToCriteriaMap(items, criterias);
+
+  return Promise.all(
     items.map(async (item) => {
       let ownerApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
       let proxyApprovedAmountPromise = Promise.resolve(BigNumber.from(0));
@@ -122,16 +127,21 @@ export const getBalancesAndApprovals = async (
 
       return {
         token: item.token,
-        identifierOrCriteria: BigNumber.from(
-          item.identifierOrCriteria
-        ).toString(),
-        balance: await balanceOf(owner, item, multicallProvider),
+        identifierOrCriteria:
+          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
+        balance: await balanceOf(
+          owner,
+          item,
+          multicallProvider,
+          itemToCriteria.get(item)
+        ),
         ownerApprovedAmount: await ownerApprovedAmountPromise,
         proxyApprovedAmount: await proxyApprovedAmountPromise,
         itemType: item.itemType,
       };
     })
   );
+};
 
 export const getInsufficientBalanceAndApprovalAmounts = (
   balancesAndApprovals: BalancesAndApprovals,
@@ -240,7 +250,13 @@ export const getInsufficientBalanceAndApprovalAmounts = (
  *    for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
  */
 export const validateOfferBalancesAndApprovals = (
-  { offer, orderType }: Pick<OrderParameters, "offer" | "orderType">,
+  {
+    offer,
+    orderType,
+    criterias,
+  }: Pick<OrderParameters, "offer" | "orderType"> & {
+    criterias: InputCriteria[];
+  },
   {
     balancesAndApprovals,
     timeBasedItemParams,
@@ -265,12 +281,12 @@ export const validateOfferBalancesAndApprovals = (
     insufficientProxyApprovals,
   } = getInsufficientBalanceAndApprovalAmounts(
     balancesAndApprovals,
-    getSummedTokenAndIdentifierAmounts(
-      offer,
-      timeBasedItemParams
+    getSummedTokenAndIdentifierAmounts(offer, {
+      criterias,
+      timeBasedItemParams: timeBasedItemParams
         ? { ...timeBasedItemParams, isConsiderationItem: false }
-        : undefined
-    ),
+        : undefined,
+    }),
     { considerationContract, proxy, proxyStrategy }
   );
 
@@ -332,7 +348,7 @@ export const validateBasicFulfillBalancesAndApprovals = (
   }
 ) => {
   validateOfferBalancesAndApprovals(
-    { offer, orderType },
+    { offer, orderType, criterias: [] },
     {
       balancesAndApprovals: offererBalancesAndApprovals,
       timeBasedItemParams,
@@ -354,8 +370,11 @@ export const validateBasicFulfillBalancesAndApprovals = (
   } = getInsufficientBalanceAndApprovalAmounts(
     fulfillerBalancesAndApprovals,
     getSummedTokenAndIdentifierAmounts(considerationWithoutOfferItemType, {
-      ...timeBasedItemParams,
-      isConsiderationItem: true,
+      criterias: [],
+      timeBasedItemParams: {
+        ...timeBasedItemParams,
+        isConsiderationItem: true,
+      },
     }),
     { considerationContract, proxy, proxyStrategy }
   );
@@ -390,7 +409,12 @@ export const validateStandardFulfillBalancesAndApprovals = (
     offer,
     orderType,
     consideration,
-  }: Pick<OrderParameters, "offer" | "orderType" | "consideration">,
+    offerCriteria,
+    considerationCriteria,
+  }: Pick<OrderParameters, "offer" | "orderType" | "consideration"> & {
+    offerCriteria: InputCriteria[];
+    considerationCriteria: InputCriteria[];
+  },
   {
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
@@ -408,7 +432,7 @@ export const validateStandardFulfillBalancesAndApprovals = (
   }
 ) => {
   validateOfferBalancesAndApprovals(
-    { offer, orderType },
+    { offer, orderType, criterias: offerCriteria },
     {
       balancesAndApprovals: offererBalancesAndApprovals,
       timeBasedItemParams,
@@ -420,8 +444,8 @@ export const validateStandardFulfillBalancesAndApprovals = (
   );
 
   const summedOfferAmounts = getSummedTokenAndIdentifierAmounts(offer, {
-    ...timeBasedItemParams,
-    isConsiderationItem: false,
+    criterias: offerCriteria,
+    timeBasedItemParams: { ...timeBasedItemParams, isConsiderationItem: false },
   });
 
   // Deep clone existing balances
@@ -461,8 +485,11 @@ export const validateStandardFulfillBalancesAndApprovals = (
   } = getInsufficientBalanceAndApprovalAmounts(
     fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
     getSummedTokenAndIdentifierAmounts(consideration, {
-      ...timeBasedItemParams,
-      isConsiderationItem: true,
+      criterias: considerationCriteria,
+      timeBasedItemParams: {
+        ...timeBasedItemParams,
+        isConsiderationItem: false,
+      },
     }),
     { considerationContract, proxy, proxyStrategy }
   );

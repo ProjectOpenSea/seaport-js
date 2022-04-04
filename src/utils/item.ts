@@ -1,6 +1,7 @@
 import { BigNumber } from "ethers";
 import { ItemType } from "../constants";
-import type { Item, Order, OrderParameters } from "../types";
+import type { InputCriteria, Item, Order, OrderParameters } from "../types";
+import { getItemToCriteriaMap } from "./criteria";
 import { findGcd } from "./gcd";
 
 export const isCurrencyItem = ({ itemType }: Item) =>
@@ -17,6 +18,11 @@ export const isErc721Item = (itemType: Item["itemType"]) =>
 
 export const isErc1155Item = (itemType: Item["itemType"]) =>
   [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType);
+
+export const isCriteriaItem = (itemType: Item["itemType"]) =>
+  [ItemType.ERC721_WITH_CRITERIA, ItemType.ERC1155_WITH_CRITERIA].includes(
+    itemType
+  );
 
 export type TimeBasedItemParams = {
   isConsiderationItem?: boolean;
@@ -75,14 +81,21 @@ export const getPresentItemAmount = (
 
 export const getSummedTokenAndIdentifierAmounts = (
   items: Item[],
-  timeBasedItemParams?: TimeBasedItemParams
+  {
+    criterias,
+    timeBasedItemParams,
+  }: {
+    criterias: InputCriteria[];
+    timeBasedItemParams?: TimeBasedItemParams;
+  }
 ) => {
+  const itemToCriteria = getItemToCriteriaMap(items, criterias);
+
   const tokenAndIdentifierToSummedAmount = items.reduce<
     Record<string, Record<string, BigNumber>>
   >((map, item) => {
-    const identifierOrCriteria = BigNumber.from(
-      item.identifierOrCriteria
-    ).toString();
+    const identifierOrCriteria =
+      itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria;
 
     return {
       ...map,

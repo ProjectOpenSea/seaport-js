@@ -1,32 +1,34 @@
-import { BigNumber, BigNumberish, Contract, ethers, providers } from "ethers";
-import { ConsiderationABI } from "../abi/Consideration";
-import type { Consideration } from "../typechain";
+import { BigNumber, BigNumberish, ethers } from "ethers";
+import { keccak256 } from "ethers/lib/utils";
+import { MerkleTree } from "merkletreejs";
 import {
   ItemType,
   ONE_HUNDRED_PERCENT_BP,
   OrderType,
   ProxyStrategy,
 } from "../constants";
+import type { Consideration } from "../typechain";
 import type {
+  ConsiderationItem,
+  CreateInputItem,
   Fee,
-  InputItem,
+  InputCriteria,
+  Item,
   OfferItem,
   Order,
   OrderParameters,
-  ConsiderationItem,
-  OrderComponents,
-  AdvancedOrder,
-  Item,
 } from "../types";
 import {
   BalancesAndApprovals,
   InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
-import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
-import { providers as multicallProviders } from "@0xsequence/multicall";
-import { gcd } from "./gcd";
-import { MerkleTree } from "merkletreejs";
+import { hashIdentifier } from "./criteria";
+import {
+  getMaximumSizeForOrder,
+  isCurrencyItem,
+  TimeBasedItemParams,
+} from "./item";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
@@ -106,12 +108,16 @@ export const deductFees = <T extends Item>(
   }));
 };
 
-export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
+export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   // Item is an NFT
   if ("itemType" in item) {
     // Convert this to a criteria based item
     if ("identifiers" in item) {
-      const tree = new MerkleTree(item.identifiers);
+      const leaves = (item.identifiers ?? []).map(hashIdentifier);
+
+      const tree = new MerkleTree(leaves, keccak256, {
+        sort: true,
+      });
 
       return {
         itemType:
@@ -119,7 +125,9 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
             ? ItemType.ERC721_WITH_CRITERIA
             : ItemType.ERC1155_WITH_CRITERIA,
         token: item.token,
-        identifierOrCriteria: tree.getRoot().toString("hex"),
+        identifierOrCriteria: tree.getRoot().toString("hex")
+          ? tree.getHexRoot()
+          : "0",
         startAmount: item.amount ?? "1",
         endAmount: item.endAmount ?? item.amount ?? "1",
       };
@@ -143,6 +151,7 @@ export const mapInputItemToOfferItem = (item: InputItem): OfferItem => {
       endAmount: "1",
     };
   }
+
   // Item is a currency
   return {
     itemType:
@@ -172,6 +181,7 @@ export const areAllCurrenciesSame = ({
 
 export const validateOrderParameters = (
   orderParameters: OrderParameters,
+  offerCriteria: InputCriteria[],
   {
     balancesAndApprovals,
     throwOnInsufficientBalances,
@@ -179,6 +189,7 @@ export const validateOrderParameters = (
     considerationContract,
     proxy,
     proxyStrategy,
+    timeBasedItemParams,
   }: {
     balancesAndApprovals: BalancesAndApprovals;
     throwOnInsufficientBalances?: boolean;
@@ -186,6 +197,7 @@ export const validateOrderParameters = (
     considerationContract: Consideration;
     proxy: string;
     proxyStrategy: ProxyStrategy;
+    timeBasedItemParams?: TimeBasedItemParams;
   }
 ): InsufficientApprovals => {
   const { offer, consideration, orderType } = orderParameters;
@@ -195,7 +207,7 @@ export const validateOrderParameters = (
   }
 
   return validateOfferBalancesAndApprovals(
-    { offer, orderType },
+    { offer, orderType, criterias: offerCriteria },
     {
       balancesAndApprovals,
       throwOnInsufficientBalances,
@@ -203,6 +215,7 @@ export const validateOrderParameters = (
       considerationContract,
       proxy,
       proxyStrategy,
+      timeBasedItemParams,
     }
   );
 };
@@ -350,9 +363,6 @@ export const mapOrderAmountsFromUnitsToFill = (
   )
     ? unitsToFillBasisPoints
     : remainingOrderPercentageToBeFilled;
-
-  // Reduce the numerator/denominator as optimization
-  const unitsGcd = gcd(unitsToFillBn, maxUnits);
 
   return {
     parameters: {

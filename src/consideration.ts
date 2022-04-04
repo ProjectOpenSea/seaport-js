@@ -19,6 +19,7 @@ import type {
   OrderComponents,
   OrderParameters,
   OrderUseCase,
+  InputCriteria,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -155,6 +156,7 @@ export class Consideration {
     const balancesAndApprovals = await getBalancesAndApprovals(
       offerer,
       offerItems,
+      [],
       {
         proxy,
         considerationContract: this.contract,
@@ -165,7 +167,7 @@ export class Consideration {
     const { insufficientOwnerApprovals, insufficientProxyApprovals } =
       getInsufficientBalanceAndApprovalAmounts(
         balancesAndApprovals,
-        getSummedTokenAndIdentifierAmounts(offerItems),
+        getSummedTokenAndIdentifierAmounts(offerItems, { criterias: [] }),
         {
           considerationContract: this.contract,
           proxy,
@@ -199,7 +201,7 @@ export class Consideration {
     const checkBalancesAndApprovals =
       this.config.balanceAndApprovalChecksOnOrderCreation;
 
-    const insufficientApprovals = validateOrderParameters(orderParameters, {
+    const insufficientApprovals = validateOrderParameters(orderParameters, [], {
       balancesAndApprovals,
       throwOnInsufficientBalances: checkBalancesAndApprovals,
       considerationContract: this.contract,
@@ -449,7 +451,15 @@ export class Consideration {
    */
   public async fulfillOrder(
     order: Order,
-    { unitsToFill }: { unitsToFill?: BigNumberish } = {},
+    {
+      unitsToFill,
+      offerCriteria = [],
+      considerationCriteria = [],
+    }: {
+      unitsToFill?: BigNumberish;
+      offerCriteria?: InputCriteria[];
+      considerationCriteria?: InputCriteria[];
+    } = {},
     accountAddress?: string
   ): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
@@ -476,18 +486,23 @@ export class Consideration {
       fulfillerBalancesAndApprovals,
       currentBlock,
     ] = await Promise.all([
-      getBalancesAndApprovals(offerer, offer, {
+      getBalancesAndApprovals(offerer, offer, offerCriteria, {
         proxy: offererProxy,
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
-      getBalancesAndApprovals(fulfillerAddress, [...offer, ...consideration], {
-        proxy: fulfillerProxy,
-        considerationContract: this.contract,
-        multicallProvider: this.multicallProvider,
-      }),
+      getBalancesAndApprovals(
+        fulfillerAddress,
+        [...offer, ...consideration],
+        [...offerCriteria, ...considerationCriteria],
+        {
+          proxy: fulfillerProxy,
+          considerationContract: this.contract,
+          multicallProvider: this.multicallProvider,
+        }
+      ),
       this.multicallProvider.getBlock("latest"),
     ]);
 
@@ -537,6 +552,8 @@ export class Consideration {
         unitsToFill,
         totalFilled,
         totalSize: totalSize.eq(0) ? getMaximumSizeForOrder(order) : totalSize,
+        offerCriteria,
+        considerationCriteria,
       },
       {
         considerationContract: this.contract,
