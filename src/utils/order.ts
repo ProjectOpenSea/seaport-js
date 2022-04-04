@@ -23,6 +23,7 @@ import {
   InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./balancesAndApprovals";
+import { hashIdentifier } from "./criteria";
 import {
   getMaximumSizeForOrder,
   isCurrencyItem,
@@ -112,12 +113,8 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   if ("itemType" in item) {
     // Convert this to a criteria based item
     if ("identifiers" in item) {
-      const leaves = (item.identifiers ?? []).map((identifier) =>
-        Buffer.from(
-          BigNumber.from(identifier).toHexString().slice(2).padStart(64, "0"),
-          "hex"
-        )
-      );
+      const leaves = (item.identifiers ?? []).map(hashIdentifier);
+
       const tree = new MerkleTree(leaves, keccak256, {
         sort: true,
       });

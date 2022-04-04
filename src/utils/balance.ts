@@ -47,7 +47,12 @@ export const balanceOf = async (
 
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
       if (!criteria) {
-        throw new Error("ERC1155 Criteria based offers are not supported");
+        // We don't have a good way to determine the balance of an erc1155 criteria item unless explicit
+        // identifiers are provided, so just assume the offerer has sufficient balance
+        const startAmount = BigNumber.from(item.startAmount);
+        const endAmount = BigNumber.from(item.endAmount);
+
+        return startAmount.gt(endAmount) ? startAmount : endAmount;
       }
       return contract.balanceOf(owner, criteria.identifier);
     }

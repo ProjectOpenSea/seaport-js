@@ -56,23 +56,14 @@ export const generateCriteriaResolvers = (
     criteriaItems.map(({ orderIndex, item, index, side }, i) => {
       const merkleRoot = item.identifierOrCriteria || "0";
       const inputCriteria = criterias[orderIndex][i];
-      const leaves = (inputCriteria.validIdentifiers ?? []).map((identifier) =>
-        Buffer.from(
-          BigNumber.from(identifier).toHexString().slice(2).padStart(64, "0"),
-          "hex"
-        )
-      );
+      const leaves = (inputCriteria.validIdentifiers ?? []).map(hashIdentifier);
+
       const tree = new MerkleTree(leaves, keccak256, {
         sort: true,
       });
+
       const criteriaProof = tree.getHexProof(
-        Buffer.from(
-          BigNumber.from(inputCriteria.identifier)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
-          "hex"
-        )
+        hashIdentifier(inputCriteria.identifier)
       );
 
       return {
@@ -108,3 +99,9 @@ export const getItemToCriteriaMap = (
     return map;
   }, new Map<Item, InputCriteria>());
 };
+
+export const hashIdentifier = (identifier: string) =>
+  Buffer.from(
+    BigNumber.from(identifier).toHexString().slice(2).padStart(64, "0"),
+    "hex"
+  );
