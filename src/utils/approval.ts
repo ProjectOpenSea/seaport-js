@@ -4,7 +4,7 @@ import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
 import type { ERC20, ERC721 } from "../typechain";
-import type { ApprovalAction, InputCriteria, Item } from "../types";
+import type { ApprovalAction, Item } from "../types";
 import type { InsufficientApprovals } from "./balancesAndApprovals";
 import { isErc1155Item, isErc721Item } from "./item";
 

@@ -54,6 +54,7 @@ export type OrderParameters = {
   salt: string;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
+  totalOriginalConsiderationItems: BigNumberish;
 };
 
 export type OrderComponents = OrderParameters & { nonce: number };

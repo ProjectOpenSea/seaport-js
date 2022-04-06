@@ -13,6 +13,7 @@ import type {
   OrderStruct,
 } from "../typechain/Consideration";
 import type {
+  ConsiderationItem,
   ExchangeAction,
   InputCriteria,
   Order,
@@ -206,13 +207,14 @@ export async function fulfillBasicOrder(
     proxy: string;
     proxyStrategy: ProxyStrategy;
     signer: providers.JsonRpcSigner;
-    tips?: { amount: string; recipient: string }[];
+    tips?: ConsiderationItem[];
   }
 ): Promise<OrderUseCase<ExchangeAction>> {
   const { offer, consideration, orderType } = orderParameters;
+  const considerationIncludingTips = [...consideration, ...tips];
 
   const offerItem = offer[0];
-  const [forOfferer, ...forAdditionalRecipients] = consideration;
+  const [forOfferer, ...forAdditionalRecipients] = considerationIncludingTips;
 
   const basicFulfillOrder =
     offerAndConsiderationFulfillmentMapping[offerItem.itemType]?.[
@@ -225,15 +227,14 @@ export async function fulfillBasicOrder(
     );
   }
 
-  const additionalRecipients = [
-    ...forAdditionalRecipients.map(({ startAmount, recipient }) => ({
+  const additionalRecipients = forAdditionalRecipients.map(
+    ({ startAmount, recipient }) => ({
       amount: startAmount,
       recipient,
-    })),
-    ...tips,
-  ];
+    })
+  );
 
-  const considerationWithoutOfferItemType = consideration.filter(
+  const considerationWithoutOfferItemType = considerationIncludingTips.filter(
     (item) => item.itemType !== offer[0].itemType
   );
 
@@ -262,7 +263,7 @@ export async function fulfillBasicOrder(
       {
         offer,
         orderType,
-        consideration,
+        consideration: considerationIncludingTips,
       },
       {
         offererBalancesAndApprovals,
@@ -413,12 +414,14 @@ export async function fulfillStandardOrder(
     totalSize,
     offerCriteria,
     considerationCriteria,
+    tips = [],
   }: {
     unitsToFill?: BigNumberish;
     totalFilled: BigNumber;
     totalSize: BigNumber;
     offerCriteria: InputCriteria[];
     considerationCriteria: InputCriteria[];
+    tips?: ConsiderationItem[];
   },
   {
     considerationContract,
@@ -457,13 +460,18 @@ export async function fulfillStandardOrder(
     parameters: { offer, consideration, orderType },
   } = orderWithAdjustedFills;
 
-  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(consideration, {
-    criterias: considerationCriteria,
-    timeBasedItemParams: {
-      ...timeBasedItemParams,
-      isConsiderationItem: true,
-    },
-  })[ethers.constants.AddressZero]?.["0"];
+  const considerationIncludingTips = [...consideration, ...tips];
+
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
+    considerationIncludingTips,
+    {
+      criterias: considerationCriteria,
+      timeBasedItemParams: {
+        ...timeBasedItemParams,
+        isConsiderationItem: true,
+      },
+    }
+  )[ethers.constants.AddressZero]?.["0"];
 
   validateOrderParameters(order.parameters, offerCriteria, {
     balancesAndApprovals: offererBalancesAndApprovals,
@@ -479,7 +487,7 @@ export async function fulfillStandardOrder(
       {
         offer,
         orderType,
-        consideration,
+        consideration: considerationIncludingTips,
         offerCriteria,
         considerationCriteria,
       },
@@ -513,7 +521,7 @@ export async function fulfillStandardOrder(
       itemType === ItemType.ERC721_WITH_CRITERIA
   );
 
-  const considerationCriteriaItems = consideration.filter(
+  const considerationCriteriaItems = considerationIncludingTips.filter(
     ({ itemType }) =>
       itemType === ItemType.ERC1155_WITH_CRITERIA ||
       itemType === ItemType.ERC721_WITH_CRITERIA
@@ -549,7 +557,7 @@ export async function fulfillStandardOrder(
     ...order,
     parameters: {
       ...order.parameters,
-      totalOriginalConsiderationItems: order.parameters.consideration.length,
+      totalOriginalConsiderationItems: consideration.length,
     },
   };
 

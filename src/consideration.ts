@@ -20,6 +20,7 @@ import type {
   OrderParameters,
   OrderUseCase,
   InputCriteria,
+  ConsiderationInputItem,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -187,6 +188,20 @@ export class Consideration {
       useProxy,
     });
 
+    const considerationItemsWithFees = [
+      ...deductFees(considerationItems, fees),
+      ...(currencies.length
+        ? fees?.map((fee) =>
+            feeToConsiderationItem({
+              fee,
+              token: currencies[0].token,
+              baseAmount: totalCurrencyAmount.startAmount,
+              baseEndAmount: totalCurrencyAmount.endAmount,
+            })
+          ) ?? []
+        : []),
+    ];
+
     const orderParameters: OrderParameters = {
       offerer,
       zone,
@@ -194,7 +209,8 @@ export class Consideration {
       endTime,
       orderType,
       offer: offerItems,
-      consideration: considerationItems,
+      consideration: considerationItemsWithFees,
+      totalOriginalConsiderationItems: considerationItemsWithFees.length,
       salt,
     };
 
@@ -209,25 +225,6 @@ export class Consideration {
       proxyStrategy: this.config.proxyStrategy,
     });
 
-    // Construct the order such that fees are deducted from the consideration amounts
-    const orderParametersWithDeductedFees = {
-      ...orderParameters,
-      offer: offerItems,
-      consideration: [
-        ...deductFees(considerationItems, fees),
-        ...(currencies.length
-          ? fees?.map((fee) =>
-              feeToConsiderationItem({
-                fee,
-                token: currencies[0].token,
-                baseAmount: totalCurrencyAmount.startAmount,
-                baseEndAmount: totalCurrencyAmount.endAmount,
-              })
-            ) ?? []
-          : []),
-      ],
-    };
-
     const approvalActions = checkBalancesAndApprovals
       ? await getApprovalActions(insufficientApprovals, {
           signer,
@@ -238,13 +235,13 @@ export class Consideration {
       type: "create",
       createOrder: async () => {
         const signature = await this.signOrder(
-          orderParametersWithDeductedFees,
+          orderParameters,
           resolvedNonce,
           accountAddress
         );
 
         return {
-          parameters: orderParametersWithDeductedFees,
+          parameters: orderParameters,
           nonce: resolvedNonce,
           signature,
         };
@@ -314,16 +311,7 @@ export class Consideration {
   public async approveOrders(orders: Order[], accountAddress?: string) {
     const signer = this.provider.getSigner(accountAddress);
 
-    return this.contract.connect(signer).validate(
-      orders.map((order) => ({
-        ...order,
-        parameters: {
-          ...order.parameters,
-          // This is actually not used at all, so set it to be 0 to save gas
-          totalOriginalConsiderationItems: 0,
-        },
-      }))
-    );
+    return this.contract.connect(signer).validate(orders);
   }
 
   public getOrderStatus(orderHash: string) {
@@ -462,10 +450,12 @@ export class Consideration {
       unitsToFill,
       offerCriteria = [],
       considerationCriteria = [],
+      tips = [],
     }: {
       unitsToFill?: BigNumberish;
       offerCriteria?: InputCriteria[];
       considerationCriteria?: InputCriteria[];
+      tips?: ConsiderationInputItem[];
     } = {},
     accountAddress?: string
   ): Promise<OrderUseCase<ExchangeAction>> {
@@ -537,6 +527,11 @@ export class Consideration {
         this.config.ascendingAmountFulfillmentBuffer,
     };
 
+    const tipConsiderationItems = tips.map((tip) => ({
+      ...mapInputItemToOfferItem(tip),
+      recipient: tip.recipient ?? offerer,
+    }));
+
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.
     if (!unitsToFill && shouldUseBasicFulfill(order.parameters, totalFilled)) {
@@ -549,6 +544,7 @@ export class Consideration {
         proxy: fulfillerProxy,
         proxyStrategy: this.config.proxyStrategy,
         signer: fulfiller,
+        tips: tipConsiderationItems,
       });
     }
 
@@ -561,6 +557,7 @@ export class Consideration {
         totalSize: totalSize.eq(0) ? getMaximumSizeForOrder(order) : totalSize,
         offerCriteria,
         considerationCriteria,
+        tips: tipConsiderationItems,
       },
       {
         considerationContract: this.contract,
