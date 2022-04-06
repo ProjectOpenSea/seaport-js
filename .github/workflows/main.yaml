@@ -25,13 +25,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
-        # Allow access to private repos
-      - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PAT_TOKEN }}" >> .npmrc
-
       - name: Install dependencies
         run: yarn install --immutable --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+          PKG_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Build
         run: yarn build
