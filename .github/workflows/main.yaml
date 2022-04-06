@@ -21,9 +21,12 @@ jobs:
         with:
           node-version: "16.11.0"
           cache: yarn
+          registry-url: "https://npm.pkg.github.com"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GPR_READ_TOKEN }}
 
         # Allow access to private repos
-      - run: echo "//registry.npmjs.org/:_authToken=${{ secrets.GH_PAT_TOKEN }}" >> .npmrc
+      - run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PAT_TOKEN }}" >> .npmrc
 
       - name: Install dependencies
         run: yarn install --immutable --ignore-scripts
