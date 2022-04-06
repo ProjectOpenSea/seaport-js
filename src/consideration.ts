@@ -228,8 +228,6 @@ export class Consideration {
       ],
     };
 
-    const signOrder = this.signOrder.bind(this);
-
     const approvalActions = checkBalancesAndApprovals
       ? await getApprovalActions(insufficientApprovals, {
           signer,
@@ -239,7 +237,7 @@ export class Consideration {
     const createOrderAction = {
       type: "create",
       createOrder: async () => {
-        const signature = await signOrder(
+        const signature = await this.signOrder(
           orderParametersWithDeductedFees,
           resolvedNonce,
           accountAddress
@@ -316,7 +314,16 @@ export class Consideration {
   public async approveOrders(orders: Order[], accountAddress?: string) {
     const signer = this.provider.getSigner(accountAddress);
 
-    return this.contract.connect(signer).validate(orders);
+    return this.contract.connect(signer).validate(
+      orders.map((order) => ({
+        ...order,
+        parameters: {
+          ...order.parameters,
+          // This is actually not used at all, so set it to be 0 to save gas
+          totalOriginalConsiderationItems: 0,
+        },
+      }))
+    );
   }
 
   public getOrderStatus(orderHash: string) {

@@ -40,6 +40,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       offer,
       consideration: considerationData,
       orderType: OrderType.FULL_OPEN,
+      totalOriginalConsiderationItems: considerationData.length,
       salt,
       startTime,
       endTime,
@@ -55,7 +56,13 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       nonce.toNumber()
     );
 
-    const order = { parameters: orderParameters, signature };
+    const order = {
+      parameters: {
+        ...orderParameters,
+        totalOriginalConsiderationItems: orderParameters.consideration.length,
+      },
+      signature,
+    };
 
     // Use a random address to verify that the signature is valid
     const isValid = await considerationContract

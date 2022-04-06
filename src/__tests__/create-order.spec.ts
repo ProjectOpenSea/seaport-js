@@ -109,7 +109,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: order.parameters,
+          parameters: {
+            ...order.parameters,
+            totalOriginalConsiderationItems:
+              order.parameters.consideration.length,
+          },
           signature: order.signature,
         },
       ]);
@@ -218,7 +222,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: order.parameters,
+          parameters: {
+            ...order.parameters,
+            totalOriginalConsiderationItems:
+              order.parameters.consideration.length,
+          },
           signature: order.signature,
         },
       ]);
@@ -376,7 +384,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       .connect(randomSigner)
       .callStatic.validate([
         {
-          parameters: order.parameters,
+          parameters: {
+            ...order.parameters,
+            totalOriginalConsiderationItems:
+              order.parameters.consideration.length,
+          },
           signature: order.signature,
         },
       ]);
@@ -585,7 +597,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: order.parameters,
+            parameters: {
+              ...order.parameters,
+              totalOriginalConsiderationItems:
+                order.parameters.consideration.length,
+            },
             signature: order.signature,
           },
         ]);
@@ -687,7 +703,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: createdOrder.parameters,
+            parameters: {
+              ...createdOrder.parameters,
+              totalOriginalConsiderationItems:
+                createdOrder.parameters.consideration.length,
+            },
             signature: createdOrder.signature,
           },
         ]);
@@ -790,7 +810,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: order.parameters,
+            parameters: {
+              ...order.parameters,
+              totalOriginalConsiderationItems:
+                order.parameters.consideration.length,
+            },
             signature: order.signature,
           },
         ]);
@@ -915,7 +939,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: order.parameters,
+            parameters: {
+              ...order.parameters,
+              totalOriginalConsiderationItems:
+                order.parameters.consideration.length,
+            },
             signature: order.signature,
           },
         ]);
@@ -1038,7 +1066,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .connect(randomSigner)
         .callStatic.validate([
           {
-            parameters: order.parameters,
+            parameters: {
+              ...order.parameters,
+              totalOriginalConsiderationItems:
+                order.parameters.consideration.length,
+            },
             signature: order.signature,
           },
         ]);
