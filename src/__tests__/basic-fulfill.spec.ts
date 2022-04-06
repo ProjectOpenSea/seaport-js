@@ -199,7 +199,7 @@ describeWithFixture(
 
             // Should revert because signature is empty
             await expect(action.transactionRequest.send()).to.be.revertedWith(
-              "BadSignatureLength"
+              "InvalidSigner"
             );
 
             await consideration.approveOrders([order], offerer.address);
@@ -436,7 +436,7 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionRequest.send()
-            ).to.be.revertedWith("BadSignatureLength");
+            ).to.be.revertedWith("InvalidSigner");
 
             await consideration.approveOrders([order], offerer.address);
 
@@ -847,7 +847,7 @@ describeWithFixture(
             // Should revert because signature is empty
             await expect(
               fulfillAction.transactionRequest.send()
-            ).to.be.revertedWith("BadSignatureLength");
+            ).to.be.revertedWith("InvalidSigner");
 
             await consideration.approveOrders([order], offerer.address);
 
@@ -1081,7 +1081,7 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionRequest.send()
-            ).to.be.revertedWith("BadSignatureLength");
+            ).to.be.revertedWith("InvalidSigner");
 
             await consideration.approveOrders([order], offerer.address);
 
