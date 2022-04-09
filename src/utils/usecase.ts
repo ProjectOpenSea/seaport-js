@@ -8,7 +8,7 @@ export const executeAllActions = async <
   for (let i = 0; i < actions.length - 1; i++) {
     const action = actions[i];
     if (action.type === "approval") {
-      await action.transactionRequest.send();
+      await action.transaction.transact();
     }
   }
 
@@ -16,5 +16,5 @@ export const executeAllActions = async <
 
   return finalAction.type === "create"
     ? await finalAction.createOrder()
-    : await finalAction.transactionRequest.send();
+    : await finalAction.transaction.transact();
 };

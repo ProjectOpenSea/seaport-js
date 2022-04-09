@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
+import { keccak256 } from "ethers/lib/utils";
 import MerkleTree from "merkletreejs";
 import { Side } from "../constants";
 import { InputCriteria, Item, Order } from "../types";

@@ -46,11 +46,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       token: testErc721.address,
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
-      transactionRequest: approvalAction.transactionRequest,
+      transaction: approvalAction.transaction,
       operator: considerationContract.address,
     });
 
-    await approvalAction.transactionRequest.send();
+    await approvalAction.transaction.transact();
 
     // NFT should now be approved
     expect(
@@ -163,11 +163,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       token: testErc20.address,
       identifierOrCriteria: "0",
       itemType: ItemType.ERC20,
-      transactionRequest: approvalAction.transactionRequest,
+      transaction: approvalAction.transaction,
       operator: considerationContract.address,
     });
 
-    await approvalAction.transactionRequest.send();
+    await approvalAction.transaction.transact();
 
     // NFT should now be approved
     expect(
@@ -295,11 +295,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       token: testErc721.address,
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
-      transactionRequest: approvalAction.transactionRequest,
+      transaction: approvalAction.transaction,
       operator: considerationContract.address,
     });
 
-    await approvalAction.transactionRequest.send();
+    await approvalAction.transaction.transact();
 
     // NFT should now be approved
     expect(
@@ -316,11 +316,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       token: testErc1155.address,
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC1155,
-      transactionRequest: erc1155ApprovalAction.transactionRequest,
+      transaction: erc1155ApprovalAction.transaction,
       operator: considerationContract.address,
     });
 
-    await erc1155ApprovalAction.transactionRequest.send();
+    await erc1155ApprovalAction.transaction.transact();
 
     // NFT should now be approved
     expect(
@@ -883,11 +883,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         token: testErc721.address,
         identifierOrCriteria: nftId,
         itemType: ItemType.ERC721,
-        transactionRequest: approvalAction.transactionRequest,
+        transaction: approvalAction.transaction,
         operator: considerationContract.address,
       });
 
-      await approvalAction.transactionRequest.send();
+      await approvalAction.transaction.transact();
 
       // NFT should now be approved
       expect(
@@ -1015,11 +1015,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         token: testErc721.address,
         identifierOrCriteria: nftId,
         itemType: ItemType.ERC721,
-        transactionRequest: approvalAction.transactionRequest,
+        transaction: approvalAction.transaction,
         operator: offererProxy,
       });
 
-      await approvalAction.transactionRequest.send();
+      await approvalAction.transaction.transact();
 
       // NFT should now be approved
       expect(await testErc721.isApprovedForAll(offerer.address, offererProxy))

@@ -1,5 +1,5 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, Contract, providers } from "ethers";
+import { BigNumber, Contract, Overrides, providers } from "ethers";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
@@ -55,11 +55,17 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             operator,
-            transactionRequest: {
-              send: () =>
-                contract.connect(signer).setApprovalForAll(operator, true),
-              populatedTransaction:
-                contract.populateTransaction.setApprovalForAll(operator, true),
+            transaction: {
+              transact: (overrides: Overrides = {}) =>
+                contract
+                  .connect(signer)
+                  .setApprovalForAll(operator, true, overrides),
+              buildTransaction: (overrides: Overrides = {}) =>
+                contract.populateTransaction.setApprovalForAll(
+                  operator,
+                  true,
+                  overrides
+                ),
             },
           };
         } else {
@@ -70,12 +76,15 @@ export function getApprovalActions(
             token,
             identifierOrCriteria,
             itemType,
-            transactionRequest: {
-              send: () => contract.connect(signer).approve(operator, MAX_INT),
-              populatedTransaction: contract.populateTransaction.approve(
-                operator,
-                MAX_INT
-              ),
+            transaction: {
+              transact: (overrides: Overrides = {}) =>
+                contract.connect(signer).approve(operator, MAX_INT, overrides),
+              buildTransaction: (overrides: Overrides = {}) =>
+                contract.populateTransaction.approve(
+                  operator,
+                  MAX_INT,
+                  overrides
+                ),
             },
             operator,
           };

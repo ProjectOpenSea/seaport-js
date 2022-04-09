@@ -115,7 +115,7 @@ describeWithFixture(
 
             expect(action.type).eq("exchange");
 
-            const transaction = await action.transactionRequest.send();
+            const transaction = await action.transaction.transact();
             const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
@@ -165,7 +165,7 @@ describeWithFixture(
 
             expect(action.type).eq("exchange");
 
-            const transaction = await action.transactionRequest.send();
+            const transaction = await action.transaction.transact();
             const receipt = await transaction.wait();
 
             await verifyBalancesAfterFulfill({
@@ -198,7 +198,7 @@ describeWithFixture(
             const action = actions[0];
 
             // Should revert because signature is empty
-            await expect(action.transactionRequest.send()).to.be.revertedWith(
+            await expect(action.transaction.transact()).to.be.revertedWith(
               "InvalidSigner"
             );
 
@@ -211,7 +211,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const transaction = await action.transactionRequest.send();
+            const transaction = await action.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -275,11 +275,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -292,10 +292,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -346,11 +346,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -363,10 +363,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -414,11 +414,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -431,16 +431,16 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
             await expect(
-              fulfillAction.transactionRequest.send()
+              fulfillAction.transaction.transact()
             ).to.be.revertedWith("InvalidSigner");
 
             await consideration.approveOrders([order], offerer.address);
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -494,11 +494,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -511,10 +511,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -590,11 +590,11 @@ describeWithFixture(
             token: testErc721.address,
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC721,
-            transactionRequest: approvalAction.transactionRequest,
+            transaction: approvalAction.transaction,
             operator: consideration.contract.address,
           });
 
-          await approvalAction.transactionRequest.send();
+          await approvalAction.transaction.transact();
 
           expect(
             await testErc721.isApprovedForAll(
@@ -607,10 +607,10 @@ describeWithFixture(
 
           expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transactionRequest: fulfillAction.transactionRequest,
+            transaction: fulfillAction.transaction,
           });
 
-          const transaction = await fulfillAction.transactionRequest.send();
+          const transaction = await fulfillAction.transaction.transact();
 
           const receipt = await transaction.wait();
 
@@ -662,10 +662,10 @@ describeWithFixture(
 
           expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transactionRequest: fulfillAction.transactionRequest,
+            transaction: fulfillAction.transaction,
           });
 
-          const transaction = await fulfillAction.transactionRequest.send();
+          const transaction = await fulfillAction.transaction.transact();
 
           const receipt = await transaction.wait();
 
@@ -756,10 +756,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -808,10 +808,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -846,7 +846,7 @@ describeWithFixture(
 
             // Should revert because signature is empty
             await expect(
-              fulfillAction.transactionRequest.send()
+              fulfillAction.transaction.transact()
             ).to.be.revertedWith("InvalidSigner");
 
             await consideration.approveOrders([order], offerer.address);
@@ -860,10 +860,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -927,11 +927,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -944,10 +944,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -998,11 +998,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -1015,10 +1015,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -1064,11 +1064,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -1080,17 +1080,17 @@ describeWithFixture(
             const fulfillAction = actions[1];
 
             await expect(
-              fulfillAction.transactionRequest.send()
+              fulfillAction.transaction.transact()
             ).to.be.revertedWith("InvalidSigner");
 
             await consideration.approveOrders([order], offerer.address);
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -1144,11 +1144,11 @@ describeWithFixture(
               token: testErc20.address,
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
-              transactionRequest: approvalAction.transactionRequest,
+              transaction: approvalAction.transaction,
               operator: consideration.contract.address,
             });
 
-            await approvalAction.transactionRequest.send();
+            await approvalAction.transaction.transact();
 
             expect(
               await testErc20.allowance(
@@ -1161,10 +1161,10 @@ describeWithFixture(
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
-              transactionRequest: fulfillAction.transactionRequest,
+              transaction: fulfillAction.transaction,
             });
 
-            const transaction = await fulfillAction.transactionRequest.send();
+            const transaction = await fulfillAction.transaction.transact();
 
             const receipt = await transaction.wait();
 
@@ -1246,11 +1246,11 @@ describeWithFixture(
             token: testErc1155.address,
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC1155,
-            transactionRequest: approvalAction.transactionRequest,
+            transaction: approvalAction.transaction,
             operator: consideration.contract.address,
           });
 
-          await approvalAction.transactionRequest.send();
+          await approvalAction.transaction.transact();
 
           expect(
             await testErc1155.isApprovedForAll(
@@ -1263,10 +1263,10 @@ describeWithFixture(
 
           expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transactionRequest: fulfillAction.transactionRequest,
+            transaction: fulfillAction.transaction,
           });
 
-          const transaction = await fulfillAction.transactionRequest.send();
+          const transaction = await fulfillAction.transaction.transact();
 
           const receipt = await transaction.wait();
 
@@ -1317,10 +1317,10 @@ describeWithFixture(
 
           expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
-            transactionRequest: fulfillAction.transactionRequest,
+            transaction: fulfillAction.transaction,
           });
 
-          const transaction = await fulfillAction.transactionRequest.send();
+          const transaction = await fulfillAction.transaction.transact();
 
           const receipt = await transaction.wait();
 
@@ -1410,10 +1410,10 @@ describeWithFixture(
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transactionRequest: fulfillAction.transactionRequest,
+          transaction: fulfillAction.transaction,
         });
 
-        const transaction = await fulfillAction.transactionRequest.send();
+        const transaction = await fulfillAction.transaction.transact();
 
         const receipt = await transaction.wait();
 
@@ -1479,20 +1479,20 @@ describeWithFixture(
           token: testErc721.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
-          transactionRequest: approvalAction.transactionRequest,
+          transaction: approvalAction.transaction,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transactionRequest.send();
+        await approvalAction.transaction.transact();
 
         const fulfillAction = actions[1];
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transactionRequest: fulfillAction.transactionRequest,
+          transaction: fulfillAction.transaction,
         });
 
-        const transaction = await fulfillAction.transactionRequest.send();
+        const transaction = await fulfillAction.transaction.transact();
 
         const receipt = await transaction.wait();
 
@@ -1557,20 +1557,20 @@ describeWithFixture(
           token: testErc721.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
-          transactionRequest: approvalAction.transactionRequest,
+          transaction: approvalAction.transaction,
           operator: fulfillerProxy,
         });
 
-        await approvalAction.transactionRequest.send();
+        await approvalAction.transaction.transact();
 
         const fulfillAction = actions[1];
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transactionRequest: fulfillAction.transactionRequest,
+          transaction: fulfillAction.transaction,
         });
 
-        const transaction = await fulfillAction.transactionRequest.send();
+        const transaction = await fulfillAction.transaction.transact();
 
         const receipt = await transaction.wait();
 

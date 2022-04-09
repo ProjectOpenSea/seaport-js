@@ -2,6 +2,7 @@ import {
   BigNumber,
   BigNumberish,
   ContractTransaction,
+  Overrides,
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
@@ -149,9 +150,9 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
-type TransactionRequest = {
-  send: () => Promise<ContractTransaction>;
-  populatedTransaction: Promise<PopulatedTransaction>;
+export type Transaction = {
+  transact: (overrides?: Overrides) => Promise<ContractTransaction>;
+  buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
 };
 
 export type ApprovalAction = {
@@ -160,12 +161,12 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   operator: string;
-  transactionRequest: TransactionRequest;
+  transaction: Transaction;
 };
 
 export type ExchangeAction = {
   type: "exchange";
-  transactionRequest: TransactionRequest;
+  transaction: Transaction;
 };
 
 export type CreateOrderAction = {
