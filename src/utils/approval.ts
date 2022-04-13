@@ -5,7 +5,7 @@ import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
 import type { ERC20, ERC721 } from "../typechain";
 import type { ApprovalAction, Item } from "../types";
-import type { InsufficientApprovals } from "./balancesAndApprovals";
+import type { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { isErc1155Item, isErc721Item } from "./item";
 
 export const approvedItemAmount = async (

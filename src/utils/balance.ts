@@ -6,7 +6,7 @@ import { ERC721ABI } from "../abi/ERC721";
 import { ItemType } from "../constants";
 import type { ERC1155, ERC20, ERC721 } from "../typechain";
 import type { InputCriteria, Item } from "../types";
-import { isErc1155Item, isErc721Item } from "./item";
+import { isErc1155Item, isErc20Item, isErc721Item } from "./item";
 
 export const balanceOf = async (
   owner: string,
@@ -60,7 +60,7 @@ export const balanceOf = async (
     return contract.balanceOf(owner, item.identifierOrCriteria);
   }
 
-  if (item.itemType === ItemType.ERC20) {
+  if (isErc20Item(item.itemType)) {
     const contract = new Contract(
       item.token,
       ERC20ABI,

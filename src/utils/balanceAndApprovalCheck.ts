@@ -8,7 +8,6 @@ import { balanceOf } from "./balance";
 import { getItemToCriteriaMap } from "./criteria";
 import {
   getSummedTokenAndIdentifierAmounts,
-  isCriteriaItem,
   isErc1155Item,
   isErc20Item,
   isErc721Item,
@@ -174,7 +173,7 @@ export const getInsufficientBalanceAndApprovalAmounts = (
 
   const filterBalancesOrApprovals = (
     filterKey: "balance" | "ownerApprovedAmount" | "proxyApprovedAmount"
-  ) =>
+  ): InsufficientBalances =>
     tokenAndIdentifierAndAmountNeeded
       .filter(([token, identifierOrCriteria, amountNeeded]) =>
         findBalanceAndApproval(
@@ -200,13 +199,13 @@ export const getInsufficientBalanceAndApprovalAmounts = (
       });
 
   const mapToApproval = (
-    balanceAndApproval: ReturnType<typeof filterBalancesOrApprovals>[number]
+    insufficientBalance: InsufficientBalances[number]
   ): InsufficientApprovals[number] => ({
-    token: balanceAndApproval.token,
-    identifierOrCriteria: balanceAndApproval.identifierOrCriteria,
-    approvedAmount: balanceAndApproval.amountHave,
-    requiredApprovedAmount: balanceAndApproval.requiredAmount,
-    itemType: balanceAndApproval.itemType,
+    token: insufficientBalance.token,
+    identifierOrCriteria: insufficientBalance.identifierOrCriteria,
+    approvedAmount: insufficientBalance.amountHave,
+    requiredApprovedAmount: insufficientBalance.requiredAmount,
+    itemType: insufficientBalance.itemType,
     operator: "",
   });
 
@@ -460,7 +459,7 @@ export const validateStandardFulfillBalancesAndApprovals = (
           const balanceAndApproval = findBalanceAndApproval(
             fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
             token,
-            identifierOrCriteria.toString()
+            identifierOrCriteria
           );
 
           const balanceAndApprovalIndex =
@@ -488,7 +487,7 @@ export const validateStandardFulfillBalancesAndApprovals = (
       criterias: considerationCriteria,
       timeBasedItemParams: {
         ...timeBasedItemParams,
-        isConsiderationItem: false,
+        isConsiderationItem: true,
       },
     }),
     { considerationContract, proxy, proxyStrategy }

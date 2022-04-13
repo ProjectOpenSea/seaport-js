@@ -26,7 +26,7 @@ import { getApprovalActions } from "./utils/approval";
 import {
   getBalancesAndApprovals,
   getInsufficientBalanceAndApprovalAmounts,
-} from "./utils/balancesAndApprovals";
+} from "./utils/balanceAndApprovalCheck";
 import {
   fulfillBasicOrder,
   fulfillStandardOrder,

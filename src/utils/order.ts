@@ -22,7 +22,7 @@ import {
   BalancesAndApprovals,
   InsufficientApprovals,
   validateOfferBalancesAndApprovals,
-} from "./balancesAndApprovals";
+} from "./balanceAndApprovalCheck";
 import { hashIdentifier } from "./criteria";
 import {
   getMaximumSizeForOrder,
@@ -263,10 +263,13 @@ export const useProxyFromApprovals = ({
   insufficientProxyApprovals: InsufficientApprovals;
   proxyStrategy: ProxyStrategy;
 }) => {
-  return proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED
-    ? insufficientProxyApprovals.length < insufficientOwnerApprovals.length &&
-        insufficientOwnerApprovals.length !== 0
-    : proxyStrategy === ProxyStrategy.ALWAYS;
+  if (proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED) {
+    return (
+      insufficientProxyApprovals.length < insufficientOwnerApprovals.length &&
+      insufficientOwnerApprovals.length !== 0
+    );
+  }
+  return proxyStrategy === ProxyStrategy.ALWAYS;
 };
 
 /**

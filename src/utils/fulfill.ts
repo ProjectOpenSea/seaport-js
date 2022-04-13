@@ -27,7 +27,7 @@ import {
   BalancesAndApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
-} from "./balancesAndApprovals";
+} from "./balanceAndApprovalCheck";
 import { generateCriteriaResolvers } from "./criteria";
 import { gcd } from "./gcd";
 import {
