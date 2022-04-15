@@ -6,7 +6,7 @@ import {
   Overrides,
   providers,
 } from "ethers";
-import { BasicFulfillOrder, ItemType, ProxyStrategy } from "../constants";
+import { BasicOrderRouteType, ItemType, ProxyStrategy } from "../constants";
 import type {
   BasicOrderParametersStruct,
   Consideration,
@@ -20,7 +20,6 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
-  Transaction,
 } from "../types";
 import { getApprovalActions } from "./approval";
 import {
@@ -162,19 +161,19 @@ export const shouldUseBasicFulfill = (
 };
 
 const offerAndConsiderationFulfillmentMapping: {
-  [_key in ItemType]?: { [_key in ItemType]?: BasicFulfillOrder };
+  [_key in ItemType]?: { [_key in ItemType]?: BasicOrderRouteType };
 } = {
   [ItemType.ERC20]: {
-    [ItemType.ERC721]: BasicFulfillOrder.ERC721_FOR_ERC20,
-    [ItemType.ERC1155]: BasicFulfillOrder.ERC1155_FOR_ERC20,
+    [ItemType.ERC721]: BasicOrderRouteType.ERC721_TO_ERC20,
+    [ItemType.ERC1155]: BasicOrderRouteType.ERC1155_TO_ERC20,
   },
   [ItemType.ERC721]: {
-    [ItemType.NATIVE]: BasicFulfillOrder.ETH_FOR_ERC721,
-    [ItemType.ERC20]: BasicFulfillOrder.ERC20_FOR_ERC721,
+    [ItemType.NATIVE]: BasicOrderRouteType.ETH_TO_ERC721,
+    [ItemType.ERC20]: BasicOrderRouteType.ERC20_TO_ERC721,
   },
   [ItemType.ERC1155]: {
-    [ItemType.NATIVE]: BasicFulfillOrder.ETH_FOR_ERC1155,
-    [ItemType.ERC20]: BasicFulfillOrder.ERC20_FOR_ERC1155,
+    [ItemType.NATIVE]: BasicOrderRouteType.ETH_TO_ERC1155,
+    [ItemType.ERC20]: BasicOrderRouteType.ERC20_TO_ERC1155,
   },
 } as const;
 
@@ -217,12 +216,12 @@ export async function fulfillBasicOrder(
   const offerItem = offer[0];
   const [forOfferer, ...forAdditionalRecipients] = considerationIncludingTips;
 
-  const basicFulfillOrder =
+  const basicOrderRouteType =
     offerAndConsiderationFulfillmentMapping[offerItem.itemType]?.[
       forOfferer.itemType
     ];
 
-  if (basicFulfillOrder === undefined) {
+  if (basicOrderRouteType === undefined) {
     throw new Error(
       "Order parameters did not result in a valid basic fulfillment"
     );
@@ -289,7 +288,11 @@ export async function fulfillBasicOrder(
   const basicOrderParameters: BasicOrderParametersStruct = {
     offerer: orderParameters.offerer,
     zone: orderParameters.zone,
-    orderType: orderParameters.orderType,
+    //  Note the use of a "basicOrderType" enum;
+    //  this represents both the usual order type as well as the "route"
+    //  of the basic order (a simple derivation function for the basic order
+    //  type is `basicOrderType = orderType + (8 * basicOrderRoute)`.)
+    basicOrderType: orderParameters.orderType + 8 * basicOrderRouteType,
     offerToken: offerItem.token,
     offerIdentifier: offerItem.identifierOrCriteria,
     offerAmount: offerItem.endAmount,
@@ -303,6 +306,7 @@ export async function fulfillBasicOrder(
     signature,
     useFulfillerProxy,
     additionalRecipients,
+    zoneHash: orderParameters.zoneHash,
   };
 
   const payableOverrides = { value: totalNativeAmount };
@@ -311,100 +315,33 @@ export async function fulfillBasicOrder(
     signer,
   });
 
-  let transact: Transaction["transact"];
-  let buildTransaction: Transaction["buildTransaction"];
-
-  switch (basicFulfillOrder) {
-    case BasicFulfillOrder.ETH_FOR_ERC721:
-      transact = (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicEthForERC721Order(basicOrderParameters, {
-            ...overrides,
-            ...payableOverrides,
-          });
-      buildTransaction = (overrides: Overrides = {}) =>
-        considerationContract.populateTransaction.fulfillBasicEthForERC721Order(
-          basicOrderParameters,
-          {
-            ...overrides,
-            ...payableOverrides,
-          }
-        );
-      break;
-    case BasicFulfillOrder.ETH_FOR_ERC1155:
-      transact = (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicEthForERC1155Order(basicOrderParameters, {
-            ...overrides,
-            ...payableOverrides,
-          });
-      buildTransaction = (overrides: Overrides = {}) =>
-        considerationContract.populateTransaction.fulfillBasicEthForERC1155Order(
-          basicOrderParameters,
-          {
-            ...overrides,
-            ...payableOverrides,
-          }
-        );
-      break;
-    case BasicFulfillOrder.ERC20_FOR_ERC721:
-      transact = (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicERC20ForERC721Order(basicOrderParameters, overrides);
-      buildTransaction = (overrides: Overrides = {}) =>
-        considerationContract.populateTransaction.fulfillBasicERC20ForERC721Order(
-          basicOrderParameters,
-          overrides
-        );
-      break;
-    case BasicFulfillOrder.ERC20_FOR_ERC1155:
-      transact = (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicERC20ForERC1155Order(basicOrderParameters, overrides);
-      buildTransaction = (overrides: Overrides = {}) =>
-        considerationContract.populateTransaction.fulfillBasicERC20ForERC1155Order(
-          basicOrderParameters,
-          overrides
-        );
-      break;
-    case BasicFulfillOrder.ERC721_FOR_ERC20:
-      transact = (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicERC721ForERC20Order(basicOrderParameters, overrides);
-      buildTransaction = (overrides: Overrides = {}) =>
-        considerationContract.populateTransaction.fulfillBasicERC721ForERC20Order(
-          basicOrderParameters,
-          overrides
-        );
-      break;
-    case BasicFulfillOrder.ERC1155_FOR_ERC20:
-      transact = (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicERC1155ForERC20Order(basicOrderParameters, overrides);
-      buildTransaction = (overrides: Overrides = {}) =>
-        considerationContract.populateTransaction.fulfillBasicERC1155ForERC20Order(
-          basicOrderParameters,
-          overrides
-        );
-  }
-
-  if (transact === undefined) {
-    throw new Error(
-      "There was an error finding the correct basic fulfillment method to genActions"
-    );
-  }
+  // transact = (overrides: Overrides = {}) =>
+  //   considerationContract
+  //     .connect(signer)
+  //     .fulfillBasicERC1155ForERC20Order(basicOrderParameters, overrides);
+  // buildTransaction = (overrides: Overrides = {}) =>
+  //   considerationContract.populateTransaction.fulfillBasicERC1155ForERC20Order(
+  //     basicOrderParameters,
+  //     overrides
+  //   );
 
   const exchangeAction = {
     type: "exchange",
     transaction: {
-      transact,
-      buildTransaction,
+      transact: (overrides: Overrides = {}) =>
+        considerationContract
+          .connect(signer)
+          .fulfillBasicOrder(basicOrderParameters, {
+            ...overrides,
+            ...payableOverrides,
+          }),
+      buildTransaction: (overrides: Overrides = {}) =>
+        considerationContract
+          .connect(signer)
+          .populateTransaction.fulfillBasicOrder(basicOrderParameters, {
+            ...overrides,
+            ...payableOverrides,
+          }),
     },
   } as ExchangeAction;
 
@@ -426,6 +363,7 @@ export async function fulfillStandardOrder(
     offerCriteria,
     considerationCriteria,
     tips = [],
+    extraData,
   }: {
     unitsToFill?: BigNumberish;
     totalFilled: BigNumber;
@@ -433,6 +371,7 @@ export async function fulfillStandardOrder(
     offerCriteria: InputCriteria[];
     considerationCriteria: InputCriteria[];
     tips?: ConsiderationItem[];
+    extraData?: string;
   },
   {
     considerationContract,
@@ -582,6 +521,7 @@ export async function fulfillStandardOrder(
                 ...orderAccountingForTips,
                 numerator,
                 denominator,
+                extraData: extraData ?? "0x",
               },
               hasCriteriaItems
                 ? generateCriteriaResolvers([order], {
@@ -601,7 +541,12 @@ export async function fulfillStandardOrder(
       buildTransaction: (overrides: Overrides = {}) =>
         useAdvanced
           ? considerationContract.populateTransaction.fulfillAdvancedOrder(
-              { ...orderAccountingForTips, numerator, denominator },
+              {
+                ...orderAccountingForTips,
+                numerator,
+                denominator,
+                extraData: extraData ?? "0x",
+              },
               hasCriteriaItems
                 ? generateCriteriaResolvers([order], {
                     offerCriterias: [offerCriteria],

@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@0xsequence/multicall": "^0.36.7",
-    "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git#cc0357b14aded9d3d5b7fdc332aa13b9ee167d59",
+    "consideration": "git+ssh://git@github.com/ProjectOpenSea/consideration.git#318b8f840d58eb4e8e5ae3a8515a851a5baa246f",
     "ethers": "^5.6.0",
     "merkletreejs": "^0.2.31"
   },

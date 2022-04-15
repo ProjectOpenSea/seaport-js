@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { parseEther } from "ethers/lib/utils";
+import { formatBytes32String, parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
@@ -101,6 +101,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
+        zoneHash: formatBytes32String("0"),
       },
       signature: order.signature,
       nonce: 0,
@@ -215,6 +216,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
+        zoneHash: formatBytes32String("0"),
       },
       signature: order.signature,
       nonce: 0,
@@ -378,6 +380,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
+        zoneHash: formatBytes32String("0"),
       },
       signature: order.signature,
       nonce: 0,
@@ -592,6 +595,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
+          zoneHash: formatBytes32String("0"),
         },
         signature: order.signature,
         nonce: 0,
@@ -699,6 +703,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
+          zoneHash: formatBytes32String("0"),
         },
         signature: createdOrder.signature,
         nonce: 0,
@@ -807,6 +812,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
+          zoneHash: formatBytes32String("0"),
         },
         signature: order.signature,
         nonce: 0,
@@ -937,6 +943,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
+          zoneHash: formatBytes32String("0"),
         },
         signature: order.signature,
         nonce: 0,
@@ -1065,6 +1072,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
+          zoneHash: formatBytes32String("0"),
         },
         signature: order.signature,
         nonce: 0,

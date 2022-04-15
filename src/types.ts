@@ -52,6 +52,7 @@ export type OrderParameters = {
   orderType: OrderType;
   startTime: BigNumberish;
   endTime: BigNumberish;
+  zoneHash: string;
   salt: string;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
