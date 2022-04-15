@@ -1,5 +1,6 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumberish, Contract, ethers, providers } from "ethers";
+import { formatBytes32String } from "ethers/lib/utils";
 import { ConsiderationABI } from "./abi/Consideration";
 import {
   CONSIDERATION_CONTRACT_NAME,
@@ -151,7 +152,7 @@ export class Consideration {
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
         multicallProvider: this.multicallProvider,
       }),
-      nonce ?? this.getNonce(offerer, zone),
+      nonce ?? this.getNonce(offerer),
     ]);
 
     const balancesAndApprovals = await getBalancesAndApprovals(
@@ -205,6 +206,8 @@ export class Consideration {
     const orderParameters: OrderParameters = {
       offerer,
       zone,
+      // TODO: Placeholder
+      zoneHash: formatBytes32String(resolvedNonce.toString()),
       startTime,
       endTime,
       orderType,
@@ -295,17 +298,10 @@ export class Consideration {
     return this.contract.connect(signer).cancel(orders);
   }
 
-  public async bulkCancelOrders({
-    offerer,
-    zone = ethers.constants.AddressZero,
-  }: {
-    offerer?: string;
-    zone: string;
-  }) {
+  public async bulkCancelOrders(offerer?: string) {
     const signer = this.provider.getSigner(offerer);
-    const resolvedOfferer = offerer ?? (await signer.getAddress());
 
-    return this.contract.connect(signer).incrementNonce(resolvedOfferer, zone);
+    return this.contract.connect(signer).incrementNonce();
   }
 
   public async approveOrders(orders: Order[], accountAddress?: string) {
@@ -318,10 +314,8 @@ export class Consideration {
     return this.contract.getOrderStatus(orderHash);
   }
 
-  public getNonce(offerer: string, zone: string) {
-    return this.contract
-      .getNonce(offerer, zone)
-      .then((nonce) => nonce.toNumber());
+  public getNonce(offerer: string) {
+    return this.contract.getNonce(offerer).then((nonce) => nonce.toNumber());
   }
 
   /**
@@ -451,16 +445,18 @@ export class Consideration {
       offerCriteria = [],
       considerationCriteria = [],
       tips = [],
+      extraData,
     }: {
       unitsToFill?: BigNumberish;
       offerCriteria?: InputCriteria[];
       considerationCriteria?: InputCriteria[];
       tips?: ConsiderationInputItem[];
+      extraData?: string;
     } = {},
     accountAddress?: string
   ): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
-    const { offerer, zone, offer, consideration } = orderParameters;
+    const { offerer, offer, consideration } = orderParameters;
 
     const fulfiller = await this.provider.getSigner(accountAddress);
 
@@ -475,7 +471,7 @@ export class Consideration {
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
         multicallProvider: this.multicallProvider,
       }),
-      this.getNonce(offerer, zone),
+      this.getNonce(offerer),
     ]);
 
     const [
@@ -558,6 +554,7 @@ export class Consideration {
         offerCriteria,
         considerationCriteria,
         tips: tipConsiderationItems,
+        extraData,
       },
       {
         considerationContract: this.contract,

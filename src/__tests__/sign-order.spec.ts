@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { formatBytes32String } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { MAX_INT, OrderType } from "../constants";
 import { generateRandomSalt } from "../utils/order";
@@ -34,6 +35,8 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       }),
     ];
 
+    const nonce = await considerationContract.getNonce(offerer.address);
+
     const orderParameters = {
       offerer: offerer.address,
       zone: ethers.constants.AddressZero,
@@ -44,12 +47,8 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       salt,
       startTime,
       endTime,
+      zoneHash: formatBytes32String(nonce.toString()),
     };
-
-    const nonce = await considerationContract.getNonce(
-      offerer.address,
-      zone.address
-    );
 
     const signature = await consideration.signOrder(
       orderParameters,

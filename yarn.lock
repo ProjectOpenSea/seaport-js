@@ -3107,9 +3107,9 @@ concat-stream@^1.5.1, concat-stream@^1.6.0, concat-stream@^1.6.2:
     readable-stream "^2.2.2"
     typedarray "^0.0.6"
 
-"consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git#cc0357b14aded9d3d5b7fdc332aa13b9ee167d59":
+"consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git#318b8f840d58eb4e8e5ae3a8515a851a5baa246f":
   version "0.0.1"
-  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#cc0357b14aded9d3d5b7fdc332aa13b9ee167d59"
+  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#318b8f840d58eb4e8e5ae3a8515a851a5baa246f"
   dependencies:
     "@openzeppelin/contracts" "^4.4.2"
     eip-712 "^0.4.3"

@@ -12,6 +12,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "orderType", type: "uint8" },
     { name: "startTime", type: "uint256" },
     { name: "endTime", type: "uint256" },
+    { name: "zoneHash", type: "bytes32" },
     { name: "salt", type: "uint256" },
     { name: "nonce", type: "uint256" },
   ],
@@ -63,13 +64,13 @@ export type NftItemType =
   | ItemType.ERC721_WITH_CRITERIA
   | ItemType.ERC1155_WITH_CRITERIA;
 
-export enum BasicFulfillOrder {
-  ETH_FOR_ERC721,
-  ETH_FOR_ERC1155,
-  ERC20_FOR_ERC721,
-  ERC20_FOR_ERC1155,
-  ERC721_FOR_ERC20,
-  ERC1155_FOR_ERC20,
+export enum BasicOrderRouteType {
+  ETH_TO_ERC721,
+  ETH_TO_ERC1155,
+  ERC20_TO_ERC721,
+  ERC20_TO_ERC1155,
+  ERC721_TO_ERC20,
+  ERC1155_TO_ERC20,
 }
 
 export enum ProxyStrategy {
