@@ -249,15 +249,6 @@ export async function fulfillBasicOrder(
     }
   )[ethers.constants.AddressZero]?.["0"];
 
-  validateOrderParameters(orderParameters, [], {
-    balancesAndApprovals: offererBalancesAndApprovals,
-    timeBasedItemParams,
-    throwOnInsufficientApprovals: true,
-    considerationContract,
-    proxy,
-    proxyStrategy,
-  });
-
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
     validateBasicFulfillBalancesAndApprovals(
       {
@@ -412,15 +403,6 @@ export async function fulfillStandardOrder(
       },
     }
   )[ethers.constants.AddressZero]?.["0"];
-
-  validateOrderParameters(order.parameters, offerCriteria, {
-    balancesAndApprovals: offererBalancesAndApprovals,
-    timeBasedItemParams,
-    throwOnInsufficientApprovals: true,
-    considerationContract,
-    proxy,
-    proxyStrategy,
-  });
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
     validateStandardFulfillBalancesAndApprovals(
