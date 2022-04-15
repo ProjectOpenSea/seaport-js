@@ -315,16 +315,6 @@ export async function fulfillBasicOrder(
     signer,
   });
 
-  // transact = (overrides: Overrides = {}) =>
-  //   considerationContract
-  //     .connect(signer)
-  //     .fulfillBasicERC1155ForERC20Order(basicOrderParameters, overrides);
-  // buildTransaction = (overrides: Overrides = {}) =>
-  //   considerationContract.populateTransaction.fulfillBasicERC1155ForERC20Order(
-  //     basicOrderParameters,
-  //     overrides
-  //   );
-
   const exchangeAction = {
     type: "exchange",
     transaction: {
