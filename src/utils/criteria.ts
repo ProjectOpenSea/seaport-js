@@ -15,37 +15,33 @@ export const generateCriteriaResolvers = (
     considerationCriterias?: InputCriteria[][];
   }
 ) => {
-  const offerCriteriaItems = orders
-    .map((order, orderIndex) =>
-      order.parameters.offer
-        .map(
-          (item, index) =>
-            ({
-              orderIndex,
-              item,
-              index,
-              side: Side.OFFER,
-            } as const)
-        )
-        .filter(({ item }) => isCriteriaItem(item.itemType))
-    )
-    .flat();
+  const offerCriteriaItems = orders.flatMap((order, orderIndex) =>
+    order.parameters.offer
+      .map(
+        (item, index) =>
+          ({
+            orderIndex,
+            item,
+            index,
+            side: Side.OFFER,
+          } as const)
+      )
+      .filter(({ item }) => isCriteriaItem(item.itemType))
+  );
 
-  const considerationCriteriaItems = orders
-    .map((order, orderIndex) =>
-      order.parameters.consideration
-        .map(
-          (item, index) =>
-            ({
-              orderIndex,
-              item,
-              index,
-              side: Side.CONSIDERATION,
-            } as const)
-        )
-        .filter(({ item }) => isCriteriaItem(item.itemType))
-    )
-    .flat();
+  const considerationCriteriaItems = orders.flatMap((order, orderIndex) =>
+    order.parameters.consideration
+      .map(
+        (item, index) =>
+          ({
+            orderIndex,
+            item,
+            index,
+            side: Side.CONSIDERATION,
+          } as const)
+      )
+      .filter(({ item }) => isCriteriaItem(item.itemType))
+  );
 
   const mapCriteriaItemsToResolver = (
     criteriaItems:

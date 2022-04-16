@@ -335,14 +335,16 @@ export const validateBasicFulfillBalancesAndApprovals = (
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
     considerationContract,
-    proxy,
+    offererProxy,
+    fulfillerProxy,
     proxyStrategy,
   }: {
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
     considerationContract: Consideration;
-    proxy: string;
+    offererProxy: string;
+    fulfillerProxy: string;
     proxyStrategy: ProxyStrategy;
   }
 ) => {
@@ -353,7 +355,7 @@ export const validateBasicFulfillBalancesAndApprovals = (
       timeBasedItemParams,
       throwOnInsufficientApprovals: true,
       considerationContract,
-      proxy,
+      proxy: offererProxy,
       proxyStrategy,
     }
   );
@@ -375,7 +377,7 @@ export const validateBasicFulfillBalancesAndApprovals = (
         isConsiderationItem: true,
       },
     }),
-    { considerationContract, proxy, proxyStrategy }
+    { considerationContract, proxy: fulfillerProxy, proxyStrategy }
   );
 
   if (insufficientBalances.length > 0) {
@@ -419,14 +421,16 @@ export const validateStandardFulfillBalancesAndApprovals = (
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
     considerationContract,
-    proxy,
+    offererProxy,
+    fulfillerProxy,
     proxyStrategy,
   }: {
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
     considerationContract: Consideration;
-    proxy: string;
+    offererProxy: string;
+    fulfillerProxy: string;
     proxyStrategy: ProxyStrategy;
   }
 ) => {
@@ -437,45 +441,18 @@ export const validateStandardFulfillBalancesAndApprovals = (
       timeBasedItemParams,
       throwOnInsufficientApprovals: true,
       considerationContract,
-      proxy,
+      proxy: offererProxy,
       proxyStrategy,
     }
   );
 
-  const summedOfferAmounts = getSummedTokenAndIdentifierAmounts(offer, {
-    criterias: offerCriteria,
-    timeBasedItemParams: { ...timeBasedItemParams, isConsiderationItem: false },
-  });
-
-  // Deep clone existing balances
   const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
-    fulfillerBalancesAndApprovals.map((item) => ({ ...item }));
-
-  // Add each summed offer amount to the fulfiller's balances as we check balances after receiving all offered items
-  Object.entries(summedOfferAmounts).forEach(
-    ([token, identifierOrCriteriaToAmount]) =>
-      Object.entries(identifierOrCriteriaToAmount).forEach(
-        ([identifierOrCriteria, amount]) => {
-          const balanceAndApproval = findBalanceAndApproval(
-            fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
-            token,
-            identifierOrCriteria
-          );
-
-          const balanceAndApprovalIndex =
-            fulfillerBalancesAndApprovalsAfterReceivingOfferedItems.indexOf(
-              balanceAndApproval
-            );
-
-          fulfillerBalancesAndApprovalsAfterReceivingOfferedItems[
-            balanceAndApprovalIndex
-          ].balance =
-            fulfillerBalancesAndApprovalsAfterReceivingOfferedItems[
-              balanceAndApprovalIndex
-            ].balance.add(amount);
-        }
-      )
-  );
+    addToExistingBalances({
+      items: offer,
+      criterias: offerCriteria,
+      balancesAndApprovals: fulfillerBalancesAndApprovals,
+      timeBasedItemParams,
+    });
 
   const {
     insufficientBalances,
@@ -490,7 +467,7 @@ export const validateStandardFulfillBalancesAndApprovals = (
         isConsiderationItem: true,
       },
     }),
-    { considerationContract, proxy, proxyStrategy }
+    { considerationContract, proxy: fulfillerProxy, proxyStrategy }
   );
 
   if (insufficientBalances.length > 0) {
@@ -500,4 +477,52 @@ export const validateStandardFulfillBalancesAndApprovals = (
   }
 
   return { insufficientOwnerApprovals, insufficientProxyApprovals };
+};
+
+const addToExistingBalances = ({
+  items,
+  criterias,
+  timeBasedItemParams,
+  balancesAndApprovals,
+}: {
+  items: Item[];
+  criterias: InputCriteria[];
+  timeBasedItemParams: TimeBasedItemParams;
+  balancesAndApprovals: BalancesAndApprovals;
+}) => {
+  const summedItemAmounts = getSummedTokenAndIdentifierAmounts(items, {
+    criterias,
+    timeBasedItemParams: { ...timeBasedItemParams, isConsiderationItem: false },
+  });
+
+  // Deep clone existing balances
+  const balancesAndApprovalsAfterReceivingItems = balancesAndApprovals.map(
+    (item) => ({ ...item })
+  );
+
+  // Add each summed item amount to the existing balances as we may want tocheck balances after receiving all items
+  Object.entries(summedItemAmounts).forEach(
+    ([token, identifierOrCriteriaToAmount]) =>
+      Object.entries(identifierOrCriteriaToAmount).forEach(
+        ([identifierOrCriteria, amount]) => {
+          const balanceAndApproval = findBalanceAndApproval(
+            balancesAndApprovalsAfterReceivingItems,
+            token,
+            identifierOrCriteria
+          );
+
+          const balanceAndApprovalIndex =
+            balancesAndApprovalsAfterReceivingItems.indexOf(balanceAndApproval);
+
+          balancesAndApprovalsAfterReceivingItems[
+            balanceAndApprovalIndex
+          ].balance =
+            balancesAndApprovalsAfterReceivingItems[
+              balanceAndApprovalIndex
+            ].balance.add(amount);
+        }
+      )
+  );
+
+  return balancesAndApprovalsAfterReceivingItems;
 };
