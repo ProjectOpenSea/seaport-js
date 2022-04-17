@@ -10,6 +10,7 @@ import { BasicOrderRouteType, ItemType, ProxyStrategy } from "../constants";
 import type {
   BasicOrderParametersStruct,
   Consideration,
+  FulfillmentComponentStruct,
   OrderStruct,
 } from "../typechain/Consideration";
 import type {
@@ -29,12 +30,13 @@ import {
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balanceAndApprovalCheck";
-import { generateCriteriaResolvers } from "./criteria";
+import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria";
 import { gcd } from "./gcd";
 import {
   getMaximumSizeForOrder,
   getSummedTokenAndIdentifierAmounts,
   isCriteriaItem,
+  isErc721Item,
   isNativeCurrencyItem,
   TimeBasedItemParams,
 } from "./item";
@@ -43,6 +45,7 @@ import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
+  useOffererProxy,
   useProxyFromApprovals,
 } from "./order";
 import { executeAllActions } from "./usecase";
@@ -483,7 +486,7 @@ export async function fulfillStandardOrder(
     ...order,
     parameters: {
       ...order.parameters,
-      consideration: considerationIncludingTips,
+      consideration,
       totalOriginalConsiderationItems: consideration.length,
     },
   };
@@ -559,7 +562,7 @@ export function validateAndSanitizeFromOrderStatus({
 }): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
-  if (totalFilled.gte(totalSize)) {
+  if (totalSize.gt(0) && totalFilled.eq(totalSize)) {
     throw new Error("The order you are trying to fulfill is already filled");
   }
 
@@ -779,6 +782,9 @@ export async function fulfillAvailableOrders({
     }
   );
 
+  const { offerFulfillments, considerationFulfillments } =
+    generateFulfillOrdersFulfillments(ordersMetadata);
+
   const exchangeAction = {
     type: "exchange",
     transaction: {
@@ -798,8 +804,8 @@ export async function fulfillAvailableOrders({
                 }
               )
             : [],
-          [],
-          [],
+          offerFulfillments,
+          considerationFulfillments,
           useProxyForFulfiller,
           { ...overrides, ...payableOverrides }
         ),
@@ -821,8 +827,8 @@ export async function fulfillAvailableOrders({
                   }
                 )
               : [],
-            [],
-            [],
+            offerFulfillments,
+            considerationFulfillments,
             useProxyForFulfiller,
             { ...overrides, ...payableOverrides }
           ),
@@ -835,5 +841,83 @@ export async function fulfillAvailableOrders({
     actions,
     executeAllActions: () =>
       executeAllActions(actions) as Promise<ContractTransaction>,
+  };
+}
+
+export function generateFulfillOrdersFulfillments(
+  ordersMetadata: FulfillOrdersMetadata
+): {
+  offerFulfillments: FulfillmentComponentStruct[];
+  considerationFulfillments: FulfillmentComponentStruct[];
+} {
+  const hashAggregateKey = (
+    sourceOrDestination: string,
+    token: string,
+    identifier: string
+  ) => `${sourceOrDestination}-${token}-${identifier}`;
+
+  const offerAggregatedFulfillments: Record<
+    string,
+    FulfillmentComponentStruct
+  > = {};
+
+  const considerationAggregatedFulfillments: Record<
+    string,
+    FulfillmentComponentStruct
+  > = {};
+
+  ordersMetadata.forEach(
+    ({ order, offererProxy, offerCriteria }, orderIndex) => {
+      const itemToCriteria = getItemToCriteriaMap(
+        order.parameters.offer,
+        offerCriteria
+      );
+      const source = useOffererProxy(order.parameters.orderType)
+        ? offererProxy
+        : order.parameters.offerer;
+
+      return order.parameters.offer.forEach((item, itemIndex) => {
+        const aggregateKey = `${hashAggregateKey(
+          source,
+          item.token,
+          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+          // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
+        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+
+        offerAggregatedFulfillments[aggregateKey] = [
+          ...(offerAggregatedFulfillments[aggregateKey] ?? []),
+          { orderIndex, itemIndex },
+        ];
+      });
+    }
+  );
+
+  ordersMetadata.forEach(({ order, offerCriteria, tips }, orderIndex) => {
+    const itemToCriteria = getItemToCriteriaMap(
+      order.parameters.offer,
+      offerCriteria
+    );
+    return [...order.parameters.consideration, ...tips].forEach(
+      (item, itemIndex) => {
+        const aggregateKey = `${hashAggregateKey(
+          item.recipient,
+          item.token,
+          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+          // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
+        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+
+        considerationAggregatedFulfillments[aggregateKey] = [
+          ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
+          { orderIndex, itemIndex },
+        ];
+      }
+    );
+  });
+
+  return {
+    offerFulfillments: Object.values(offerAggregatedFulfillments),
+    considerationFulfillments: Object.values(
+      considerationAggregatedFulfillments
+    ),
   };
 }

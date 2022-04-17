@@ -109,11 +109,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(1);
 
@@ -195,11 +194,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(2);
 
@@ -322,11 +320,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(1);
 
@@ -407,11 +404,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(2);
 
@@ -538,11 +534,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(1);
 
@@ -634,11 +629,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(2);
 
@@ -773,11 +767,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(1);
 
@@ -868,11 +861,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(2);
 

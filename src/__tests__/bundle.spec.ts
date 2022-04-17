@@ -110,11 +110,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(1);
 
@@ -180,11 +179,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -302,11 +300,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -461,11 +458,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(1);
 
@@ -533,11 +529,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -661,11 +656,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -848,11 +842,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(1);
 
@@ -916,11 +909,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -1042,11 +1034,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 

@@ -122,11 +122,10 @@ describeWithFixture(
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(2);
 
@@ -260,11 +259,10 @@ describeWithFixture(
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(2);
 
@@ -416,11 +414,10 @@ describeWithFixture(
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         expect(actions.length).to.eq(3);
 
