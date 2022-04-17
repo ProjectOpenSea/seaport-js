@@ -557,7 +557,7 @@ export function validateAndSanitizeFromOrderStatus({
 }): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
-  if (totalSize.gt(0) && totalFilled.eq(totalSize)) {
+  if (totalSize.gt(0) && totalFilled.div(totalSize).eq(1)) {
     throw new Error("The order you are trying to fulfill is already filled");
   }
 
