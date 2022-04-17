@@ -45,7 +45,7 @@ describeWithFixture(
       fulfillStandardOrderSpy.restore();
     });
 
-    describe.only("An ERC1155 is partially transferred", async () => {
+    describe("An ERC1155 is partially transferred", async () => {
       describe("[Buy now] I want to partially buy an ERC1155", async () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;

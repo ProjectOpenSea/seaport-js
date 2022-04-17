@@ -486,7 +486,7 @@ export async function fulfillStandardOrder(
     ...order,
     parameters: {
       ...order.parameters,
-      consideration,
+      consideration: [...order.parameters.consideration, ...tips],
       totalOriginalConsiderationItems: consideration.length,
     },
   };
