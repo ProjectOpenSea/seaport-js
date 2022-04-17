@@ -193,31 +193,30 @@ const offerAndConsiderationFulfillmentMapping: {
  * @param order - Standard order object
  * @param contract - Consideration ethers contract
  */
-export async function fulfillBasicOrder(
-  { parameters: orderParameters, signature }: Order,
-  {
-    considerationContract,
-    offererBalancesAndApprovals,
-    fulfillerBalancesAndApprovals,
-    timeBasedItemParams,
-    offererProxy,
-    fulfillerProxy,
-    proxyStrategy,
-    signer,
-    tips = [],
-  }: {
-    considerationContract: Consideration;
-    offererBalancesAndApprovals: BalancesAndApprovals;
-    fulfillerBalancesAndApprovals: BalancesAndApprovals;
-    timeBasedItemParams: TimeBasedItemParams;
-    offererProxy: string;
-    fulfillerProxy: string;
-    proxyStrategy: ProxyStrategy;
-    signer: providers.JsonRpcSigner;
-    tips?: ConsiderationItem[];
-  }
-): Promise<OrderUseCase<ExchangeAction>> {
-  const { offer, consideration, orderType } = orderParameters;
+export async function fulfillBasicOrder({
+  order,
+  considerationContract,
+  offererBalancesAndApprovals,
+  fulfillerBalancesAndApprovals,
+  timeBasedItemParams,
+  offererProxy,
+  fulfillerProxy,
+  proxyStrategy,
+  signer,
+  tips = [],
+}: {
+  order: Order;
+  considerationContract: Consideration;
+  offererBalancesAndApprovals: BalancesAndApprovals;
+  fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  timeBasedItemParams: TimeBasedItemParams;
+  offererProxy: string;
+  fulfillerProxy: string;
+  proxyStrategy: ProxyStrategy;
+  signer: providers.JsonRpcSigner;
+  tips?: ConsiderationItem[];
+}): Promise<OrderUseCase<ExchangeAction>> {
+  const { offer, consideration, orderType } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
 
   const offerItem = offer[0];
@@ -285,27 +284,28 @@ export async function fulfillBasicOrder(
     : insufficientOwnerApprovals;
 
   const basicOrderParameters: BasicOrderParametersStruct = {
-    offerer: orderParameters.offerer,
-    zone: orderParameters.zone,
+    offerer: order.parameters.offerer,
+    zone: order.parameters.zone,
     //  Note the use of a "basicOrderType" enum;
     //  this represents both the usual order type as well as the "route"
     //  of the basic order (a simple derivation function for the basic order
     //  type is `basicOrderType = orderType + (8 * basicOrderRoute)`.)
-    basicOrderType: orderParameters.orderType + 8 * basicOrderRouteType,
+    basicOrderType: order.parameters.orderType + 8 * basicOrderRouteType,
     offerToken: offerItem.token,
     offerIdentifier: offerItem.identifierOrCriteria,
     offerAmount: offerItem.endAmount,
     considerationToken: forOfferer.token,
     considerationIdentifier: forOfferer.identifierOrCriteria,
     considerationAmount: forOfferer.endAmount,
-    startTime: orderParameters.startTime,
-    endTime: orderParameters.endTime,
-    salt: orderParameters.salt,
-    totalOriginalAdditionalRecipients: orderParameters.consideration.length - 1,
-    signature,
+    startTime: order.parameters.startTime,
+    endTime: order.parameters.endTime,
+    salt: order.parameters.salt,
+    totalOriginalAdditionalRecipients:
+      order.parameters.consideration.length - 1,
+    signature: order.signature,
     useFulfillerProxy,
     additionalRecipients,
-    zoneHash: orderParameters.zoneHash,
+    zoneHash: order.parameters.zoneHash,
   };
 
   const payableOverrides = { value: totalNativeAmount };
@@ -343,46 +343,41 @@ export async function fulfillBasicOrder(
   };
 }
 
-export async function fulfillStandardOrder(
-  order: Order,
-  {
-    unitsToFill = 0,
-    totalFilled,
-    totalSize,
-    offerCriteria,
-    considerationCriteria,
-    tips = [],
-    extraData,
-  }: {
-    unitsToFill?: BigNumberish;
-    totalFilled: BigNumber;
-    totalSize: BigNumber;
-    offerCriteria: InputCriteria[];
-    considerationCriteria: InputCriteria[];
-    tips?: ConsiderationItem[];
-    extraData?: string;
-  },
-  {
-    considerationContract,
-    offererBalancesAndApprovals,
-    fulfillerBalancesAndApprovals,
-    timeBasedItemParams,
-    offererProxy,
-    fulfillerProxy,
-    proxyStrategy,
-    signer,
-  }: {
-    considerationContract: Consideration;
-    offererBalancesAndApprovals: BalancesAndApprovals;
-    fulfillerBalancesAndApprovals: BalancesAndApprovals;
-    timeBasedItemParams: TimeBasedItemParams;
-    unitsToFill?: BigNumberish;
-    offererProxy: string;
-    fulfillerProxy: string;
-    proxyStrategy: ProxyStrategy;
-    signer: providers.JsonRpcSigner;
-  }
-): Promise<OrderUseCase<ExchangeAction>> {
+export async function fulfillStandardOrder({
+  order,
+  unitsToFill = 0,
+  totalSize,
+  totalFilled,
+  offerCriteria,
+  considerationCriteria,
+  tips = [],
+  extraData,
+  considerationContract,
+  offererBalancesAndApprovals,
+  fulfillerBalancesAndApprovals,
+  timeBasedItemParams,
+  offererProxy,
+  fulfillerProxy,
+  proxyStrategy,
+  signer,
+}: {
+  order: Order;
+  unitsToFill?: BigNumberish;
+  totalFilled: BigNumber;
+  totalSize: BigNumber;
+  offerCriteria: InputCriteria[];
+  considerationCriteria: InputCriteria[];
+  tips?: ConsiderationItem[];
+  extraData?: string;
+  considerationContract: Consideration;
+  offererBalancesAndApprovals: BalancesAndApprovals;
+  fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  timeBasedItemParams: TimeBasedItemParams;
+  offererProxy: string;
+  fulfillerProxy: string;
+  proxyStrategy: ProxyStrategy;
+  signer: providers.JsonRpcSigner;
+}): Promise<OrderUseCase<ExchangeAction>> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills = unitsToFill

@@ -550,7 +550,8 @@ export class Consideration {
       shouldUseBasicFulfill(sanitizedOrder.parameters, totalFilled)
     ) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder(sanitizedOrder, {
+      return fulfillBasicOrder({
+        order: sanitizedOrder,
         considerationContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
@@ -564,30 +565,26 @@ export class Consideration {
     }
 
     // Else, we fallback to the standard fulfill order
-    return fulfillStandardOrder(
-      sanitizedOrder,
-      {
-        unitsToFill,
-        totalFilled,
-        totalSize: totalSize.eq(0)
-          ? getMaximumSizeForOrder(sanitizedOrder)
-          : totalSize,
-        offerCriteria,
-        considerationCriteria,
-        tips: tipConsiderationItems,
-        extraData,
-      },
-      {
-        considerationContract: this.contract,
-        offererBalancesAndApprovals,
-        fulfillerBalancesAndApprovals,
-        timeBasedItemParams,
-        offererProxy,
-        fulfillerProxy,
-        proxyStrategy: this.config.proxyStrategy,
-        signer: fulfiller,
-      }
-    );
+    return fulfillStandardOrder({
+      order: sanitizedOrder,
+      unitsToFill,
+      totalFilled,
+      totalSize: totalSize.eq(0)
+        ? getMaximumSizeForOrder(sanitizedOrder)
+        : totalSize,
+      offerCriteria,
+      considerationCriteria,
+      tips: tipConsiderationItems,
+      extraData,
+      considerationContract: this.contract,
+      offererBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      timeBasedItemParams,
+      offererProxy,
+      fulfillerProxy,
+      proxyStrategy: this.config.proxyStrategy,
+      signer: fulfiller,
+    });
   }
 
   /**
