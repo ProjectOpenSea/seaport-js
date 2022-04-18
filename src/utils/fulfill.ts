@@ -6,7 +6,13 @@ import {
   Overrides,
   providers,
 } from "ethers";
-import { BasicOrderRouteType, ItemType, ProxyStrategy } from "../constants";
+import {
+  BasicOrderRouteType,
+  ItemType,
+  LEGACY_PROXY_CONDUIT,
+  NO_CONDUIT,
+  ProxyStrategy,
+} from "../constants";
 import type {
   BasicOrderParametersStruct,
   Consideration,
@@ -216,7 +222,7 @@ export async function fulfillBasicOrder({
   signer: providers.JsonRpcSigner;
   tips?: ConsiderationItem[];
 }): Promise<OrderUseCase<ExchangeAction>> {
-  const { offer, consideration, orderType } = order.parameters;
+  const { offer, consideration } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
 
   const offerItem = offer[0];
@@ -259,7 +265,7 @@ export async function fulfillBasicOrder({
     validateBasicFulfillBalancesAndApprovals(
       {
         offer,
-        orderType,
+        conduit: order.parameters.conduit,
         consideration: considerationIncludingTips,
       },
       {
@@ -285,12 +291,13 @@ export async function fulfillBasicOrder({
 
   const basicOrderParameters: BasicOrderParametersStruct = {
     offerer: order.parameters.offerer,
+    offererConduit: order.parameters.conduit,
     zone: order.parameters.zone,
     //  Note the use of a "basicOrderType" enum;
     //  this represents both the usual order type as well as the "route"
     //  of the basic order (a simple derivation function for the basic order
-    //  type is `basicOrderType = orderType + (8 * basicOrderRoute)`.)
-    basicOrderType: order.parameters.orderType + 8 * basicOrderRouteType,
+    //  type is `basicOrderType = orderType + (4 * basicOrderRoute)`.)
+    basicOrderType: order.parameters.orderType + 4 * basicOrderRouteType,
     offerToken: offerItem.token,
     offerIdentifier: offerItem.identifierOrCriteria,
     offerAmount: offerItem.endAmount,
@@ -303,7 +310,7 @@ export async function fulfillBasicOrder({
     totalOriginalAdditionalRecipients:
       order.parameters.consideration.length - 1,
     signature: order.signature,
-    useFulfillerProxy,
+    fulfillerConduit: useFulfillerProxy ? LEGACY_PROXY_CONDUIT : NO_CONDUIT,
     additionalRecipients,
     zoneHash: order.parameters.zoneHash,
   };
@@ -393,7 +400,7 @@ export async function fulfillStandardOrder({
       });
 
   const {
-    parameters: { offer, consideration, orderType },
+    parameters: { offer, consideration, conduit },
   } = orderWithAdjustedFills;
 
   const considerationIncludingTips = [...consideration, ...tips];
@@ -413,7 +420,7 @@ export async function fulfillStandardOrder({
     validateStandardFulfillBalancesAndApprovals(
       {
         offer,
-        orderType,
+        conduit,
         consideration: considerationIncludingTips,
         offerCriteria,
         considerationCriteria,
@@ -486,6 +493,10 @@ export async function fulfillStandardOrder({
     },
   };
 
+  const fulfillerConduit = useProxyForFulfiller
+    ? LEGACY_PROXY_CONDUIT
+    : NO_CONDUIT;
+
   const exchangeAction = {
     type: "exchange",
     transaction: {
@@ -504,12 +515,12 @@ export async function fulfillStandardOrder({
                     considerationCriterias: [considerationCriteria],
                   })
                 : [],
-              useProxyForFulfiller,
+              fulfillerConduit,
               { ...overrides, ...payableOverrides }
             )
           : considerationContract
               .connect(signer)
-              .fulfillOrder(orderAccountingForTips, useProxyForFulfiller, {
+              .fulfillOrder(orderAccountingForTips, fulfillerConduit, {
                 ...overrides,
                 ...payableOverrides,
               }),
@@ -528,12 +539,12 @@ export async function fulfillStandardOrder({
                     considerationCriterias: [considerationCriteria],
                   })
                 : [],
-              useProxyForFulfiller,
+              fulfillerConduit,
               { ...overrides, ...payableOverrides }
             )
           : considerationContract.populateTransaction.fulfillOrder(
               orderAccountingForTips,
-              useProxyForFulfiller,
+              fulfillerConduit,
               { ...overrides, ...payableOverrides }
             ),
     },
@@ -684,7 +695,7 @@ export async function fulfillAvailableOrders({
         validateStandardFulfillBalancesAndApprovals(
           {
             offer: order.parameters.offer,
-            orderType: order.parameters.orderType,
+            conduit: order.parameters.conduit,
             consideration: considerationIncludingTips,
             offerCriteria,
             considerationCriteria,
@@ -780,6 +791,9 @@ export async function fulfillAvailableOrders({
   const { offerFulfillments, considerationFulfillments } =
     generateFulfillOrdersFulfillments(ordersMetadata);
 
+  const fulfillerConduit = useProxyForFulfiller
+    ? LEGACY_PROXY_CONDUIT
+    : NO_CONDUIT;
   const exchangeAction = {
     type: "exchange",
     transaction: {
@@ -801,7 +815,7 @@ export async function fulfillAvailableOrders({
             : [],
           offerFulfillments,
           considerationFulfillments,
-          useProxyForFulfiller,
+          fulfillerConduit,
           { ...overrides, ...payableOverrides }
         ),
       buildTransaction: (overrides: Overrides = {}) =>
@@ -824,7 +838,7 @@ export async function fulfillAvailableOrders({
               : [],
             offerFulfillments,
             considerationFulfillments,
-            useProxyForFulfiller,
+            fulfillerConduit,
             { ...overrides, ...payableOverrides }
           ),
     },
@@ -867,7 +881,7 @@ export function generateFulfillOrdersFulfillments(
         order.parameters.offer,
         offerCriteria
       );
-      const source = useOffererProxy(order.parameters.orderType)
+      const source = useOffererProxy(order.parameters.conduit)
         ? offererProxy
         : order.parameters.offerer;
 

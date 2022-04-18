@@ -3,53 +3,32 @@ import { keccak256 } from "ethers/lib/utils";
 import { MerkleTree } from "merkletreejs";
 import {
   ItemType,
+  LEGACY_PROXY_CONDUIT,
   ONE_HUNDRED_PERCENT_BP,
   OrderType,
   ProxyStrategy,
 } from "../constants";
-import type { Consideration } from "../typechain";
 import type {
   ConsiderationItem,
   CreateInputItem,
   Fee,
-  InputCriteria,
   Item,
   OfferItem,
   Order,
   OrderParameters,
 } from "../types";
-import {
-  BalancesAndApprovals,
-  InsufficientApprovals,
-  validateOfferBalancesAndApprovals,
-} from "./balanceAndApprovalCheck";
+import { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { hashIdentifier } from "./criteria";
-import {
-  getMaximumSizeForOrder,
-  isCurrencyItem,
-  TimeBasedItemParams,
-} from "./item";
+import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 
 export const ORDER_OPTIONS_TO_ORDER_TYPE = {
   FULL: {
-    OPEN: {
-      WITHOUT_PROXY: OrderType.FULL_OPEN,
-      VIA_PROXY: OrderType.FULL_OPEN_VIA_PROXY,
-    },
-    RESTRICTED: {
-      WITHOUT_PROXY: OrderType.FULL_RESTRICTED,
-      VIA_PROXY: OrderType.FULL_RESTRICTED_VIA_PROXY,
-    },
+    OPEN: OrderType.FULL_OPEN,
+    RESTRICTED: OrderType.FULL_RESTRICTED,
   },
   PARTIAL: {
-    OPEN: {
-      WITHOUT_PROXY: OrderType.PARTIAL_OPEN,
-      VIA_PROXY: OrderType.PARTIAL_OPEN_VIA_PROXY,
-    },
-    RESTRICTED: {
-      WITHOUT_PROXY: OrderType.PARTIAL_RESTRICTED,
-      VIA_PROXY: OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
-    },
+    OPEN: OrderType.PARTIAL_OPEN,
+    RESTRICTED: OrderType.PARTIAL_RESTRICTED,
   },
 } as const;
 
@@ -205,13 +184,8 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
     );
 };
 
-export const useOffererProxy = (orderType: OrderType) =>
-  [
-    OrderType.FULL_OPEN_VIA_PROXY,
-    OrderType.PARTIAL_OPEN_VIA_PROXY,
-    OrderType.FULL_RESTRICTED_VIA_PROXY,
-    OrderType.PARTIAL_RESTRICTED_VIA_PROXY,
-  ].includes(orderType);
+export const useOffererProxy = (conduit: string) =>
+  conduit === LEGACY_PROXY_CONDUIT;
 
 export const useProxyFromApprovals = ({
   insufficientOwnerApprovals,

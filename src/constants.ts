@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 /* eslint-disable no-unused-vars */
 export const CONSIDERATION_CONTRACT_NAME = "Consideration";
@@ -14,6 +14,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "endTime", type: "uint256" },
     { name: "zoneHash", type: "bytes32" },
     { name: "salt", type: "uint256" },
+    { name: "conduit", type: "address" },
     { name: "nonce", type: "uint256" },
   ],
   OfferItem: [
@@ -38,10 +39,6 @@ export enum OrderType {
   PARTIAL_OPEN = 1, // Partial fills supported, anyone can execute
   FULL_RESTRICTED = 2, // No partial fills, only offerer or zone can execute
   PARTIAL_RESTRICTED = 3, // Partial fills supported, only offerer or zone can execute
-  FULL_OPEN_VIA_PROXY = 4, // No partial fills, anyone can execute, routed through proxy
-  PARTIAL_OPEN_VIA_PROXY = 5, // Partial fills supported, anyone can execute, routed through proxy
-  FULL_RESTRICTED_VIA_PROXY = 6, // No partial fills, only offerer or zone can execute, routed through proxy
-  PARTIAL_RESTRICTED_VIA_PROXY = 7, // Partial fills supported, only offerer or zone can execute, routed through proxy
 }
 
 export enum ItemType {
@@ -85,3 +82,7 @@ export const MAX_INT = BigNumber.from(
 );
 
 export const ONE_HUNDRED_PERCENT_BP = 10000;
+
+export const NO_CONDUIT = ethers.constants.AddressZero;
+export const LEGACY_PROXY_CONDUIT =
+  ethers.constants.AddressZero.slice(0, -1) + "1";

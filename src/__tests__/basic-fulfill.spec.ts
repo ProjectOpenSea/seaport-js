@@ -6,7 +6,12 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
 import { Consideration } from "../consideration";
-import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
+import {
+  ItemType,
+  LEGACY_PROXY_CONDUIT,
+  MAX_INT,
+  ProxyStrategy,
+} from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
@@ -141,9 +146,7 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            expect(order.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -318,9 +321,7 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            expect(order.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -777,9 +778,7 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            expect(order.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -961,9 +960,7 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            expect(order.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(

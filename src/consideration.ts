@@ -6,7 +6,9 @@ import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
+  LEGACY_PROXY_CONDUIT,
   MAX_INT,
+  NO_CONDUIT,
   ProxyStrategy,
 } from "./constants";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
@@ -105,17 +107,11 @@ export class Consideration {
   private _getOrderTypeFromOrderOptions({
     allowPartialFills,
     restrictedByZone,
-    useProxy,
-  }: Pick<
-    CreateOrderInput,
-    "allowPartialFills" | "restrictedByZone" | "useProxy"
-  >) {
+  }: Pick<CreateOrderInput, "allowPartialFills" | "restrictedByZone">) {
     const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
     const restrictedKey = restrictedByZone ? "RESTRICTED" : "OPEN";
-    const proxyKey = useProxy ? "VIA_PROXY" : "WITHOUT_PROXY";
 
-    const orderType =
-      ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey][proxyKey];
+    const orderType = ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey];
 
     return orderType;
   }
@@ -192,7 +188,6 @@ export class Consideration {
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
       restrictedByZone,
-      useProxy,
     });
 
     const considerationItemsWithFees = [
@@ -209,6 +204,8 @@ export class Consideration {
         : []),
     ];
 
+    const conduit = useProxy ? LEGACY_PROXY_CONDUIT : NO_CONDUIT;
+
     const orderParameters: OrderParameters = {
       offerer,
       zone,
@@ -221,6 +218,7 @@ export class Consideration {
       consideration: considerationItemsWithFees,
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
       salt,
+      conduit,
     };
 
     const checkBalancesAndApprovals =
@@ -238,7 +236,7 @@ export class Consideration {
     }
 
     const insufficientApprovals = validateOfferBalancesAndApprovals(
-      { offer: offerItems, orderType, criterias: [] },
+      { offer: offerItems, conduit, criterias: [] },
       {
         balancesAndApprovals,
         throwOnInsufficientBalances: checkBalancesAndApprovals,

@@ -251,9 +251,9 @@ export const getInsufficientBalanceAndApprovalAmounts = (
 export const validateOfferBalancesAndApprovals = (
   {
     offer,
-    orderType,
+    conduit,
     criterias,
-  }: Pick<OrderParameters, "offer" | "orderType"> & {
+  }: Pick<OrderParameters, "offer" | "conduit"> & {
     criterias: InputCriteria[];
   },
   {
@@ -295,7 +295,7 @@ export const validateOfferBalancesAndApprovals = (
     );
   }
 
-  const approvalsToCheck = useOffererProxy(orderType)
+  const approvalsToCheck = useOffererProxy(conduit)
     ? insufficientProxyApprovals
     : insufficientOwnerApprovals;
 
@@ -327,9 +327,9 @@ export const validateOfferBalancesAndApprovals = (
 export const validateBasicFulfillBalancesAndApprovals = (
   {
     offer,
-    orderType,
+    conduit,
     consideration,
-  }: Pick<OrderParameters, "offer" | "orderType" | "consideration">,
+  }: Pick<OrderParameters, "offer" | "conduit" | "consideration">,
   {
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
@@ -349,7 +349,7 @@ export const validateBasicFulfillBalancesAndApprovals = (
   }
 ) => {
   validateOfferBalancesAndApprovals(
-    { offer, orderType, criterias: [] },
+    { offer, conduit, criterias: [] },
     {
       balancesAndApprovals: offererBalancesAndApprovals,
       timeBasedItemParams,
@@ -408,11 +408,11 @@ export const validateBasicFulfillBalancesAndApprovals = (
 export const validateStandardFulfillBalancesAndApprovals = (
   {
     offer,
-    orderType,
+    conduit,
     consideration,
     offerCriteria,
     considerationCriteria,
-  }: Pick<OrderParameters, "offer" | "orderType" | "consideration"> & {
+  }: Pick<OrderParameters, "offer" | "conduit" | "consideration"> & {
     offerCriteria: InputCriteria[];
     considerationCriteria: InputCriteria[];
   },
@@ -435,7 +435,7 @@ export const validateStandardFulfillBalancesAndApprovals = (
   }
 ) => {
   validateOfferBalancesAndApprovals(
-    { offer, orderType, criterias: offerCriteria },
+    { offer, conduit, criterias: offerCriteria },
     {
       balancesAndApprovals: offererBalancesAndApprovals,
       timeBasedItemParams,

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { formatBytes32String } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { MAX_INT, OrderType } from "../constants";
+import { MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import { generateRandomSalt } from "../utils/order";
 import { constructCurrencyItem, constructNftItem } from "./utils/item";
 import { describeWithFixture } from "./utils/setup";
@@ -48,6 +48,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       startTime,
       endTime,
       zoneHash: formatBytes32String(nonce.toString()),
+      conduit: NO_CONDUIT,
     };
 
     const signature = await consideration.signOrder(
