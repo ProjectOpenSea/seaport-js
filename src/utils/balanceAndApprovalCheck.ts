@@ -1,7 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber, ethers } from "ethers";
 import { ItemType, MAX_INT, ProxyStrategy } from "../constants";
-import type { Consideration } from "../typechain";
+import type { Consideration } from "../typechain/Consideration";
 import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";

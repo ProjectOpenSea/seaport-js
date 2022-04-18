@@ -1,7 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { Contract } from "ethers";
 import { ProxyRegistryInterfaceABI } from "../abi/ProxyRegistryInterface";
-import type { ProxyRegistryInterface } from "../typechain";
+import type { ProxyRegistryInterface } from "../typechain/ProxyRegistryInterface";
 
 export const getProxy = (
   address: string,
