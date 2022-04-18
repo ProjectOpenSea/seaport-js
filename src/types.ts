@@ -58,6 +58,7 @@ export type OrderParameters = {
   offer: OfferItem[];
   consideration: ConsiderationItem[];
   totalOriginalConsiderationItems: BigNumberish;
+  conduit: string;
 };
 
 export type OrderComponents = OrderParameters & { nonce: number };

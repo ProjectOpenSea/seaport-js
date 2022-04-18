@@ -2,7 +2,14 @@ import { expect } from "chai";
 import { formatBytes32String, parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { Consideration } from "../consideration";
-import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
+import {
+  ItemType,
+  LEGACY_PROXY_CONDUIT,
+  MAX_INT,
+  NO_CONDUIT,
+  OrderType,
+  ProxyStrategy,
+} from "../constants";
 import { ApprovalAction, CreateOrderAction } from "../types";
 import { generateRandomSalt } from "../utils/order";
 import { describeWithFixture } from "./utils/setup";
@@ -102,6 +109,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
+        conduit: NO_CONDUIT,
       },
       signature: order.signature,
       nonce: 0,
@@ -217,6 +225,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
+        conduit: NO_CONDUIT,
       },
       signature: order.signature,
       nonce: 0,
@@ -381,6 +390,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
+        conduit: NO_CONDUIT,
       },
       signature: order.signature,
       nonce: 0,
@@ -596,6 +606,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
+          conduit: NO_CONDUIT,
         },
         signature: order.signature,
         nonce: 0,
@@ -698,12 +709,13 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             },
           ],
           offerer: offerer.address,
-          orderType: OrderType.FULL_OPEN_VIA_PROXY,
+          orderType: OrderType.FULL_OPEN,
           salt,
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
+          conduit: LEGACY_PROXY_CONDUIT,
         },
         signature: createdOrder.signature,
         nonce: 0,
@@ -813,6 +825,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
+          conduit: NO_CONDUIT,
         },
         signature: order.signature,
         nonce: 0,
@@ -944,6 +957,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
+          conduit: NO_CONDUIT,
         },
         signature: order.signature,
         nonce: 0,
@@ -1067,12 +1081,13 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             },
           ],
           offerer: offerer.address,
-          orderType: OrderType.FULL_OPEN_VIA_PROXY,
+          orderType: OrderType.FULL_OPEN,
           salt,
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
+          conduit: LEGACY_PROXY_CONDUIT,
         },
         signature: order.signature,
         nonce: 0,

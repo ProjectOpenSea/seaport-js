@@ -1,11 +1,10 @@
-import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
-import { ItemType, MAX_INT, OrderType } from "../constants";
+import { ItemType, LEGACY_PROXY_CONDUIT, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -196,9 +195,7 @@ describeWithFixture(
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
-            expect(firstOrder.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(firstOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const secondOrderUseCase = await consideration.createOrder(
               secondStandardCreateOrderInput
@@ -206,9 +203,7 @@ describeWithFixture(
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
-            expect(secondOrder.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(secondOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const thirdOrderUseCase = await consideration.createOrder(
               thirdStandardCreateOrderInput,
@@ -783,9 +778,7 @@ describeWithFixture(
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
-            expect(firstOrder.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(firstOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const secondOrderUseCase = await consideration.createOrder(
               secondStandardCreateOrderInput
@@ -793,9 +786,7 @@ describeWithFixture(
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
-            expect(secondOrder.parameters.orderType).eq(
-              OrderType.FULL_OPEN_VIA_PROXY
-            );
+            expect(secondOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
 
             const thirdOrderUseCase = await consideration.createOrder(
               thirdStandardCreateOrderInput,
