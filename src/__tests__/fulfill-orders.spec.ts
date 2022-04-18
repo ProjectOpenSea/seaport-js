@@ -7,6 +7,7 @@ import { ethers } from "hardhat";
 import sinon from "sinon";
 import { Consideration } from "../consideration";
 import { ItemType, MAX_INT, OrderType, ProxyStrategy } from "../constants";
+import { TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
@@ -20,93 +21,129 @@ describeWithFixture(
   "As a user I want to buy multiple listings or accept multiple offers",
   (fixture) => {
     let offerer: SignerWithAddress;
+    let secondOfferer: SignerWithAddress;
     let zone: SignerWithAddress;
     let fulfiller: SignerWithAddress;
     let standardCreateOrderInput: CreateOrderInput;
     let multicallProvider: providers.MulticallProvider;
     let fulfillAvailableOrdersSpy: sinon.SinonSpy;
+    let secondTestErc721: TestERC721;
+
     const nftId = "1";
+    const nftId2 = "2";
     const erc1155Amount = "3";
 
     beforeEach(async () => {
       fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
 
-      [offerer, zone, fulfiller] = await ethers.getSigners();
+      [offerer, secondOfferer, zone, fulfiller] = await ethers.getSigners();
 
       multicallProvider = new providers.MulticallProvider(ethers.provider);
+
+      const TestERC721 = await ethers.getContractFactory("TestERC721");
+      secondTestErc721 = await TestERC721.deploy();
+      await secondTestErc721.deployed();
     });
 
     afterEach(() => {
       fulfillAvailableOrdersSpy.restore();
     });
 
-    describe("A single ERC721 is to be transferred", async () => {
-      describe("[Buy now] I want to buy a single ERC721", async () => {
+    describe("Multiple ERC721s are to be transferred from separate orders", async () => {
+      describe("[Buy now] I want to buy three ERC721 listings", async () => {
         beforeEach(async () => {
-          const { testErc721, legacyProxyRegistry, considerationContract } =
-            fixture;
+          const { testErc721 } = fixture;
 
+          // These will be used in 3 separate orders
           await testErc721.mint(offerer.address, nftId);
-
-          // Register the proxy on the offerer
-          await legacyProxyRegistry.connect(offerer).registerProxy();
-
-          const offererProxy = await legacyProxyRegistry.proxies(
-            offerer.address
-          );
-
-          // Approving both proxy and consideration contract for convenience
-          await testErc721
-            .connect(offerer)
-            .setApprovalForAll(offererProxy, true);
-
-          await testErc721
-            .connect(offerer)
-            .setApprovalForAll(considerationContract.address, true);
-
-          standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
-            offer: [
-              {
-                itemType: ItemType.ERC721,
-                token: testErc721.address,
-                identifier: nftId,
-              },
-            ],
-            consideration: [
-              {
-                amount: parseEther("10").toString(),
-                recipient: offerer.address,
-              },
-            ],
-            // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
-          };
+          await testErc721.mint(offerer.address, nftId2);
+          await secondTestErc721.mint(secondOfferer.address, nftId);
         });
 
         describe("with ETH", () => {
-          it("ERC721 <=> ETH", async () => {
-            const { consideration } = fixture;
+          it.only("3 ERC721 <=> ETH", async () => {
+            const { consideration, testErc721 } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
-              standardCreateOrderInput
+            const firstOrderUseCase = await consideration.createOrder({
+              startTime: "0",
+              endTime: MAX_INT.toString(),
+              salt: generateRandomSalt(),
+              offer: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: testErc721.address,
+                  identifier: nftId,
+                },
+              ],
+              consideration: [
+                {
+                  amount: parseEther("10").toString(),
+                  recipient: offerer.address,
+                },
+              ],
+              // 2.5% fee
+              fees: [{ recipient: zone.address, basisPoints: 250 }],
+            });
+
+            const firstOrder = await firstOrderUseCase.executeAllActions();
+
+            const secondOrderUseCase = await consideration.createOrder({
+              startTime: "0",
+              endTime: MAX_INT.toString(),
+              salt: generateRandomSalt(),
+              offer: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: testErc721.address,
+                  identifier: nftId2,
+                },
+              ],
+              consideration: [
+                {
+                  amount: parseEther("10").toString(),
+                  recipient: offerer.address,
+                },
+              ],
+              // 2.5% fee
+              fees: [{ recipient: zone.address, basisPoints: 250 }],
+            });
+
+            const secondOrder = await secondOrderUseCase.executeAllActions();
+
+            const thirdOrderUseCase = await consideration.createOrder(
+              {
+                startTime: "0",
+                endTime: MAX_INT.toString(),
+                salt: generateRandomSalt(),
+                offer: [
+                  {
+                    itemType: ItemType.ERC721,
+                    token: secondTestErc721.address,
+                    identifier: nftId,
+                  },
+                ],
+                consideration: [
+                  {
+                    amount: parseEther("10").toString(),
+                    recipient: secondOfferer.address,
+                  },
+                ],
+                // 2.5% fee
+                fees: [{ recipient: zone.address, basisPoints: 250 }],
+              },
+              secondOfferer.address
             );
 
-            const order = await executeAllActions();
+            const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const ownerToTokenToIdentifierBalances =
-              await getBalancesForFulfillOrder(
-                order,
-                fulfiller.address,
-                multicallProvider
-              );
-
-            const { actions } = await consideration.fulfillOrder({
-              order,
-              accountAddress: fulfiller.address,
-            });
+            const { actions } = await consideration.fulfillOrders(
+              [
+                { order: firstOrder },
+                { order: secondOrder },
+                { order: thirdOrder },
+              ],
+              fulfiller.address
+            );
 
             expect(actions.length).to.eq(1);
 
@@ -117,17 +154,19 @@ describeWithFixture(
             const transaction = await action.transaction.transact();
             const receipt = await transaction.wait();
 
-            await verifyBalancesAfterFulfill({
-              ownerToTokenToIdentifierBalances,
-              order,
-              fulfillerAddress: fulfiller.address,
-              multicallProvider,
-              fulfillReceipt: receipt,
-            });
+            const owners = await Promise.all([
+              testErc721.ownerOf(nftId),
+              testErc721.ownerOf(nftId2),
+              secondTestErc721.ownerOf(nftId),
+            ]);
+
+            expect(owners.every((owner) => owner === fulfiller.address)).to.be
+              .true;
+
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
 
-          it("ERC721 <=> ETH (offer via proxy)", async () => {
+          it("ERC721 <=> ETH (two offer via proxy)", async () => {
             const { testErc721, considerationContract } = fixture;
 
             await testErc721
@@ -219,6 +258,7 @@ describeWithFixture(
               multicallProvider,
               fulfillReceipt: receipt,
             });
+
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
         });

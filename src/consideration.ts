@@ -624,7 +624,7 @@ export class Consideration {
         legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
         multicallProvider: this.multicallProvider,
       }),
-      Promise.all(uniqueOfferers.map(this.getNonce)),
+      Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
     ]);
 
     const offererOrderMetadata: Record<
