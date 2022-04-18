@@ -6,6 +6,7 @@ import {
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
+import { BalancesAndApprovals } from "./utils/balanceAndApprovalCheck";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
@@ -69,6 +70,7 @@ export type Order = {
 export type AdvancedOrder = Order & {
   numerator: BigNumber;
   denominator: BigNumber;
+  extraData: string;
 };
 
 export type BasicErc721Item = {
@@ -115,6 +117,8 @@ export type CurrencyItem = {
 export type CreateInputItem = Erc721Item | Erc1155Item | CurrencyItem;
 
 export type ConsiderationInputItem = CreateInputItem & { recipient?: string };
+
+export type TipInputItem = CreateInputItem & { recipient: string };
 
 export type Fee = {
   recipient: string;

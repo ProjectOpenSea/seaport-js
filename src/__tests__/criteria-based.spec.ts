@@ -88,11 +88,11 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              { offerCriteria: [{ identifier: nftId, validIdentifiers: [] }] },
-              fulfiller.address
-            );
+              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -161,11 +161,11 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              { offerCriteria: [{ identifier: nftId, validIdentifiers: [] }] },
-              fulfiller.address
-            );
+              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(2);
 
@@ -265,15 +265,14 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                considerationCriteria: [
-                  { identifier: nftId, validIdentifiers: [] },
-                ],
-              },
-              fulfiller.address
-            );
+
+              considerationCriteria: [
+                { identifier: nftId, validIdentifiers: [] },
+              ],
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -393,15 +392,13 @@ describeWithFixture(
               );
 
             const { actions: revertedActions } =
-              await consideration.fulfillOrder(
+              await consideration.fulfillOrder({
                 order,
-                {
-                  offerCriteria: [
-                    { identifier: nftId2, validIdentifiers: [nftId2] },
-                  ],
-                },
-                fulfiller.address
-              );
+                offerCriteria: [
+                  { identifier: nftId2, validIdentifiers: [nftId2] },
+                ],
+                accountAddress: fulfiller.address,
+              });
 
             expect(revertedActions.length).to.eq(1);
 
@@ -417,18 +414,17 @@ describeWithFixture(
               revertedFulfill.transaction.transact()
             ).to.be.revertedWith("InvalidProof()");
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                offerCriteria: [
-                  {
-                    identifier: nftId3,
-                    validIdentifiers: [nftId, nftId3],
-                  },
-                ],
-              },
-              fulfiller.address
-            );
+
+              offerCriteria: [
+                {
+                  identifier: nftId3,
+                  validIdentifiers: [nftId, nftId3],
+                },
+              ],
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -491,15 +487,14 @@ describeWithFixture(
               );
 
             const { actions: revertedActions } =
-              await consideration.fulfillOrder(
+              await consideration.fulfillOrder({
                 order,
-                {
-                  offerCriteria: [
-                    { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
-                  ],
-                },
-                fulfiller.address
-              );
+
+                offerCriteria: [
+                  { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                ],
+                accountAddress: fulfiller.address,
+              });
 
             expect(revertedActions.length).to.eq(2);
 
@@ -534,15 +529,15 @@ describeWithFixture(
               revertedFulfill.transaction.transact()
             ).to.be.revertedWith("InvalidProof()");
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                offerCriteria: [
-                  { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
-                ],
-              },
-              fulfiller.address
-            );
+
+              offerCriteria: [
+                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+              ],
+
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -624,15 +619,13 @@ describeWithFixture(
               );
 
             const { actions: revertedActions } =
-              await consideration.fulfillOrder(
+              await consideration.fulfillOrder({
                 order,
-                {
-                  considerationCriteria: [
-                    { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
-                  ],
-                },
-                fulfiller.address
-              );
+                considerationCriteria: [
+                  { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                ],
+                accountAddress: fulfiller.address,
+              });
 
             const approvalAction = revertedActions[0];
 
@@ -686,15 +679,15 @@ describeWithFixture(
               revertedFulfillAction.transaction.transact()
             ).to.be.revertedWith("InvalidProof()");
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                considerationCriteria: [
-                  { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
-                ],
-              },
-              fulfiller.address
-            );
+
+              considerationCriteria: [
+                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+              ],
+
+              accountAddress: fulfiller.address,
+            });
 
             const fulfillAction = actions[0];
 
@@ -760,11 +753,11 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              { offerCriteria: [{ identifier: nftId, validIdentifiers: [] }] },
-              fulfiller.address
-            );
+              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -812,11 +805,11 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              { offerCriteria: [{ identifier: nftId, validIdentifiers: [] }] },
-              fulfiller.address
-            );
+              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(2);
 
@@ -902,15 +895,14 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                considerationCriteria: [
-                  { identifier: nftId, validIdentifiers: [] },
-                ],
-              },
-              fulfiller.address
-            );
+
+              considerationCriteria: [
+                { identifier: nftId, validIdentifiers: [] },
+              ],
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -1017,15 +1009,13 @@ describeWithFixture(
             const order = await executeAllActions();
 
             const { actions: revertedActions } =
-              await consideration.fulfillOrder(
+              await consideration.fulfillOrder({
                 order,
-                {
-                  offerCriteria: [
-                    { identifier: nftId2, validIdentifiers: [nftId2] },
-                  ],
-                },
-                fulfiller.address
-              );
+                offerCriteria: [
+                  { identifier: nftId2, validIdentifiers: [nftId2] },
+                ],
+                accountAddress: fulfiller.address,
+              });
 
             expect(revertedActions.length).to.eq(1);
 
@@ -1041,18 +1031,17 @@ describeWithFixture(
               revertedFulfill.transaction.transact()
             ).to.be.revertedWith("InvalidProof()");
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                offerCriteria: [
-                  {
-                    identifier: nftId3,
-                    validIdentifiers: [nftId, nftId3],
-                  },
-                ],
-              },
-              fulfiller.address
-            );
+
+              offerCriteria: [
+                {
+                  identifier: nftId3,
+                  validIdentifiers: [nftId, nftId3],
+                },
+              ],
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -1101,15 +1090,14 @@ describeWithFixture(
             const order = await executeAllActions();
 
             const { actions: revertedActions } =
-              await consideration.fulfillOrder(
+              await consideration.fulfillOrder({
                 order,
-                {
-                  offerCriteria: [
-                    { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
-                  ],
-                },
-                fulfiller.address
-              );
+
+                offerCriteria: [
+                  { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                ],
+                accountAddress: fulfiller.address,
+              });
 
             expect(revertedActions.length).to.eq(2);
 
@@ -1144,15 +1132,15 @@ describeWithFixture(
               revertedFulfill.transaction.transact()
             ).to.be.revertedWith("InvalidProof()");
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                offerCriteria: [
-                  { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
-                ],
-              },
-              fulfiller.address
-            );
+
+              offerCriteria: [
+                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+              ],
+
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -1221,15 +1209,13 @@ describeWithFixture(
             const order = await executeAllActions();
 
             const { actions: revertedActions } =
-              await consideration.fulfillOrder(
+              await consideration.fulfillOrder({
                 order,
-                {
-                  considerationCriteria: [
-                    { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
-                  ],
-                },
-                fulfiller.address
-              );
+                considerationCriteria: [
+                  { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                ],
+                accountAddress: fulfiller.address,
+              });
 
             const approvalAction = revertedActions[0];
 
@@ -1283,15 +1269,15 @@ describeWithFixture(
               revertedFulfillAction.transaction.transact()
             ).to.be.revertedWith("InvalidProof()");
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              {
-                considerationCriteria: [
-                  { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
-                ],
-              },
-              fulfiller.address
-            );
+
+              considerationCriteria: [
+                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+              ],
+
+              accountAddress: fulfiller.address,
+            });
 
             const fulfillAction = actions[0];
 
@@ -1351,16 +1337,14 @@ describeWithFixture(
 
           const order = await executeAllActions();
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            {
-              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
-              considerationCriteria: [
-                { identifier: nftId2, validIdentifiers: [] },
-              ],
-            },
-            fulfiller.address
-          );
+            offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+            considerationCriteria: [
+              { identifier: nftId2, validIdentifiers: [] },
+            ],
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(2);
 
@@ -1446,16 +1430,16 @@ describeWithFixture(
           const order = await executeAllActions();
 
           const { actions: revertedActions } = await consideration.fulfillOrder(
-            order,
             {
+              order,
               offerCriteria: [
                 { identifier: nftId2, validIdentifiers: [nftId2] },
               ],
               considerationCriteria: [
                 { identifier: nftId2, validIdentifiers: [nftId2, nftId3] },
               ],
-            },
-            fulfiller.address
+              accountAddress: fulfiller.address,
+            }
           );
 
           expect(revertedActions.length).to.eq(2);
@@ -1485,18 +1469,16 @@ describeWithFixture(
             revertedFulfill.transaction.transact()
           ).to.be.revertedWith("InvalidProof()");
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            {
-              offerCriteria: [
-                { identifier: nftId, validIdentifiers: [nftId, nftId3] },
-              ],
-              considerationCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId2, nftId3] },
-              ],
-            },
-            fulfiller.address
-          );
+            offerCriteria: [
+              { identifier: nftId, validIdentifiers: [nftId, nftId3] },
+            ],
+            considerationCriteria: [
+              { identifier: nftId2, validIdentifiers: [nftId2, nftId3] },
+            ],
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(1);
 

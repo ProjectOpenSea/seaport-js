@@ -132,9 +132,10 @@ export const getMaximumSizeForOrder = ({
 }: Order) => {
   const allItems = [...offer, ...consideration];
 
-  const amounts = allItems
-    .map(({ startAmount, endAmount }) => [startAmount, endAmount])
-    .flat();
+  const amounts = allItems.flatMap(({ startAmount, endAmount }) => [
+    startAmount,
+    endAmount,
+  ]);
 
   return findGcd(amounts);
 };

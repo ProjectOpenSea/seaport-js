@@ -16,22 +16,28 @@ import type {
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
+  InputCriteria,
+  OfferItem,
   Order,
   OrderComponents,
   OrderParameters,
   OrderUseCase,
-  InputCriteria,
-  ConsiderationInputItem,
+  TipInputItem,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
+  BalancesAndApprovals,
   getBalancesAndApprovals,
   getInsufficientBalanceAndApprovalAmounts,
+  validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck";
 import {
+  fulfillAvailableOrders,
   fulfillBasicOrder,
+  FulfillOrdersMetadata,
   fulfillStandardOrder,
   shouldUseBasicFulfill,
+  validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
 import {
   getMaximumSizeForOrder,
@@ -39,6 +45,7 @@ import {
   isCurrencyItem,
 } from "./utils/item";
 import {
+  areAllCurrenciesSame,
   deductFees,
   feeToConsiderationItem,
   generateRandomSalt,
@@ -46,7 +53,6 @@ import {
   ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
   useProxyFromApprovals,
-  validateOrderParameters,
 } from "./utils/order";
 import { getProxy } from "./utils/proxy";
 import { executeAllActions } from "./utils/usecase";
@@ -220,13 +226,27 @@ export class Consideration {
     const checkBalancesAndApprovals =
       this.config.balanceAndApprovalChecksOnOrderCreation;
 
-    const insufficientApprovals = validateOrderParameters(orderParameters, [], {
-      balancesAndApprovals,
-      throwOnInsufficientBalances: checkBalancesAndApprovals,
-      considerationContract: this.contract,
-      proxy,
-      proxyStrategy: this.config.proxyStrategy,
-    });
+    if (
+      !areAllCurrenciesSame({
+        offer: offerItems,
+        consideration: considerationItemsWithFees,
+      })
+    ) {
+      throw new Error(
+        "All currency tokens in the order must be the same token"
+      );
+    }
+
+    const insufficientApprovals = validateOfferBalancesAndApprovals(
+      { offer: offerItems, orderType, criterias: [] },
+      {
+        balancesAndApprovals,
+        throwOnInsufficientBalances: checkBalancesAndApprovals,
+        considerationContract: this.contract,
+        proxy,
+        proxyStrategy: this.config.proxyStrategy,
+      }
+    );
 
     const approvalActions = checkBalancesAndApprovals
       ? await getApprovalActions(insufficientApprovals, {
@@ -433,28 +453,28 @@ export class Consideration {
   };
 
   /**
-   * Fulfills an order through either the basic fulfill methods or the standard method
+   * Fulfills an order through either the basic method or the standard method
    * Units to fill are denominated by the max possible size of the order, which is the greatest common denominator (GCD).
    * We expose a helper to get this: getMaximumSizeForOrder
    * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order
    */
-  public async fulfillOrder(
-    order: Order,
-    {
-      unitsToFill,
-      offerCriteria = [],
-      considerationCriteria = [],
-      tips = [],
-      extraData,
-    }: {
-      unitsToFill?: BigNumberish;
-      offerCriteria?: InputCriteria[];
-      considerationCriteria?: InputCriteria[];
-      tips?: ConsiderationInputItem[];
-      extraData?: string;
-    } = {},
-    accountAddress?: string
-  ): Promise<OrderUseCase<ExchangeAction>> {
+  public async fulfillOrder({
+    order,
+    unitsToFill,
+    offerCriteria = [],
+    considerationCriteria = [],
+    tips = [],
+    extraData,
+    accountAddress,
+  }: {
+    order: Order;
+    unitsToFill?: BigNumberish;
+    offerCriteria?: InputCriteria[];
+    considerationCriteria?: InputCriteria[];
+    tips?: TipInputItem[];
+    extraData?: string;
+    accountAddress?: string;
+  }): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
@@ -478,6 +498,7 @@ export class Consideration {
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       currentBlock,
+      orderStatus,
     ] = await Promise.all([
       getBalancesAndApprovals(offerer, offer, offerCriteria, {
         proxy: offererProxy,
@@ -497,27 +518,21 @@ export class Consideration {
         }
       ),
       this.multicallProvider.getBlock("latest"),
+      this.getOrderStatus(this.getOrderHash({ ...orderParameters, nonce })),
     ]);
 
     const currentBlockTimestamp = currentBlock.timestamp;
 
-    const { isValidated, isCancelled, totalFilled, totalSize } =
-      await this.getOrderStatus(
-        this.getOrderHash({ ...orderParameters, nonce })
-      );
+    const { totalFilled, totalSize } = orderStatus;
 
-    if (isCancelled) {
-      throw new Error("The order you are trying to fulfill is cancelled");
-    }
-
-    if (isValidated) {
-      // If the order is already validated, manually wipe the signature off of the order to save gas
-      order.signature = "0x";
-    }
+    const sanitizedOrder = validateAndSanitizeFromOrderStatus({
+      order,
+      orderStatus,
+    });
 
     const timeBasedItemParams = {
-      startTime: order.parameters.startTime,
-      endTime: order.parameters.endTime,
+      startTime: sanitizedOrder.parameters.startTime,
+      endTime: sanitizedOrder.parameters.endTime,
       currentBlockTimestamp,
       ascendingAmountTimestampBuffer:
         this.config.ascendingAmountFulfillmentBuffer,
@@ -525,19 +540,24 @@ export class Consideration {
 
     const tipConsiderationItems = tips.map((tip) => ({
       ...mapInputItemToOfferItem(tip),
-      recipient: tip.recipient ?? offerer,
+      recipient: tip.recipient,
     }));
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.
-    if (!unitsToFill && shouldUseBasicFulfill(order.parameters, totalFilled)) {
+    if (
+      !unitsToFill &&
+      shouldUseBasicFulfill(sanitizedOrder.parameters, totalFilled)
+    ) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder(order, {
+      return fulfillBasicOrder({
+        order: sanitizedOrder,
         considerationContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
-        proxy: fulfillerProxy,
+        offererProxy,
+        fulfillerProxy,
         proxyStrategy: this.config.proxyStrategy,
         signer: fulfiller,
         tips: tipConsiderationItems,
@@ -545,26 +565,188 @@ export class Consideration {
     }
 
     // Else, we fallback to the standard fulfill order
-    return fulfillStandardOrder(
-      order,
+    return fulfillStandardOrder({
+      order: sanitizedOrder,
+      unitsToFill,
+      totalFilled,
+      totalSize: totalSize.eq(0)
+        ? getMaximumSizeForOrder(sanitizedOrder)
+        : totalSize,
+      offerCriteria,
+      considerationCriteria,
+      tips: tipConsiderationItems,
+      extraData,
+      considerationContract: this.contract,
+      offererBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      timeBasedItemParams,
+      offererProxy,
+      fulfillerProxy,
+      proxyStrategy: this.config.proxyStrategy,
+      signer: fulfiller,
+    });
+  }
+
+  /**
+   * Fulfills a list of orders in a best-effort fashion
+   */
+  public async fulfillOrders(
+    fulfillOrderDetails: {
+      order: Order;
+      unitsToFill?: BigNumberish;
+      offerCriteria?: InputCriteria[];
+      considerationCriteria?: InputCriteria[];
+      tips?: TipInputItem[];
+      extraData?: string;
+    }[],
+    accountAddress?: string
+  ) {
+    const fulfiller = await this.provider.getSigner(accountAddress);
+
+    const fulfillerAddress = await fulfiller.getAddress();
+
+    const uniqueOfferers = [
+      ...new Set(
+        fulfillOrderDetails.map(({ order }) => order.parameters.offerer)
+      ),
+    ];
+
+    const [offererProxies, fulfillerProxy, offererNonces] = await Promise.all([
+      Promise.all(
+        uniqueOfferers.map((offerer) =>
+          getProxy(offerer, {
+            legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+            multicallProvider: this.multicallProvider,
+          })
+        )
+      ),
+      getProxy(fulfillerAddress, {
+        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
+        multicallProvider: this.multicallProvider,
+      }),
+      Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
+    ]);
+
+    const offererOrderMetadata: Record<
+      string,
       {
-        unitsToFill,
-        totalFilled,
-        totalSize: totalSize.eq(0) ? getMaximumSizeForOrder(order) : totalSize,
-        offerCriteria,
-        considerationCriteria,
-        tips: tipConsiderationItems,
-        extraData,
-      },
-      {
-        considerationContract: this.contract,
-        offererBalancesAndApprovals,
-        fulfillerBalancesAndApprovals,
-        timeBasedItemParams,
-        proxy: fulfillerProxy,
-        proxyStrategy: this.config.proxyStrategy,
-        signer: fulfiller,
+        proxy: string;
+        nonce: number;
+        items: OfferItem[];
+        criteria: InputCriteria[];
+        balancesAndApprovals: BalancesAndApprovals;
       }
+    > = {};
+
+    uniqueOfferers.forEach((offerer, i) => {
+      offererOrderMetadata[offerer] = {
+        proxy: offererProxies[i],
+        nonce: offererNonces[i],
+        items: fulfillOrderDetails
+          .filter(({ order }) => order.parameters.offerer === offerer)
+          .flatMap(({ order }) => order.parameters.offer),
+        criteria: fulfillOrderDetails
+          .filter(({ order }) => order.parameters.offerer === offerer)
+          .flatMap(({ offerCriteria = [] }) => offerCriteria),
+        balancesAndApprovals: [],
+      };
+    });
+
+    const allOfferItems = fulfillOrderDetails.flatMap(
+      ({ order }) => order.parameters.offer
     );
+
+    const allConsiderationItems = fulfillOrderDetails.flatMap(
+      ({ order }) => order.parameters.consideration
+    );
+    const allOfferCriteria = fulfillOrderDetails.flatMap(
+      ({ offerCriteria = [] }) => offerCriteria
+    );
+    const allConsiderationCriteria = fulfillOrderDetails.flatMap(
+      ({ considerationCriteria = [] }) => considerationCriteria
+    );
+
+    const [
+      uniqueOfferersBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      currentBlock,
+      orderStatuses,
+    ] = await Promise.all([
+      Promise.all(
+        uniqueOfferers.map((offerer) =>
+          getBalancesAndApprovals(
+            offerer,
+            offererOrderMetadata[offerer].items,
+            offererOrderMetadata[offerer].criteria,
+            {
+              proxy: offererOrderMetadata[offerer].proxy,
+              considerationContract: this.contract,
+              multicallProvider: this.multicallProvider,
+            }
+          )
+        )
+      ),
+      // Get fulfiller balances and approvals of all items in the set, as offer items
+      // may be received by the fulfiller for standard fulfills
+      getBalancesAndApprovals(
+        fulfillerAddress,
+        [...allOfferItems, ...allConsiderationItems],
+        [...allOfferCriteria, ...allConsiderationCriteria],
+        {
+          proxy: fulfillerProxy,
+          considerationContract: this.contract,
+          multicallProvider: this.multicallProvider,
+        }
+      ),
+      this.multicallProvider.getBlock("latest"),
+      Promise.all(
+        fulfillOrderDetails.map(({ order }) =>
+          this.getOrderStatus(
+            this.getOrderHash({
+              ...order.parameters,
+              nonce: offererOrderMetadata[order.parameters.offerer].nonce,
+            })
+          )
+        )
+      ),
+    ]);
+
+    uniqueOfferers.forEach((offerer, i) => {
+      offererOrderMetadata[offerer].balancesAndApprovals =
+        uniqueOfferersBalancesAndApprovals[i];
+    });
+
+    const ordersMetadata: FulfillOrdersMetadata = fulfillOrderDetails.map(
+      (orderDetails, index) => ({
+        order: orderDetails.order,
+        unitsToFill: orderDetails.unitsToFill,
+        orderStatus: orderStatuses[index],
+        offerCriteria: orderDetails.offerCriteria ?? [],
+        considerationCriteria: orderDetails.considerationCriteria ?? [],
+        tips:
+          orderDetails.tips?.map((tip) => ({
+            ...mapInputItemToOfferItem(tip),
+            recipient: tip.recipient,
+          })) ?? [],
+        extraData: orderDetails.extraData ?? "0x",
+        offererBalancesAndApprovals:
+          offererOrderMetadata[orderDetails.order.parameters.offerer]
+            .balancesAndApprovals,
+        offererProxy:
+          offererOrderMetadata[orderDetails.order.parameters.offerer].proxy,
+      })
+    );
+
+    return fulfillAvailableOrders({
+      ordersMetadata,
+      considerationContract: this.contract,
+      fulfillerBalancesAndApprovals,
+      currentBlockTimestamp: currentBlock.timestamp,
+      ascendingAmountTimestampBuffer:
+        this.config.ascendingAmountFulfillmentBuffer,
+      fulfillerProxy,
+      proxyStrategy: this.config.proxyStrategy,
+      signer: fulfiller,
+    });
   }
 }

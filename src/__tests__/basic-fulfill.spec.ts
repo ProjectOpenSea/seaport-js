@@ -103,11 +103,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -153,11 +152,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -189,11 +187,10 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const action = actions[0];
 
@@ -262,11 +259,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -333,11 +329,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -399,11 +394,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const revertedUseCase = await consideration.fulfillOrder(
+            const revertedUseCase = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const actions = revertedUseCase.actions;
 
@@ -479,11 +473,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             // Even though the proxy has approval, we still check approvals on consideration contract
 
@@ -577,11 +570,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -652,11 +644,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const fulfillAction = actions[0];
 
@@ -746,11 +737,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const fulfillAction = actions[0];
 
@@ -798,11 +788,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const fulfillAction = actions[0];
 
@@ -836,11 +825,10 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const fulfillAction = actions[0];
 
@@ -914,11 +902,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -985,11 +972,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -1051,11 +1037,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             const approvalAction = actions[0];
 
@@ -1129,11 +1114,10 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder(
+            const { actions } = await consideration.fulfillOrder({
               order,
-              undefined,
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             // Even though the proxy has approval, we still check approvals on consideration contract
 
@@ -1233,11 +1217,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -1308,11 +1291,10 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            undefined,
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
           const fulfillAction = actions[0];
 
           expect(fulfillAction).to.be.deep.equal({
@@ -1399,11 +1381,10 @@ describeWithFixture(
           .connect(fulfiller)
           .setApprovalForAll(fulfillerProxy, true);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         // I should have sufficient approvals because it automatically uses my proxy
         const fulfillAction = actions[0];
@@ -1464,11 +1445,10 @@ describeWithFixture(
           .connect(fulfiller)
           .setApprovalForAll(fulfillerProxy, true);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         // I should not have sufficient approvals because it does not use my proxy
 
@@ -1543,11 +1523,10 @@ describeWithFixture(
           .connect(fulfiller)
           .setApprovalForAll(considerationContract.address, true);
 
-        const { actions } = await consideration.fulfillOrder(
+        const { actions } = await consideration.fulfillOrder({
           order,
-          undefined,
-          fulfiller.address
-        );
+          accountAddress: fulfiller.address,
+        });
 
         // I should not have sufficient approvals because it always uses my proxy
         const approvalAction = actions[0];

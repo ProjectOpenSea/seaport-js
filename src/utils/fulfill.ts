@@ -10,9 +10,11 @@ import { BasicOrderRouteType, ItemType, ProxyStrategy } from "../constants";
 import type {
   BasicOrderParametersStruct,
   Consideration,
+  FulfillmentComponentStruct,
   OrderStruct,
 } from "../typechain/Consideration";
 import type {
+  AdvancedOrder,
   ConsiderationItem,
   ExchangeAction,
   InputCriteria,
@@ -24,14 +26,17 @@ import type {
 import { getApprovalActions } from "./approval";
 import {
   BalancesAndApprovals,
+  InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balanceAndApprovalCheck";
-import { generateCriteriaResolvers } from "./criteria";
+import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria";
 import { gcd } from "./gcd";
 import {
   getMaximumSizeForOrder,
   getSummedTokenAndIdentifierAmounts,
+  isCriteriaItem,
+  isErc721Item,
   isNativeCurrencyItem,
   TimeBasedItemParams,
 } from "./item";
@@ -40,8 +45,8 @@ import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
+  useOffererProxy,
   useProxyFromApprovals,
-  validateOrderParameters,
 } from "./order";
 import { executeAllActions } from "./usecase";
 
@@ -188,29 +193,30 @@ const offerAndConsiderationFulfillmentMapping: {
  * @param order - Standard order object
  * @param contract - Consideration ethers contract
  */
-export async function fulfillBasicOrder(
-  { parameters: orderParameters, signature }: Order,
-  {
-    considerationContract,
-    offererBalancesAndApprovals,
-    fulfillerBalancesAndApprovals,
-    timeBasedItemParams,
-    proxy,
-    proxyStrategy,
-    signer,
-    tips = [],
-  }: {
-    considerationContract: Consideration;
-    offererBalancesAndApprovals: BalancesAndApprovals;
-    fulfillerBalancesAndApprovals: BalancesAndApprovals;
-    timeBasedItemParams: TimeBasedItemParams;
-    proxy: string;
-    proxyStrategy: ProxyStrategy;
-    signer: providers.JsonRpcSigner;
-    tips?: ConsiderationItem[];
-  }
-): Promise<OrderUseCase<ExchangeAction>> {
-  const { offer, consideration, orderType } = orderParameters;
+export async function fulfillBasicOrder({
+  order,
+  considerationContract,
+  offererBalancesAndApprovals,
+  fulfillerBalancesAndApprovals,
+  timeBasedItemParams,
+  offererProxy,
+  fulfillerProxy,
+  proxyStrategy,
+  signer,
+  tips = [],
+}: {
+  order: Order;
+  considerationContract: Consideration;
+  offererBalancesAndApprovals: BalancesAndApprovals;
+  fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  timeBasedItemParams: TimeBasedItemParams;
+  offererProxy: string;
+  fulfillerProxy: string;
+  proxyStrategy: ProxyStrategy;
+  signer: providers.JsonRpcSigner;
+  tips?: ConsiderationItem[];
+}): Promise<OrderUseCase<ExchangeAction>> {
+  const { offer, consideration, orderType } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
 
   const offerItem = offer[0];
@@ -261,7 +267,8 @@ export async function fulfillBasicOrder(
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
         considerationContract,
-        proxy,
+        offererProxy,
+        fulfillerProxy,
         proxyStrategy,
       }
     );
@@ -277,27 +284,28 @@ export async function fulfillBasicOrder(
     : insufficientOwnerApprovals;
 
   const basicOrderParameters: BasicOrderParametersStruct = {
-    offerer: orderParameters.offerer,
-    zone: orderParameters.zone,
+    offerer: order.parameters.offerer,
+    zone: order.parameters.zone,
     //  Note the use of a "basicOrderType" enum;
     //  this represents both the usual order type as well as the "route"
     //  of the basic order (a simple derivation function for the basic order
     //  type is `basicOrderType = orderType + (8 * basicOrderRoute)`.)
-    basicOrderType: orderParameters.orderType + 8 * basicOrderRouteType,
+    basicOrderType: order.parameters.orderType + 8 * basicOrderRouteType,
     offerToken: offerItem.token,
     offerIdentifier: offerItem.identifierOrCriteria,
     offerAmount: offerItem.endAmount,
     considerationToken: forOfferer.token,
     considerationIdentifier: forOfferer.identifierOrCriteria,
     considerationAmount: forOfferer.endAmount,
-    startTime: orderParameters.startTime,
-    endTime: orderParameters.endTime,
-    salt: orderParameters.salt,
-    totalOriginalAdditionalRecipients: orderParameters.consideration.length - 1,
-    signature,
+    startTime: order.parameters.startTime,
+    endTime: order.parameters.endTime,
+    salt: order.parameters.salt,
+    totalOriginalAdditionalRecipients:
+      order.parameters.consideration.length - 1,
+    signature: order.signature,
     useFulfillerProxy,
     additionalRecipients,
-    zoneHash: orderParameters.zoneHash,
+    zoneHash: order.parameters.zoneHash,
   };
 
   const payableOverrides = { value: totalNativeAmount };
@@ -335,44 +343,41 @@ export async function fulfillBasicOrder(
   };
 }
 
-export async function fulfillStandardOrder(
-  order: Order,
-  {
-    unitsToFill = 0,
-    totalFilled,
-    totalSize,
-    offerCriteria,
-    considerationCriteria,
-    tips = [],
-    extraData,
-  }: {
-    unitsToFill?: BigNumberish;
-    totalFilled: BigNumber;
-    totalSize: BigNumber;
-    offerCriteria: InputCriteria[];
-    considerationCriteria: InputCriteria[];
-    tips?: ConsiderationItem[];
-    extraData?: string;
-  },
-  {
-    considerationContract,
-    offererBalancesAndApprovals,
-    fulfillerBalancesAndApprovals,
-    timeBasedItemParams,
-    proxy,
-    proxyStrategy,
-    signer,
-  }: {
-    considerationContract: Consideration;
-    offererBalancesAndApprovals: BalancesAndApprovals;
-    fulfillerBalancesAndApprovals: BalancesAndApprovals;
-    timeBasedItemParams: TimeBasedItemParams;
-    unitsToFill?: BigNumberish;
-    proxy: string;
-    proxyStrategy: ProxyStrategy;
-    signer: providers.JsonRpcSigner;
-  }
-): Promise<OrderUseCase<ExchangeAction>> {
+export async function fulfillStandardOrder({
+  order,
+  unitsToFill = 0,
+  totalSize,
+  totalFilled,
+  offerCriteria,
+  considerationCriteria,
+  tips = [],
+  extraData,
+  considerationContract,
+  offererBalancesAndApprovals,
+  fulfillerBalancesAndApprovals,
+  timeBasedItemParams,
+  offererProxy,
+  fulfillerProxy,
+  proxyStrategy,
+  signer,
+}: {
+  order: Order;
+  unitsToFill?: BigNumberish;
+  totalFilled: BigNumber;
+  totalSize: BigNumber;
+  offerCriteria: InputCriteria[];
+  considerationCriteria: InputCriteria[];
+  tips?: ConsiderationItem[];
+  extraData?: string;
+  considerationContract: Consideration;
+  offererBalancesAndApprovals: BalancesAndApprovals;
+  fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  timeBasedItemParams: TimeBasedItemParams;
+  offererProxy: string;
+  fulfillerProxy: string;
+  proxyStrategy: ProxyStrategy;
+  signer: providers.JsonRpcSigner;
+}): Promise<OrderUseCase<ExchangeAction>> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills = unitsToFill
@@ -418,7 +423,8 @@ export async function fulfillStandardOrder(
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
         considerationContract,
-        proxy,
+        offererProxy,
+        fulfillerProxy,
         proxyStrategy,
       }
     );
@@ -437,16 +443,12 @@ export async function fulfillStandardOrder(
 
   const approvalActions = await getApprovalActions(approvalsToUse, { signer });
 
-  const offerCriteriaItems = offer.filter(
-    ({ itemType }) =>
-      itemType === ItemType.ERC1155_WITH_CRITERIA ||
-      itemType === ItemType.ERC721_WITH_CRITERIA
+  const offerCriteriaItems = offer.filter(({ itemType }) =>
+    isCriteriaItem(itemType)
   );
 
   const considerationCriteriaItems = considerationIncludingTips.filter(
-    ({ itemType }) =>
-      itemType === ItemType.ERC1155_WITH_CRITERIA ||
-      itemType === ItemType.ERC721_WITH_CRITERIA
+    ({ itemType }) => isCriteriaItem(itemType)
   );
 
   const hasCriteriaItems =
@@ -479,6 +481,7 @@ export async function fulfillStandardOrder(
     ...order,
     parameters: {
       ...order.parameters,
+      consideration: [...order.parameters.consideration, ...tips],
       totalOriginalConsiderationItems: consideration.length,
     },
   };
@@ -542,5 +545,374 @@ export async function fulfillStandardOrder(
     actions,
     executeAllActions: () =>
       executeAllActions(actions) as Promise<ContractTransaction>,
+  };
+}
+
+export function validateAndSanitizeFromOrderStatus({
+  order,
+  orderStatus,
+}: {
+  order: Order;
+  orderStatus: OrderStatus;
+}): Order {
+  const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
+
+  if (totalSize.gt(0) && totalFilled.div(totalSize).eq(1)) {
+    throw new Error("The order you are trying to fulfill is already filled");
+  }
+
+  if (isCancelled) {
+    throw new Error("The order you are trying to fulfill is cancelled");
+  }
+
+  if (isValidated) {
+    // If the order is already validated, manually wipe the signature off of the order to save gas
+    return { parameters: { ...order.parameters }, signature: "0x" };
+  }
+
+  return order;
+}
+
+export type FulfillOrdersMetadata = {
+  order: Order;
+  unitsToFill?: BigNumberish;
+  orderStatus: OrderStatus;
+  offerCriteria: InputCriteria[];
+  considerationCriteria: InputCriteria[];
+  tips: ConsiderationItem[];
+  extraData: string;
+  offererBalancesAndApprovals: BalancesAndApprovals;
+  offererProxy: string;
+}[];
+
+export async function fulfillAvailableOrders({
+  ordersMetadata,
+  considerationContract,
+  fulfillerBalancesAndApprovals,
+  currentBlockTimestamp,
+  ascendingAmountTimestampBuffer,
+  fulfillerProxy,
+  proxyStrategy,
+  signer,
+}: {
+  ordersMetadata: FulfillOrdersMetadata;
+  considerationContract: Consideration;
+  fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  currentBlockTimestamp: number;
+  ascendingAmountTimestampBuffer: number;
+  fulfillerProxy: string;
+  proxyStrategy: ProxyStrategy;
+  signer: providers.JsonRpcSigner;
+}): Promise<OrderUseCase<ExchangeAction>> {
+  const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
+    ...orderMetadata,
+    order: validateAndSanitizeFromOrderStatus({
+      order: orderMetadata.order,
+      orderStatus: orderMetadata.orderStatus,
+    }),
+  }));
+
+  const ordersMetadataWithAdjustedFills = sanitizedOrdersMetadata.map(
+    (orderMetadata) => ({
+      ...orderMetadata,
+      // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
+      // the remaining order left to be fulfilled
+      order: orderMetadata.unitsToFill
+        ? mapOrderAmountsFromUnitsToFill(orderMetadata.order, {
+            unitsToFill: orderMetadata.unitsToFill,
+            totalFilled: orderMetadata.orderStatus.totalFilled,
+            totalSize: orderMetadata.orderStatus.totalSize,
+          })
+        : // Else, we adjust the order by the remaining order left to be fulfilled
+          mapOrderAmountsFromFilledStatus(orderMetadata.order, {
+            totalFilled: orderMetadata.orderStatus.totalFilled,
+            totalSize: orderMetadata.orderStatus.totalSize,
+          }),
+    })
+  );
+
+  let totalNativeAmount = BigNumber.from(0);
+  const totalInsufficientOwnerApprovals: InsufficientApprovals = [];
+  const totalInsufficientProxyApprovals: InsufficientApprovals = [];
+  const hasCriteriaItems = false;
+
+  const addApprovalIfNeeded = (
+    totalInsufficientApprovals: InsufficientApprovals,
+    orderInsufficientApprovals: InsufficientApprovals
+  ) => {
+    orderInsufficientApprovals.forEach((insufficientApproval) => {
+      if (
+        !totalInsufficientApprovals.find(
+          (approval) => approval.token === insufficientApproval.token
+        )
+      ) {
+        totalInsufficientApprovals.push(insufficientApproval);
+      }
+    });
+  };
+
+  ordersMetadataWithAdjustedFills.forEach(
+    ({
+      order,
+      tips,
+      offerCriteria,
+      considerationCriteria,
+      offererBalancesAndApprovals,
+      offererProxy,
+    }) => {
+      const considerationIncludingTips = [
+        ...order.parameters.consideration,
+        ...tips,
+      ];
+
+      const timeBasedItemParams = {
+        startTime: order.parameters.startTime,
+        endTime: order.parameters.endTime,
+        currentBlockTimestamp,
+        ascendingAmountTimestampBuffer,
+        isConsiderationItem: true,
+      };
+
+      totalNativeAmount = totalNativeAmount.add(
+        getSummedTokenAndIdentifierAmounts(considerationIncludingTips, {
+          criterias: considerationCriteria,
+          timeBasedItemParams,
+        })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0)
+      );
+
+      const { insufficientOwnerApprovals, insufficientProxyApprovals } =
+        validateStandardFulfillBalancesAndApprovals(
+          {
+            offer: order.parameters.offer,
+            orderType: order.parameters.orderType,
+            consideration: considerationIncludingTips,
+            offerCriteria,
+            considerationCriteria,
+          },
+          {
+            offererBalancesAndApprovals,
+            fulfillerBalancesAndApprovals,
+            timeBasedItemParams,
+            considerationContract,
+            offererProxy,
+            fulfillerProxy,
+            proxyStrategy,
+          }
+        );
+
+      const offerCriteriaItems = order.parameters.offer.filter(({ itemType }) =>
+        isCriteriaItem(itemType)
+      );
+
+      const considerationCriteriaItems = considerationIncludingTips.filter(
+        ({ itemType }) => isCriteriaItem(itemType)
+      );
+
+      if (
+        offerCriteriaItems.length !== offerCriteria.length ||
+        considerationCriteriaItems.length !== considerationCriteria.length
+      ) {
+        throw new Error(
+          "You must supply the appropriate criterias for criteria based items"
+        );
+      }
+
+      addApprovalIfNeeded(
+        totalInsufficientOwnerApprovals,
+        insufficientOwnerApprovals
+      );
+      addApprovalIfNeeded(
+        totalInsufficientProxyApprovals,
+        insufficientProxyApprovals
+      );
+    }
+  );
+
+  const useProxyForFulfiller = useProxyFromApprovals({
+    insufficientOwnerApprovals: totalInsufficientOwnerApprovals,
+    insufficientProxyApprovals: totalInsufficientProxyApprovals,
+    proxyStrategy,
+  });
+
+  const approvalsToUse = useProxyForFulfiller
+    ? totalInsufficientProxyApprovals
+    : totalInsufficientOwnerApprovals;
+
+  const payableOverrides = { value: totalNativeAmount };
+
+  const approvalActions = await getApprovalActions(approvalsToUse, { signer });
+
+  const advancedOrdersWithTips: AdvancedOrder[] = sanitizedOrdersMetadata.map(
+    ({ order, unitsToFill = 0, tips, extraData }) => {
+      const maxUnits = getMaximumSizeForOrder(order);
+      const unitsToFillBn = BigNumber.from(unitsToFill);
+
+      // Reduce the numerator/denominator as optimization
+      const unitsGcd = gcd(unitsToFillBn, maxUnits);
+
+      const numerator = unitsToFill
+        ? unitsToFillBn.div(unitsGcd)
+        : BigNumber.from(1);
+
+      const denominator = unitsToFill
+        ? maxUnits.div(unitsGcd)
+        : BigNumber.from(1);
+
+      const considerationIncludingTips = [
+        ...order.parameters.consideration,
+        ...tips,
+      ];
+      return {
+        ...order,
+        parameters: {
+          ...order.parameters,
+          consideration: considerationIncludingTips,
+          totalOriginalConsiderationItems:
+            order.parameters.consideration.length,
+        },
+        numerator,
+        denominator,
+        extraData,
+      };
+    }
+  );
+
+  const { offerFulfillments, considerationFulfillments } =
+    generateFulfillOrdersFulfillments(ordersMetadata);
+
+  const exchangeAction = {
+    type: "exchange",
+    transaction: {
+      transact: (overrides: Overrides = {}) =>
+        considerationContract.connect(signer).fulfillAvailableAdvancedOrders(
+          advancedOrdersWithTips,
+          hasCriteriaItems
+            ? generateCriteriaResolvers(
+                ordersMetadata.map(({ order }) => order),
+                {
+                  offerCriterias: ordersMetadata.map(
+                    ({ offerCriteria }) => offerCriteria
+                  ),
+                  considerationCriterias: ordersMetadata.map(
+                    ({ considerationCriteria }) => considerationCriteria
+                  ),
+                }
+              )
+            : [],
+          offerFulfillments,
+          considerationFulfillments,
+          useProxyForFulfiller,
+          { ...overrides, ...payableOverrides }
+        ),
+      buildTransaction: (overrides: Overrides = {}) =>
+        considerationContract
+          .connect(signer)
+          .populateTransaction.fulfillAvailableAdvancedOrders(
+            advancedOrdersWithTips,
+            hasCriteriaItems
+              ? generateCriteriaResolvers(
+                  ordersMetadata.map(({ order }) => order),
+                  {
+                    offerCriterias: ordersMetadata.map(
+                      ({ offerCriteria }) => offerCriteria
+                    ),
+                    considerationCriterias: ordersMetadata.map(
+                      ({ considerationCriteria }) => considerationCriteria
+                    ),
+                  }
+                )
+              : [],
+            offerFulfillments,
+            considerationFulfillments,
+            useProxyForFulfiller,
+            { ...overrides, ...payableOverrides }
+          ),
+    },
+  } as const;
+
+  const actions = [...approvalActions, exchangeAction] as const;
+
+  return {
+    actions,
+    executeAllActions: () =>
+      executeAllActions(actions) as Promise<ContractTransaction>,
+  };
+}
+
+export function generateFulfillOrdersFulfillments(
+  ordersMetadata: FulfillOrdersMetadata
+): {
+  offerFulfillments: FulfillmentComponentStruct[];
+  considerationFulfillments: FulfillmentComponentStruct[];
+} {
+  const hashAggregateKey = (
+    sourceOrDestination: string,
+    token: string,
+    identifier: string
+  ) => `${sourceOrDestination}-${token}-${identifier}`;
+
+  const offerAggregatedFulfillments: Record<
+    string,
+    FulfillmentComponentStruct
+  > = {};
+
+  const considerationAggregatedFulfillments: Record<
+    string,
+    FulfillmentComponentStruct
+  > = {};
+
+  ordersMetadata.forEach(
+    ({ order, offererProxy, offerCriteria }, orderIndex) => {
+      const itemToCriteria = getItemToCriteriaMap(
+        order.parameters.offer,
+        offerCriteria
+      );
+      const source = useOffererProxy(order.parameters.orderType)
+        ? offererProxy
+        : order.parameters.offerer;
+
+      return order.parameters.offer.forEach((item, itemIndex) => {
+        const aggregateKey = `${hashAggregateKey(
+          source,
+          item.token,
+          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+          // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
+        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+
+        offerAggregatedFulfillments[aggregateKey] = [
+          ...(offerAggregatedFulfillments[aggregateKey] ?? []),
+          { orderIndex, itemIndex },
+        ];
+      });
+    }
+  );
+
+  ordersMetadata.forEach(({ order, offerCriteria, tips }, orderIndex) => {
+    const itemToCriteria = getItemToCriteriaMap(
+      order.parameters.offer,
+      offerCriteria
+    );
+    return [...order.parameters.consideration, ...tips].forEach(
+      (item, itemIndex) => {
+        const aggregateKey = `${hashAggregateKey(
+          item.recipient,
+          item.token,
+          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+          // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
+        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+
+        considerationAggregatedFulfillments[aggregateKey] = [
+          ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
+          { orderIndex, itemIndex },
+        ];
+      }
+    );
+  });
+
+  return {
+    offerFulfillments: Object.values(offerAggregatedFulfillments),
+    considerationFulfillments: Object.values(
+      considerationAggregatedFulfillments
+    ),
   };
 }

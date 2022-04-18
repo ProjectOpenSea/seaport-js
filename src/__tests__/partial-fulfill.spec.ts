@@ -17,7 +17,7 @@ import {
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(
-  "As a user I want to buy now or accept an offer for a bundle of items",
+  "As a user I want to buy now or accept an offer partially",
   (fixture) => {
     let offerer: SignerWithAddress;
     let zone: SignerWithAddress;
@@ -102,11 +102,11 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            { unitsToFill: 2 },
-            fulfiller.address
-          );
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(1);
 
@@ -187,11 +187,11 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            { unitsToFill: 2 },
-            fulfiller.address
-          );
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(2);
 
@@ -313,11 +313,11 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            { unitsToFill: 2 },
-            fulfiller.address
-          );
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -464,11 +464,11 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            { unitsToFill: 2 },
-            fulfiller.address
-          );
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(1);
 
@@ -559,11 +559,11 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            { unitsToFill: 2 },
-            fulfiller.address
-          );
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+          });
 
           expect(actions.length).to.eq(2);
 
@@ -703,11 +703,11 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder(
+          const { actions } = await consideration.fulfillOrder({
             order,
-            { unitsToFill: 2 },
-            fulfiller.address
-          );
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 

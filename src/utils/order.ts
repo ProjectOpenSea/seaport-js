@@ -179,47 +179,6 @@ export const areAllCurrenciesSame = ({
   );
 };
 
-export const validateOrderParameters = (
-  orderParameters: OrderParameters,
-  offerCriteria: InputCriteria[],
-  {
-    balancesAndApprovals,
-    throwOnInsufficientBalances,
-    throwOnInsufficientApprovals,
-    considerationContract,
-    proxy,
-    proxyStrategy,
-    timeBasedItemParams,
-  }: {
-    balancesAndApprovals: BalancesAndApprovals;
-    throwOnInsufficientBalances?: boolean;
-    throwOnInsufficientApprovals?: boolean;
-    considerationContract: Consideration;
-    proxy: string;
-    proxyStrategy: ProxyStrategy;
-    timeBasedItemParams?: TimeBasedItemParams;
-  }
-): InsufficientApprovals => {
-  const { offer, consideration, orderType } = orderParameters;
-
-  if (!areAllCurrenciesSame({ offer, consideration })) {
-    throw new Error("All currency tokens in the order must be the same token");
-  }
-
-  return validateOfferBalancesAndApprovals(
-    { offer, orderType, criterias: offerCriteria },
-    {
-      balancesAndApprovals,
-      throwOnInsufficientBalances,
-      throwOnInsufficientApprovals,
-      considerationContract,
-      proxy,
-      proxyStrategy,
-      timeBasedItemParams,
-    }
-  );
-};
-
 export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
   const initialValues = {
     startAmount: BigNumber.from(0),
