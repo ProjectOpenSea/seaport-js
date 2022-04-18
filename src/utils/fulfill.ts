@@ -677,7 +677,7 @@ export async function fulfillAvailableOrders({
         getSummedTokenAndIdentifierAmounts(considerationIncludingTips, {
           criterias: considerationCriteria,
           timeBasedItemParams,
-        })[ethers.constants.AddressZero]?.["0"]
+        })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0)
       );
 
       const { insufficientOwnerApprovals, insufficientProxyApprovals } =
