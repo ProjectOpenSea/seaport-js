@@ -187,17 +187,6 @@ const offerAndConsiderationFulfillmentMapping: {
   },
 } as const;
 
-/**
- * Executes one of the six basic fulfillment methods
- * 1. fulfillBasicEthForERC721Order
- * 2. fulfillBasicEthForERC1155Order
- * 3. fulfillBasicERC1155ForERC20Order
- * 4. fulfillBasicERC20ForERC1155Order
- * 5. fulfillBasicERC20ForERC721Order
- * 6. fulfillBasicERC721ForERC20Order
- * @param order - Standard order object
- * @param contract - Consideration ethers contract
- */
 export async function fulfillBasicOrder({
   order,
   considerationContract,

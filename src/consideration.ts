@@ -24,8 +24,10 @@ import type {
   Order,
   OrderComponents,
   OrderParameters,
+  OrderStatus,
   OrderUseCase,
   TipInputItem,
+  TransactionMethods,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -57,7 +59,7 @@ import {
   useProxyFromApprovals,
 } from "./utils/order";
 import { getProxy } from "./utils/proxy";
-import { executeAllActions } from "./utils/usecase";
+import { executeAllActions, getTransactionMethods } from "./utils/usecase";
 
 export class Consideration {
   // Provides the raw interface to the contract for flexibility
@@ -322,7 +324,7 @@ export class Consideration {
     orderParameters: OrderParameters,
     nonce: number,
     accountAddress?: string
-  ) {
+  ): Promise<string> {
     const signer = this.provider.getSigner(accountAddress);
     const { chainId } = await this.provider.getNetwork();
 
@@ -353,33 +355,67 @@ export class Consideration {
    *
    * @param orders list of order components
    * @param accountAddress optional account address from which to cancel the orders from.
-   * @returns
+   * @returns the set of transaction methods that can be used
    */
-  public async cancelOrders(
+  public cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string
-  ) {
+  ): TransactionMethods {
     const signer = this.provider.getSigner(accountAddress);
-    return this.contract.connect(signer).cancel(orders);
+
+    return getTransactionMethods(this.contract.connect(signer), "cancel", [
+      orders,
+    ]);
   }
 
-  public async bulkCancelOrders(offerer?: string) {
+  /**
+   * Bulk cancels all existing orders for a given account
+   * @param offerer the account to bulk cancel orders on
+   * @returns the set of transaction methods that can be used
+   */
+  public bulkCancelOrders(offerer?: string): TransactionMethods {
     const signer = this.provider.getSigner(offerer);
 
-    return this.contract.connect(signer).incrementNonce();
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "incrementNonce",
+      []
+    );
   }
 
-  public async approveOrders(orders: Order[], accountAddress?: string) {
+  /**
+   * Approves a list of orders on-chain. This allows accounts to fulfill the order without requiring
+   * a signature
+   * @param orders list of order structs
+   * @param accountAddress optional account address to approve orders.
+   * @returns the set of transaction methods that can be used
+   */
+  public approveOrders(
+    orders: Order[],
+    accountAddress?: string
+  ): TransactionMethods {
     const signer = this.provider.getSigner(accountAddress);
 
-    return this.contract.connect(signer).validate(orders);
+    return getTransactionMethods(this.contract.connect(signer), "validate", [
+      orders,
+    ]);
   }
 
-  public getOrderStatus(orderHash: string) {
+  /**
+   * Returns the order status given an order hash
+   * @param orderHash the hash of the order
+   * @returns an order status struct
+   */
+  public getOrderStatus(orderHash: string): Promise<OrderStatus> {
     return this.contract.getOrderStatus(orderHash);
   }
 
-  public getNonce(offerer: string) {
+  /**
+   * Gets the nonce of a given offerer
+   * @param offerer the offerer to get the nonce of
+   * @returns nonce as a number
+   */
+  public getNonce(offerer: string): Promise<number> {
     return this.contract.getNonce(offerer).then((nonce) => nonce.toNumber());
   }
 
@@ -387,7 +423,7 @@ export class Consideration {
    * Calculates the order hash of order components so we can forgo executing a request to the contract
    * This saves us RPC calls and latency.
    */
-  public getOrderHash = (orderComponents: OrderComponents) => {
+  public getOrderHash = (orderComponents: OrderComponents): string => {
     const offerItemTypeString =
       "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
     const considerationItemTypeString =
@@ -502,6 +538,15 @@ export class Consideration {
    * Units to fill are denominated by the max possible size of the order, which is the greatest common denominator (GCD).
    * We expose a helper to get this: getMaximumSizeForOrder
    * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order
+   * @param input
+   * @param input.order The standard order struct
+   * @param input.unitsToFill the number of units to fill for the given order. Only used if you wish to partially fill an order
+   * @param input.offerCriteria an array of criteria with length equal to the number of offer criteria items
+   * @param input.considerationCriteria an array of criteria with length equal to the number of consideration criteria items
+   * @param input.tips an array of optional condensed consideration items to be added onto a fulfillment
+   * @param input.extraData extra data supplied to the order
+   * @param input.accountAddress optional address from which to fulfill the order from
+   * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
     order,
