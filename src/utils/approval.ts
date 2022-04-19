@@ -46,11 +46,7 @@ export const approvedItemAmount = async (
  */
 export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
-  {
-    signer,
-  }: {
-    signer: providers.JsonRpcSigner;
-  }
+  signer: providers.JsonRpcSigner
 ): Promise<ApprovalAction[]> {
   return Promise.all(
     insufficientApprovals.map(

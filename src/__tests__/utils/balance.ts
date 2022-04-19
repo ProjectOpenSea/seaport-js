@@ -121,15 +121,13 @@ export const verifyBalancesAfterFulfill = async ({
 
   // Offer items are depleted
   offer.forEach((item) => {
-    const exchangedAmount = getPresentItemAmount(
-      {
-        startAmount: item.startAmount,
-        endAmount: item.endAmount,
-      },
-      timeBasedItemParams
+    const exchangedAmount = getPresentItemAmount({
+      startAmount: item.startAmount,
+      endAmount: item.endAmount,
+      timeBasedItemParams: timeBasedItemParams
         ? { ...timeBasedItemParams, isConsiderationItem: false }
-        : undefined
-    );
+        : undefined,
+    });
 
     ownerToTokenToIdentifierBalances[offerer][item.token][
       item.identifierOrCriteria
@@ -153,15 +151,13 @@ export const verifyBalancesAfterFulfill = async ({
   });
 
   consideration.forEach((item) => {
-    const exchangedAmount = getPresentItemAmount(
-      {
-        startAmount: item.startAmount,
-        endAmount: item.endAmount,
-      },
-      timeBasedItemParams
+    const exchangedAmount = getPresentItemAmount({
+      startAmount: item.startAmount,
+      endAmount: item.endAmount,
+      timeBasedItemParams: timeBasedItemParams
         ? { ...timeBasedItemParams, isConsiderationItem: true }
-        : undefined
-    );
+        : undefined,
+    });
 
     ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
       item.identifierOrCriteria

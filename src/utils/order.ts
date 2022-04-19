@@ -5,7 +5,6 @@ import {
   ItemType,
   LEGACY_PROXY_CONDUIT,
   ONE_HUNDRED_PERCENT_BP,
-  OrderType,
   ProxyStrategy,
 } from "../constants";
 import type {
@@ -21,7 +20,7 @@ import { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { hashIdentifier } from "./criteria";
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 
-const multiplyBasisPoints = (amount: BigNumberish, basisPoints: number) =>
+const multiplyBasisPoints = (amount: BigNumberish, basisPoints: BigNumberish) =>
   BigNumber.from(amount)
     .mul(BigNumber.from(basisPoints))
     .div(ONE_HUNDRED_PERCENT_BP);
@@ -220,23 +219,17 @@ export const mapOrderAmountsFromFilledStatus = (
         ...item,
         startAmount: multiplyBasisPoints(
           item.startAmount,
-          basisPoints.toNumber()
+          basisPoints
         ).toString(),
-        endAmount: multiplyBasisPoints(
-          item.endAmount,
-          basisPoints.toNumber()
-        ).toString(),
+        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
         startAmount: multiplyBasisPoints(
           item.startAmount,
-          basisPoints.toNumber()
+          basisPoints
         ).toString(),
-        endAmount: multiplyBasisPoints(
-          item.endAmount,
-          basisPoints.toNumber()
-        ).toString(),
+        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
       })),
     },
     signature: order.signature,
@@ -296,23 +289,17 @@ export const mapOrderAmountsFromUnitsToFill = (
         ...item,
         startAmount: multiplyBasisPoints(
           item.startAmount,
-          basisPoints.toNumber()
+          basisPoints
         ).toString(),
-        endAmount: multiplyBasisPoints(
-          item.endAmount,
-          basisPoints.toNumber()
-        ).toString(),
+        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
         startAmount: multiplyBasisPoints(
           item.startAmount,
-          basisPoints.toNumber()
+          basisPoints
         ).toString(),
-        endAmount: multiplyBasisPoints(
-          item.endAmount,
-          basisPoints.toNumber()
-        ).toString(),
+        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
       })),
     },
     signature: order.signature,

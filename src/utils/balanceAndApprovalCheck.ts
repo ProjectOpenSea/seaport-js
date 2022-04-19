@@ -65,20 +65,21 @@ const findBalanceAndApproval = (
   return balanceAndApproval;
 };
 
-export const getBalancesAndApprovals = async (
-  owner: string,
-  items: Item[],
-  criterias: InputCriteria[],
-  {
-    considerationContract,
-    proxy,
-    multicallProvider,
-  }: {
-    considerationContract: Consideration;
-    proxy: string;
-    multicallProvider: multicallProviders.MulticallProvider;
-  }
-): Promise<BalancesAndApprovals> => {
+export const getBalancesAndApprovals = async ({
+  owner,
+  items,
+  criterias,
+  considerationContract,
+  proxy,
+  multicallProvider,
+}: {
+  owner: string;
+  items: Item[];
+  criterias: InputCriteria[];
+  considerationContract: Consideration;
+  proxy: string;
+  multicallProvider: multicallProviders.MulticallProvider;
+}): Promise<BalancesAndApprovals> => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
 
   return Promise.all(
@@ -142,21 +143,21 @@ export const getBalancesAndApprovals = async (
   );
 };
 
-export const getInsufficientBalanceAndApprovalAmounts = (
-  balancesAndApprovals: BalancesAndApprovals,
+export const getInsufficientBalanceAndApprovalAmounts = ({
+  balancesAndApprovals,
+  tokenAndIdentifierAmounts,
+  considerationContract,
+  proxy,
+  proxyStrategy,
+}: {
+  balancesAndApprovals: BalancesAndApprovals;
   tokenAndIdentifierAmounts: ReturnType<
     typeof getSummedTokenAndIdentifierAmounts
-  >,
-  {
-    considerationContract,
-    proxy,
-    proxyStrategy,
-  }: {
-    considerationContract: Consideration;
-    proxy: string;
-    proxyStrategy: ProxyStrategy;
-  }
-): {
+  >;
+  considerationContract: Consideration;
+  proxy: string;
+  proxyStrategy: ProxyStrategy;
+}): {
   insufficientBalances: InsufficientBalances;
   insufficientOwnerApprovals: InsufficientApprovals;
   insufficientProxyApprovals: InsufficientApprovals;
@@ -248,46 +249,45 @@ export const getInsufficientBalanceAndApprovalAmounts = (
  * 3. If the order does indicate proxy utilization, the offerer should have sufficient approvals set
  *    for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
  */
-export const validateOfferBalancesAndApprovals = (
-  {
-    offer,
-    conduit,
-    criterias,
-  }: Pick<OrderParameters, "offer" | "conduit"> & {
+export const validateOfferBalancesAndApprovals = ({
+  offer,
+  conduit,
+  criterias,
+  balancesAndApprovals,
+  timeBasedItemParams,
+  throwOnInsufficientBalances = true,
+  throwOnInsufficientApprovals,
+  considerationContract,
+  proxy,
+  proxyStrategy,
+}: {
+  balancesAndApprovals: BalancesAndApprovals;
+  timeBasedItemParams?: TimeBasedItemParams;
+  throwOnInsufficientBalances?: boolean;
+  throwOnInsufficientApprovals?: boolean;
+  considerationContract: Consideration;
+  proxy: string;
+  proxyStrategy: ProxyStrategy;
+} & Pick<OrderParameters, "offer" | "conduit"> & {
     criterias: InputCriteria[];
-  },
-  {
-    balancesAndApprovals,
-    timeBasedItemParams,
-    throwOnInsufficientBalances = true,
-    throwOnInsufficientApprovals,
-    considerationContract,
-    proxy,
-    proxyStrategy,
-  }: {
-    balancesAndApprovals: BalancesAndApprovals;
-    timeBasedItemParams?: TimeBasedItemParams;
-    throwOnInsufficientBalances?: boolean;
-    throwOnInsufficientApprovals?: boolean;
-    considerationContract: Consideration;
-    proxy: string;
-    proxyStrategy: ProxyStrategy;
-  }
-): InsufficientApprovals => {
+  }): InsufficientApprovals => {
   const {
     insufficientBalances,
     insufficientOwnerApprovals,
     insufficientProxyApprovals,
-  } = getInsufficientBalanceAndApprovalAmounts(
+  } = getInsufficientBalanceAndApprovalAmounts({
     balancesAndApprovals,
-    getSummedTokenAndIdentifierAmounts(offer, {
+    tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
+      items: offer,
       criterias,
       timeBasedItemParams: timeBasedItemParams
         ? { ...timeBasedItemParams, isConsiderationItem: false }
         : undefined,
     }),
-    { considerationContract, proxy, proxyStrategy }
-  );
+    considerationContract,
+    proxy,
+    proxyStrategy,
+  });
 
   if (throwOnInsufficientBalances && insufficientBalances.length > 0) {
     throw new Error(
@@ -324,41 +324,37 @@ export const validateOfferBalancesAndApprovals = (
  *
  * @returns the list of insufficient owner and proxy approvals
  */
-export const validateBasicFulfillBalancesAndApprovals = (
-  {
+export const validateBasicFulfillBalancesAndApprovals = ({
+  offer,
+  conduit,
+  consideration,
+  offererBalancesAndApprovals,
+  fulfillerBalancesAndApprovals,
+  timeBasedItemParams,
+  considerationContract,
+  offererProxy,
+  fulfillerProxy,
+  proxyStrategy,
+}: {
+  offererBalancesAndApprovals: BalancesAndApprovals;
+  fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  timeBasedItemParams: TimeBasedItemParams;
+  considerationContract: Consideration;
+  offererProxy: string;
+  fulfillerProxy: string;
+  proxyStrategy: ProxyStrategy;
+} & Pick<OrderParameters, "offer" | "conduit" | "consideration">) => {
+  validateOfferBalancesAndApprovals({
     offer,
     conduit,
-    consideration,
-  }: Pick<OrderParameters, "offer" | "conduit" | "consideration">,
-  {
-    offererBalancesAndApprovals,
-    fulfillerBalancesAndApprovals,
+    criterias: [],
+    balancesAndApprovals: offererBalancesAndApprovals,
     timeBasedItemParams,
+    throwOnInsufficientApprovals: true,
     considerationContract,
-    offererProxy,
-    fulfillerProxy,
+    proxy: offererProxy,
     proxyStrategy,
-  }: {
-    offererBalancesAndApprovals: BalancesAndApprovals;
-    fulfillerBalancesAndApprovals: BalancesAndApprovals;
-    timeBasedItemParams: TimeBasedItemParams;
-    considerationContract: Consideration;
-    offererProxy: string;
-    fulfillerProxy: string;
-    proxyStrategy: ProxyStrategy;
-  }
-) => {
-  validateOfferBalancesAndApprovals(
-    { offer, conduit, criterias: [] },
-    {
-      balancesAndApprovals: offererBalancesAndApprovals,
-      timeBasedItemParams,
-      throwOnInsufficientApprovals: true,
-      considerationContract,
-      proxy: offererProxy,
-      proxyStrategy,
-    }
-  );
+  });
 
   const considerationWithoutOfferItemType = consideration.filter(
     (item) => item.itemType !== offer[0].itemType
@@ -368,17 +364,20 @@ export const validateBasicFulfillBalancesAndApprovals = (
     insufficientBalances,
     insufficientOwnerApprovals,
     insufficientProxyApprovals,
-  } = getInsufficientBalanceAndApprovalAmounts(
-    fulfillerBalancesAndApprovals,
-    getSummedTokenAndIdentifierAmounts(considerationWithoutOfferItemType, {
+  } = getInsufficientBalanceAndApprovalAmounts({
+    balancesAndApprovals: fulfillerBalancesAndApprovals,
+    tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
+      items: considerationWithoutOfferItemType,
       criterias: [],
       timeBasedItemParams: {
         ...timeBasedItemParams,
         isConsiderationItem: true,
       },
     }),
-    { considerationContract, proxy: fulfillerProxy, proxyStrategy }
-  );
+    considerationContract,
+    proxy: fulfillerProxy,
+    proxyStrategy,
+  });
 
   if (insufficientBalances.length > 0) {
     throw new Error(
@@ -434,17 +433,17 @@ export const validateStandardFulfillBalancesAndApprovals = (
     proxyStrategy: ProxyStrategy;
   }
 ) => {
-  validateOfferBalancesAndApprovals(
-    { offer, conduit, criterias: offerCriteria },
-    {
-      balancesAndApprovals: offererBalancesAndApprovals,
-      timeBasedItemParams,
-      throwOnInsufficientApprovals: true,
-      considerationContract,
-      proxy: offererProxy,
-      proxyStrategy,
-    }
-  );
+  validateOfferBalancesAndApprovals({
+    offer,
+    conduit,
+    criterias: offerCriteria,
+    balancesAndApprovals: offererBalancesAndApprovals,
+    timeBasedItemParams,
+    throwOnInsufficientApprovals: true,
+    considerationContract,
+    proxy: offererProxy,
+    proxyStrategy,
+  });
 
   const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
     addToExistingBalances({
@@ -458,17 +457,21 @@ export const validateStandardFulfillBalancesAndApprovals = (
     insufficientBalances,
     insufficientOwnerApprovals,
     insufficientProxyApprovals,
-  } = getInsufficientBalanceAndApprovalAmounts(
-    fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
-    getSummedTokenAndIdentifierAmounts(consideration, {
+  } = getInsufficientBalanceAndApprovalAmounts({
+    balancesAndApprovals:
+      fulfillerBalancesAndApprovalsAfterReceivingOfferedItems,
+    tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
+      items: consideration,
       criterias: considerationCriteria,
       timeBasedItemParams: {
         ...timeBasedItemParams,
         isConsiderationItem: true,
       },
     }),
-    { considerationContract, proxy: fulfillerProxy, proxyStrategy }
-  );
+    considerationContract,
+    proxy: fulfillerProxy,
+    proxyStrategy,
+  });
 
   if (insufficientBalances.length > 0) {
     throw new Error(
@@ -490,7 +493,8 @@ const addToExistingBalances = ({
   timeBasedItemParams: TimeBasedItemParams;
   balancesAndApprovals: BalancesAndApprovals;
 }) => {
-  const summedItemAmounts = getSummedTokenAndIdentifierAmounts(items, {
+  const summedItemAmounts = getSummedTokenAndIdentifierAmounts({
+    items,
     criterias,
     timeBasedItemParams: { ...timeBasedItemParams, isConsiderationItem: false },
   });

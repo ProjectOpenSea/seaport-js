@@ -80,9 +80,7 @@ export enum ProxyStrategy {
 export const MAX_INT = BigNumber.from(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 );
-
 export const ONE_HUNDRED_PERCENT_BP = 10000;
-
 export const NO_CONDUIT = ethers.constants.AddressZero;
 export const LEGACY_PROXY_CONDUIT =
   ethers.constants.AddressZero.slice(0, -1) + "1";

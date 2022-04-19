@@ -5,16 +5,15 @@ import { Side } from "../constants";
 import { InputCriteria, Item, Order } from "../types";
 import { isCriteriaItem } from "./item";
 
-export const generateCriteriaResolvers = (
-  orders: Order[],
-  {
-    offerCriterias = [[]],
-    considerationCriterias = [[]],
-  }: {
-    offerCriterias?: InputCriteria[][];
-    considerationCriterias?: InputCriteria[][];
-  }
-) => {
+export const generateCriteriaResolvers = ({
+  orders,
+  offerCriterias = [[]],
+  considerationCriterias = [[]],
+}: {
+  orders: Order[];
+  offerCriterias?: InputCriteria[][];
+  considerationCriterias?: InputCriteria[][];
+}) => {
   const offerCriteriaItems = orders.flatMap((order, orderIndex) =>
     order.parameters.offer
       .map(

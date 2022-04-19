@@ -2,6 +2,7 @@ import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumberish, Contract, ethers, providers } from "ethers";
 import { formatBytes32String } from "ethers/lib/utils";
 import { ConsiderationABI } from "./abi/Consideration";
+import { ProxyRegistryInterfaceABI } from "./abi/ProxyRegistryInterface";
 import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
@@ -12,6 +13,7 @@ import {
   OrderType,
   ProxyStrategy,
 } from "./constants";
+import { ProxyRegistryInterface } from "./typechain";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
   ConsiderationConfig,
@@ -58,7 +60,6 @@ import {
   totalItemsAmount,
   useProxyFromApprovals,
 } from "./utils/order";
-import { getProxy } from "./utils/proxy";
 import { executeAllActions, getTransactionMethods } from "./utils/usecase";
 
 export class Consideration {
@@ -131,6 +132,16 @@ export class Consideration {
     return restrictedByZone ? OrderType.FULL_RESTRICTED : OrderType.FULL_OPEN;
   }
 
+  private _getLegacyConduitProxy(address: string) {
+    const proxyRegistryInterface = new Contract(
+      this.legacyProxyRegistryAddress,
+      ProxyRegistryInterfaceABI,
+      this.multicallProvider
+    ) as ProxyRegistryInterface;
+
+    return proxyRegistryInterface.proxies(address);
+  }
+
   /**
    * Returns a use case that will create an order.
    * The use case will contain the list of actions necessary to finish creating an order.
@@ -185,34 +196,30 @@ export class Consideration {
     const totalCurrencyAmount = totalItemsAmount(currencies);
 
     const [proxy, resolvedNonce] = await Promise.all([
-      getProxy(offerer, {
-        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        multicallProvider: this.multicallProvider,
-      }),
+      this._getLegacyConduitProxy(offerer),
       nonce ?? this.getNonce(offerer),
     ]);
 
-    const balancesAndApprovals = await getBalancesAndApprovals(
-      offerer,
-      offerItems,
-      [],
-      {
-        proxy,
-        considerationContract: this.contract,
-        multicallProvider: this.multicallProvider,
-      }
-    );
+    const balancesAndApprovals = await getBalancesAndApprovals({
+      owner: offerer,
+      items: offerItems,
+      criterias: [],
+      proxy,
+      considerationContract: this.contract,
+      multicallProvider: this.multicallProvider,
+    });
 
     const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-      getInsufficientBalanceAndApprovalAmounts(
+      getInsufficientBalanceAndApprovalAmounts({
         balancesAndApprovals,
-        getSummedTokenAndIdentifierAmounts(offerItems, { criterias: [] }),
-        {
-          considerationContract: this.contract,
-          proxy,
-          proxyStrategy: this.config.proxyStrategy,
-        }
-      );
+        tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
+          items: offerItems,
+          criterias: [],
+        }),
+        considerationContract: this.contract,
+        proxy,
+        proxyStrategy: this.config.proxyStrategy,
+      });
 
     const useProxy = useProxyFromApprovals({
       insufficientOwnerApprovals,
@@ -270,21 +277,19 @@ export class Consideration {
       );
     }
 
-    const insufficientApprovals = validateOfferBalancesAndApprovals(
-      { offer: offerItems, conduit, criterias: [] },
-      {
-        balancesAndApprovals,
-        throwOnInsufficientBalances: checkBalancesAndApprovals,
-        considerationContract: this.contract,
-        proxy,
-        proxyStrategy: this.config.proxyStrategy,
-      }
-    );
+    const insufficientApprovals = validateOfferBalancesAndApprovals({
+      offer: offerItems,
+      conduit,
+      criterias: [],
+      balancesAndApprovals,
+      throwOnInsufficientBalances: checkBalancesAndApprovals,
+      considerationContract: this.contract,
+      proxy,
+      proxyStrategy: this.config.proxyStrategy,
+    });
 
     const approvalActions = checkBalancesAndApprovals
-      ? await getApprovalActions(insufficientApprovals, {
-          signer,
-        })
+      ? await getApprovalActions(insufficientApprovals, signer)
       : [];
 
     const createOrderAction = {
@@ -573,14 +578,8 @@ export class Consideration {
     const fulfillerAddress = await fulfiller.getAddress();
 
     const [offererProxy, fulfillerProxy, nonce] = await Promise.all([
-      getProxy(offerer, {
-        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        multicallProvider: this.multicallProvider,
-      }),
-      getProxy(fulfillerAddress, {
-        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        multicallProvider: this.multicallProvider,
-      }),
+      this._getLegacyConduitProxy(offerer),
+      this._getLegacyConduitProxy(fulfillerAddress),
       this.getNonce(offerer),
     ]);
 
@@ -590,23 +589,24 @@ export class Consideration {
       currentBlock,
       orderStatus,
     ] = await Promise.all([
-      getBalancesAndApprovals(offerer, offer, offerCriteria, {
+      getBalancesAndApprovals({
+        owner: offerer,
+        items: offer,
+        criterias: offerCriteria,
         proxy: offererProxy,
         considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
-      getBalancesAndApprovals(
-        fulfillerAddress,
-        [...offer, ...consideration],
-        [...offerCriteria, ...considerationCriteria],
-        {
-          proxy: fulfillerProxy,
-          considerationContract: this.contract,
-          multicallProvider: this.multicallProvider,
-        }
-      ),
+      getBalancesAndApprovals({
+        owner: fulfillerAddress,
+        items: [...offer, ...consideration],
+        criterias: [...offerCriteria, ...considerationCriteria],
+        proxy: fulfillerProxy,
+        considerationContract: this.contract,
+        multicallProvider: this.multicallProvider,
+      }),
       this.multicallProvider.getBlock("latest"),
       this.getOrderStatus(this.getOrderHash({ ...orderParameters, nonce })),
     ]);
@@ -615,10 +615,10 @@ export class Consideration {
 
     const { totalFilled, totalSize } = orderStatus;
 
-    const sanitizedOrder = validateAndSanitizeFromOrderStatus({
+    const sanitizedOrder = validateAndSanitizeFromOrderStatus(
       order,
-      orderStatus,
-    });
+      orderStatus
+    );
 
     const timeBasedItemParams = {
       startTime: sanitizedOrder.parameters.startTime,
@@ -703,17 +703,9 @@ export class Consideration {
 
     const [offererProxies, fulfillerProxy, offererNonces] = await Promise.all([
       Promise.all(
-        uniqueOfferers.map((offerer) =>
-          getProxy(offerer, {
-            legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-            multicallProvider: this.multicallProvider,
-          })
-        )
+        uniqueOfferers.map((offerer) => this._getLegacyConduitProxy(offerer))
       ),
-      getProxy(fulfillerAddress, {
-        legacyProxyRegistryAddress: this.legacyProxyRegistryAddress,
-        multicallProvider: this.multicallProvider,
-      }),
+      this._getLegacyConduitProxy(fulfillerAddress),
       Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
     ]);
 
@@ -764,30 +756,26 @@ export class Consideration {
     ] = await Promise.all([
       Promise.all(
         uniqueOfferers.map((offerer) =>
-          getBalancesAndApprovals(
-            offerer,
-            offererOrderMetadata[offerer].items,
-            offererOrderMetadata[offerer].criteria,
-            {
-              proxy: offererOrderMetadata[offerer].proxy,
-              considerationContract: this.contract,
-              multicallProvider: this.multicallProvider,
-            }
-          )
+          getBalancesAndApprovals({
+            owner: offerer,
+            items: offererOrderMetadata[offerer].items,
+            criterias: offererOrderMetadata[offerer].criteria,
+            proxy: offererOrderMetadata[offerer].proxy,
+            considerationContract: this.contract,
+            multicallProvider: this.multicallProvider,
+          })
         )
       ),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
-      getBalancesAndApprovals(
-        fulfillerAddress,
-        [...allOfferItems, ...allConsiderationItems],
-        [...allOfferCriteria, ...allConsiderationCriteria],
-        {
-          proxy: fulfillerProxy,
-          considerationContract: this.contract,
-          multicallProvider: this.multicallProvider,
-        }
-      ),
+      getBalancesAndApprovals({
+        owner: fulfillerAddress,
+        items: [...allOfferItems, ...allConsiderationItems],
+        criterias: [...allOfferCriteria, ...allConsiderationCriteria],
+        proxy: fulfillerProxy,
+        considerationContract: this.contract,
+        multicallProvider: this.multicallProvider,
+      }),
       this.multicallProvider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>

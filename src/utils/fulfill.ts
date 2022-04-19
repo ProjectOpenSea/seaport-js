@@ -238,34 +238,28 @@ export async function fulfillBasicOrder({
     (item) => item.itemType !== offer[0].itemType
   );
 
-  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
-    considerationWithoutOfferItemType,
-    {
-      criterias: [],
-      timeBasedItemParams: {
-        ...timeBasedItemParams,
-        isConsiderationItem: true,
-      },
-    }
-  )[ethers.constants.AddressZero]?.["0"];
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
+    items: considerationWithoutOfferItemType,
+    criterias: [],
+    timeBasedItemParams: {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    },
+  })[ethers.constants.AddressZero]?.["0"];
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-    validateBasicFulfillBalancesAndApprovals(
-      {
-        offer,
-        conduit: order.parameters.conduit,
-        consideration: considerationIncludingTips,
-      },
-      {
-        offererBalancesAndApprovals,
-        fulfillerBalancesAndApprovals,
-        timeBasedItemParams,
-        considerationContract,
-        offererProxy,
-        fulfillerProxy,
-        proxyStrategy,
-      }
-    );
+    validateBasicFulfillBalancesAndApprovals({
+      offer,
+      conduit: order.parameters.conduit,
+      consideration: considerationIncludingTips,
+      offererBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      timeBasedItemParams,
+      considerationContract,
+      offererProxy,
+      fulfillerProxy,
+      proxyStrategy,
+    });
 
   const useFulfillerProxy = useProxyFromApprovals({
     insufficientOwnerApprovals,
@@ -305,9 +299,7 @@ export async function fulfillBasicOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, {
-    signer,
-  });
+  const approvalActions = await getApprovalActions(approvalsToUse, signer);
 
   const exchangeAction = {
     type: "exchange",
@@ -382,16 +374,14 @@ export async function fulfillStandardOrder({
 
   const considerationIncludingTips = [...consideration, ...tips];
 
-  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
-    considerationIncludingTips,
-    {
-      criterias: considerationCriteria,
-      timeBasedItemParams: {
-        ...timeBasedItemParams,
-        isConsiderationItem: true,
-      },
-    }
-  )[ethers.constants.AddressZero]?.["0"];
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
+    items: considerationIncludingTips,
+    criterias: considerationCriteria,
+    timeBasedItemParams: {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    },
+  })[ethers.constants.AddressZero]?.["0"];
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
     validateStandardFulfillBalancesAndApprovals(
@@ -425,7 +415,7 @@ export async function fulfillStandardOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, { signer });
+  const approvalActions = await getApprovalActions(approvalsToUse, signer);
 
   const offerCriteriaItems = offer.filter(({ itemType }) =>
     isCriteriaItem(itemType)
@@ -488,7 +478,8 @@ export async function fulfillStandardOrder({
               extraData: extraData ?? "0x",
             },
             hasCriteriaItems
-              ? generateCriteriaResolvers([order], {
+              ? generateCriteriaResolvers({
+                  orders: [order],
                   offerCriterias: [offerCriteria],
                   considerationCriterias: [considerationCriteria],
                 })
@@ -513,13 +504,10 @@ export async function fulfillStandardOrder({
   };
 }
 
-export function validateAndSanitizeFromOrderStatus({
-  order,
-  orderStatus,
-}: {
-  order: Order;
-  orderStatus: OrderStatus;
-}): Order {
+export function validateAndSanitizeFromOrderStatus(
+  order: Order,
+  orderStatus: OrderStatus
+): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
   if (totalSize.gt(0) && totalFilled.div(totalSize).eq(1)) {
@@ -571,10 +559,10 @@ export async function fulfillAvailableOrders({
 }): Promise<OrderUseCase<ExchangeAction>> {
   const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
     ...orderMetadata,
-    order: validateAndSanitizeFromOrderStatus({
-      order: orderMetadata.order,
-      orderStatus: orderMetadata.orderStatus,
-    }),
+    order: validateAndSanitizeFromOrderStatus(
+      orderMetadata.order,
+      orderMetadata.orderStatus
+    ),
   }));
 
   const ordersMetadataWithAdjustedFills = sanitizedOrdersMetadata.map(
@@ -639,7 +627,8 @@ export async function fulfillAvailableOrders({
       };
 
       totalNativeAmount = totalNativeAmount.add(
-        getSummedTokenAndIdentifierAmounts(considerationIncludingTips, {
+        getSummedTokenAndIdentifierAmounts({
+          items: considerationIncludingTips,
           criterias: considerationCriteria,
           timeBasedItemParams,
         })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0)
@@ -705,7 +694,7 @@ export async function fulfillAvailableOrders({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, { signer });
+  const approvalActions = await getApprovalActions(approvalsToUse, signer);
 
   const advancedOrdersWithTips: AdvancedOrder[] = sanitizedOrdersMetadata.map(
     ({ order, unitsToFill = 0, tips, extraData }) => {
@@ -756,17 +745,15 @@ export async function fulfillAvailableOrders({
       [
         advancedOrdersWithTips,
         hasCriteriaItems
-          ? generateCriteriaResolvers(
-              ordersMetadata.map(({ order }) => order),
-              {
-                offerCriterias: ordersMetadata.map(
-                  ({ offerCriteria }) => offerCriteria
-                ),
-                considerationCriterias: ordersMetadata.map(
-                  ({ considerationCriteria }) => considerationCriteria
-                ),
-              }
-            )
+          ? generateCriteriaResolvers({
+              orders: ordersMetadata.map(({ order }) => order),
+              offerCriterias: ordersMetadata.map(
+                ({ offerCriteria }) => offerCriteria
+              ),
+              considerationCriterias: ordersMetadata.map(
+                ({ considerationCriteria }) => considerationCriteria
+              ),
+            })
           : [],
         offerFulfillments,
         considerationFulfillments,

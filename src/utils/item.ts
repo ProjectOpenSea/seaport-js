@@ -30,10 +30,13 @@ export type TimeBasedItemParams = {
   ascendingAmountTimestampBuffer: number;
 } & Pick<OrderParameters, "startTime" | "endTime">;
 
-export const getPresentItemAmount = (
-  { startAmount, endAmount }: Pick<Item, "startAmount" | "endAmount">,
-  timeBasedItemParams?: TimeBasedItemParams
-): BigNumber => {
+export const getPresentItemAmount = ({
+  startAmount,
+  endAmount,
+  timeBasedItemParams,
+}: Pick<Item, "startAmount" | "endAmount"> & {
+  timeBasedItemParams?: TimeBasedItemParams;
+}): BigNumber => {
   const startAmountBn = BigNumber.from(startAmount);
   const endAmountBn = BigNumber.from(endAmount);
 
@@ -79,16 +82,15 @@ export const getPresentItemAmount = (
     .div(duration);
 };
 
-export const getSummedTokenAndIdentifierAmounts = (
-  items: Item[],
-  {
-    criterias,
-    timeBasedItemParams,
-  }: {
-    criterias: InputCriteria[];
-    timeBasedItemParams?: TimeBasedItemParams;
-  }
-) => {
+export const getSummedTokenAndIdentifierAmounts = ({
+  items,
+  criterias,
+  timeBasedItemParams,
+}: {
+  items: Item[];
+  criterias: InputCriteria[];
+  timeBasedItemParams?: TimeBasedItemParams;
+}) => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
 
   const tokenAndIdentifierToSummedAmount = items.reduce<
@@ -105,13 +107,11 @@ export const getSummedTokenAndIdentifierAmounts = (
           (map[item.token]?.[identifierOrCriteria] as BigNumber | undefined) ??
           BigNumber.from(0)
         ).add(
-          getPresentItemAmount(
-            {
-              startAmount: item.startAmount,
-              endAmount: item.endAmount,
-            },
-            timeBasedItemParams
-          )
+          getPresentItemAmount({
+            startAmount: item.startAmount,
+            endAmount: item.endAmount,
+            timeBasedItemParams,
+          })
         ),
       },
     };
