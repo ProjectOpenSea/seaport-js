@@ -14,17 +14,25 @@ export const approvedItemAmount = async (
   owner: string,
   item: Item,
   operator: string,
-  provider: multicallProviders.MulticallProvider
+  multicallProvider: multicallProviders.MulticallProvider
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
+    const contract = new Contract(
+      item.token,
+      ERC721ABI,
+      multicallProvider
+    ) as ERC721;
     return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
       // Setting to the max int to consolidate types and simplify
       isApprovedForAll ? MAX_INT : BigNumber.from(0)
     );
   } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC20ABI, provider) as ERC20;
+    const contract = new Contract(
+      item.token,
+      ERC20ABI,
+      multicallProvider
+    ) as ERC20;
 
     return contract.allowance(owner, operator);
   }

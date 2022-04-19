@@ -96,7 +96,7 @@ export class Consideration {
     this.contract = new Contract(
       overrides?.contractAddress ?? "",
       ConsiderationABI,
-      provider.getSigner()
+      this.multicallProvider
     ) as ConsiderationContract;
 
     this.config = {
