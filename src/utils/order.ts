@@ -21,17 +21,6 @@ import { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { hashIdentifier } from "./criteria";
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 
-export const ORDER_OPTIONS_TO_ORDER_TYPE = {
-  FULL: {
-    OPEN: OrderType.FULL_OPEN,
-    RESTRICTED: OrderType.FULL_RESTRICTED,
-  },
-  PARTIAL: {
-    OPEN: OrderType.PARTIAL_OPEN,
-    RESTRICTED: OrderType.PARTIAL_RESTRICTED,
-  },
-} as const;
-
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: number) =>
   BigNumber.from(amount)
     .mul(BigNumber.from(basisPoints))

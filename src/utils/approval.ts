@@ -1,5 +1,5 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, Contract, Overrides, providers } from "ethers";
+import { BigNumber, Contract, providers } from "ethers";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
@@ -8,6 +8,7 @@ import type { ERC721 } from "../typechain/ERC721";
 import type { ApprovalAction, Item } from "../types";
 import type { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { isErc1155Item, isErc721Item } from "./item";
+import { getTransactionMethods } from "./usecase";
 
 export const approvedItemAmount = async (
   owner: string,
@@ -56,18 +57,11 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             operator,
-            transaction: {
-              transact: (overrides: Overrides = {}) =>
-                contract
-                  .connect(signer)
-                  .setApprovalForAll(operator, true, overrides),
-              buildTransaction: (overrides: Overrides = {}) =>
-                contract.populateTransaction.setApprovalForAll(
-                  operator,
-                  true,
-                  overrides
-                ),
-            },
+            transactionMethods: getTransactionMethods(
+              contract.connect(signer),
+              "setApprovalForAll",
+              [operator, true]
+            ),
           };
         } else {
           const contract = new Contract(token, ERC20ABI, signer) as ERC20;
@@ -77,16 +71,11 @@ export function getApprovalActions(
             token,
             identifierOrCriteria,
             itemType,
-            transaction: {
-              transact: (overrides: Overrides = {}) =>
-                contract.connect(signer).approve(operator, MAX_INT, overrides),
-              buildTransaction: (overrides: Overrides = {}) =>
-                contract.populateTransaction.approve(
-                  operator,
-                  MAX_INT,
-                  overrides
-                ),
-            },
+            transactionMethods: getTransactionMethods(
+              contract.connect(signer),
+              "approve",
+              [operator, MAX_INT]
+            ),
             operator,
           };
         }

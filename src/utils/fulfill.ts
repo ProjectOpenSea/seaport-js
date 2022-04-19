@@ -3,7 +3,6 @@ import {
   BigNumberish,
   ContractTransaction,
   ethers,
-  Overrides,
   providers,
 } from "ethers";
 import {
@@ -54,7 +53,7 @@ import {
   useOffererProxy,
   useProxyFromApprovals,
 } from "./order";
-import { executeAllActions } from "./usecase";
+import { executeAllActions, getTransactionMethods } from "./usecase";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -323,22 +322,11 @@ export async function fulfillBasicOrder({
 
   const exchangeAction = {
     type: "exchange",
-    transaction: {
-      transact: (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicOrder(basicOrderParameters, {
-            ...overrides,
-            ...payableOverrides,
-          }),
-      buildTransaction: (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .populateTransaction.fulfillBasicOrder(basicOrderParameters, {
-            ...overrides,
-            ...payableOverrides,
-          }),
-    },
+    transactionMethods: getTransactionMethods(
+      considerationContract.connect(signer),
+      "fulfillBasicOrder",
+      [basicOrderParameters, payableOverrides]
+    ),
   } as ExchangeAction;
 
   const actions = [...approvalActions, exchangeAction] as const;
@@ -499,55 +487,32 @@ export async function fulfillStandardOrder({
 
   const exchangeAction = {
     type: "exchange",
-    transaction: {
-      transact: (overrides: Overrides = {}) =>
-        useAdvanced
-          ? considerationContract.connect(signer).fulfillAdvancedOrder(
-              {
-                ...orderAccountingForTips,
-                numerator,
-                denominator,
-                extraData: extraData ?? "0x",
-              },
-              hasCriteriaItems
-                ? generateCriteriaResolvers([order], {
-                    offerCriterias: [offerCriteria],
-                    considerationCriterias: [considerationCriteria],
-                  })
-                : [],
-              fulfillerConduit,
-              { ...overrides, ...payableOverrides }
-            )
-          : considerationContract
-              .connect(signer)
-              .fulfillOrder(orderAccountingForTips, fulfillerConduit, {
-                ...overrides,
-                ...payableOverrides,
-              }),
-      buildTransaction: (overrides: Overrides = {}) =>
-        useAdvanced
-          ? considerationContract.populateTransaction.fulfillAdvancedOrder(
-              {
-                ...orderAccountingForTips,
-                numerator,
-                denominator,
-                extraData: extraData ?? "0x",
-              },
-              hasCriteriaItems
-                ? generateCriteriaResolvers([order], {
-                    offerCriterias: [offerCriteria],
-                    considerationCriterias: [considerationCriteria],
-                  })
-                : [],
-              fulfillerConduit,
-              { ...overrides, ...payableOverrides }
-            )
-          : considerationContract.populateTransaction.fulfillOrder(
-              orderAccountingForTips,
-              fulfillerConduit,
-              { ...overrides, ...payableOverrides }
-            ),
-    },
+    transactionMethods: useAdvanced
+      ? getTransactionMethods(
+          considerationContract.connect(signer),
+          "fulfillAdvancedOrder",
+          [
+            {
+              ...orderAccountingForTips,
+              numerator,
+              denominator,
+              extraData: extraData ?? "0x",
+            },
+            hasCriteriaItems
+              ? generateCriteriaResolvers([order], {
+                  offerCriterias: [offerCriteria],
+                  considerationCriterias: [considerationCriteria],
+                })
+              : [],
+            fulfillerConduit,
+            payableOverrides,
+          ]
+        )
+      : getTransactionMethods(
+          considerationContract.connect(signer),
+          "fulfillOrder",
+          [orderAccountingForTips, fulfillerConduit, payableOverrides]
+        ),
   } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;
@@ -796,52 +761,30 @@ export async function fulfillAvailableOrders({
     : NO_CONDUIT;
   const exchangeAction = {
     type: "exchange",
-    transaction: {
-      transact: (overrides: Overrides = {}) =>
-        considerationContract.connect(signer).fulfillAvailableAdvancedOrders(
-          advancedOrdersWithTips,
-          hasCriteriaItems
-            ? generateCriteriaResolvers(
-                ordersMetadata.map(({ order }) => order),
-                {
-                  offerCriterias: ordersMetadata.map(
-                    ({ offerCriteria }) => offerCriteria
-                  ),
-                  considerationCriterias: ordersMetadata.map(
-                    ({ considerationCriteria }) => considerationCriteria
-                  ),
-                }
-              )
-            : [],
-          offerFulfillments,
-          considerationFulfillments,
-          fulfillerConduit,
-          { ...overrides, ...payableOverrides }
-        ),
-      buildTransaction: (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .populateTransaction.fulfillAvailableAdvancedOrders(
-            advancedOrdersWithTips,
-            hasCriteriaItems
-              ? generateCriteriaResolvers(
-                  ordersMetadata.map(({ order }) => order),
-                  {
-                    offerCriterias: ordersMetadata.map(
-                      ({ offerCriteria }) => offerCriteria
-                    ),
-                    considerationCriterias: ordersMetadata.map(
-                      ({ considerationCriteria }) => considerationCriteria
-                    ),
-                  }
-                )
-              : [],
-            offerFulfillments,
-            considerationFulfillments,
-            fulfillerConduit,
-            { ...overrides, ...payableOverrides }
-          ),
-    },
+    transactionMethods: getTransactionMethods(
+      considerationContract.connect(signer),
+      "fulfillAvailableAdvancedOrders",
+      [
+        advancedOrdersWithTips,
+        hasCriteriaItems
+          ? generateCriteriaResolvers(
+              ordersMetadata.map(({ order }) => order),
+              {
+                offerCriterias: ordersMetadata.map(
+                  ({ offerCriteria }) => offerCriteria
+                ),
+                considerationCriterias: ordersMetadata.map(
+                  ({ considerationCriteria }) => considerationCriteria
+                ),
+              }
+            )
+          : [],
+        offerFulfillments,
+        considerationFulfillments,
+        fulfillerConduit,
+        payableOverrides,
+      ]
+    ),
   } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;

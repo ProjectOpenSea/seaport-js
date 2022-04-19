@@ -9,6 +9,7 @@ import {
   LEGACY_PROXY_CONDUIT,
   MAX_INT,
   NO_CONDUIT,
+  OrderType,
   ProxyStrategy,
 } from "./constants";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
@@ -52,7 +53,6 @@ import {
   feeToConsiderationItem,
   generateRandomSalt,
   mapInputItemToOfferItem,
-  ORDER_OPTIONS_TO_ORDER_TYPE,
   totalItemsAmount,
   useProxyFromApprovals,
 } from "./utils/order";
@@ -74,6 +74,10 @@ export class Consideration {
   private config: Required<Omit<ConsiderationConfig, "overrides">>;
   private legacyProxyRegistryAddress: string;
 
+  /**
+   * @param provider - The provider to use for web3-related calls
+   * @param considerationConfig - A config to provide flexibility in the usage of Consideration
+   */
   public constructor(
     provider: providers.JsonRpcProvider,
     {
@@ -104,24 +108,53 @@ export class Consideration {
       overrides?.legacyProxyRegistryAddress ?? "";
   }
 
+  /**
+   * Returns the corresponding order type based on whether it allows partial fills and is restricted by zone
+   *
+   * @param input
+   * @param input.allowPartialFills Whether or not the order can be partially filled
+   * @param input.restrictedByZone Whether or not the order can only be filled/cancelled by the zone
+   * @returns the order type
+   */
   private _getOrderTypeFromOrderOptions({
     allowPartialFills,
     restrictedByZone,
   }: Pick<CreateOrderInput, "allowPartialFills" | "restrictedByZone">) {
-    const fillsKey = allowPartialFills ? "PARTIAL" : "FULL";
-    const restrictedKey = restrictedByZone ? "RESTRICTED" : "OPEN";
+    if (allowPartialFills) {
+      return restrictedByZone
+        ? OrderType.PARTIAL_RESTRICTED
+        : OrderType.PARTIAL_OPEN;
+    }
 
-    const orderType = ORDER_OPTIONS_TO_ORDER_TYPE[fillsKey][restrictedKey];
-
-    return orderType;
+    return restrictedByZone ? OrderType.FULL_RESTRICTED : OrderType.FULL_OPEN;
   }
 
+  /**
+   * Returns a use case that will create an order.
+   * The use case will contain the list of actions necessary to finish creating an order.
+   * The list of actions will either be an approval if approvals are necessary
+   * or a signature request that will then be supplied into the final Order struct, ready to be fulfilled.
+   *
+   * @param input
+   * @param input.zone The zone of the order. Defaults to the zero address.
+   * @param input.startTime The start time of the order. Defaults to the current unix time.
+   * @param input.endTime The end time of the order. Defaults to "never end".
+   *                      It is HIGHLY recommended to pass in an explicit end time
+   * @param input.offer The items you are willing to offer. This is a condensed version of the Consideration struct OfferItem for convenience
+   * @param input.consideration The items that will go to their respective recipients upon receiving your offer.
+   * @param input.allowPartialFills Whether to allow the order to be partially filled
+   * @param input.restrictedByZone Whether the order should be restricted by zone
+   * @param input.fees Convenience array to apply fees onto the order. The fees will be deducted from the
+   *                   existing consideration items and then tacked on as new consideration items
+   * @param input.salt Random salt
+   * @param input.offerer The order's creator address. Defaults to the first address on the provider.
+   * @param accountAddress Optional address for which to create the order with
+   * @returns a use case containing the list of actions needed to be performed in order to create the order
+   */
   public async createOrder(
     {
       zone = ethers.constants.AddressZero,
-      // Default to current unix time.
       startTime = Math.floor(Date.now() / 1000).toString(),
-      // Defaulting to "never end". We HIGHLY recommend passing in an explicit end time
       endTime = MAX_INT.toString(),
       offer,
       consideration,
@@ -258,7 +291,7 @@ export class Consideration {
         const signature = await this.signOrder(
           orderParameters,
           resolvedNonce,
-          accountAddress
+          offerer
         );
 
         return {
@@ -278,6 +311,13 @@ export class Consideration {
     };
   }
 
+  /**
+   * Submits a request to your provider to sign the order. Signed orders are used for off-chain order books.
+   * @param orderParameters standard order parameter struct
+   * @param nonce nonce of the offerer
+   * @param accountAddress optional account address from which to sign the order with.
+   * @returns the order signature
+   */
   public async signOrder(
     orderParameters: OrderParameters,
     nonce: number,
@@ -308,6 +348,13 @@ export class Consideration {
     return ethers.utils.splitSignature(signature).compact;
   }
 
+  /**
+   * Cancels a list of orders so that they are no longer fulfillable.
+   *
+   * @param orders list of order components
+   * @param accountAddress optional account address from which to cancel the orders from.
+   * @returns
+   */
   public async cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string

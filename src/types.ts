@@ -6,7 +6,6 @@ import {
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType, ProxyStrategy } from "./constants";
-import { BalancesAndApprovals } from "./utils/balanceAndApprovalCheck";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
@@ -156,7 +155,9 @@ export type CreatedOrder = Order & {
   nonce: number;
 };
 
-export type Transaction = {
+export type TransactionMethods = {
+  callStatic: <T>(overrides?: Overrides) => Promise<T>;
+  estimateGas: (overrides?: Overrides) => Promise<BigNumber>;
   transact: (overrides?: Overrides) => Promise<ContractTransaction>;
   buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
 };
@@ -167,12 +168,12 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   operator: string;
-  transaction: Transaction;
+  transactionMethods: TransactionMethods;
 };
 
 export type ExchangeAction = {
   type: "exchange";
-  transaction: Transaction;
+  transactionMethods: TransactionMethods;
 };
 
 export type CreateOrderAction = {
