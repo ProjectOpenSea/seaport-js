@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { formatBytes32String } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { MAX_INT, NO_CONDUIT, OrderType } from "../constants";
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
+import { ConsiderationItem, OfferItem } from "../types";
 import { generateRandomSalt } from "../utils/order";
-import { constructCurrencyItem, constructNftItem } from "./utils/item";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to sign an order", (fixture) => {
@@ -14,25 +14,35 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     const startTime = 0;
     const endTime = MAX_INT;
     const salt = generateRandomSalt();
-    const nftId = 0;
+    const nftId = "0";
 
-    const offer = [
-      constructNftItem({
+    const offer: OfferItem[] = [
+      {
+        itemType: ItemType.ERC721,
         token: testErc721.address,
         identifierOrCriteria: nftId,
-        amount: 1,
-      }),
+        startAmount: "1",
+        endAmount: "1",
+      },
     ];
 
-    const considerationData = [
-      constructCurrencyItem({
-        amount: ethers.utils.parseEther("10"),
+    const considerationData: ConsiderationItem[] = [
+      {
+        itemType: ItemType.NATIVE,
+        token: ethers.constants.AddressZero,
+        startAmount: ethers.utils.parseEther("10").toString(),
+        endAmount: ethers.utils.parseEther("10").toString(),
         recipient: offerer.address,
-      }),
-      constructCurrencyItem({
-        amount: ethers.utils.parseEther("1"),
+        identifierOrCriteria: "0",
+      },
+      {
+        itemType: ItemType.NATIVE,
+        token: ethers.constants.AddressZero,
+        startAmount: ethers.utils.parseEther("1").toString(),
+        endAmount: ethers.utils.parseEther("1").toString(),
         recipient: zone.address,
-      }),
+        identifierOrCriteria: "0",
+      },
     ];
 
     const nonce = await considerationContract.getNonce(offerer.address);
