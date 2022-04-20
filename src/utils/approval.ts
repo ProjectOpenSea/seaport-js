@@ -1,28 +1,38 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, Contract, Overrides, providers } from "ethers";
+import { BigNumber, Contract, providers } from "ethers";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
-import type { ERC20, ERC721 } from "../typechain";
+import type { ERC20 } from "../typechain/ERC20";
+import type { ERC721 } from "../typechain/ERC721";
 import type { ApprovalAction, Item } from "../types";
 import type { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { isErc1155Item, isErc721Item } from "./item";
+import { getTransactionMethods } from "./usecase";
 
 export const approvedItemAmount = async (
   owner: string,
   item: Item,
   operator: string,
-  provider: multicallProviders.MulticallProvider
+  multicallProvider: multicallProviders.MulticallProvider
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-    const contract = new Contract(item.token, ERC721ABI, provider) as ERC721;
+    const contract = new Contract(
+      item.token,
+      ERC721ABI,
+      multicallProvider
+    ) as ERC721;
     return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
       // Setting to the max int to consolidate types and simplify
       isApprovedForAll ? MAX_INT : BigNumber.from(0)
     );
   } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(item.token, ERC20ABI, provider) as ERC20;
+    const contract = new Contract(
+      item.token,
+      ERC20ABI,
+      multicallProvider
+    ) as ERC20;
 
     return contract.allowance(owner, operator);
   }
@@ -36,11 +46,7 @@ export const approvedItemAmount = async (
  */
 export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
-  {
-    signer,
-  }: {
-    signer: providers.JsonRpcSigner;
-  }
+  signer: providers.JsonRpcSigner
 ): Promise<ApprovalAction[]> {
   return Promise.all(
     insufficientApprovals.map(
@@ -55,18 +61,11 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             operator,
-            transaction: {
-              transact: (overrides: Overrides = {}) =>
-                contract
-                  .connect(signer)
-                  .setApprovalForAll(operator, true, overrides),
-              buildTransaction: (overrides: Overrides = {}) =>
-                contract.populateTransaction.setApprovalForAll(
-                  operator,
-                  true,
-                  overrides
-                ),
-            },
+            transactionMethods: getTransactionMethods(
+              contract.connect(signer),
+              "setApprovalForAll",
+              [operator, true]
+            ),
           };
         } else {
           const contract = new Contract(token, ERC20ABI, signer) as ERC20;
@@ -76,16 +75,11 @@ export function getApprovalActions(
             token,
             identifierOrCriteria,
             itemType,
-            transaction: {
-              transact: (overrides: Overrides = {}) =>
-                contract.connect(signer).approve(operator, MAX_INT, overrides),
-              buildTransaction: (overrides: Overrides = {}) =>
-                contract.populateTransaction.approve(
-                  operator,
-                  MAX_INT,
-                  overrides
-                ),
-            },
+            transactionMethods: getTransactionMethods(
+              contract.connect(signer),
+              "approve",
+              [operator, MAX_INT]
+            ),
             operator,
           };
         }

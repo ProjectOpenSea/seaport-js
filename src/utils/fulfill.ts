@@ -3,7 +3,6 @@ import {
   BigNumberish,
   ContractTransaction,
   ethers,
-  Overrides,
   providers,
 } from "ethers";
 import {
@@ -54,7 +53,7 @@ import {
   useOffererProxy,
   useProxyFromApprovals,
 } from "./order";
-import { executeAllActions } from "./usecase";
+import { executeAllActions, getTransactionMethods } from "./usecase";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -188,17 +187,6 @@ const offerAndConsiderationFulfillmentMapping: {
   },
 } as const;
 
-/**
- * Executes one of the six basic fulfillment methods
- * 1. fulfillBasicEthForERC721Order
- * 2. fulfillBasicEthForERC1155Order
- * 3. fulfillBasicERC1155ForERC20Order
- * 4. fulfillBasicERC20ForERC1155Order
- * 5. fulfillBasicERC20ForERC721Order
- * 6. fulfillBasicERC721ForERC20Order
- * @param order - Standard order object
- * @param contract - Consideration ethers contract
- */
 export async function fulfillBasicOrder({
   order,
   considerationContract,
@@ -250,34 +238,28 @@ export async function fulfillBasicOrder({
     (item) => item.itemType !== offer[0].itemType
   );
 
-  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
-    considerationWithoutOfferItemType,
-    {
-      criterias: [],
-      timeBasedItemParams: {
-        ...timeBasedItemParams,
-        isConsiderationItem: true,
-      },
-    }
-  )[ethers.constants.AddressZero]?.["0"];
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
+    items: considerationWithoutOfferItemType,
+    criterias: [],
+    timeBasedItemParams: {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    },
+  })[ethers.constants.AddressZero]?.["0"];
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-    validateBasicFulfillBalancesAndApprovals(
-      {
-        offer,
-        conduit: order.parameters.conduit,
-        consideration: considerationIncludingTips,
-      },
-      {
-        offererBalancesAndApprovals,
-        fulfillerBalancesAndApprovals,
-        timeBasedItemParams,
-        considerationContract,
-        offererProxy,
-        fulfillerProxy,
-        proxyStrategy,
-      }
-    );
+    validateBasicFulfillBalancesAndApprovals({
+      offer,
+      conduit: order.parameters.conduit,
+      consideration: considerationIncludingTips,
+      offererBalancesAndApprovals,
+      fulfillerBalancesAndApprovals,
+      timeBasedItemParams,
+      considerationContract,
+      offererProxy,
+      fulfillerProxy,
+      proxyStrategy,
+    });
 
   const useFulfillerProxy = useProxyFromApprovals({
     insufficientOwnerApprovals,
@@ -317,28 +299,15 @@ export async function fulfillBasicOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, {
-    signer,
-  });
+  const approvalActions = await getApprovalActions(approvalsToUse, signer);
 
   const exchangeAction = {
     type: "exchange",
-    transaction: {
-      transact: (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .fulfillBasicOrder(basicOrderParameters, {
-            ...overrides,
-            ...payableOverrides,
-          }),
-      buildTransaction: (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .populateTransaction.fulfillBasicOrder(basicOrderParameters, {
-            ...overrides,
-            ...payableOverrides,
-          }),
-    },
+    transactionMethods: getTransactionMethods(
+      considerationContract.connect(signer),
+      "fulfillBasicOrder",
+      [basicOrderParameters, payableOverrides]
+    ),
   } as ExchangeAction;
 
   const actions = [...approvalActions, exchangeAction] as const;
@@ -405,16 +374,14 @@ export async function fulfillStandardOrder({
 
   const considerationIncludingTips = [...consideration, ...tips];
 
-  const totalNativeAmount = getSummedTokenAndIdentifierAmounts(
-    considerationIncludingTips,
-    {
-      criterias: considerationCriteria,
-      timeBasedItemParams: {
-        ...timeBasedItemParams,
-        isConsiderationItem: true,
-      },
-    }
-  )[ethers.constants.AddressZero]?.["0"];
+  const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
+    items: considerationIncludingTips,
+    criterias: considerationCriteria,
+    timeBasedItemParams: {
+      ...timeBasedItemParams,
+      isConsiderationItem: true,
+    },
+  })[ethers.constants.AddressZero]?.["0"];
 
   const { insufficientOwnerApprovals, insufficientProxyApprovals } =
     validateStandardFulfillBalancesAndApprovals(
@@ -448,7 +415,7 @@ export async function fulfillStandardOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, { signer });
+  const approvalActions = await getApprovalActions(approvalsToUse, signer);
 
   const offerCriteriaItems = offer.filter(({ itemType }) =>
     isCriteriaItem(itemType)
@@ -499,55 +466,33 @@ export async function fulfillStandardOrder({
 
   const exchangeAction = {
     type: "exchange",
-    transaction: {
-      transact: (overrides: Overrides = {}) =>
-        useAdvanced
-          ? considerationContract.connect(signer).fulfillAdvancedOrder(
-              {
-                ...orderAccountingForTips,
-                numerator,
-                denominator,
-                extraData: extraData ?? "0x",
-              },
-              hasCriteriaItems
-                ? generateCriteriaResolvers([order], {
-                    offerCriterias: [offerCriteria],
-                    considerationCriterias: [considerationCriteria],
-                  })
-                : [],
-              fulfillerConduit,
-              { ...overrides, ...payableOverrides }
-            )
-          : considerationContract
-              .connect(signer)
-              .fulfillOrder(orderAccountingForTips, fulfillerConduit, {
-                ...overrides,
-                ...payableOverrides,
-              }),
-      buildTransaction: (overrides: Overrides = {}) =>
-        useAdvanced
-          ? considerationContract.populateTransaction.fulfillAdvancedOrder(
-              {
-                ...orderAccountingForTips,
-                numerator,
-                denominator,
-                extraData: extraData ?? "0x",
-              },
-              hasCriteriaItems
-                ? generateCriteriaResolvers([order], {
-                    offerCriterias: [offerCriteria],
-                    considerationCriterias: [considerationCriteria],
-                  })
-                : [],
-              fulfillerConduit,
-              { ...overrides, ...payableOverrides }
-            )
-          : considerationContract.populateTransaction.fulfillOrder(
-              orderAccountingForTips,
-              fulfillerConduit,
-              { ...overrides, ...payableOverrides }
-            ),
-    },
+    transactionMethods: useAdvanced
+      ? getTransactionMethods(
+          considerationContract.connect(signer),
+          "fulfillAdvancedOrder",
+          [
+            {
+              ...orderAccountingForTips,
+              numerator,
+              denominator,
+              extraData: extraData ?? "0x",
+            },
+            hasCriteriaItems
+              ? generateCriteriaResolvers({
+                  orders: [order],
+                  offerCriterias: [offerCriteria],
+                  considerationCriterias: [considerationCriteria],
+                })
+              : [],
+            fulfillerConduit,
+            payableOverrides,
+          ]
+        )
+      : getTransactionMethods(
+          considerationContract.connect(signer),
+          "fulfillOrder",
+          [orderAccountingForTips, fulfillerConduit, payableOverrides]
+        ),
   } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;
@@ -559,13 +504,10 @@ export async function fulfillStandardOrder({
   };
 }
 
-export function validateAndSanitizeFromOrderStatus({
-  order,
-  orderStatus,
-}: {
-  order: Order;
-  orderStatus: OrderStatus;
-}): Order {
+export function validateAndSanitizeFromOrderStatus(
+  order: Order,
+  orderStatus: OrderStatus
+): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
   if (totalSize.gt(0) && totalFilled.div(totalSize).eq(1)) {
@@ -617,10 +559,10 @@ export async function fulfillAvailableOrders({
 }): Promise<OrderUseCase<ExchangeAction>> {
   const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
     ...orderMetadata,
-    order: validateAndSanitizeFromOrderStatus({
-      order: orderMetadata.order,
-      orderStatus: orderMetadata.orderStatus,
-    }),
+    order: validateAndSanitizeFromOrderStatus(
+      orderMetadata.order,
+      orderMetadata.orderStatus
+    ),
   }));
 
   const ordersMetadataWithAdjustedFills = sanitizedOrdersMetadata.map(
@@ -685,7 +627,8 @@ export async function fulfillAvailableOrders({
       };
 
       totalNativeAmount = totalNativeAmount.add(
-        getSummedTokenAndIdentifierAmounts(considerationIncludingTips, {
+        getSummedTokenAndIdentifierAmounts({
+          items: considerationIncludingTips,
           criterias: considerationCriteria,
           timeBasedItemParams,
         })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0)
@@ -751,7 +694,7 @@ export async function fulfillAvailableOrders({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, { signer });
+  const approvalActions = await getApprovalActions(approvalsToUse, signer);
 
   const advancedOrdersWithTips: AdvancedOrder[] = sanitizedOrdersMetadata.map(
     ({ order, unitsToFill = 0, tips, extraData }) => {
@@ -796,52 +739,28 @@ export async function fulfillAvailableOrders({
     : NO_CONDUIT;
   const exchangeAction = {
     type: "exchange",
-    transaction: {
-      transact: (overrides: Overrides = {}) =>
-        considerationContract.connect(signer).fulfillAvailableAdvancedOrders(
-          advancedOrdersWithTips,
-          hasCriteriaItems
-            ? generateCriteriaResolvers(
-                ordersMetadata.map(({ order }) => order),
-                {
-                  offerCriterias: ordersMetadata.map(
-                    ({ offerCriteria }) => offerCriteria
-                  ),
-                  considerationCriterias: ordersMetadata.map(
-                    ({ considerationCriteria }) => considerationCriteria
-                  ),
-                }
-              )
-            : [],
-          offerFulfillments,
-          considerationFulfillments,
-          fulfillerConduit,
-          { ...overrides, ...payableOverrides }
-        ),
-      buildTransaction: (overrides: Overrides = {}) =>
-        considerationContract
-          .connect(signer)
-          .populateTransaction.fulfillAvailableAdvancedOrders(
-            advancedOrdersWithTips,
-            hasCriteriaItems
-              ? generateCriteriaResolvers(
-                  ordersMetadata.map(({ order }) => order),
-                  {
-                    offerCriterias: ordersMetadata.map(
-                      ({ offerCriteria }) => offerCriteria
-                    ),
-                    considerationCriterias: ordersMetadata.map(
-                      ({ considerationCriteria }) => considerationCriteria
-                    ),
-                  }
-                )
-              : [],
-            offerFulfillments,
-            considerationFulfillments,
-            fulfillerConduit,
-            { ...overrides, ...payableOverrides }
-          ),
-    },
+    transactionMethods: getTransactionMethods(
+      considerationContract.connect(signer),
+      "fulfillAvailableAdvancedOrders",
+      [
+        advancedOrdersWithTips,
+        hasCriteriaItems
+          ? generateCriteriaResolvers({
+              orders: ordersMetadata.map(({ order }) => order),
+              offerCriterias: ordersMetadata.map(
+                ({ offerCriteria }) => offerCriteria
+              ),
+              considerationCriterias: ordersMetadata.map(
+                ({ considerationCriteria }) => considerationCriteria
+              ),
+            })
+          : [],
+        offerFulfillments,
+        considerationFulfillments,
+        fulfillerConduit,
+        payableOverrides,
+      ]
+    ),
   } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;

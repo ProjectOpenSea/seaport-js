@@ -120,10 +120,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(action).to.deep.equal({
           type: "exchange",
-          transaction: action.transaction,
+          transactionMethods: action.transactionMethods,
         });
 
-        const transaction = await action.transaction.transact();
+        const transaction = await action.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -208,11 +208,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           token: testErc20.address,
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await testErc20.allowance(
@@ -225,10 +225,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -331,10 +331,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(action).to.deep.equal({
           type: "exchange",
-          transaction: action.transaction,
+          transactionMethods: action.transactionMethods,
         });
 
-        const transaction = await action.transaction.transact();
+        const transaction = await action.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -418,11 +418,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           token: testErc20.address,
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await testErc20.allowance(
@@ -435,10 +435,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -545,10 +545,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(action).to.deep.equal({
           type: "exchange",
-          transaction: action.transaction,
+          transactionMethods: action.transactionMethods,
         });
 
-        const transaction = await action.transaction.transact();
+        const transaction = await action.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -643,11 +643,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           token: testErc20.address,
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await testErc20.allowance(
@@ -660,10 +660,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -778,10 +778,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(action).to.deep.equal({
           type: "exchange",
-          transaction: action.transaction,
+          transactionMethods: action.transactionMethods,
         });
 
-        const transaction = await action.transaction.transact();
+        const transaction = await action.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 
@@ -875,11 +875,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           token: testErc20.address,
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await testErc20.allowance(
@@ -892,10 +892,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(fulfillAction).to.be.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
 
         const receipt = await transaction.wait();
 

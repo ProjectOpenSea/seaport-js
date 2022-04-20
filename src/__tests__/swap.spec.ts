@@ -105,11 +105,11 @@ describeWithFixture(
           token: testErc721.address,
           identifierOrCriteria: nftId2,
           itemType: ItemType.ERC721,
-          transaction: createApprovalAction.transaction,
+          transactionMethods: createApprovalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await createApprovalAction.transaction.transact();
+        await createApprovalAction.transactionMethods.transact();
 
         const createOrderAction = createActions[1] as CreateOrderAction;
 
@@ -136,11 +136,11 @@ describeWithFixture(
           token: secondTestErc721.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await secondTestErc721.isApprovedForAll(
@@ -153,10 +153,10 @@ describeWithFixture(
 
         expect(fulfillAction).to.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
         const receipt = await transaction.wait();
 
         await verifyBalancesAfterFulfill({
@@ -242,11 +242,11 @@ describeWithFixture(
           token: testErc1155.address,
           identifierOrCriteria: nftId2,
           itemType: ItemType.ERC1155,
-          transaction: createApprovalAction.transaction,
+          transactionMethods: createApprovalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await createApprovalAction.transaction.transact();
+        await createApprovalAction.transactionMethods.transact();
 
         const createOrderAction = createActions[1] as CreateOrderAction;
 
@@ -273,11 +273,11 @@ describeWithFixture(
           token: secondTestErc1155.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC1155,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await secondTestErc1155.isApprovedForAll(
@@ -290,10 +290,10 @@ describeWithFixture(
 
         expect(fulfillAction).to.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
         const receipt = await transaction.wait();
 
         await verifyBalancesAfterFulfill({
@@ -384,11 +384,11 @@ describeWithFixture(
           token: testErc721.address,
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
-          transaction: createApprovalAction.transaction,
+          transactionMethods: createApprovalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await createApprovalAction.transaction.transact();
+        await createApprovalAction.transactionMethods.transact();
 
         const createErc20ApprovalAction = createActions[1] as ApprovalAction;
 
@@ -397,11 +397,11 @@ describeWithFixture(
           token: testErc20.address,
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
-          transaction: createErc20ApprovalAction.transaction,
+          transactionMethods: createErc20ApprovalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await createErc20ApprovalAction.transaction.transact();
+        await createErc20ApprovalAction.transactionMethods.transact();
 
         const createOrderAction = createActions[2] as CreateOrderAction;
 
@@ -428,11 +428,11 @@ describeWithFixture(
           token: testErc721.address,
           identifierOrCriteria: nftId2,
           itemType: ItemType.ERC721,
-          transaction: approvalAction.transaction,
+          transactionMethods: approvalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await approvalAction.transaction.transact();
+        await approvalAction.transactionMethods.transact();
 
         expect(
           await testErc721.isApprovedForAll(
@@ -448,11 +448,11 @@ describeWithFixture(
           token: testErc20.address,
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
-          transaction: secondApprovalAction.transaction,
+          transactionMethods: secondApprovalAction.transactionMethods,
           operator: consideration.contract.address,
         });
 
-        await secondApprovalAction.transaction.transact();
+        await secondApprovalAction.transactionMethods.transact();
 
         expect(
           await testErc20.allowance(
@@ -465,10 +465,10 @@ describeWithFixture(
 
         expect(fulfillAction).to.deep.equal({
           type: "exchange",
-          transaction: fulfillAction.transaction,
+          transactionMethods: fulfillAction.transactionMethods,
         });
 
-        const transaction = await fulfillAction.transaction.transact();
+        const transaction = await fulfillAction.transactionMethods.transact();
         const receipt = await transaction.wait();
 
         await verifyBalancesAfterFulfill({
