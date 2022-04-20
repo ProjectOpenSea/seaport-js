@@ -156,10 +156,10 @@ export type CreatedOrder = Order & {
 };
 
 export type TransactionMethods = {
+  buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
   callStatic: <T>(overrides?: Overrides) => Promise<T>;
   estimateGas: (overrides?: Overrides) => Promise<BigNumber>;
   transact: (overrides?: Overrides) => Promise<ContractTransaction>;
-  buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
 };
 
 export type ApprovalAction = {

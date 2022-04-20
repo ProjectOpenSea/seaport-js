@@ -155,6 +155,7 @@ export class Consideration {
    *                      It is HIGHLY recommended to pass in an explicit end time
    * @param input.offer The items you are willing to offer. This is a condensed version of the Consideration struct OfferItem for convenience
    * @param input.consideration The items that will go to their respective recipients upon receiving your offer.
+   * @param input.nonce The nonce from which to create the order with. Automatically fetched from the contract if not provided
    * @param input.allowPartialFills Whether to allow the order to be partially filled
    * @param input.restrictedByZone Whether the order should be restricted by zone
    * @param input.fees Convenience array to apply fees onto the order. The fees will be deducted from the
@@ -188,6 +189,17 @@ export class Consideration {
         recipient: consideration.recipient ?? offerer,
       })),
     ];
+
+    if (
+      !areAllCurrenciesSame({
+        offer: offerItems,
+        consideration: considerationItems,
+      })
+    ) {
+      throw new Error(
+        "All currency tokens in the order must be the same token"
+      );
+    }
 
     const currencies = [...offerItems, ...considerationItems].filter(
       isCurrencyItem
@@ -265,17 +277,6 @@ export class Consideration {
 
     const checkBalancesAndApprovals =
       this.config.balanceAndApprovalChecksOnOrderCreation;
-
-    if (
-      !areAllCurrenciesSame({
-        offer: offerItems,
-        consideration: considerationItemsWithFees,
-      })
-    ) {
-      throw new Error(
-        "All currency tokens in the order must be the same token"
-      );
-    }
 
     const insufficientApprovals = validateOfferBalancesAndApprovals({
       offer: offerItems,
@@ -559,7 +560,7 @@ export class Consideration {
     offerCriteria = [],
     considerationCriteria = [],
     tips = [],
-    extraData,
+    extraData = "0x",
     accountAddress,
   }: {
     order: Order;

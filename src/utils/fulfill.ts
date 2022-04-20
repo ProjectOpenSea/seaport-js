@@ -41,6 +41,7 @@ import {
   getMaximumSizeForOrder,
   getSummedTokenAndIdentifierAmounts,
   isCriteriaItem,
+  isCurrencyItem,
   isErc721Item,
   isNativeCurrencyItem,
   TimeBasedItemParams,
@@ -92,9 +93,7 @@ export const shouldUseBasicFulfill = (
   );
 
   const nftsWithCriteria = allItems.filter(({ itemType }) =>
-    [ItemType.ERC721_WITH_CRITERIA, ItemType.ERC1155_WITH_CRITERIA].includes(
-      itemType
-    )
+    isCriteriaItem(itemType)
   );
 
   const offersNativeCurrency = isNativeCurrencyItem(offer[0]);
@@ -145,9 +144,7 @@ export const shouldUseBasicFulfill = (
     return false;
   }
 
-  const currencies = allItems.filter(({ itemType }) =>
-    [ItemType.NATIVE, ItemType.ERC20].includes(itemType)
-  );
+  const currencies = allItems.filter(isCurrencyItem);
 
   //  9. The token on native currency items needs to be set to the null address and the identifier on
   //  currencies needs to be zero, and the amounts on the 721 item need to be 1
