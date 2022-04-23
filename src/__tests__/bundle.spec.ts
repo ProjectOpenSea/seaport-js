@@ -283,7 +283,7 @@ describeWithFixture(
           };
         });
 
-        it("ERC20 <=> ERC721", async () => {
+        it.only("ERC20 <=> ERC721", async () => {
           const { consideration, testErc721, testErc20 } = fixture;
 
           const { executeAllActions } = await consideration.createOrder(
