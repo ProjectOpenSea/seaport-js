@@ -371,6 +371,26 @@ export async function fulfillStandardOrder({
 
   const considerationIncludingTips = [...consideration, ...tips];
 
+  const offerCriteriaItems = offer.filter(({ itemType }) =>
+    isCriteriaItem(itemType)
+  );
+
+  const considerationCriteriaItems = considerationIncludingTips.filter(
+    ({ itemType }) => isCriteriaItem(itemType)
+  );
+
+  const hasCriteriaItems =
+    offerCriteriaItems.length > 0 || considerationCriteriaItems.length > 0;
+
+  if (
+    offerCriteriaItems.length !== offerCriteria.length ||
+    considerationCriteriaItems.length !== considerationCriteria.length
+  ) {
+    throw new Error(
+      "You must supply the appropriate criterias for criteria based items"
+    );
+  }
+
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
     items: considerationIncludingTips,
     criterias: considerationCriteria,
@@ -413,26 +433,6 @@ export async function fulfillStandardOrder({
   const payableOverrides = { value: totalNativeAmount };
 
   const approvalActions = await getApprovalActions(approvalsToUse, signer);
-
-  const offerCriteriaItems = offer.filter(({ itemType }) =>
-    isCriteriaItem(itemType)
-  );
-
-  const considerationCriteriaItems = considerationIncludingTips.filter(
-    ({ itemType }) => isCriteriaItem(itemType)
-  );
-
-  const hasCriteriaItems =
-    offerCriteriaItems.length > 0 || considerationCriteriaItems.length > 0;
-
-  if (
-    offerCriteriaItems.length !== offerCriteria.length ||
-    considerationCriteriaItems.length !== considerationCriteria.length
-  ) {
-    throw new Error(
-      "You must supply the appropriate criterias for criteria based items"
-    );
-  }
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems;
 
