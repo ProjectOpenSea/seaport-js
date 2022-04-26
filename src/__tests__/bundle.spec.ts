@@ -9,7 +9,6 @@ import { ItemType, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -63,9 +62,6 @@ describeWithFixture(
           await secondTestErc721.mint(offerer.address, nftId);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -249,9 +245,6 @@ describeWithFixture(
           await testErc20.mint(offerer.address, parseEther("10").toString());
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -410,9 +403,6 @@ describeWithFixture(
           await testErc1155.mint(offerer.address, nftId, erc1155Amount);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -604,9 +594,6 @@ describeWithFixture(
           await testErc20.mint(offerer.address, parseEther("10").toString());
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -792,9 +779,6 @@ describeWithFixture(
           await secondTestErc1155.mint(offerer.address, nftId, erc1155Amount);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -980,9 +964,6 @@ describeWithFixture(
           await testErc20.mint(offerer.address, parseEther("10").toString());
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),

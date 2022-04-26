@@ -10,7 +10,6 @@ import {
   ItemType,
   LEGACY_PROXY_CONDUIT,
   NO_CONDUIT,
-  ProxyStrategy,
 } from "../constants";
 import type {
   BasicOrderParametersStruct,
@@ -20,6 +19,7 @@ import type {
 } from "../typechain/Consideration";
 import type {
   AdvancedOrder,
+  ApprovalOperators,
   ConsiderationItem,
   ExchangeAction,
   InputCriteria,
@@ -42,6 +42,7 @@ import {
   getSummedTokenAndIdentifierAmounts,
   isCriteriaItem,
   isCurrencyItem,
+  isErc20Item,
   isErc721Item,
   isNativeCurrencyItem,
   TimeBasedItemParams,
@@ -52,7 +53,6 @@ import {
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
   useOffererProxy,
-  useProxyFromApprovals,
 } from "./order";
 import { executeAllActions, getTransactionMethods } from "./usecase";
 
@@ -190,22 +190,22 @@ export async function fulfillBasicOrder({
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
   timeBasedItemParams,
-  offererProxy,
-  fulfillerProxy,
-  proxyStrategy,
+  offererOperators,
+  fulfillerOperators,
   signer,
   tips = [],
+  conduit,
 }: {
   order: Order;
   considerationContract: Consideration;
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   timeBasedItemParams: TimeBasedItemParams;
-  offererProxy: string;
-  fulfillerProxy: string;
-  proxyStrategy: ProxyStrategy;
+  offererOperators: ApprovalOperators;
+  fulfillerOperators: ApprovalOperators;
   signer: providers.JsonRpcSigner;
   tips?: ConsiderationItem[];
+  conduit: string;
 }): Promise<OrderUseCase<ExchangeAction>> {
   const { offer, consideration } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
@@ -244,29 +244,17 @@ export async function fulfillBasicOrder({
     },
   })[ethers.constants.AddressZero]?.["0"];
 
-  const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-    validateBasicFulfillBalancesAndApprovals({
-      offer,
-      conduit: order.parameters.conduit,
-      consideration: considerationIncludingTips,
-      offererBalancesAndApprovals,
-      fulfillerBalancesAndApprovals,
-      timeBasedItemParams,
-      considerationContract,
-      offererProxy,
-      fulfillerProxy,
-      proxyStrategy,
-    });
-
-  const useFulfillerProxy = useProxyFromApprovals({
-    insufficientOwnerApprovals,
-    insufficientProxyApprovals,
-    proxyStrategy,
+  const insufficientApprovals = validateBasicFulfillBalancesAndApprovals({
+    offer,
+    consideration: considerationIncludingTips,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    offererOperators,
+    fulfillerOperators,
   });
 
-  const approvalsToUse = useFulfillerProxy
-    ? insufficientProxyApprovals
-    : insufficientOwnerApprovals;
+  const useFulfillerProxy = conduit === LEGACY_PROXY_CONDUIT;
 
   const basicOrderParameters: BasicOrderParametersStruct = {
     offerer: order.parameters.offerer,
@@ -296,7 +284,10 @@ export async function fulfillBasicOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, signer);
+  const approvalActions = await getApprovalActions(
+    insufficientApprovals,
+    signer
+  );
 
   const exchangeAction = {
     type: "exchange",
@@ -328,10 +319,10 @@ export async function fulfillStandardOrder({
   considerationContract,
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
+  offererOperators,
+  fulfillerOperators,
   timeBasedItemParams,
-  offererProxy,
-  fulfillerProxy,
-  proxyStrategy,
+  conduit,
   signer,
 }: {
   order: Order;
@@ -345,10 +336,10 @@ export async function fulfillStandardOrder({
   considerationContract: Consideration;
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  offererOperators: ApprovalOperators;
+  fulfillerOperators: ApprovalOperators;
+  conduit: string;
   timeBasedItemParams: TimeBasedItemParams;
-  offererProxy: string;
-  fulfillerProxy: string;
-  proxyStrategy: ProxyStrategy;
   signer: providers.JsonRpcSigner;
 }): Promise<OrderUseCase<ExchangeAction>> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
@@ -366,7 +357,7 @@ export async function fulfillStandardOrder({
       });
 
   const {
-    parameters: { offer, consideration, conduit },
+    parameters: { offer, consideration },
   } = orderWithAdjustedFills;
 
   const considerationIncludingTips = [...consideration, ...tips];
@@ -400,53 +391,26 @@ export async function fulfillStandardOrder({
     },
   })[ethers.constants.AddressZero]?.["0"];
 
-  const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-    validateStandardFulfillBalancesAndApprovals(
-      {
-        offer,
-        conduit,
-        consideration: considerationIncludingTips,
-        offerCriteria,
-        considerationCriteria,
-      },
-      {
-        offererBalancesAndApprovals,
-        fulfillerBalancesAndApprovals,
-        timeBasedItemParams,
-        considerationContract,
-        offererProxy,
-        fulfillerProxy,
-        proxyStrategy,
-      }
-    );
-
-  const useProxyForFulfiller = useProxyFromApprovals({
-    insufficientOwnerApprovals,
-    insufficientProxyApprovals,
-    proxyStrategy,
+  const insufficientApprovals = validateStandardFulfillBalancesAndApprovals({
+    offer,
+    consideration: considerationIncludingTips,
+    offerCriteria,
+    considerationCriteria,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    offererOperators,
+    fulfillerOperators,
   });
-
-  const approvalsToUse = useProxyForFulfiller
-    ? insufficientProxyApprovals
-    : insufficientOwnerApprovals;
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, signer);
+  const approvalActions = await getApprovalActions(
+    insufficientApprovals,
+    signer
+  );
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems;
-
-  // Used for advanced order cases
-  const maxUnits = getMaximumSizeForOrder(order);
-  const unitsToFillBn = BigNumber.from(unitsToFill);
-
-  // Reduce the numerator/denominator as optimization
-  const unitsGcd = gcd(unitsToFillBn, maxUnits);
-
-  const numerator = unitsToFill
-    ? unitsToFillBn.div(unitsGcd)
-    : BigNumber.from(1);
-  const denominator = unitsToFill ? maxUnits.div(unitsGcd) : BigNumber.from(1);
 
   const orderAccountingForTips: OrderStruct = {
     ...order,
@@ -457,9 +421,10 @@ export async function fulfillStandardOrder({
     },
   };
 
-  const fulfillerConduit = useProxyForFulfiller
-    ? LEGACY_PROXY_CONDUIT
-    : NO_CONDUIT;
+  const { numerator, denominator } = getAdvancedOrderNumeratorDenominator(
+    order,
+    unitsToFill
+  );
 
   const exchangeAction = {
     type: "exchange",
@@ -481,14 +446,14 @@ export async function fulfillStandardOrder({
                   considerationCriterias: [considerationCriteria],
                 })
               : [],
-            fulfillerConduit,
+            conduit,
             payableOverrides,
           ]
         )
       : getTransactionMethods(
           considerationContract.connect(signer),
           "fulfillOrder",
-          [orderAccountingForTips, fulfillerConduit, payableOverrides]
+          [orderAccountingForTips, conduit, payableOverrides]
         ),
   } as const;
 
@@ -532,26 +497,26 @@ export type FulfillOrdersMetadata = {
   tips: ConsiderationItem[];
   extraData: string;
   offererBalancesAndApprovals: BalancesAndApprovals;
-  offererProxy: string;
+  offererOperators: ApprovalOperators;
 }[];
 
 export async function fulfillAvailableOrders({
   ordersMetadata,
   considerationContract,
   fulfillerBalancesAndApprovals,
+  fulfillerOperators,
   currentBlockTimestamp,
   ascendingAmountTimestampBuffer,
-  fulfillerProxy,
-  proxyStrategy,
+  conduit,
   signer,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
   considerationContract: Consideration;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
+  fulfillerOperators: ApprovalOperators;
   currentBlockTimestamp: number;
   ascendingAmountTimestampBuffer: number;
-  fulfillerProxy: string;
-  proxyStrategy: ProxyStrategy;
+  conduit: string;
   signer: providers.JsonRpcSigner;
 }): Promise<OrderUseCase<ExchangeAction>> {
   const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
@@ -582,12 +547,10 @@ export async function fulfillAvailableOrders({
   );
 
   let totalNativeAmount = BigNumber.from(0);
-  const totalInsufficientOwnerApprovals: InsufficientApprovals = [];
-  const totalInsufficientProxyApprovals: InsufficientApprovals = [];
+  const totalInsufficientApprovals: InsufficientApprovals = [];
   const hasCriteriaItems = false;
 
   const addApprovalIfNeeded = (
-    totalInsufficientApprovals: InsufficientApprovals,
     orderInsufficientApprovals: InsufficientApprovals
   ) => {
     orderInsufficientApprovals.forEach((insufficientApproval) => {
@@ -608,7 +571,7 @@ export async function fulfillAvailableOrders({
       offerCriteria,
       considerationCriteria,
       offererBalancesAndApprovals,
-      offererProxy,
+      offererOperators,
     }) => {
       const considerationIncludingTips = [
         ...order.parameters.consideration,
@@ -631,25 +594,19 @@ export async function fulfillAvailableOrders({
         })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0)
       );
 
-      const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-        validateStandardFulfillBalancesAndApprovals(
-          {
-            offer: order.parameters.offer,
-            conduit: order.parameters.conduit,
-            consideration: considerationIncludingTips,
-            offerCriteria,
-            considerationCriteria,
-          },
-          {
-            offererBalancesAndApprovals,
-            fulfillerBalancesAndApprovals,
-            timeBasedItemParams,
-            considerationContract,
-            offererProxy,
-            fulfillerProxy,
-            proxyStrategy,
-          }
-        );
+      const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
+        {
+          offer: order.parameters.offer,
+          consideration: considerationIncludingTips,
+          offerCriteria,
+          considerationCriteria,
+          offererBalancesAndApprovals,
+          fulfillerBalancesAndApprovals,
+          timeBasedItemParams,
+          offererOperators,
+          fulfillerOperators,
+        }
+      );
 
       const offerCriteriaItems = order.parameters.offer.filter(({ itemType }) =>
         isCriteriaItem(itemType)
@@ -668,46 +625,23 @@ export async function fulfillAvailableOrders({
         );
       }
 
-      addApprovalIfNeeded(
-        totalInsufficientOwnerApprovals,
-        insufficientOwnerApprovals
-      );
-      addApprovalIfNeeded(
-        totalInsufficientProxyApprovals,
-        insufficientProxyApprovals
-      );
+      addApprovalIfNeeded(insufficientApprovals);
     }
   );
 
-  const useProxyForFulfiller = useProxyFromApprovals({
-    insufficientOwnerApprovals: totalInsufficientOwnerApprovals,
-    insufficientProxyApprovals: totalInsufficientProxyApprovals,
-    proxyStrategy,
-  });
-
-  const approvalsToUse = useProxyForFulfiller
-    ? totalInsufficientProxyApprovals
-    : totalInsufficientOwnerApprovals;
-
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(approvalsToUse, signer);
+  const approvalActions = await getApprovalActions(
+    totalInsufficientApprovals,
+    signer
+  );
 
   const advancedOrdersWithTips: AdvancedOrder[] = sanitizedOrdersMetadata.map(
     ({ order, unitsToFill = 0, tips, extraData }) => {
-      const maxUnits = getMaximumSizeForOrder(order);
-      const unitsToFillBn = BigNumber.from(unitsToFill);
-
-      // Reduce the numerator/denominator as optimization
-      const unitsGcd = gcd(unitsToFillBn, maxUnits);
-
-      const numerator = unitsToFill
-        ? unitsToFillBn.div(unitsGcd)
-        : BigNumber.from(1);
-
-      const denominator = unitsToFill
-        ? maxUnits.div(unitsGcd)
-        : BigNumber.from(1);
+      const { numerator, denominator } = getAdvancedOrderNumeratorDenominator(
+        order,
+        unitsToFill
+      );
 
       const considerationIncludingTips = [
         ...order.parameters.consideration,
@@ -731,9 +665,6 @@ export async function fulfillAvailableOrders({
   const { offerFulfillments, considerationFulfillments } =
     generateFulfillOrdersFulfillments(ordersMetadata);
 
-  const fulfillerConduit = useProxyForFulfiller
-    ? LEGACY_PROXY_CONDUIT
-    : NO_CONDUIT;
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
@@ -754,7 +685,7 @@ export async function fulfillAvailableOrders({
           : [],
         offerFulfillments,
         considerationFulfillments,
-        fulfillerConduit,
+        conduit,
         payableOverrides,
       ]
     ),
@@ -792,18 +723,19 @@ export function generateFulfillOrdersFulfillments(
   > = {};
 
   ordersMetadata.forEach(
-    ({ order, offererProxy, offerCriteria }, orderIndex) => {
+    ({ order, offererOperators, offerCriteria }, orderIndex) => {
       const itemToCriteria = getItemToCriteriaMap(
         order.parameters.offer,
         offerCriteria
       );
-      const source = useOffererProxy(order.parameters.conduit)
-        ? offererProxy
-        : order.parameters.offerer;
 
       return order.parameters.offer.forEach((item, itemIndex) => {
         const aggregateKey = `${hashAggregateKey(
-          source,
+          useOffererProxy(order.parameters.conduit)
+            ? isErc20Item(item.itemType)
+              ? offererOperators.erc20Operator
+              : offererOperators.operator
+            : order.parameters.offerer,
           item.token,
           itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
           // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
@@ -848,3 +780,22 @@ export function generateFulfillOrdersFulfillments(
     ),
   };
 }
+
+export const getAdvancedOrderNumeratorDenominator = (
+  order: Order,
+  unitsToFill?: BigNumberish
+) => {
+  // Used for advanced order cases
+  const maxUnits = getMaximumSizeForOrder(order);
+  const unitsToFillBn = BigNumber.from(unitsToFill);
+
+  // Reduce the numerator/denominator as optimization
+  const unitsGcd = gcd(unitsToFillBn, maxUnits);
+
+  const numerator = unitsToFill
+    ? unitsToFillBn.div(unitsGcd)
+    : BigNumber.from(1);
+  const denominator = unitsToFill ? maxUnits.div(unitsGcd) : BigNumber.from(1);
+
+  return { numerator, denominator };
+};

@@ -7,6 +7,7 @@ import type {
   Consideration as ConsiderationContract,
   OwnedUpgradeabilityProxy,
   WyvernProxyRegistry,
+  WyvernTokenTransferProxy,
 } from "../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -23,6 +24,7 @@ type Fixture = {
   testErc1155: TestERC1155;
   ownedUpgradeabilityProxy: OwnedUpgradeabilityProxy;
   legacyProxyRegistry: WyvernProxyRegistry;
+  legacyTokenTransferProxy: WyvernTokenTransferProxy;
 };
 
 export const describeWithFixture = (
@@ -45,6 +47,15 @@ export const describeWithFixture = (
       const ownedUpgradeabilityProxy =
         await OwnedUpgradeabilityProxyFactory.deploy();
 
+      const LegacyTokenTransferProxyFactory = await ethers.getContractFactory(
+        "WyvernTokenTransferProxy"
+      );
+
+      const legacyTokenTransferProxy =
+        await LegacyTokenTransferProxyFactory.deploy(
+          legacyProxyRegistry.address
+        );
+
       const ConsiderationFactory = await ethers.getContractFactory(
         "Consideration"
       );
@@ -54,6 +65,7 @@ export const describeWithFixture = (
 
       const considerationContract = await ConsiderationFactory.deploy(
         legacyProxyRegistry.address,
+        legacyTokenTransferProxy.address,
         legacyProxyImplementation
       );
 
@@ -67,6 +79,7 @@ export const describeWithFixture = (
         overrides: {
           contractAddress: considerationContract.address,
           legacyProxyRegistryAddress: legacyProxyRegistry.address,
+          legacyTokenTransferProxy: legacyTokenTransferProxy.address,
         },
       });
 
@@ -91,6 +104,7 @@ export const describeWithFixture = (
       fixture.testErc20 = testErc20;
       fixture.ownedUpgradeabilityProxy = ownedUpgradeabilityProxy;
       fixture.legacyProxyRegistry = legacyProxyRegistry;
+      fixture.legacyTokenTransferProxy = legacyTokenTransferProxy;
     });
 
     suiteCb(fixture as Fixture);

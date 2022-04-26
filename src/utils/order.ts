@@ -5,7 +5,6 @@ import {
   ItemType,
   LEGACY_PROXY_CONDUIT,
   ONE_HUNDRED_PERCENT_BP,
-  ProxyStrategy,
 } from "../constants";
 import type {
   ConsiderationItem,
@@ -16,7 +15,6 @@ import type {
   Order,
   OrderParameters,
 } from "../types";
-import { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { hashIdentifier } from "./criteria";
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 
@@ -174,24 +172,6 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
 
 export const useOffererProxy = (conduit: string) =>
   conduit === LEGACY_PROXY_CONDUIT;
-
-export const useProxyFromApprovals = ({
-  insufficientOwnerApprovals,
-  insufficientProxyApprovals,
-  proxyStrategy,
-}: {
-  insufficientOwnerApprovals: InsufficientApprovals;
-  insufficientProxyApprovals: InsufficientApprovals;
-  proxyStrategy: ProxyStrategy;
-}) => {
-  if (proxyStrategy === ProxyStrategy.IF_ZERO_APPROVALS_NEEDED) {
-    return (
-      insufficientProxyApprovals.length < insufficientOwnerApprovals.length &&
-      insufficientOwnerApprovals.length !== 0
-    );
-  }
-  return proxyStrategy === ProxyStrategy.ALWAYS;
-};
 
 /**
  * Maps order offer and consideration item amounts based on the order's filled status

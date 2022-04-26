@@ -9,20 +9,20 @@ import {
   EIP_712_ORDER_TYPE,
   LEGACY_PROXY_CONDUIT,
   MAX_INT,
+  Network,
   NO_CONDUIT,
   OrderType,
-  ProxyStrategy,
 } from "./constants";
 import { ProxyRegistryInterface } from "./typechain";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
+  ApprovalOperators,
   ConsiderationConfig,
   CreatedOrder,
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
   InputCriteria,
-  OfferItem,
   Order,
   OrderComponents,
   OrderParameters,
@@ -33,9 +33,7 @@ import type {
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
-  BalancesAndApprovals,
   getBalancesAndApprovals,
-  getInsufficientBalanceAndApprovalAmounts,
   validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck";
 import {
@@ -46,11 +44,8 @@ import {
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
-import {
-  getMaximumSizeForOrder,
-  getSummedTokenAndIdentifierAmounts,
-  isCurrencyItem,
-} from "./utils/item";
+import { getMaximumSizeForOrder, isCurrencyItem } from "./utils/item";
+import { LEGACY_PROXY_ADDRESSES } from "./utils/legacyAddresses";
 import {
   areAllCurrenciesSame,
   deductFees,
@@ -58,7 +53,6 @@ import {
   generateRandomSalt,
   mapInputItemToOfferItem,
   totalItemsAmount,
-  useProxyFromApprovals,
 } from "./utils/order";
 import { executeAllActions, getTransactionMethods } from "./utils/usecase";
 
@@ -76,6 +70,7 @@ export class Consideration {
 
   private config: Required<Omit<ConsiderationConfig, "overrides">>;
   private legacyProxyRegistryAddress: string;
+  private legacyTokenTransferProxyAddress: string;
 
   /**
    * @param provider - The provider to use for web3-related calls
@@ -88,7 +83,7 @@ export class Consideration {
       ascendingAmountFulfillmentBuffer = 1800,
       approveExactAmount = false,
       balanceAndApprovalChecksOnOrderCreation = true,
-      proxyStrategy = ProxyStrategy.IF_ZERO_APPROVALS_NEEDED,
+      network = Network.MAINNET,
     }: ConsiderationConfig
   ) {
     this.provider = provider;
@@ -104,11 +99,15 @@ export class Consideration {
       ascendingAmountFulfillmentBuffer,
       approveExactAmount,
       balanceAndApprovalChecksOnOrderCreation,
-      proxyStrategy,
+      network,
     };
 
     this.legacyProxyRegistryAddress =
-      overrides?.legacyProxyRegistryAddress ?? "";
+      overrides?.legacyProxyRegistryAddress ??
+      LEGACY_PROXY_ADDRESSES[network].WyvernProxyRegistry;
+    this.legacyTokenTransferProxyAddress =
+      overrides?.legacyTokenTransferProxy ??
+      LEGACY_PROXY_ADDRESSES[network].WyvernTokenTransferProxy;
   }
 
   /**
@@ -132,14 +131,34 @@ export class Consideration {
     return restrictedByZone ? OrderType.FULL_RESTRICTED : OrderType.FULL_OPEN;
   }
 
-  private _getLegacyConduitProxy(address: string) {
-    const proxyRegistryInterface = new Contract(
-      this.legacyProxyRegistryAddress,
-      ProxyRegistryInterfaceABI,
-      this.multicallProvider
-    ) as ProxyRegistryInterface;
+  private _getConduitOperators(
+    address: string,
+    conduit: string
+  ): Promise<ApprovalOperators> {
+    if (conduit === NO_CONDUIT) {
+      return Promise.resolve({
+        operator: this.contract.address,
+        erc20Operator: this.contract.address,
+      });
+    }
 
-    return proxyRegistryInterface.proxies(address);
+    if (conduit === LEGACY_PROXY_CONDUIT) {
+      const proxyRegistryInterface = new Contract(
+        this.legacyProxyRegistryAddress,
+        ProxyRegistryInterfaceABI,
+        this.multicallProvider
+      ) as ProxyRegistryInterface;
+
+      return Promise.all([
+        proxyRegistryInterface.proxies(address),
+        this.legacyTokenTransferProxyAddress,
+      ]).then(([operator, erc20Operator]) => ({
+        operator,
+        erc20Operator,
+      }));
+    }
+
+    return Promise.resolve({ operator: conduit, erc20Operator: conduit });
   }
 
   /**
@@ -149,6 +168,8 @@ export class Consideration {
    * or a signature request that will then be supplied into the final Order struct, ready to be fulfilled.
    *
    * @param input
+   * @param input.conduit The address to source your approvals from. Defaults to address(0) which refers to the Consideration contract.
+   *                      Another special value is address(1) will refer to the legacy proxy. All other values refer to the specified address
    * @param input.zone The zone of the order. Defaults to the zero address.
    * @param input.startTime The start time of the order. Defaults to the current unix time.
    * @param input.endTime The end time of the order. Defaults to "never end".
@@ -167,6 +188,7 @@ export class Consideration {
    */
   public async createOrder(
     {
+      conduit = NO_CONDUIT,
       zone = ethers.constants.AddressZero,
       startTime = Math.floor(Date.now() / 1000).toString(),
       endTime = MAX_INT.toString(),
@@ -207,8 +229,8 @@ export class Consideration {
 
     const totalCurrencyAmount = totalItemsAmount(currencies);
 
-    const [proxy, resolvedNonce] = await Promise.all([
-      this._getLegacyConduitProxy(offerer),
+    const [operators, resolvedNonce] = await Promise.all([
+      this._getConduitOperators(offerer, conduit),
       nonce ?? this.getNonce(offerer),
     ]);
 
@@ -216,27 +238,8 @@ export class Consideration {
       owner: offerer,
       items: offerItems,
       criterias: [],
-      proxy,
-      considerationContract: this.contract,
       multicallProvider: this.multicallProvider,
-    });
-
-    const { insufficientOwnerApprovals, insufficientProxyApprovals } =
-      getInsufficientBalanceAndApprovalAmounts({
-        balancesAndApprovals,
-        tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
-          items: offerItems,
-          criterias: [],
-        }),
-        considerationContract: this.contract,
-        proxy,
-        proxyStrategy: this.config.proxyStrategy,
-      });
-
-    const useProxy = useProxyFromApprovals({
-      insufficientOwnerApprovals,
-      insufficientProxyApprovals,
-      proxyStrategy: this.config.proxyStrategy,
+      operators,
     });
 
     const orderType = this._getOrderTypeFromOrderOptions({
@@ -258,8 +261,6 @@ export class Consideration {
         : []),
     ];
 
-    const conduit = useProxy ? LEGACY_PROXY_CONDUIT : NO_CONDUIT;
-
     const orderParameters: OrderParameters = {
       offerer,
       zone,
@@ -280,13 +281,10 @@ export class Consideration {
 
     const insufficientApprovals = validateOfferBalancesAndApprovals({
       offer: offerItems,
-      conduit,
       criterias: [],
       balancesAndApprovals,
       throwOnInsufficientBalances: checkBalancesAndApprovals,
-      considerationContract: this.contract,
-      proxy,
-      proxyStrategy: this.config.proxyStrategy,
+      operators,
     });
 
     const approvalActions = checkBalancesAndApprovals
@@ -552,6 +550,7 @@ export class Consideration {
    * @param input.tips an array of optional condensed consideration items to be added onto a fulfillment
    * @param input.extraData extra data supplied to the order
    * @param input.accountAddress optional address from which to fulfill the order from
+   * @param input.conduit the conduit to source approvals from
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -562,6 +561,7 @@ export class Consideration {
     tips = [],
     extraData = "0x",
     accountAddress,
+    conduit = NO_CONDUIT,
   }: {
     order: Order;
     unitsToFill?: BigNumberish;
@@ -570,6 +570,7 @@ export class Consideration {
     tips?: TipInputItem[];
     extraData?: string;
     accountAddress?: string;
+    conduit?: string;
   }): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
@@ -578,9 +579,9 @@ export class Consideration {
 
     const fulfillerAddress = await fulfiller.getAddress();
 
-    const [offererProxy, fulfillerProxy, nonce] = await Promise.all([
-      this._getLegacyConduitProxy(offerer),
-      this._getLegacyConduitProxy(fulfillerAddress),
+    const [offererOperators, fulfillerOperators, nonce] = await Promise.all([
+      this._getConduitOperators(offerer, orderParameters.conduit),
+      this._getConduitOperators(fulfillerAddress, conduit),
       this.getNonce(offerer),
     ]);
 
@@ -594,9 +595,8 @@ export class Consideration {
         owner: offerer,
         items: offer,
         criterias: offerCriteria,
-        proxy: offererProxy,
-        considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
+        operators: offererOperators,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
@@ -604,9 +604,8 @@ export class Consideration {
         owner: fulfillerAddress,
         items: [...offer, ...consideration],
         criterias: [...offerCriteria, ...considerationCriteria],
-        proxy: fulfillerProxy,
-        considerationContract: this.contract,
         multicallProvider: this.multicallProvider,
+        operators: fulfillerOperators,
       }),
       this.multicallProvider.getBlock("latest"),
       this.getOrderStatus(this.getOrderHash({ ...orderParameters, nonce })),
@@ -647,9 +646,9 @@ export class Consideration {
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
-        offererProxy,
-        fulfillerProxy,
-        proxyStrategy: this.config.proxyStrategy,
+        conduit,
+        offererOperators,
+        fulfillerOperators,
         signer: fulfiller,
         tips: tipConsiderationItems,
       });
@@ -671,17 +670,22 @@ export class Consideration {
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       timeBasedItemParams,
-      offererProxy,
-      fulfillerProxy,
-      proxyStrategy: this.config.proxyStrategy,
+      conduit,
       signer: fulfiller,
+      offererOperators,
+      fulfillerOperators,
     });
   }
 
   /**
    * Fulfills a list of orders in a best-effort fashion
    */
-  public async fulfillOrders(
+  public async fulfillOrders({
+    fulfillOrderDetails,
+    accountAddress,
+    conduit = NO_CONDUIT,
+  }: {
+    conduit?: string;
     fulfillOrderDetails: {
       order: Order;
       unitsToFill?: BigNumberish;
@@ -689,9 +693,9 @@ export class Consideration {
       considerationCriteria?: InputCriteria[];
       tips?: TipInputItem[];
       extraData?: string;
-    }[],
-    accountAddress?: string
-  ) {
+    }[];
+    accountAddress?: string;
+  }) {
     const fulfiller = await this.provider.getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
@@ -702,38 +706,19 @@ export class Consideration {
       ),
     ];
 
-    const [offererProxies, fulfillerProxy, offererNonces] = await Promise.all([
-      Promise.all(
-        uniqueOfferers.map((offerer) => this._getLegacyConduitProxy(offerer))
-      ),
-      this._getLegacyConduitProxy(fulfillerAddress),
-      Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
-    ]);
-
-    const offererOrderMetadata: Record<
-      string,
-      {
-        proxy: string;
-        nonce: number;
-        items: OfferItem[];
-        criteria: InputCriteria[];
-        balancesAndApprovals: BalancesAndApprovals;
-      }
-    > = {};
-
-    uniqueOfferers.forEach((offerer, i) => {
-      offererOrderMetadata[offerer] = {
-        proxy: offererProxies[i],
-        nonce: offererNonces[i],
-        items: fulfillOrderDetails
-          .filter(({ order }) => order.parameters.offerer === offerer)
-          .flatMap(({ order }) => order.parameters.offer),
-        criteria: fulfillOrderDetails
-          .filter(({ order }) => order.parameters.offerer === offerer)
-          .flatMap(({ offerCriteria = [] }) => offerCriteria),
-        balancesAndApprovals: [],
-      };
-    });
+    const [allOffererOperators, fulfillerOperators, offererNonces] =
+      await Promise.all([
+        Promise.all(
+          fulfillOrderDetails.map(({ order }) =>
+            this._getConduitOperators(
+              order.parameters.offerer,
+              order.parameters.conduit
+            )
+          )
+        ),
+        this._getConduitOperators(fulfillerAddress, conduit),
+        Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
+      ]);
 
     const allOfferItems = fulfillOrderDetails.flatMap(
       ({ order }) => order.parameters.offer
@@ -750,19 +735,18 @@ export class Consideration {
     );
 
     const [
-      uniqueOfferersBalancesAndApprovals,
+      offerersBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       currentBlock,
       orderStatuses,
     ] = await Promise.all([
       Promise.all(
-        uniqueOfferers.map((offerer) =>
+        fulfillOrderDetails.map(({ order, offerCriteria = [] }, i) =>
           getBalancesAndApprovals({
-            owner: offerer,
-            items: offererOrderMetadata[offerer].items,
-            criterias: offererOrderMetadata[offerer].criteria,
-            proxy: offererOrderMetadata[offerer].proxy,
-            considerationContract: this.contract,
+            owner: order.parameters.offerer,
+            items: order.parameters.offer,
+            criterias: offerCriteria,
+            operators: allOffererOperators[i],
             multicallProvider: this.multicallProvider,
           })
         )
@@ -773,8 +757,7 @@ export class Consideration {
         owner: fulfillerAddress,
         items: [...allOfferItems, ...allConsiderationItems],
         criterias: [...allOfferCriteria, ...allConsiderationCriteria],
-        proxy: fulfillerProxy,
-        considerationContract: this.contract,
+        operators: fulfillerOperators,
         multicallProvider: this.multicallProvider,
       }),
       this.multicallProvider.getBlock("latest"),
@@ -783,17 +766,13 @@ export class Consideration {
           this.getOrderStatus(
             this.getOrderHash({
               ...order.parameters,
-              nonce: offererOrderMetadata[order.parameters.offerer].nonce,
+              nonce:
+                offererNonces[uniqueOfferers.indexOf(order.parameters.offerer)],
             })
           )
         )
       ),
     ]);
-
-    uniqueOfferers.forEach((offerer, i) => {
-      offererOrderMetadata[offerer].balancesAndApprovals =
-        uniqueOfferersBalancesAndApprovals[i];
-    });
 
     const ordersMetadata: FulfillOrdersMetadata = fulfillOrderDetails.map(
       (orderDetails, index) => ({
@@ -808,11 +787,8 @@ export class Consideration {
             recipient: tip.recipient,
           })) ?? [],
         extraData: orderDetails.extraData ?? "0x",
-        offererBalancesAndApprovals:
-          offererOrderMetadata[orderDetails.order.parameters.offerer]
-            .balancesAndApprovals,
-        offererProxy:
-          offererOrderMetadata[orderDetails.order.parameters.offerer].proxy,
+        offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
+        offererOperators: allOffererOperators[index],
       })
     );
 
@@ -823,9 +799,9 @@ export class Consideration {
       currentBlockTimestamp: currentBlock.timestamp,
       ascendingAmountTimestampBuffer:
         this.config.ascendingAmountFulfillmentBuffer,
-      fulfillerProxy,
-      proxyStrategy: this.config.proxyStrategy,
+      fulfillerOperators,
       signer: fulfiller,
+      conduit,
     });
   }
 }

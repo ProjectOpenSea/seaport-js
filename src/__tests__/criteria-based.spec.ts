@@ -8,7 +8,6 @@ import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -51,9 +50,6 @@ describeWithFixture(
             await testErc721.mint(offerer.address, nftId);
 
             standardCreateOrderInput = {
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
               offer: [
                 {
                   itemType: ItemType.ERC721,
@@ -227,9 +223,7 @@ describeWithFixture(
 
             standardCreateOrderInput = {
               allowPartialFills: true,
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
+
               offer: [
                 {
                   amount: parseEther("10").toString(),
@@ -355,9 +349,6 @@ describeWithFixture(
             await testErc721.mint(offerer.address, nftId3);
 
             standardCreateOrderInput = {
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
               offer: [
                 {
                   itemType: ItemType.ERC721,
@@ -581,9 +572,7 @@ describeWithFixture(
 
             standardCreateOrderInput = {
               allowPartialFills: true,
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
+
               offer: [
                 {
                   amount: parseEther("10").toString(),
@@ -725,9 +714,6 @@ describeWithFixture(
             await testErc1155.mint(offerer.address, nftId, erc1155Amount);
 
             standardCreateOrderInput = {
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
               offer: [
                 {
                   itemType: ItemType.ERC1155,
@@ -865,9 +851,7 @@ describeWithFixture(
 
             standardCreateOrderInput = {
               allowPartialFills: true,
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
+
               offer: [
                 {
                   amount: parseEther("10").toString(),
@@ -979,9 +963,6 @@ describeWithFixture(
             await testErc1155.mint(offerer.address, nftId3, erc1155Amount);
 
             standardCreateOrderInput = {
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
               offer: [
                 {
                   itemType: ItemType.ERC1155,
@@ -1178,9 +1159,7 @@ describeWithFixture(
 
             standardCreateOrderInput = {
               allowPartialFills: true,
-              startTime: "0",
-              endTime: MAX_INT.toString(),
-              salt: generateRandomSalt(),
+
               offer: [
                 {
                   amount: parseEther("10").toString(),
@@ -1308,9 +1287,6 @@ describeWithFixture(
           await testErc1155.mint(fulfiller.address, nftId2, erc1155Amount);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -1400,9 +1376,6 @@ describeWithFixture(
           await testErc1155.mint(offerer.address, nftId3, erc1155Amount);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC1155,

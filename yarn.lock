@@ -2997,9 +2997,9 @@ concurrently@^7.1.0:
     tree-kill "^1.2.2"
     yargs "^16.2.0"
 
-"consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git#53a9908dd1edcff073a0228f28813325d3549861":
+"consideration@git+ssh://git@github.com/ProjectOpenSea/consideration.git#2a213e7a7aff4a586c8d0241610f6e52475d19bc":
   version "0.0.1"
-  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#53a9908dd1edcff073a0228f28813325d3549861"
+  resolved "git+ssh://git@github.com/ProjectOpenSea/consideration.git#2a213e7a7aff4a586c8d0241610f6e52475d19bc"
   dependencies:
     ethers "^5.5.3"
     ethers-eip712 "^0.2.0"

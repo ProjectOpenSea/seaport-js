@@ -5,7 +5,7 @@ import {
   Overrides,
   PopulatedTransaction,
 } from "ethers";
-import { ItemType, OrderType, ProxyStrategy } from "./constants";
+import { ItemType, Network, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
@@ -17,14 +17,13 @@ export type ConsiderationConfig = {
   // allow users to optionally skip balance and approval checks
   balanceAndApprovalChecksOnOrderCreation?: boolean;
 
-  // Defaults to use proxy if it would result in zero approvals needed. Otherwise, users can specify the proxy strategy
-  // they want to use, relevant for creating orders or fulfilling orders
-  proxyStrategy?: ProxyStrategy;
-
   overrides?: {
     contractAddress?: string;
     legacyProxyRegistryAddress?: string;
+    legacyTokenTransferProxy?: string;
   };
+
+  network?: Network;
 };
 
 export type OfferItem = {
@@ -126,6 +125,7 @@ export type Fee = {
 };
 
 export type CreateOrderInput = {
+  conduit?: string;
   zone?: string;
   startTime?: string;
   endTime?: string;
@@ -210,4 +210,9 @@ export type FulfillmentComponent = {
 export type Fulfillment = {
   offerComponents: FulfillmentComponent[];
   considerationComponents: FulfillmentComponent[];
+};
+
+export type ApprovalOperators = {
+  operator: string;
+  erc20Operator: string;
 };
