@@ -70,13 +70,6 @@ export enum BasicOrderRouteType {
   ERC1155_TO_ERC20,
 }
 
-export enum ProxyStrategy {
-  // Use the proxy if there are zero approvals needed for the proxy
-  IF_ZERO_APPROVALS_NEEDED,
-  NEVER,
-  ALWAYS,
-}
-
 export const MAX_INT = BigNumber.from(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 );
@@ -84,3 +77,8 @@ export const ONE_HUNDRED_PERCENT_BP = 10000;
 export const NO_CONDUIT = ethers.constants.AddressZero;
 export const LEGACY_PROXY_CONDUIT =
   ethers.constants.AddressZero.slice(0, -1) + "1";
+
+export enum Network {
+  MAINNET = 1,
+  RINKEBY = 4,
+}
