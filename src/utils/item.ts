@@ -102,6 +102,7 @@ export const getSummedTokenAndIdentifierAmounts = ({
     return {
       ...map,
       [item.token]: {
+        ...map[item.token],
         // Being explicit about the undefined type as it's possible for it to be undefined at first iteration
         [identifierOrCriteria]: (
           (map[item.token]?.[identifierOrCriteria] as BigNumber | undefined) ??

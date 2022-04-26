@@ -371,6 +371,26 @@ export async function fulfillStandardOrder({
 
   const considerationIncludingTips = [...consideration, ...tips];
 
+  const offerCriteriaItems = offer.filter(({ itemType }) =>
+    isCriteriaItem(itemType)
+  );
+
+  const considerationCriteriaItems = considerationIncludingTips.filter(
+    ({ itemType }) => isCriteriaItem(itemType)
+  );
+
+  const hasCriteriaItems =
+    offerCriteriaItems.length > 0 || considerationCriteriaItems.length > 0;
+
+  if (
+    offerCriteriaItems.length !== offerCriteria.length ||
+    considerationCriteriaItems.length !== considerationCriteria.length
+  ) {
+    throw new Error(
+      "You must supply the appropriate criterias for criteria based items"
+    );
+  }
+
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
     items: considerationIncludingTips,
     criterias: considerationCriteria,
@@ -413,26 +433,6 @@ export async function fulfillStandardOrder({
   const payableOverrides = { value: totalNativeAmount };
 
   const approvalActions = await getApprovalActions(approvalsToUse, signer);
-
-  const offerCriteriaItems = offer.filter(({ itemType }) =>
-    isCriteriaItem(itemType)
-  );
-
-  const considerationCriteriaItems = considerationIncludingTips.filter(
-    ({ itemType }) => isCriteriaItem(itemType)
-  );
-
-  const hasCriteriaItems =
-    offerCriteriaItems.length > 0 || considerationCriteriaItems.length > 0;
-
-  if (
-    offerCriteriaItems.length !== offerCriteria.length ||
-    considerationCriteriaItems.length !== considerationCriteria.length
-  ) {
-    throw new Error(
-      "You must supply the appropriate criterias for criteria based items"
-    );
-  }
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems;
 
@@ -817,27 +817,29 @@ export function generateFulfillOrdersFulfillments(
     }
   );
 
-  ordersMetadata.forEach(({ order, offerCriteria, tips }, orderIndex) => {
-    const itemToCriteria = getItemToCriteriaMap(
-      order.parameters.offer,
-      offerCriteria
-    );
-    return [...order.parameters.consideration, ...tips].forEach(
-      (item, itemIndex) => {
-        const aggregateKey = `${hashAggregateKey(
-          item.recipient,
-          item.token,
-          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
-          // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+  ordersMetadata.forEach(
+    ({ order, considerationCriteria, tips }, orderIndex) => {
+      const itemToCriteria = getItemToCriteriaMap(
+        order.parameters.consideration,
+        considerationCriteria
+      );
+      return [...order.parameters.consideration, ...tips].forEach(
+        (item, itemIndex) => {
+          const aggregateKey = `${hashAggregateKey(
+            item.recipient,
+            item.token,
+            itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+            // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
+          )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
-        considerationAggregatedFulfillments[aggregateKey] = [
-          ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
-          { orderIndex, itemIndex },
-        ];
-      }
-    );
-  });
+          considerationAggregatedFulfillments[aggregateKey] = [
+            ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
+            { orderIndex, itemIndex },
+          ];
+        }
+      );
+    }
+  );
 
   return {
     offerFulfillments: Object.values(offerAggregatedFulfillments),

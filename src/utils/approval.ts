@@ -49,8 +49,13 @@ export function getApprovalActions(
   signer: providers.JsonRpcSigner
 ): Promise<ApprovalAction[]> {
   return Promise.all(
-    insufficientApprovals.map(
-      async ({ token, operator, itemType, identifierOrCriteria }) => {
+    insufficientApprovals
+      .filter(
+        (approval, index) =>
+          index === insufficientApprovals.length - 1 ||
+          insufficientApprovals[index + 1].token !== approval.token
+      )
+      .map(async ({ token, operator, itemType, identifierOrCriteria }) => {
         if (isErc721Item(itemType) || isErc1155Item(itemType)) {
           // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
           const contract = new Contract(token, ERC721ABI, signer) as ERC721;
@@ -83,7 +88,6 @@ export function getApprovalActions(
             operator,
           };
         }
-      }
-    )
+      })
   );
 }
