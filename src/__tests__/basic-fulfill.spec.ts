@@ -5,7 +5,6 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
-import { Consideration } from "../consideration";
 import { ItemType, LEGACY_PROXY_CONDUIT, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -66,8 +65,6 @@ describeWithFixture(
 
           standardCreateOrderInput = {
             startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -128,16 +125,11 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ETH (offer via proxy)", async () => {
-            const { testErc721, considerationContract } = fixture;
-
-            await testErc721
-              .connect(offerer)
-              .setApprovalForAll(considerationContract.address, false);
-
             const { consideration } = fixture;
-            const { executeAllActions } = await consideration.createOrder(
-              standardCreateOrderInput
-            );
+            const { executeAllActions } = await consideration.createOrder({
+              ...standardCreateOrderInput,
+              conduit: LEGACY_PROXY_CONDUIT,
+            });
 
             const order = await executeAllActions();
 
@@ -307,15 +299,12 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ERC20 (offer via proxy)", async () => {
-            const { testErc721, consideration, testErc20 } = fixture;
+            const { consideration, testErc20 } = fixture;
 
-            await testErc721
-              .connect(offerer)
-              .setApprovalForAll(consideration.contract.address, false);
-
-            const { executeAllActions } = await consideration.createOrder(
-              standardCreateOrderInput
-            );
+            const { executeAllActions } = await consideration.createOrder({
+              ...standardCreateOrderInput,
+              conduit: LEGACY_PROXY_CONDUIT,
+            });
 
             const order = await executeAllActions();
 
@@ -451,8 +440,13 @@ describeWithFixture(
             expect(fulfillBasicOrderSpy).calledOnce;
           });
 
-          it("ERC721 <=> ERC20 (cannot be fulfilled via proxy)", async () => {
-            const { consideration, legacyProxyRegistry, testErc20 } = fixture;
+          it("ERC721 <=> ERC20 (fulfilled via proxy)", async () => {
+            const {
+              consideration,
+              legacyProxyRegistry,
+              testErc20,
+              legacyTokenTransferProxy,
+            } = fixture;
 
             // Register the proxy on the fulfiller
             await legacyProxyRegistry.connect(fulfiller).registerProxy();
@@ -479,9 +473,8 @@ describeWithFixture(
             const { actions } = await consideration.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              conduit: LEGACY_PROXY_CONDUIT,
             });
-
-            // Even though the proxy has approval, we still check approvals on consideration contract
 
             const approvalAction = actions[0];
 
@@ -491,7 +484,7 @@ describeWithFixture(
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: consideration.contract.address,
+              operator: legacyTokenTransferProxy.address,
             });
 
             await approvalAction.transactionMethods.transact();
@@ -499,7 +492,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                consideration.contract.address
+                legacyTokenTransferProxy.address
               )
             ).to.equal(MAX_INT);
 
@@ -651,6 +644,7 @@ describeWithFixture(
           const { actions } = await consideration.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            conduit: LEGACY_PROXY_CONDUIT,
           });
 
           const fulfillAction = actions[0];
@@ -769,16 +763,11 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ETH (offer via proxy)", async () => {
-            const { testErc1155, considerationContract } = fixture;
-
-            await testErc1155
-              .connect(offerer)
-              .setApprovalForAll(considerationContract.address, false);
-
             const { consideration } = fixture;
-            const { executeAllActions } = await consideration.createOrder(
-              standardCreateOrderInput
-            );
+            const { executeAllActions } = await consideration.createOrder({
+              ...standardCreateOrderInput,
+              conduit: LEGACY_PROXY_CONDUIT,
+            });
 
             const order = await executeAllActions();
 
@@ -957,15 +946,12 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ERC20 (offer via proxy)", async () => {
-            const { testErc1155, consideration, testErc20 } = fixture;
+            const { consideration, testErc20 } = fixture;
 
-            await testErc1155
-              .connect(offerer)
-              .setApprovalForAll(consideration.contract.address, false);
-
-            const { executeAllActions } = await consideration.createOrder(
-              standardCreateOrderInput
-            );
+            const { executeAllActions } = await consideration.createOrder({
+              ...standardCreateOrderInput,
+              conduit: LEGACY_PROXY_CONDUIT,
+            });
 
             const order = await executeAllActions();
 
@@ -1099,8 +1085,13 @@ describeWithFixture(
             expect(fulfillBasicOrderSpy).calledOnce;
           });
 
-          it("ERC1155 <=> ERC20 (cannot be fulfilled via proxy)", async () => {
-            const { consideration, legacyProxyRegistry, testErc20 } = fixture;
+          it("ERC1155 <=> ERC20 (fulfilled via proxy)", async () => {
+            const {
+              consideration,
+              legacyProxyRegistry,
+              testErc20,
+              legacyTokenTransferProxy,
+            } = fixture;
 
             // Register the proxy on the fulfiller
             await legacyProxyRegistry.connect(fulfiller).registerProxy();
@@ -1127,9 +1118,8 @@ describeWithFixture(
             const { actions } = await consideration.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              conduit: LEGACY_PROXY_CONDUIT,
             });
-
-            // Even though the proxy has approval, we still check approvals on consideration contract
 
             const approvalAction = actions[0];
 
@@ -1139,7 +1129,7 @@ describeWithFixture(
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: consideration.contract.address,
+              operator: legacyTokenTransferProxy.address,
             });
 
             await approvalAction.transactionMethods.transact();
@@ -1147,7 +1137,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                consideration.contract.address
+                legacyTokenTransferProxy.address
               )
             ).to.equal(MAX_INT);
 
@@ -1303,6 +1293,7 @@ describeWithFixture(
             );
 
           const { actions } = await consideration.fulfillOrder({
+            conduit: LEGACY_PROXY_CONDUIT,
             order,
             accountAddress: fulfiller.address,
           });

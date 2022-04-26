@@ -4,7 +4,12 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
-import { ItemType, LEGACY_PROXY_CONDUIT, MAX_INT } from "../constants";
+import {
+  ItemType,
+  LEGACY_PROXY_CONDUIT,
+  MAX_INT,
+  NO_CONDUIT,
+} from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -148,14 +153,14 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const { actions } = await consideration.fulfillOrders(
-              [
+            const { actions } = await consideration.fulfillOrders({
+              fulfillOrderDetails: [
                 { order: firstOrder },
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -189,9 +194,10 @@ describeWithFixture(
               .connect(offerer)
               .setApprovalForAll(offererProxy, true);
 
-            const firstOrderUseCase = await consideration.createOrder(
-              firstStandardCreateOrderInput
-            );
+            const firstOrderUseCase = await consideration.createOrder({
+              ...firstStandardCreateOrderInput,
+              conduit: LEGACY_PROXY_CONDUIT,
+            });
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
@@ -203,7 +209,7 @@ describeWithFixture(
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
-            expect(secondOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(secondOrder.parameters.conduit).eq(NO_CONDUIT);
 
             const thirdOrderUseCase = await consideration.createOrder(
               thirdStandardCreateOrderInput,
@@ -212,14 +218,16 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const { actions } = await consideration.fulfillOrders(
-              [
+            expect(thirdOrder.parameters.conduit).eq(NO_CONDUIT);
+
+            const { actions } = await consideration.fulfillOrders({
+              fulfillOrderDetails: [
                 { order: firstOrder },
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -301,14 +309,14 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const { actions } = await consideration.fulfillOrders(
-              [
+            const { actions } = await consideration.fulfillOrders({
+              fulfillOrderDetails: [
                 { order: firstOrder },
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(2);
 
@@ -453,14 +461,14 @@ describeWithFixture(
 
           const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-          const { actions } = await consideration.fulfillOrders(
-            [
+          const { actions } = await consideration.fulfillOrders({
+            fulfillOrderDetails: [
               { order: firstOrder },
               { order: secondOrder },
               { order: thirdOrder },
             ],
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -547,8 +555,13 @@ describeWithFixture(
         });
 
         it("ERC20 <=> ERC721 (fulfilled via proxy)", async () => {
-          const { consideration, testErc721, legacyProxyRegistry, testErc20 } =
-            fixture;
+          const {
+            consideration,
+            testErc721,
+            legacyProxyRegistry,
+            legacyTokenTransferProxy,
+            testErc20,
+          } = fixture;
 
           const firstOrderUseCase = await consideration.createOrder(
             firstStandardCreateOrderInput
@@ -582,20 +595,21 @@ describeWithFixture(
 
           await testErc20
             .connect(fulfiller)
-            .approve(consideration.contract.address, MAX_INT);
+            .approve(legacyTokenTransferProxy.address, MAX_INT);
 
           await secondTestErc721
             .connect(fulfiller)
             .setApprovalForAll(fulfillerProxy, true);
 
-          const { actions } = await consideration.fulfillOrders(
-            [
+          const { actions } = await consideration.fulfillOrders({
+            fulfillOrderDetails: [
               { order: firstOrder },
               { order: secondOrder },
               { order: thirdOrder },
             ],
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+            conduit: LEGACY_PROXY_CONDUIT,
+          });
 
           const fulfillAction = actions[0];
 
@@ -730,14 +744,14 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const { actions } = await consideration.fulfillOrders(
-              [
+            const { actions } = await consideration.fulfillOrders({
+              fulfillOrderDetails: [
                 { order: firstOrder },
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -772,9 +786,10 @@ describeWithFixture(
               .connect(offerer)
               .setApprovalForAll(offererProxy, true);
 
-            const firstOrderUseCase = await consideration.createOrder(
-              firstStandardCreateOrderInput
-            );
+            const firstOrderUseCase = await consideration.createOrder({
+              ...firstStandardCreateOrderInput,
+              conduit: LEGACY_PROXY_CONDUIT,
+            });
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
@@ -786,7 +801,7 @@ describeWithFixture(
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
-            expect(secondOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(secondOrder.parameters.conduit).eq(NO_CONDUIT);
 
             const thirdOrderUseCase = await consideration.createOrder(
               thirdStandardCreateOrderInput,
@@ -795,14 +810,16 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const { actions } = await consideration.fulfillOrders(
-              [
+            expect(thirdOrder.parameters.conduit).eq(NO_CONDUIT);
+
+            const { actions } = await consideration.fulfillOrders({
+              fulfillOrderDetails: [
                 { order: firstOrder },
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(1);
 
@@ -885,14 +902,14 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            const { actions } = await consideration.fulfillOrders(
-              [
+            const { actions } = await consideration.fulfillOrders({
+              fulfillOrderDetails: [
                 { order: firstOrder },
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              fulfiller.address
-            );
+              accountAddress: fulfiller.address,
+            });
 
             expect(actions.length).to.eq(2);
 
@@ -1041,14 +1058,14 @@ describeWithFixture(
 
           const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-          const { actions } = await consideration.fulfillOrders(
-            [
+          const { actions } = await consideration.fulfillOrders({
+            fulfillOrderDetails: [
               { order: firstOrder },
               { order: secondOrder },
               { order: thirdOrder },
             ],
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+          });
 
           const approvalAction = actions[0];
 
@@ -1133,8 +1150,13 @@ describeWithFixture(
         });
 
         it("ERC20 <=> ERC1155 (fulfilled via proxy)", async () => {
-          const { consideration, testErc1155, legacyProxyRegistry, testErc20 } =
-            fixture;
+          const {
+            consideration,
+            testErc1155,
+            legacyProxyRegistry,
+            testErc20,
+            legacyTokenTransferProxy,
+          } = fixture;
 
           const firstOrderUseCase = await consideration.createOrder(
             firstStandardCreateOrderInput
@@ -1168,20 +1190,21 @@ describeWithFixture(
 
           await testErc20
             .connect(fulfiller)
-            .approve(consideration.contract.address, MAX_INT);
+            .approve(legacyTokenTransferProxy.address, MAX_INT);
 
           await secondTestErc1155
             .connect(fulfiller)
             .setApprovalForAll(fulfillerProxy, true);
 
-          const { actions } = await consideration.fulfillOrders(
-            [
+          const { actions } = await consideration.fulfillOrders({
+            fulfillOrderDetails: [
               { order: firstOrder },
               { order: secondOrder },
               { order: thirdOrder },
             ],
-            fulfiller.address
-          );
+            accountAddress: fulfiller.address,
+            conduit: LEGACY_PROXY_CONDUIT,
+          });
 
           const fulfillAction = actions[0];
 

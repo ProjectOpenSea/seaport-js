@@ -683,9 +683,9 @@ export class Consideration {
   public async fulfillOrders({
     fulfillOrderDetails,
     accountAddress,
-    conduit,
+    conduit = NO_CONDUIT,
   }: {
-    conduit: string;
+    conduit?: string;
     fulfillOrderDetails: {
       order: Order;
       unitsToFill?: BigNumberish;
