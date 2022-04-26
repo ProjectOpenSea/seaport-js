@@ -8,7 +8,6 @@ import { ItemType, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain";
 import { ApprovalAction, CreateOrderAction, CreateOrderInput } from "../types";
 import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -62,9 +61,6 @@ describeWithFixture(
         await secondTestErc721.mint(fulfiller.address, nftId);
 
         standardCreateOrderInput = {
-          startTime: "0",
-          endTime: MAX_INT.toString(),
-          salt: generateRandomSalt(),
           offer: [
             {
               itemType: ItemType.ERC721,
@@ -196,9 +192,6 @@ describeWithFixture(
         await secondTestErc1155.mint(fulfiller.address, nftId, erc1155Amount);
 
         standardCreateOrderInput = {
-          startTime: "0",
-          endTime: MAX_INT.toString(),
-          salt: generateRandomSalt(),
           offer: [
             {
               itemType: ItemType.ERC1155,
@@ -338,9 +331,6 @@ describeWithFixture(
         await testErc20.mint(fulfiller.address, parseEther("5").toString());
 
         standardCreateOrderInput = {
-          startTime: "0",
-          endTime: MAX_INT.toString(),
-          salt: generateRandomSalt(),
           offer: [
             {
               itemType: ItemType.ERC721,

@@ -13,7 +13,6 @@ import {
 import { TestERC1155, TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(
@@ -67,9 +66,6 @@ describeWithFixture(
           await legacyProxyRegistry.connect(offerer).registerProxy();
 
           firstStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -88,9 +84,6 @@ describeWithFixture(
           };
 
           secondStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -109,9 +102,6 @@ describeWithFixture(
           };
 
           thirdStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -373,9 +363,6 @@ describeWithFixture(
           );
 
           firstStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -395,9 +382,6 @@ describeWithFixture(
           };
 
           secondStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -417,9 +401,6 @@ describeWithFixture(
           };
 
           thirdStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -655,9 +636,6 @@ describeWithFixture(
           await legacyProxyRegistry.connect(offerer).registerProxy();
 
           firstStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -677,9 +655,6 @@ describeWithFixture(
           };
 
           secondStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -699,9 +674,6 @@ describeWithFixture(
           };
 
           thirdStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -967,9 +939,6 @@ describeWithFixture(
           );
 
           firstStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -990,9 +959,6 @@ describeWithFixture(
           };
 
           secondStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -1013,9 +979,6 @@ describeWithFixture(
           };
 
           thirdStandardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),

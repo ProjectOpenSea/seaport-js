@@ -8,7 +8,6 @@ import sinon from "sinon";
 import { ItemType, LEGACY_PROXY_CONDUIT, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -528,9 +527,6 @@ describeWithFixture(
           await testErc20.mint(offerer.address, parseEther("10").toString());
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -695,9 +691,6 @@ describeWithFixture(
             .setApprovalForAll(considerationContract.address, true);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -1178,9 +1171,6 @@ describeWithFixture(
             .approve(considerationContract.address, MAX_INT);
 
           standardCreateOrderInput = {
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
             offer: [
               {
                 amount: parseEther("10").toString(),

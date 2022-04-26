@@ -9,7 +9,6 @@ import { ItemType, MAX_INT, OrderType } from "../constants";
 import { TestERC1155 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -55,9 +54,7 @@ describeWithFixture(
 
           standardCreateOrderInput = {
             allowPartialFills: true,
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
+
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -264,9 +261,7 @@ describeWithFixture(
 
           standardCreateOrderInput = {
             allowPartialFills: true,
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
+
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -411,9 +406,7 @@ describeWithFixture(
 
           standardCreateOrderInput = {
             allowPartialFills: true,
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
+
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -647,9 +640,7 @@ describeWithFixture(
 
           standardCreateOrderInput = {
             allowPartialFills: true,
-            startTime: "0",
-            endTime: MAX_INT.toString(),
-            salt: generateRandomSalt(),
+
             offer: [
               {
                 amount: parseEther("10").toString(),
