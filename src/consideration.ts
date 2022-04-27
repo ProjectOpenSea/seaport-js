@@ -1,6 +1,6 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumberish, Contract, ethers, providers } from "ethers";
-import { formatBytes32String } from "ethers/lib/utils";
+import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
 import { ConsiderationABI } from "./abi/Consideration";
 import { ProxyRegistryInterfaceABI } from "./abi/ProxyRegistryInterface";
 import {
@@ -293,6 +293,9 @@ export class Consideration {
 
     const createOrderAction = {
       type: "create",
+      getMessageToSign: () => {
+        return this._getMessageToSign(orderParameters, resolvedNonce);
+      },
       createOrder: async () => {
         const signature = await this.signOrder(
           orderParameters,
@@ -318,6 +321,47 @@ export class Consideration {
   }
 
   /**
+   * Returns the domain data used when signing typed data
+   * @returns domain data
+   */
+  private async _getDomainData() {
+    const { chainId } = await this.provider.getNetwork();
+
+    return {
+      name: CONSIDERATION_CONTRACT_NAME,
+      version: CONSIDERATION_CONTRACT_VERSION,
+      chainId,
+      verifyingContract: this.contract.address,
+    };
+  }
+
+  /**
+   * Returns a raw message to be signed using EIP-712
+   * @param orderParameters order parameter struct
+   * @param nonce nonce of the order
+   * @returns JSON string of the message to be signed
+   */
+  private async _getMessageToSign(
+    orderParameters: OrderParameters,
+    nonce: number
+  ) {
+    const domainData = await this._getDomainData();
+
+    const orderComponents: OrderComponents = {
+      ...orderParameters,
+      nonce,
+    };
+
+    return JSON.stringify(
+      _TypedDataEncoder.getPayload(
+        domainData,
+        EIP_712_ORDER_TYPE,
+        orderComponents
+      )
+    );
+  }
+
+  /**
    * Submits a request to your provider to sign the order. Signed orders are used for off-chain order books.
    * @param orderParameters standard order parameter struct
    * @param nonce nonce of the offerer
@@ -330,14 +374,8 @@ export class Consideration {
     accountAddress?: string
   ): Promise<string> {
     const signer = this.provider.getSigner(accountAddress);
-    const { chainId } = await this.provider.getNetwork();
 
-    const domainData = {
-      name: CONSIDERATION_CONTRACT_NAME,
-      version: CONSIDERATION_CONTRACT_VERSION,
-      chainId,
-      verifyingContract: this.contract.address,
-    };
+    const domainData = await this._getDomainData();
 
     const orderComponents: OrderComponents = {
       ...orderParameters,
