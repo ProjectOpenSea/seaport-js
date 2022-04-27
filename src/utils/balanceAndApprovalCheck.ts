@@ -191,7 +191,6 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
   ];
 
   const mapOperator = (insufficientApproval: InsufficientApprovals[number]) => {
-    // We always use consideration contract as the operator for ERC-20s
     const operator = isErc20Item(insufficientApproval.itemType)
       ? operators.erc20Operator
       : operators.operator;

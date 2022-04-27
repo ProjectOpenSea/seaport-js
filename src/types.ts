@@ -178,6 +178,7 @@ export type ExchangeAction = {
 
 export type CreateOrderAction = {
   type: "create";
+  getMessageToSign: () => Promise<string>;
   createOrder: () => Promise<CreatedOrder>;
 };
 

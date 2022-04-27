@@ -621,4 +621,85 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       expect(isValid).to.be.true;
     });
   });
+
+  it("returns a valid message to sign", async () => {
+    const { considerationContract, consideration, testErc721 } = fixture;
+
+    const [offerer, zone, randomSigner] = await ethers.getSigners();
+    const nftId = "1";
+    await testErc721.mint(offerer.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const salt = generateRandomSalt();
+
+    const { actions } = await consideration.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifier: nftId,
+        },
+      ],
+      consideration: [
+        {
+          amount: ethers.utils.parseEther("10").toString(),
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
+
+    const approvalAction = actions[0] as ApprovalAction;
+
+    expect(approvalAction).to.be.deep.equal({
+      type: "approval",
+      token: testErc721.address,
+      identifierOrCriteria: nftId,
+      itemType: ItemType.ERC721,
+      transactionMethods: approvalAction.transactionMethods,
+      operator: considerationContract.address,
+    });
+
+    await approvalAction.transactionMethods.transact();
+
+    // NFT should now be approved
+    expect(
+      await testErc721.isApprovedForAll(
+        offerer.address,
+        considerationContract.address
+      )
+    ).to.be.true;
+
+    const createOrderAction = actions[1] as CreateOrderAction;
+    const messageToSign = await createOrderAction.getMessageToSign();
+    const order = await createOrderAction.createOrder();
+
+    expect(createOrderAction.type).to.equal("create");
+    const rawSignTypedMessage = await ethers.provider.send(
+      "eth_signTypedData_v4",
+      [offerer.address, messageToSign]
+    );
+    expect(ethers.utils.splitSignature(rawSignTypedMessage).compact).eq(
+      order.signature
+    );
+
+    const isValid = await considerationContract
+      .connect(randomSigner)
+      .callStatic.validate([
+        {
+          parameters: {
+            ...order.parameters,
+            totalOriginalConsiderationItems:
+              order.parameters.consideration.length,
+          },
+          signature: rawSignTypedMessage,
+        },
+      ]);
+
+    expect(isValid).to.be.true;
+  });
 });
