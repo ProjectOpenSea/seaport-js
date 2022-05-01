@@ -186,12 +186,12 @@ describeWithFixture(
 
             const firstOrderUseCase = await consideration.createOrder({
               ...firstStandardCreateOrderInput,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
-            expect(firstOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(firstOrder.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
 
             const secondOrderUseCase = await consideration.createOrder(
               secondStandardCreateOrderInput
@@ -199,7 +199,7 @@ describeWithFixture(
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
-            expect(secondOrder.parameters.conduit).eq(NO_CONDUIT);
+            expect(secondOrder.parameters.conduitKey).eq(NO_CONDUIT);
 
             const thirdOrderUseCase = await consideration.createOrder(
               thirdStandardCreateOrderInput,
@@ -208,7 +208,7 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            expect(thirdOrder.parameters.conduit).eq(NO_CONDUIT);
+            expect(thirdOrder.parameters.conduitKey).eq(NO_CONDUIT);
 
             const { actions } = await consideration.fulfillOrders({
               fulfillOrderDetails: [
@@ -589,7 +589,7 @@ describeWithFixture(
               { order: thirdOrder },
             ],
             accountAddress: fulfiller.address,
-            conduit: LEGACY_PROXY_CONDUIT,
+            conduitKey: LEGACY_PROXY_CONDUIT,
           });
 
           const fulfillAction = actions[0];
@@ -760,12 +760,12 @@ describeWithFixture(
 
             const firstOrderUseCase = await consideration.createOrder({
               ...firstStandardCreateOrderInput,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
-            expect(firstOrder.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(firstOrder.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
 
             const secondOrderUseCase = await consideration.createOrder(
               secondStandardCreateOrderInput
@@ -773,7 +773,7 @@ describeWithFixture(
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
-            expect(secondOrder.parameters.conduit).eq(NO_CONDUIT);
+            expect(secondOrder.parameters.conduitKey).eq(NO_CONDUIT);
 
             const thirdOrderUseCase = await consideration.createOrder(
               thirdStandardCreateOrderInput,
@@ -782,7 +782,7 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
-            expect(thirdOrder.parameters.conduit).eq(NO_CONDUIT);
+            expect(thirdOrder.parameters.conduitKey).eq(NO_CONDUIT);
 
             const { actions } = await consideration.fulfillOrders({
               fulfillOrderDetails: [
@@ -1166,7 +1166,7 @@ describeWithFixture(
               { order: thirdOrder },
             ],
             accountAddress: fulfiller.address,
-            conduit: LEGACY_PROXY_CONDUIT,
+            conduitKey: LEGACY_PROXY_CONDUIT,
           });
 
           const fulfillAction = actions[0];

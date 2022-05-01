@@ -127,12 +127,12 @@ describeWithFixture(
             const { consideration } = fixture;
             const { executeAllActions } = await consideration.createOrder({
               ...standardCreateOrderInput,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const order = await executeAllActions();
 
-            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(order.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -302,12 +302,12 @@ describeWithFixture(
 
             const { executeAllActions } = await consideration.createOrder({
               ...standardCreateOrderInput,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const order = await executeAllActions();
 
-            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(order.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -472,7 +472,7 @@ describeWithFixture(
             const { actions } = await consideration.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const approvalAction = actions[0];
@@ -640,7 +640,7 @@ describeWithFixture(
           const { actions } = await consideration.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
-            conduit: LEGACY_PROXY_CONDUIT,
+            conduitKey: LEGACY_PROXY_CONDUIT,
           });
 
           const fulfillAction = actions[0];
@@ -759,12 +759,12 @@ describeWithFixture(
             const { consideration } = fixture;
             const { executeAllActions } = await consideration.createOrder({
               ...standardCreateOrderInput,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const order = await executeAllActions();
 
-            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(order.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -943,12 +943,12 @@ describeWithFixture(
 
             const { executeAllActions } = await consideration.createOrder({
               ...standardCreateOrderInput,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const order = await executeAllActions();
 
-            expect(order.parameters.conduit).eq(LEGACY_PROXY_CONDUIT);
+            expect(order.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -1111,7 +1111,7 @@ describeWithFixture(
             const { actions } = await consideration.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
-              conduit: LEGACY_PROXY_CONDUIT,
+              conduitKey: LEGACY_PROXY_CONDUIT,
             });
 
             const approvalAction = actions[0];
@@ -1283,7 +1283,7 @@ describeWithFixture(
             );
 
           const { actions } = await consideration.fulfillOrder({
-            conduit: LEGACY_PROXY_CONDUIT,
+            conduitKey: LEGACY_PROXY_CONDUIT,
             order,
             accountAddress: fulfiller.address,
           });

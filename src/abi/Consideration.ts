@@ -3,7 +3,17 @@ const ConsiderationABI = [
     inputs: [
       {
         internalType: "address",
+        name: "conduitController",
+        type: "address",
+      },
+      {
+        internalType: "address",
         name: "legacyProxyRegistry",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "legacyTokenTransferProxy",
         type: "address",
       },
       {
@@ -142,21 +152,6 @@ const ConsiderationABI = [
   },
   {
     inputs: [],
-    name: "FulfilledOrderConsiderationIndexOutOfRange",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "FulfilledOrderIndexOutOfRange",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "FulfilledOrderOfferIndexOutOfRange",
-    type: "error",
-  },
-  {
-    inputs: [],
     name: "InexactFraction",
     type: "error",
   },
@@ -176,8 +171,29 @@ const ConsiderationABI = [
     type: "error",
   },
   {
+    inputs: [
+      {
+        internalType: "bytes32",
+        name: "conduitKey",
+        type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "conduit",
+        type: "address",
+      },
+    ],
+    name: "InvalidConduit",
+    type: "error",
+  },
+  {
     inputs: [],
     name: "InvalidERC721TransferAmount",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "InvalidFulfillmentComponentData",
     type: "error",
   },
   {
@@ -229,17 +245,7 @@ const ConsiderationABI = [
   },
   {
     inputs: [],
-    name: "MismatchedFulfillmentConsiderationComponents",
-    type: "error",
-  },
-  {
-    inputs: [],
     name: "MismatchedFulfillmentOfferAndConsiderationComponents",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "MismatchedFulfillmentOfferComponents",
     type: "error",
   },
   {
@@ -251,6 +257,11 @@ const ConsiderationABI = [
       },
     ],
     name: "MissingFulfillmentComponentOnAggregation",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "MissingItemAmount",
     type: "error",
   },
   {
@@ -535,19 +546,6 @@ const ConsiderationABI = [
     type: "event",
   },
   {
-    inputs: [],
-    name: "DOMAIN_SEPARATOR",
-    outputs: [
-      {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         components: [
@@ -656,9 +654,9 @@ const ConsiderationABI = [
             type: "uint256",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
           {
             internalType: "uint256",
@@ -793,9 +791,9 @@ const ConsiderationABI = [
                 type: "uint256",
               },
               {
-                internalType: "address",
-                name: "conduit",
-                type: "address",
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
               },
               {
                 internalType: "uint256",
@@ -865,9 +863,9 @@ const ConsiderationABI = [
         type: "tuple[]",
       },
       {
-        internalType: "address",
-        name: "fulfillerConduit",
-        type: "address",
+        internalType: "bytes32",
+        name: "fulfillerConduitKey",
+        type: "bytes32",
       },
     ],
     name: "fulfillAdvancedOrder",
@@ -992,9 +990,9 @@ const ConsiderationABI = [
                 type: "uint256",
               },
               {
-                internalType: "address",
-                name: "conduit",
-                type: "address",
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
               },
               {
                 internalType: "uint256",
@@ -1098,9 +1096,9 @@ const ConsiderationABI = [
         type: "tuple[][]",
       },
       {
-        internalType: "address",
-        name: "fulfillerConduit",
-        type: "address",
+        internalType: "bytes32",
+        name: "fulfillerConduitKey",
+        type: "bytes32",
       },
     ],
     name: "fulfillAvailableAdvancedOrders",
@@ -1150,9 +1148,9 @@ const ConsiderationABI = [
             type: "address",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
         ],
         internalType: "struct Execution[]",
@@ -1187,9 +1185,9 @@ const ConsiderationABI = [
             type: "uint256[]",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
         ],
         internalType: "struct BatchExecution[]",
@@ -1270,14 +1268,14 @@ const ConsiderationABI = [
             type: "uint256",
           },
           {
-            internalType: "address",
-            name: "offererConduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "offererConduitKey",
+            type: "bytes32",
           },
           {
-            internalType: "address",
-            name: "fulfillerConduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "fulfillerConduitKey",
+            type: "bytes32",
           },
           {
             internalType: "uint256",
@@ -1434,9 +1432,9 @@ const ConsiderationABI = [
                 type: "uint256",
               },
               {
-                internalType: "address",
-                name: "conduit",
-                type: "address",
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
               },
               {
                 internalType: "uint256",
@@ -1459,9 +1457,9 @@ const ConsiderationABI = [
         type: "tuple",
       },
       {
-        internalType: "address",
-        name: "fulfillerConduit",
-        type: "address",
+        internalType: "bytes32",
+        name: "fulfillerConduitKey",
+        type: "bytes32",
       },
     ],
     name: "fulfillOrder",
@@ -1603,9 +1601,9 @@ const ConsiderationABI = [
             type: "uint256",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
           {
             internalType: "uint256",
@@ -1674,6 +1672,24 @@ const ConsiderationABI = [
       },
     ],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "information",
+    outputs: [
+      {
+        internalType: "bytes32",
+        name: "domainSeparator",
+        type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "conduitController",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -1787,9 +1803,9 @@ const ConsiderationABI = [
                 type: "uint256",
               },
               {
-                internalType: "address",
-                name: "conduit",
-                type: "address",
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
               },
               {
                 internalType: "uint256",
@@ -1942,9 +1958,9 @@ const ConsiderationABI = [
             type: "address",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
         ],
         internalType: "struct Execution[]",
@@ -1979,9 +1995,9 @@ const ConsiderationABI = [
             type: "uint256[]",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
         ],
         internalType: "struct BatchExecution[]",
@@ -2103,9 +2119,9 @@ const ConsiderationABI = [
                 type: "uint256",
               },
               {
-                internalType: "address",
-                name: "conduit",
-                type: "address",
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
               },
               {
                 internalType: "uint256",
@@ -2211,9 +2227,9 @@ const ConsiderationABI = [
             type: "address",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
         ],
         internalType: "struct Execution[]",
@@ -2248,9 +2264,9 @@ const ConsiderationABI = [
             type: "uint256[]",
           },
           {
-            internalType: "address",
-            name: "conduit",
-            type: "address",
+            internalType: "bytes32",
+            name: "conduitKey",
+            type: "bytes32",
           },
         ],
         internalType: "struct BatchExecution[]",
@@ -2259,19 +2275,6 @@ const ConsiderationABI = [
       },
     ],
     stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "name",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "pure",
     type: "function",
   },
   {
@@ -2385,9 +2388,9 @@ const ConsiderationABI = [
                 type: "uint256",
               },
               {
-                internalType: "address",
-                name: "conduit",
-                type: "address",
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
               },
               {
                 internalType: "uint256",
@@ -2419,19 +2422,6 @@ const ConsiderationABI = [
       },
     ],
     stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "version",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "pure",
     type: "function",
   },
 ];

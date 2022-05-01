@@ -56,7 +56,7 @@ export type OrderParameters = {
   offer: OfferItem[];
   consideration: ConsiderationItem[];
   totalOriginalConsiderationItems: BigNumberish;
-  conduit: string;
+  conduitKey: string;
 };
 
 export type OrderComponents = OrderParameters & { nonce: number };
@@ -125,7 +125,7 @@ export type Fee = {
 };
 
 export type CreateOrderInput = {
-  conduit?: string;
+  conduitKey?: string;
   zone?: string;
   startTime?: string;
   endTime?: string;

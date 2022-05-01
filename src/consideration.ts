@@ -133,16 +133,16 @@ export class Consideration {
 
   private _getConduitOperators(
     address: string,
-    conduit: string
+    conduitKey: string
   ): Promise<ApprovalOperators> {
-    if (conduit === NO_CONDUIT) {
+    if (conduitKey === NO_CONDUIT) {
       return Promise.resolve({
         operator: this.contract.address,
         erc20Operator: this.contract.address,
       });
     }
 
-    if (conduit === LEGACY_PROXY_CONDUIT) {
+    if (conduitKey === LEGACY_PROXY_CONDUIT) {
       const proxyRegistryInterface = new Contract(
         this.legacyProxyRegistryAddress,
         ProxyRegistryInterfaceABI,
@@ -157,8 +157,11 @@ export class Consideration {
         erc20Operator,
       }));
     }
-
-    return Promise.resolve({ operator: conduit, erc20Operator: conduit });
+    // PLACEHOLDER FOR NOW
+    return Promise.resolve({
+      operator: this.contract.address,
+      erc20Operator: this.contract.address,
+    });
   }
 
   /**
@@ -168,8 +171,8 @@ export class Consideration {
    * or a signature request that will then be supplied into the final Order struct, ready to be fulfilled.
    *
    * @param input
-   * @param input.conduit The address to source your approvals from. Defaults to address(0) which refers to the Consideration contract.
-   *                      Another special value is address(1) will refer to the legacy proxy. All other values refer to the specified address
+   * @param input.conduitKey The conduitKey key to derive where to source your approvals from. Defaults to 0 which refers to the Consideration contract.
+   *                         Another special value is address(1) will refer to the legacy proxy. All other must derive to the specified address.
    * @param input.zone The zone of the order. Defaults to the zero address.
    * @param input.startTime The start time of the order. Defaults to the current unix time.
    * @param input.endTime The end time of the order. Defaults to "never end".
@@ -188,7 +191,7 @@ export class Consideration {
    */
   public async createOrder(
     {
-      conduit = NO_CONDUIT,
+      conduitKey = NO_CONDUIT,
       zone = ethers.constants.AddressZero,
       startTime = Math.floor(Date.now() / 1000).toString(),
       endTime = MAX_INT.toString(),
@@ -230,7 +233,7 @@ export class Consideration {
     const totalCurrencyAmount = totalItemsAmount(currencies);
 
     const [operators, resolvedNonce] = await Promise.all([
-      this._getConduitOperators(offerer, conduit),
+      this._getConduitOperators(offerer, conduitKey),
       nonce ?? this.getNonce(offerer),
     ]);
 
@@ -273,7 +276,7 @@ export class Consideration {
       consideration: considerationItemsWithFees,
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
       salt,
-      conduit,
+      conduitKey,
     };
 
     const checkBalancesAndApprovals =
@@ -588,7 +591,7 @@ export class Consideration {
    * @param input.tips an array of optional condensed consideration items to be added onto a fulfillment
    * @param input.extraData extra data supplied to the order
    * @param input.accountAddress optional address from which to fulfill the order from
-   * @param input.conduit the conduit to source approvals from
+   * @param input.conduitKey the conduitKey to source approvals from
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -599,7 +602,7 @@ export class Consideration {
     tips = [],
     extraData = "0x",
     accountAddress,
-    conduit = NO_CONDUIT,
+    conduitKey = NO_CONDUIT,
   }: {
     order: Order;
     unitsToFill?: BigNumberish;
@@ -608,7 +611,7 @@ export class Consideration {
     tips?: TipInputItem[];
     extraData?: string;
     accountAddress?: string;
-    conduit?: string;
+    conduitKey?: string;
   }): Promise<OrderUseCase<ExchangeAction>> {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
@@ -618,8 +621,8 @@ export class Consideration {
     const fulfillerAddress = await fulfiller.getAddress();
 
     const [offererOperators, fulfillerOperators, nonce] = await Promise.all([
-      this._getConduitOperators(offerer, orderParameters.conduit),
-      this._getConduitOperators(fulfillerAddress, conduit),
+      this._getConduitOperators(offerer, orderParameters.conduitKey),
+      this._getConduitOperators(fulfillerAddress, conduitKey),
       this.getNonce(offerer),
     ]);
 
@@ -684,7 +687,7 @@ export class Consideration {
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
-        conduit,
+        conduitKey,
         offererOperators,
         fulfillerOperators,
         signer: fulfiller,
@@ -708,7 +711,7 @@ export class Consideration {
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       timeBasedItemParams,
-      conduit,
+      conduitKey,
       signer: fulfiller,
       offererOperators,
       fulfillerOperators,
@@ -721,9 +724,9 @@ export class Consideration {
   public async fulfillOrders({
     fulfillOrderDetails,
     accountAddress,
-    conduit = NO_CONDUIT,
+    conduitKey = NO_CONDUIT,
   }: {
-    conduit?: string;
+    conduitKey?: string;
     fulfillOrderDetails: {
       order: Order;
       unitsToFill?: BigNumberish;
@@ -750,11 +753,11 @@ export class Consideration {
           fulfillOrderDetails.map(({ order }) =>
             this._getConduitOperators(
               order.parameters.offerer,
-              order.parameters.conduit
+              order.parameters.conduitKey
             )
           )
         ),
-        this._getConduitOperators(fulfillerAddress, conduit),
+        this._getConduitOperators(fulfillerAddress, conduitKey),
         Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
       ]);
 
@@ -839,7 +842,7 @@ export class Consideration {
         this.config.ascendingAmountFulfillmentBuffer,
       fulfillerOperators,
       signer: fulfiller,
-      conduit,
+      conduitKey,
     });
   }
 }

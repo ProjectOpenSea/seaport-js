@@ -5,7 +5,13 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
-import { ItemType, MAX_INT, OrderType } from "../constants";
+import {
+  ItemType,
+  LEGACY_PROXY_CONDUIT,
+  MAX_INT,
+  NO_CONDUIT,
+  OrderType,
+} from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
@@ -506,6 +512,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC1155 <=> ETH", async () => {
+        console.log(NO_CONDUIT, LEGACY_PROXY_CONDUIT);
+
         const { consideration, testErc1155 } = fixture;
 
         const { executeAllActions } = await consideration.createOrder(

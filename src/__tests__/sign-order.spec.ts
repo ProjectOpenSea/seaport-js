@@ -58,7 +58,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       startTime,
       endTime,
       zoneHash: formatBytes32String(nonce.toString()),
-      conduit: NO_CONDUIT,
+      conduitKey: NO_CONDUIT,
     };
 
     const signature = await consideration.signOrder(

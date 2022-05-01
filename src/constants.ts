@@ -1,6 +1,5 @@
 import { BigNumber, ethers } from "ethers";
 
-/* eslint-disable no-unused-vars */
 export const CONSIDERATION_CONTRACT_NAME = "Consideration";
 export const CONSIDERATION_CONTRACT_VERSION = "rc.1";
 export const EIP_712_ORDER_TYPE = {
@@ -14,7 +13,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "endTime", type: "uint256" },
     { name: "zoneHash", type: "bytes32" },
     { name: "salt", type: "uint256" },
-    { name: "conduit", type: "address" },
+    { name: "conduitKey", type: "bytes32" },
     { name: "nonce", type: "uint256" },
   ],
   OfferItem: [
@@ -74,9 +73,10 @@ export const MAX_INT = BigNumber.from(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 );
 export const ONE_HUNDRED_PERCENT_BP = 10000;
-export const NO_CONDUIT = ethers.constants.AddressZero;
+export const NO_CONDUIT =
+  "0x0000000000000000000000000000000000000000000000000000000000000000";
 export const LEGACY_PROXY_CONDUIT =
-  ethers.constants.AddressZero.slice(0, -1) + "1";
+  "0x0000000000000000000000000000000000000000000000000000000000000001";
 
 export enum Network {
   MAINNET = 1,

@@ -63,7 +63,14 @@ export const describeWithFixture = (
       const legacyProxyImplementation =
         await legacyProxyRegistry.delegateProxyImplementation();
 
+      const ConduitControllerFactory = await ethers.getContractFactory(
+        "ConduitController"
+      );
+
+      const conduitController = await ConduitControllerFactory.deploy();
+
       const considerationContract = await ConsiderationFactory.deploy(
+        conduitController.address,
         legacyProxyRegistry.address,
         legacyTokenTransferProxy.address,
         legacyProxyImplementation

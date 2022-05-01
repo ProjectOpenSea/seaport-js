@@ -170,8 +170,8 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
     );
 };
 
-export const useOffererProxy = (conduit: string) =>
-  conduit === LEGACY_PROXY_CONDUIT;
+export const useOffererProxy = (conduitKey: string) =>
+  conduitKey === LEGACY_PROXY_CONDUIT;
 
 /**
  * Maps order offer and consideration item amounts based on the order's filled status

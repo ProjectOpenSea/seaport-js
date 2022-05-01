@@ -194,7 +194,7 @@ export async function fulfillBasicOrder({
   fulfillerOperators,
   signer,
   tips = [],
-  conduit,
+  conduitKey,
 }: {
   order: Order;
   considerationContract: Consideration;
@@ -205,7 +205,7 @@ export async function fulfillBasicOrder({
   fulfillerOperators: ApprovalOperators;
   signer: providers.JsonRpcSigner;
   tips?: ConsiderationItem[];
-  conduit: string;
+  conduitKey: string;
 }): Promise<OrderUseCase<ExchangeAction>> {
   const { offer, consideration } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
@@ -254,11 +254,11 @@ export async function fulfillBasicOrder({
     fulfillerOperators,
   });
 
-  const useFulfillerProxy = conduit === LEGACY_PROXY_CONDUIT;
+  const useFulfillerProxy = conduitKey === LEGACY_PROXY_CONDUIT;
 
   const basicOrderParameters: BasicOrderParametersStruct = {
     offerer: order.parameters.offerer,
-    offererConduit: order.parameters.conduit,
+    offererConduitKey: order.parameters.conduitKey,
     zone: order.parameters.zone,
     //  Note the use of a "basicOrderType" enum;
     //  this represents both the usual order type as well as the "route"
@@ -277,7 +277,7 @@ export async function fulfillBasicOrder({
     totalOriginalAdditionalRecipients:
       order.parameters.consideration.length - 1,
     signature: order.signature,
-    fulfillerConduit: useFulfillerProxy ? LEGACY_PROXY_CONDUIT : NO_CONDUIT,
+    fulfillerConduitKey: useFulfillerProxy ? LEGACY_PROXY_CONDUIT : NO_CONDUIT,
     additionalRecipients,
     zoneHash: order.parameters.zoneHash,
   };
@@ -322,7 +322,7 @@ export async function fulfillStandardOrder({
   offererOperators,
   fulfillerOperators,
   timeBasedItemParams,
-  conduit,
+  conduitKey,
   signer,
 }: {
   order: Order;
@@ -338,7 +338,7 @@ export async function fulfillStandardOrder({
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   offererOperators: ApprovalOperators;
   fulfillerOperators: ApprovalOperators;
-  conduit: string;
+  conduitKey: string;
   timeBasedItemParams: TimeBasedItemParams;
   signer: providers.JsonRpcSigner;
 }): Promise<OrderUseCase<ExchangeAction>> {
@@ -446,14 +446,14 @@ export async function fulfillStandardOrder({
                   considerationCriterias: [considerationCriteria],
                 })
               : [],
-            conduit,
+            conduitKey,
             payableOverrides,
           ]
         )
       : getTransactionMethods(
           considerationContract.connect(signer),
           "fulfillOrder",
-          [orderAccountingForTips, conduit, payableOverrides]
+          [orderAccountingForTips, conduitKey, payableOverrides]
         ),
   } as const;
 
@@ -507,7 +507,7 @@ export async function fulfillAvailableOrders({
   fulfillerOperators,
   currentBlockTimestamp,
   ascendingAmountTimestampBuffer,
-  conduit,
+  conduitKey,
   signer,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
@@ -516,7 +516,7 @@ export async function fulfillAvailableOrders({
   fulfillerOperators: ApprovalOperators;
   currentBlockTimestamp: number;
   ascendingAmountTimestampBuffer: number;
-  conduit: string;
+  conduitKey: string;
   signer: providers.JsonRpcSigner;
 }): Promise<OrderUseCase<ExchangeAction>> {
   const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
@@ -685,7 +685,7 @@ export async function fulfillAvailableOrders({
           : [],
         offerFulfillments,
         considerationFulfillments,
-        conduit,
+        conduitKey,
         payableOverrides,
       ]
     ),
@@ -731,7 +731,7 @@ export function generateFulfillOrdersFulfillments(
 
       return order.parameters.offer.forEach((item, itemIndex) => {
         const aggregateKey = `${hashAggregateKey(
-          useOffererProxy(order.parameters.conduit)
+          useOffererProxy(order.parameters.conduitKey)
             ? isErc20Item(item.itemType)
               ? offererOperators.erc20Operator
               : offererOperators.operator
