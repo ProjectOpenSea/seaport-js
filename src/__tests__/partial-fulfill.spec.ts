@@ -86,10 +86,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await consideration.getOrderStatus(
-            consideration.getOrderHash({
-              ...order.parameters,
-              nonce: order.nonce,
-            })
+            consideration.getOrderHash(order.parameters)
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -171,10 +168,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await consideration.getOrderStatus(
-            consideration.getOrderHash({
-              ...order.parameters,
-              nonce: order.nonce,
-            })
+            consideration.getOrderHash(order.parameters)
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -295,10 +289,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await consideration.getOrderStatus(
-            consideration.getOrderHash({
-              ...order.parameters,
-              nonce: order.nonce,
-            })
+            consideration.getOrderHash(order.parameters)
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -444,10 +435,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await consideration.getOrderStatus(
-            consideration.getOrderHash({
-              ...order.parameters,
-              nonce: order.nonce,
-            })
+            consideration.getOrderHash(order.parameters)
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -539,10 +527,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await consideration.getOrderStatus(
-            consideration.getOrderHash({
-              ...order.parameters,
-              nonce: order.nonce,
-            })
+            consideration.getOrderHash(order.parameters)
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -681,10 +666,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await consideration.getOrderStatus(
-            consideration.getOrderHash({
-              ...order.parameters,
-              nonce: order.nonce,
-            })
+            consideration.getOrderHash(order.parameters)
           );
 
           const ownerToTokenToIdentifierBalances =

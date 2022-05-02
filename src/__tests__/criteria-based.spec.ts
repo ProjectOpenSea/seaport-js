@@ -144,10 +144,7 @@ describeWithFixture(
             const order = await executeAllActions();
 
             const orderStatus = await consideration.getOrderStatus(
-              consideration.getOrderHash({
-                ...order.parameters,
-                nonce: order.nonce,
-              })
+              consideration.getOrderHash(order.parameters)
             );
 
             const ownerToTokenToIdentifierBalances =

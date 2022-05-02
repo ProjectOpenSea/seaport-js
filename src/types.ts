@@ -151,8 +151,9 @@ export type OrderStatus = {
   totalSize: BigNumber;
 };
 
-export type CreatedOrder = Order & {
-  nonce: number;
+export type OrderWithNonce = {
+  parameters: OrderComponents;
+  signature: string;
 };
 
 export type TransactionMethods = {
@@ -179,7 +180,7 @@ export type ExchangeAction = {
 export type CreateOrderAction = {
   type: "create";
   getMessageToSign: () => Promise<string>;
-  createOrder: () => Promise<CreatedOrder>;
+  createOrder: () => Promise<OrderWithNonce>;
 };
 
 export type TransactionAction = ApprovalAction | ExchangeAction;
@@ -199,7 +200,7 @@ export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
     ? CreateOrderActions
     : OrderExchangeActions;
   executeAllActions: () => Promise<
-    T extends CreateOrderAction ? CreatedOrder : ContractTransaction
+    T extends CreateOrderAction ? OrderWithNonce : ContractTransaction
   >;
 };
 

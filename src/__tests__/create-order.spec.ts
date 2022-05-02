@@ -103,9 +103,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
         conduitKey: NO_CONDUIT,
+        nonce: 0,
       },
       signature: order.signature,
-      nonce: 0,
     });
 
     const isValid = await considerationContract
@@ -219,9 +219,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
         conduitKey: NO_CONDUIT,
+        nonce: 0,
       },
       signature: order.signature,
-      nonce: 0,
     });
 
     const isValid = await considerationContract
@@ -384,9 +384,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
         conduitKey: NO_CONDUIT,
+        nonce: 0,
       },
       signature: order.signature,
-      nonce: 0,
     });
 
     const isValid = await considerationContract
@@ -600,9 +600,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
           conduitKey: NO_CONDUIT,
+          nonce: 0,
         },
         signature: order.signature,
-        nonce: 0,
       });
 
       const isValid = await considerationContract
@@ -701,5 +701,47 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ]);
 
     expect(isValid).to.be.true;
+  });
+
+  it("should have the same order hash as on the contract", async () => {
+    const { considerationContract, consideration, testErc721 } = fixture;
+
+    const [offerer, zone] = await ethers.getSigners();
+    const nftId = "1";
+    await testErc721.mint(offerer.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const salt = generateRandomSalt();
+
+    const { executeAllActions } = await consideration.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifier: nftId,
+        },
+      ],
+      consideration: [
+        {
+          amount: ethers.utils.parseEther("10").toString(),
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
+
+    const order = await executeAllActions();
+
+    const contractOrderHash = await considerationContract.getOrderHash(
+      order.parameters
+    );
+
+    const localOrderHash = consideration.getOrderHash(order.parameters);
+
+    expect(contractOrderHash).eq(localOrderHash);
   });
 });

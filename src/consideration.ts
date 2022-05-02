@@ -18,7 +18,7 @@ import type { Consideration as ConsiderationContract } from "./typechain/Conside
 import type {
   ApprovalOperators,
   ConsiderationConfig,
-  CreatedOrder,
+  OrderWithNonce,
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
@@ -307,8 +307,7 @@ export class Consideration {
         );
 
         return {
-          parameters: orderParameters,
-          nonce: resolvedNonce,
+          parameters: { ...orderParameters, nonce: resolvedNonce },
           signature,
         };
       },
@@ -319,7 +318,7 @@ export class Consideration {
     return {
       actions,
       executeAllActions: () =>
-        executeAllActions(actions) as Promise<CreatedOrder>,
+        executeAllActions(actions) as Promise<OrderWithNonce>,
     };
   }
 
@@ -474,7 +473,7 @@ export class Consideration {
     const considerationItemTypeString =
       "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
     const orderComponentsPartialTypeString =
-      "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,uint256 salt,uint256 nonce)";
+      "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 nonce)";
     const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
 
     const offerItemTypeHash = ethers.utils.keccak256(
@@ -567,7 +566,9 @@ export class Consideration {
             .toHexString()
             .slice(2)
             .padStart(64, "0"),
+          orderComponents.zoneHash.slice(2),
           orderComponents.salt.slice(2).padStart(64, "0"),
+          orderComponents.conduitKey.slice(2).padStart(64, "0"),
           ethers.BigNumber.from(orderComponents.nonce)
             .toHexString()
             .slice(2)
@@ -582,7 +583,7 @@ export class Consideration {
    * Fulfills an order through either the basic method or the standard method
    * Units to fill are denominated by the max possible size of the order, which is the greatest common denominator (GCD).
    * We expose a helper to get this: getMaximumSizeForOrder
-   * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order
+   * i.e. If the maximum size of an order is 4, supplying 2 as the units to fulfill will fill half of the order: ;
    * @param input
    * @param input.order The standard order struct
    * @param input.unitsToFill the number of units to fill for the given order. Only used if you wish to partially fill an order
@@ -604,7 +605,7 @@ export class Consideration {
     accountAddress,
     conduitKey = NO_CONDUIT,
   }: {
-    order: Order;
+    order: OrderWithNonce;
     unitsToFill?: BigNumberish;
     offerCriteria?: InputCriteria[];
     considerationCriteria?: InputCriteria[];
@@ -620,10 +621,9 @@ export class Consideration {
 
     const fulfillerAddress = await fulfiller.getAddress();
 
-    const [offererOperators, fulfillerOperators, nonce] = await Promise.all([
+    const [offererOperators, fulfillerOperators] = await Promise.all([
       this._getConduitOperators(offerer, orderParameters.conduitKey),
       this._getConduitOperators(fulfillerAddress, conduitKey),
-      this.getNonce(offerer),
     ]);
 
     const [
@@ -649,7 +649,7 @@ export class Consideration {
         operators: fulfillerOperators,
       }),
       this.multicallProvider.getBlock("latest"),
-      this.getOrderStatus(this.getOrderHash({ ...orderParameters, nonce })),
+      this.getOrderStatus(this.getOrderHash(orderParameters)),
     ]);
 
     const currentBlockTimestamp = currentBlock.timestamp;
@@ -728,7 +728,7 @@ export class Consideration {
   }: {
     conduitKey?: string;
     fulfillOrderDetails: {
-      order: Order;
+      order: OrderWithNonce;
       unitsToFill?: BigNumberish;
       offerCriteria?: InputCriteria[];
       considerationCriteria?: InputCriteria[];
@@ -741,25 +741,17 @@ export class Consideration {
 
     const fulfillerAddress = await fulfiller.getAddress();
 
-    const uniqueOfferers = [
-      ...new Set(
-        fulfillOrderDetails.map(({ order }) => order.parameters.offerer)
-      ),
-    ];
-
-    const [allOffererOperators, fulfillerOperators, offererNonces] =
-      await Promise.all([
-        Promise.all(
-          fulfillOrderDetails.map(({ order }) =>
-            this._getConduitOperators(
-              order.parameters.offerer,
-              order.parameters.conduitKey
-            )
+    const [allOffererOperators, fulfillerOperators] = await Promise.all([
+      Promise.all(
+        fulfillOrderDetails.map(({ order }) =>
+          this._getConduitOperators(
+            order.parameters.offerer,
+            order.parameters.conduitKey
           )
-        ),
-        this._getConduitOperators(fulfillerAddress, conduitKey),
-        Promise.all(uniqueOfferers.map((offerer) => this.getNonce(offerer))),
-      ]);
+        )
+      ),
+      this._getConduitOperators(fulfillerAddress, conduitKey),
+    ]);
 
     const allOfferItems = fulfillOrderDetails.flatMap(
       ({ order }) => order.parameters.offer
@@ -804,13 +796,7 @@ export class Consideration {
       this.multicallProvider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
-          this.getOrderStatus(
-            this.getOrderHash({
-              ...order.parameters,
-              nonce:
-                offererNonces[uniqueOfferers.indexOf(order.parameters.offerer)],
-            })
-          )
+          this.getOrderStatus(this.getOrderHash(order.parameters))
         )
       ),
     ]);
