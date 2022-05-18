@@ -274,7 +274,7 @@ describeWithFixture(
         });
       });
 
-      describe.only("[Accept offer] I want to accept three ERC721 offers", async () => {
+      describe("[Accept offer] I want to accept three ERC721 offers", async () => {
         beforeEach(async () => {
           const { testErc721, testErc20 } = fixture;
 

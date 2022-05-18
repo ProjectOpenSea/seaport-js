@@ -696,11 +696,17 @@ export function generateFulfillOrdersFulfillments(
   offerFulfillments: FulfillmentComponentStruct[];
   considerationFulfillments: FulfillmentComponentStruct[];
 } {
-  const hashAggregateKey = (
-    sourceOrDestination: string,
-    token: string,
-    identifier: string
-  ) => `${sourceOrDestination}-${token}-${identifier}`;
+  const hashAggregateKey = ({
+    sourceOrDestination,
+    operator = "",
+    token,
+    identifier,
+  }: {
+    sourceOrDestination: string;
+    operator?: string;
+    token: string;
+    identifier: string;
+  }) => `${sourceOrDestination}-${operator}-${token}-${identifier}`;
 
   const offerAggregatedFulfillments: Record<
     string,
@@ -720,12 +726,14 @@ export function generateFulfillOrdersFulfillments(
       );
 
       return order.parameters.offer.forEach((item, itemIndex) => {
-        const aggregateKey = `${hashAggregateKey(
-          offererOperator,
-          item.token,
-          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+        const aggregateKey = `${hashAggregateKey({
+          sourceOrDestination: order.parameters.offerer,
+          operator: offererOperator,
+          token: item.token,
+          identifier:
+            itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
           // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+        })}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
         offerAggregatedFulfillments[aggregateKey] = [
           ...(offerAggregatedFulfillments[aggregateKey] ?? []),
@@ -743,12 +751,13 @@ export function generateFulfillOrdersFulfillments(
       );
       return [...order.parameters.consideration, ...tips].forEach(
         (item, itemIndex) => {
-          const aggregateKey = `${hashAggregateKey(
-            item.recipient,
-            item.token,
-            itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+          const aggregateKey = `${hashAggregateKey({
+            sourceOrDestination: item.recipient,
+            token: item.token,
+            identifier:
+              itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
             // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-          )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+          })}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
           considerationAggregatedFulfillments[aggregateKey] = [
             ...(considerationAggregatedFulfillments[aggregateKey] ?? []),

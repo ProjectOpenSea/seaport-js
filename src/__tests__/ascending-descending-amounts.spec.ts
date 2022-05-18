@@ -506,8 +506,6 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC1155 <=> ETH", async () => {
-        console.log(NO_CONDUIT);
-
         const { consideration, testErc1155 } = fixture;
 
         const { executeAllActions } = await consideration.createOrder(
