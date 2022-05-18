@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from "ethers";
+import { BigNumber } from "ethers";
 
 export const CONSIDERATION_CONTRACT_NAME = "Consideration";
 export const CONSIDERATION_CONTRACT_VERSION = "rc.1";
@@ -75,8 +75,9 @@ export const MAX_INT = BigNumber.from(
 export const ONE_HUNDRED_PERCENT_BP = 10000;
 export const NO_CONDUIT =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
-export const LEGACY_PROXY_CONDUIT =
-  "0x0000000000000000000000000000000000000000000000000000000000000001";
+
+// Supply here any known conduit keys as well as their conduits
+export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {};
 
 export enum Network {
   MAINNET = 1,

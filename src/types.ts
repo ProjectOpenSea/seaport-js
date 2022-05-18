@@ -8,22 +8,23 @@ import {
 import { ItemType, Network, OrderType } from "./constants";
 
 export type ConsiderationConfig = {
-  // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 30 minutes
+  // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
   ascendingAmountFulfillmentBuffer?: number;
 
-  // Defaults to false (thus, approving the max amount)
-  approveExactAmount?: boolean;
-
-  // allow users to optionally skip balance and approval checks
+  // Allow users to optionally skip balance and approval checks on order creation
   balanceAndApprovalChecksOnOrderCreation?: boolean;
+
+  // Mainly used for defaulting the contract address
+  network?: Network;
+
+  // A mapping of conduit key to conduit
+  conduitKeyToConduit?: Record<string, string>;
 
   overrides?: {
     contractAddress?: string;
-    legacyProxyRegistryAddress?: string;
-    legacyTokenTransferProxy?: string;
+    // A default conduit key to use when creating and fulfilling orders
+    defaultConduitKey?: string;
   };
-
-  network?: Network;
 };
 
 export type OfferItem = {
@@ -212,9 +213,4 @@ export type FulfillmentComponent = {
 export type Fulfillment = {
   offerComponents: FulfillmentComponent[];
   considerationComponents: FulfillmentComponent[];
-};
-
-export type ApprovalOperators = {
-  operator: string;
-  erc20Operator: string;
 };

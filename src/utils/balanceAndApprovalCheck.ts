@@ -1,12 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumber } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
-import type {
-  ApprovalOperators,
-  InputCriteria,
-  Item,
-  OrderParameters,
-} from "../types";
+import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";
 import { getItemToCriteriaMap } from "./criteria";
@@ -71,13 +66,13 @@ export const getBalancesAndApprovals = async ({
   owner,
   items,
   criterias,
-  operators,
+  operator,
   multicallProvider,
 }: {
   owner: string;
   items: Item[];
   criterias: InputCriteria[];
-  operators: ApprovalOperators;
+  operator: string;
   multicallProvider: multicallProviders.MulticallProvider;
 }): Promise<BalancesAndApprovals> => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
@@ -90,14 +85,14 @@ export const getBalancesAndApprovals = async ({
         approvedAmountPromise = approvedItemAmount(
           owner,
           item,
-          operators.operator,
+          operator,
           multicallProvider
         );
       } else if (isErc20Item(item.itemType)) {
         approvedAmountPromise = approvedItemAmount(
           owner,
           item,
-          operators.erc20Operator,
+          operator,
           multicallProvider
         );
       }
@@ -126,13 +121,13 @@ export const getBalancesAndApprovals = async ({
 export const getInsufficientBalanceAndApprovalAmounts = ({
   balancesAndApprovals,
   tokenAndIdentifierAmounts,
-  operators,
+  operator,
 }: {
   balancesAndApprovals: BalancesAndApprovals;
   tokenAndIdentifierAmounts: ReturnType<
     typeof getSummedTokenAndIdentifierAmounts
   >;
-  operators: ApprovalOperators;
+  operator: string;
 }): {
   insufficientBalances: InsufficientBalances;
   insufficientApprovals: InsufficientApprovals;
@@ -182,7 +177,7 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
     approvedAmount: insufficientBalance.amountHave,
     requiredApprovedAmount: insufficientBalance.requiredAmount,
     itemType: insufficientBalance.itemType,
-    operator: "",
+    operator,
   });
 
   const [insufficientBalances, insufficientApprovals] = [
@@ -190,17 +185,9 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
     filterBalancesOrApprovals("approvedAmount").map(mapToApproval),
   ];
 
-  const mapOperator = (insufficientApproval: InsufficientApprovals[number]) => {
-    const operator = isErc20Item(insufficientApproval.itemType)
-      ? operators.erc20Operator
-      : operators.operator;
-
-    return { ...insufficientApproval, operator };
-  };
-
   return {
     insufficientBalances,
-    insufficientApprovals: insufficientApprovals.map(mapOperator),
+    insufficientApprovals,
   };
 };
 
@@ -218,13 +205,13 @@ export const validateOfferBalancesAndApprovals = ({
   timeBasedItemParams,
   throwOnInsufficientBalances = true,
   throwOnInsufficientApprovals,
-  operators,
+  operator,
 }: {
   balancesAndApprovals: BalancesAndApprovals;
   timeBasedItemParams?: TimeBasedItemParams;
   throwOnInsufficientBalances?: boolean;
   throwOnInsufficientApprovals?: boolean;
-  operators: ApprovalOperators;
+  operator: string;
 } & Pick<OrderParameters, "offer"> & {
     criterias: InputCriteria[];
   }): InsufficientApprovals => {
@@ -238,7 +225,7 @@ export const validateOfferBalancesAndApprovals = ({
           ? { ...timeBasedItemParams, isConsiderationItem: false }
           : undefined,
       }),
-      operators,
+      operator,
     });
 
   if (throwOnInsufficientBalances && insufficientBalances.length > 0) {
@@ -278,14 +265,14 @@ export const validateBasicFulfillBalancesAndApprovals = ({
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
   timeBasedItemParams,
-  offererOperators,
-  fulfillerOperators,
+  offererOperator,
+  fulfillerOperator,
 }: {
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   timeBasedItemParams: TimeBasedItemParams;
-  offererOperators: ApprovalOperators;
-  fulfillerOperators: ApprovalOperators;
+  offererOperator: string;
+  fulfillerOperator: string;
 } & Pick<OrderParameters, "offer" | "consideration">) => {
   validateOfferBalancesAndApprovals({
     offer,
@@ -293,7 +280,7 @@ export const validateBasicFulfillBalancesAndApprovals = ({
     balancesAndApprovals: offererBalancesAndApprovals,
     timeBasedItemParams,
     throwOnInsufficientApprovals: true,
-    operators: offererOperators,
+    operator: offererOperator,
   });
 
   const considerationWithoutOfferItemType = consideration.filter(
@@ -311,7 +298,7 @@ export const validateBasicFulfillBalancesAndApprovals = ({
           isConsiderationItem: true,
         },
       }),
-      operators: fulfillerOperators,
+      operator: fulfillerOperator,
     });
 
   if (insufficientBalances.length > 0) {
@@ -347,16 +334,16 @@ export const validateStandardFulfillBalancesAndApprovals = ({
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
   timeBasedItemParams,
-  offererOperators,
-  fulfillerOperators,
+  offererOperator,
+  fulfillerOperator,
 }: Pick<OrderParameters, "offer" | "consideration"> & {
   offerCriteria: InputCriteria[];
   considerationCriteria: InputCriteria[];
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   timeBasedItemParams: TimeBasedItemParams;
-  offererOperators: ApprovalOperators;
-  fulfillerOperators: ApprovalOperators;
+  offererOperator: string;
+  fulfillerOperator: string;
 }) => {
   validateOfferBalancesAndApprovals({
     offer,
@@ -364,7 +351,7 @@ export const validateStandardFulfillBalancesAndApprovals = ({
     balancesAndApprovals: offererBalancesAndApprovals,
     timeBasedItemParams,
     throwOnInsufficientApprovals: true,
-    operators: offererOperators,
+    operator: offererOperator,
   });
 
   const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
@@ -387,7 +374,7 @@ export const validateStandardFulfillBalancesAndApprovals = ({
           isConsiderationItem: true,
         },
       }),
-      operators: fulfillerOperators,
+      operator: fulfillerOperator,
     });
 
   if (insufficientBalances.length > 0) {

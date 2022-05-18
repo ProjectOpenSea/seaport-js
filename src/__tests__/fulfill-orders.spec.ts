@@ -4,12 +4,7 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
-import {
-  ItemType,
-  LEGACY_PROXY_CONDUIT,
-  MAX_INT,
-  NO_CONDUIT,
-} from "../constants";
+import { ItemType, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -55,15 +50,12 @@ describeWithFixture(
     describe("Multiple ERC721s are to be transferred from separate orders", async () => {
       describe("[Buy now] I want to buy three ERC721 listings", async () => {
         beforeEach(async () => {
-          const { testErc721, legacyProxyRegistry } = fixture;
+          const { testErc721 } = fixture;
 
           // These will be used in 3 separate orders
           await testErc721.mint(offerer.address, nftId);
           await testErc721.mint(offerer.address, nftId2);
           await secondTestErc721.mint(secondOfferer.address, nftId);
-
-          // Register the proxy on the offerer
-          await legacyProxyRegistry.connect(offerer).registerProxy();
 
           firstStandardCreateOrderInput = {
             offer: [
@@ -169,72 +161,6 @@ describeWithFixture(
             expect(owners.every((owner) => owner === fulfiller.address)).to.be
               .true;
 
-            expect(fulfillAvailableOrdersSpy).calledOnce;
-          });
-
-          it("3 ERC721 <=> ETH (two offer via proxy)", async () => {
-            const { testErc721, legacyProxyRegistry, consideration } = fixture;
-
-            const offererProxy = await legacyProxyRegistry.proxies(
-              offerer.address
-            );
-
-            // Approving both proxy and consideration contract for convenience
-            await testErc721
-              .connect(offerer)
-              .setApprovalForAll(offererProxy, true);
-
-            const firstOrderUseCase = await consideration.createOrder({
-              ...firstStandardCreateOrderInput,
-              conduitKey: LEGACY_PROXY_CONDUIT,
-            });
-
-            const firstOrder = await firstOrderUseCase.executeAllActions();
-
-            expect(firstOrder.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
-
-            const secondOrderUseCase = await consideration.createOrder(
-              secondStandardCreateOrderInput
-            );
-
-            const secondOrder = await secondOrderUseCase.executeAllActions();
-
-            expect(secondOrder.parameters.conduitKey).eq(NO_CONDUIT);
-
-            const thirdOrderUseCase = await consideration.createOrder(
-              thirdStandardCreateOrderInput,
-              secondOfferer.address
-            );
-
-            const thirdOrder = await thirdOrderUseCase.executeAllActions();
-
-            expect(thirdOrder.parameters.conduitKey).eq(NO_CONDUIT);
-
-            const { actions } = await consideration.fulfillOrders({
-              fulfillOrderDetails: [
-                { order: firstOrder },
-                { order: secondOrder },
-                { order: thirdOrder },
-              ],
-              accountAddress: fulfiller.address,
-            });
-
-            expect(actions.length).to.eq(1);
-
-            const action = actions[0];
-
-            expect(action.type).eq("exchange");
-
-            await action.transactionMethods.transact();
-
-            const owners = await Promise.all([
-              testErc721.ownerOf(nftId),
-              testErc721.ownerOf(nftId2),
-              secondTestErc721.ownerOf(nftId),
-            ]);
-
-            expect(owners.every((owner) => owner === fulfiller.address)).to.be
-              .true;
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
         });
@@ -348,7 +274,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept three ERC721 offers", async () => {
+      describe.only("[Accept offer] I want to accept three ERC721 offers", async () => {
         beforeEach(async () => {
           const { testErc721, testErc20 } = fixture;
 
@@ -534,94 +460,13 @@ describeWithFixture(
 
           expect(fulfillAvailableOrdersSpy).calledOnce;
         });
-
-        it("ERC20 <=> ERC721 (fulfilled via proxy)", async () => {
-          const {
-            consideration,
-            testErc721,
-            legacyProxyRegistry,
-            legacyTokenTransferProxy,
-            testErc20,
-          } = fixture;
-
-          const firstOrderUseCase = await consideration.createOrder(
-            firstStandardCreateOrderInput
-          );
-
-          const firstOrder = await firstOrderUseCase.executeAllActions();
-
-          const secondOrderUseCase = await consideration.createOrder(
-            secondStandardCreateOrderInput
-          );
-
-          const secondOrder = await secondOrderUseCase.executeAllActions();
-
-          const thirdOrderUseCase = await consideration.createOrder(
-            thirdStandardCreateOrderInput,
-            secondOfferer.address
-          );
-
-          const thirdOrder = await thirdOrderUseCase.executeAllActions();
-
-          // Register the proxy on the fulfiller
-          await legacyProxyRegistry.connect(fulfiller).registerProxy();
-
-          const fulfillerProxy = await legacyProxyRegistry.proxies(
-            fulfiller.address
-          );
-
-          await testErc721
-            .connect(fulfiller)
-            .setApprovalForAll(fulfillerProxy, true);
-
-          await testErc20
-            .connect(fulfiller)
-            .approve(legacyTokenTransferProxy.address, MAX_INT);
-
-          await secondTestErc721
-            .connect(fulfiller)
-            .setApprovalForAll(fulfillerProxy, true);
-
-          const { actions } = await consideration.fulfillOrders({
-            fulfillOrderDetails: [
-              { order: firstOrder },
-              { order: secondOrder },
-              { order: thirdOrder },
-            ],
-            accountAddress: fulfiller.address,
-            conduitKey: LEGACY_PROXY_CONDUIT,
-          });
-
-          const fulfillAction = actions[0];
-
-          expect(fulfillAction).to.be.deep.equal({
-            type: "exchange",
-            transactionMethods: fulfillAction.transactionMethods,
-          });
-
-          await fulfillAction.transactionMethods.transact();
-
-          const owners = await Promise.all([
-            testErc721.ownerOf(nftId),
-            testErc721.ownerOf(nftId2),
-            secondTestErc721.ownerOf(nftId),
-          ]);
-
-          expect(owners).deep.equal([
-            offerer.address,
-            offerer.address,
-            secondOfferer.address,
-          ]);
-
-          expect(fulfillAvailableOrdersSpy).calledOnce;
-        });
       });
     });
 
     describe("Multiple ERC1155s are to be transferred from separate orders", async () => {
       describe("[Buy now] I want to buy three ERC1155 listings", async () => {
         beforeEach(async () => {
-          const { testErc1155, legacyProxyRegistry } = fixture;
+          const { testErc1155 } = fixture;
 
           // These will be used in 3 separate orders
           await testErc1155.mint(offerer.address, nftId, erc1155Amount);
@@ -631,9 +476,6 @@ describeWithFixture(
             nftId,
             erc1155Amount
           );
-
-          // Register the proxy on the offerer
-          await legacyProxyRegistry.connect(offerer).registerProxy();
 
           firstStandardCreateOrderInput = {
             offer: [
@@ -743,73 +585,6 @@ describeWithFixture(
               BigNumber.from(erc1155Amount),
             ]);
 
-            expect(fulfillAvailableOrdersSpy).calledOnce;
-          });
-
-          it("3 ERC1155 <=> ETH (two offer via proxy)", async () => {
-            const { testErc1155, legacyProxyRegistry, consideration } = fixture;
-
-            const offererProxy = await legacyProxyRegistry.proxies(
-              offerer.address
-            );
-
-            // Approving both proxy and consideration contract for convenience
-            await testErc1155
-              .connect(offerer)
-              .setApprovalForAll(offererProxy, true);
-
-            const firstOrderUseCase = await consideration.createOrder({
-              ...firstStandardCreateOrderInput,
-              conduitKey: LEGACY_PROXY_CONDUIT,
-            });
-
-            const firstOrder = await firstOrderUseCase.executeAllActions();
-
-            expect(firstOrder.parameters.conduitKey).eq(LEGACY_PROXY_CONDUIT);
-
-            const secondOrderUseCase = await consideration.createOrder(
-              secondStandardCreateOrderInput
-            );
-
-            const secondOrder = await secondOrderUseCase.executeAllActions();
-
-            expect(secondOrder.parameters.conduitKey).eq(NO_CONDUIT);
-
-            const thirdOrderUseCase = await consideration.createOrder(
-              thirdStandardCreateOrderInput,
-              secondOfferer.address
-            );
-
-            const thirdOrder = await thirdOrderUseCase.executeAllActions();
-
-            expect(thirdOrder.parameters.conduitKey).eq(NO_CONDUIT);
-
-            const { actions } = await consideration.fulfillOrders({
-              fulfillOrderDetails: [
-                { order: firstOrder },
-                { order: secondOrder },
-                { order: thirdOrder },
-              ],
-              accountAddress: fulfiller.address,
-            });
-
-            expect(actions.length).to.eq(1);
-
-            const action = actions[0];
-
-            expect(action.type).eq("exchange");
-
-            await action.transactionMethods.transact();
-
-            const balances = await Promise.all([
-              testErc1155.balanceOf(fulfiller.address, nftId),
-              secondTestErc1155.balanceOf(fulfiller.address, nftId),
-            ]);
-
-            expect(balances).to.deep.equal([
-              BigNumber.from(10),
-              BigNumber.from(erc1155Amount),
-            ]);
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
         });
@@ -1091,85 +866,6 @@ describeWithFixture(
           ).to.be.true;
 
           const fulfillAction = actions[3];
-
-          expect(fulfillAction).to.be.deep.equal({
-            type: "exchange",
-            transactionMethods: fulfillAction.transactionMethods,
-          });
-
-          await fulfillAction.transactionMethods.transact();
-
-          const balances = await Promise.all([
-            testErc1155.balanceOf(offerer.address, nftId),
-            secondTestErc1155.balanceOf(secondOfferer.address, nftId),
-          ]);
-
-          expect(balances).to.deep.equal([
-            BigNumber.from(10),
-            BigNumber.from(erc1155Amount),
-          ]);
-
-          expect(fulfillAvailableOrdersSpy).calledOnce;
-        });
-
-        it("ERC20 <=> ERC1155 (fulfilled via proxy)", async () => {
-          const {
-            consideration,
-            testErc1155,
-            legacyProxyRegistry,
-            testErc20,
-            legacyTokenTransferProxy,
-          } = fixture;
-
-          const firstOrderUseCase = await consideration.createOrder(
-            firstStandardCreateOrderInput
-          );
-
-          const firstOrder = await firstOrderUseCase.executeAllActions();
-
-          const secondOrderUseCase = await consideration.createOrder(
-            secondStandardCreateOrderInput
-          );
-
-          const secondOrder = await secondOrderUseCase.executeAllActions();
-
-          const thirdOrderUseCase = await consideration.createOrder(
-            thirdStandardCreateOrderInput,
-            secondOfferer.address
-          );
-
-          const thirdOrder = await thirdOrderUseCase.executeAllActions();
-
-          // Register the proxy on the fulfiller
-          await legacyProxyRegistry.connect(fulfiller).registerProxy();
-
-          const fulfillerProxy = await legacyProxyRegistry.proxies(
-            fulfiller.address
-          );
-
-          await testErc1155
-            .connect(fulfiller)
-            .setApprovalForAll(fulfillerProxy, true);
-
-          await testErc20
-            .connect(fulfiller)
-            .approve(legacyTokenTransferProxy.address, MAX_INT);
-
-          await secondTestErc1155
-            .connect(fulfiller)
-            .setApprovalForAll(fulfillerProxy, true);
-
-          const { actions } = await consideration.fulfillOrders({
-            fulfillOrderDetails: [
-              { order: firstOrder },
-              { order: secondOrder },
-              { order: thirdOrder },
-            ],
-            accountAddress: fulfiller.address,
-            conduitKey: LEGACY_PROXY_CONDUIT,
-          });
-
-          const fulfillAction = actions[0];
 
           expect(fulfillAction).to.be.deep.equal({
             type: "exchange",
