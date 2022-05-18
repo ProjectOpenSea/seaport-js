@@ -85,8 +85,6 @@ export const describeWithFixture = (
       const consideration = new Consideration(ethers.provider, {
         overrides: {
           contractAddress: considerationContract.address,
-          legacyProxyRegistryAddress: legacyProxyRegistry.address,
-          legacyTokenTransferProxy: legacyTokenTransferProxy.address,
         },
       });
 
@@ -109,9 +107,6 @@ export const describeWithFixture = (
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;
       fixture.testErc20 = testErc20;
-      fixture.ownedUpgradeabilityProxy = ownedUpgradeabilityProxy;
-      fixture.legacyProxyRegistry = legacyProxyRegistry;
-      fixture.legacyTokenTransferProxy = legacyTokenTransferProxy;
     });
 
     suiteCb(fixture as Fixture);

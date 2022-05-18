@@ -5,12 +5,7 @@ import {
   ethers,
   providers,
 } from "ethers";
-import {
-  BasicOrderRouteType,
-  ItemType,
-  LEGACY_PROXY_CONDUIT,
-  NO_CONDUIT,
-} from "../constants";
+import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
   BasicOrderParametersStruct,
   Consideration,
@@ -19,7 +14,6 @@ import type {
 } from "../typechain/Consideration";
 import type {
   AdvancedOrder,
-  ApprovalOperators,
   ConsiderationItem,
   ExchangeAction,
   InputCriteria,
@@ -42,7 +36,6 @@ import {
   getSummedTokenAndIdentifierAmounts,
   isCriteriaItem,
   isCurrencyItem,
-  isErc20Item,
   isErc721Item,
   isNativeCurrencyItem,
   TimeBasedItemParams,
@@ -52,7 +45,6 @@ import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
-  useOffererProxy,
 } from "./order";
 import { executeAllActions, getTransactionMethods } from "./usecase";
 
@@ -190,19 +182,19 @@ export async function fulfillBasicOrder({
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
   timeBasedItemParams,
-  offererOperators,
-  fulfillerOperators,
+  offererOperator,
+  fulfillerOperator,
   signer,
   tips = [],
-  conduitKey,
+  conduitKey = NO_CONDUIT,
 }: {
   order: Order;
   considerationContract: Consideration;
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   timeBasedItemParams: TimeBasedItemParams;
-  offererOperators: ApprovalOperators;
-  fulfillerOperators: ApprovalOperators;
+  offererOperator: string;
+  fulfillerOperator: string;
   signer: providers.JsonRpcSigner;
   tips?: ConsiderationItem[];
   conduitKey: string;
@@ -250,11 +242,9 @@ export async function fulfillBasicOrder({
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
-    offererOperators,
-    fulfillerOperators,
+    offererOperator,
+    fulfillerOperator,
   });
-
-  const useFulfillerProxy = conduitKey === LEGACY_PROXY_CONDUIT;
 
   const basicOrderParameters: BasicOrderParametersStruct = {
     offerer: order.parameters.offerer,
@@ -277,7 +267,7 @@ export async function fulfillBasicOrder({
     totalOriginalAdditionalRecipients:
       order.parameters.consideration.length - 1,
     signature: order.signature,
-    fulfillerConduitKey: useFulfillerProxy ? LEGACY_PROXY_CONDUIT : NO_CONDUIT,
+    fulfillerConduitKey: conduitKey,
     additionalRecipients,
     zoneHash: order.parameters.zoneHash,
   };
@@ -319,8 +309,8 @@ export async function fulfillStandardOrder({
   considerationContract,
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
-  offererOperators,
-  fulfillerOperators,
+  offererOperator,
+  fulfillerOperator,
   timeBasedItemParams,
   conduitKey,
   signer,
@@ -336,8 +326,8 @@ export async function fulfillStandardOrder({
   considerationContract: Consideration;
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
-  offererOperators: ApprovalOperators;
-  fulfillerOperators: ApprovalOperators;
+  offererOperator: string;
+  fulfillerOperator: string;
   conduitKey: string;
   timeBasedItemParams: TimeBasedItemParams;
   signer: providers.JsonRpcSigner;
@@ -399,8 +389,8 @@ export async function fulfillStandardOrder({
     offererBalancesAndApprovals,
     fulfillerBalancesAndApprovals,
     timeBasedItemParams,
-    offererOperators,
-    fulfillerOperators,
+    offererOperator,
+    fulfillerOperator,
   });
 
   const payableOverrides = { value: totalNativeAmount };
@@ -497,14 +487,14 @@ export type FulfillOrdersMetadata = {
   tips: ConsiderationItem[];
   extraData: string;
   offererBalancesAndApprovals: BalancesAndApprovals;
-  offererOperators: ApprovalOperators;
+  offererOperator: string;
 }[];
 
 export async function fulfillAvailableOrders({
   ordersMetadata,
   considerationContract,
   fulfillerBalancesAndApprovals,
-  fulfillerOperators,
+  fulfillerOperator,
   currentBlockTimestamp,
   ascendingAmountTimestampBuffer,
   conduitKey,
@@ -513,7 +503,7 @@ export async function fulfillAvailableOrders({
   ordersMetadata: FulfillOrdersMetadata;
   considerationContract: Consideration;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
-  fulfillerOperators: ApprovalOperators;
+  fulfillerOperator: string;
   currentBlockTimestamp: number;
   ascendingAmountTimestampBuffer: number;
   conduitKey: string;
@@ -571,7 +561,7 @@ export async function fulfillAvailableOrders({
       offerCriteria,
       considerationCriteria,
       offererBalancesAndApprovals,
-      offererOperators,
+      offererOperator,
     }) => {
       const considerationIncludingTips = [
         ...order.parameters.consideration,
@@ -603,8 +593,8 @@ export async function fulfillAvailableOrders({
           offererBalancesAndApprovals,
           fulfillerBalancesAndApprovals,
           timeBasedItemParams,
-          offererOperators,
-          fulfillerOperators,
+          offererOperator,
+          fulfillerOperator,
         }
       );
 
@@ -706,11 +696,17 @@ export function generateFulfillOrdersFulfillments(
   offerFulfillments: FulfillmentComponentStruct[];
   considerationFulfillments: FulfillmentComponentStruct[];
 } {
-  const hashAggregateKey = (
-    sourceOrDestination: string,
-    token: string,
-    identifier: string
-  ) => `${sourceOrDestination}-${token}-${identifier}`;
+  const hashAggregateKey = ({
+    sourceOrDestination,
+    operator = "",
+    token,
+    identifier,
+  }: {
+    sourceOrDestination: string;
+    operator?: string;
+    token: string;
+    identifier: string;
+  }) => `${sourceOrDestination}-${operator}-${token}-${identifier}`;
 
   const offerAggregatedFulfillments: Record<
     string,
@@ -723,23 +719,21 @@ export function generateFulfillOrdersFulfillments(
   > = {};
 
   ordersMetadata.forEach(
-    ({ order, offererOperators, offerCriteria }, orderIndex) => {
+    ({ order, offererOperator, offerCriteria }, orderIndex) => {
       const itemToCriteria = getItemToCriteriaMap(
         order.parameters.offer,
         offerCriteria
       );
 
       return order.parameters.offer.forEach((item, itemIndex) => {
-        const aggregateKey = `${hashAggregateKey(
-          useOffererProxy(order.parameters.conduitKey)
-            ? isErc20Item(item.itemType)
-              ? offererOperators.erc20Operator
-              : offererOperators.operator
-            : order.parameters.offerer,
-          item.token,
-          itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+        const aggregateKey = `${hashAggregateKey({
+          sourceOrDestination: order.parameters.offerer,
+          operator: offererOperator,
+          token: item.token,
+          identifier:
+            itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
           // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-        )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+        })}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
         offerAggregatedFulfillments[aggregateKey] = [
           ...(offerAggregatedFulfillments[aggregateKey] ?? []),
@@ -757,12 +751,13 @@ export function generateFulfillOrdersFulfillments(
       );
       return [...order.parameters.consideration, ...tips].forEach(
         (item, itemIndex) => {
-          const aggregateKey = `${hashAggregateKey(
-            item.recipient,
-            item.token,
-            itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+          const aggregateKey = `${hashAggregateKey({
+            sourceOrDestination: item.recipient,
+            token: item.token,
+            identifier:
+              itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
             // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-          )}${isErc721Item(item.itemType) ? itemIndex : ""}`;
+          })}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
           considerationAggregatedFulfillments[aggregateKey] = [
             ...(considerationAggregatedFulfillments[aggregateKey] ?? []),

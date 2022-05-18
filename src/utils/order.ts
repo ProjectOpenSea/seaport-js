@@ -1,11 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { keccak256 } from "ethers/lib/utils";
 import { MerkleTree } from "merkletreejs";
-import {
-  ItemType,
-  LEGACY_PROXY_CONDUIT,
-  ONE_HUNDRED_PERCENT_BP,
-} from "../constants";
+import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants";
 import type {
   ConsiderationItem,
   CreateInputItem,
@@ -169,9 +165,6 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
       }
     );
 };
-
-export const useOffererProxy = (conduitKey: string) =>
-  conduitKey === LEGACY_PROXY_CONDUIT;
 
 /**
  * Maps order offer and consideration item amounts based on the order's filled status

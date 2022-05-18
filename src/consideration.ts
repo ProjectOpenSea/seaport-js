@@ -2,23 +2,19 @@ import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumberish, Contract, ethers, providers } from "ethers";
 import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
 import { ConsiderationABI } from "./abi/Consideration";
-import { ProxyRegistryInterfaceABI } from "./abi/ProxyRegistryInterface";
 import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
-  LEGACY_PROXY_CONDUIT,
+  KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
   Network,
   NO_CONDUIT,
   OrderType,
 } from "./constants";
-import { ProxyRegistryInterface } from "./typechain";
 import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
 import type {
-  ApprovalOperators,
   ConsiderationConfig,
-  OrderWithNonce,
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
@@ -28,6 +24,7 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
+  OrderWithNonce,
   TipInputItem,
   TransactionMethods,
 } from "./types";
@@ -45,7 +42,6 @@ import {
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
 import { getMaximumSizeForOrder, isCurrencyItem } from "./utils/item";
-import { LEGACY_PROXY_ADDRESSES } from "./utils/legacyAddresses";
 import {
   areAllCurrenciesSame,
   deductFees,
@@ -69,8 +65,8 @@ export class Consideration {
   private multicallProvider: multicallProviders.MulticallProvider;
 
   private config: Required<Omit<ConsiderationConfig, "overrides">>;
-  private legacyProxyRegistryAddress: string;
-  private legacyTokenTransferProxyAddress: string;
+
+  private defaultConduitKey: string;
 
   /**
    * @param provider - The provider to use for web3-related calls
@@ -80,10 +76,11 @@ export class Consideration {
     provider: providers.JsonRpcProvider,
     {
       overrides,
-      ascendingAmountFulfillmentBuffer = 1800,
-      approveExactAmount = false,
+      // Five minute buffer
+      ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
       network = Network.MAINNET,
+      conduitKeyToConduit,
     }: ConsiderationConfig
   ) {
     this.provider = provider;
@@ -97,17 +94,16 @@ export class Consideration {
 
     this.config = {
       ascendingAmountFulfillmentBuffer,
-      approveExactAmount,
       balanceAndApprovalChecksOnOrderCreation,
       network,
+      conduitKeyToConduit: {
+        ...KNOWN_CONDUIT_KEYS_TO_CONDUIT,
+        [NO_CONDUIT]: this.contract.address,
+        ...conduitKeyToConduit,
+      },
     };
 
-    this.legacyProxyRegistryAddress =
-      overrides?.legacyProxyRegistryAddress ??
-      LEGACY_PROXY_ADDRESSES[network].WyvernProxyRegistry;
-    this.legacyTokenTransferProxyAddress =
-      overrides?.legacyTokenTransferProxy ??
-      LEGACY_PROXY_ADDRESSES[network].WyvernTokenTransferProxy;
+    this.defaultConduitKey = overrides?.defaultConduitKey ?? NO_CONDUIT;
   }
 
   /**
@@ -129,39 +125,6 @@ export class Consideration {
     }
 
     return restrictedByZone ? OrderType.FULL_RESTRICTED : OrderType.FULL_OPEN;
-  }
-
-  private _getConduitOperators(
-    address: string,
-    conduitKey: string
-  ): Promise<ApprovalOperators> {
-    if (conduitKey === NO_CONDUIT) {
-      return Promise.resolve({
-        operator: this.contract.address,
-        erc20Operator: this.contract.address,
-      });
-    }
-
-    if (conduitKey === LEGACY_PROXY_CONDUIT) {
-      const proxyRegistryInterface = new Contract(
-        this.legacyProxyRegistryAddress,
-        ProxyRegistryInterfaceABI,
-        this.multicallProvider
-      ) as ProxyRegistryInterface;
-
-      return Promise.all([
-        proxyRegistryInterface.proxies(address),
-        this.legacyTokenTransferProxyAddress,
-      ]).then(([operator, erc20Operator]) => ({
-        operator,
-        erc20Operator,
-      }));
-    }
-    // PLACEHOLDER FOR NOW
-    return Promise.resolve({
-      operator: this.contract.address,
-      erc20Operator: this.contract.address,
-    });
   }
 
   /**
@@ -191,7 +154,7 @@ export class Consideration {
    */
   public async createOrder(
     {
-      conduitKey = NO_CONDUIT,
+      conduitKey = this.defaultConduitKey,
       zone = ethers.constants.AddressZero,
       startTime = Math.floor(Date.now() / 1000).toString(),
       endTime = MAX_INT.toString(),
@@ -232,18 +195,18 @@ export class Consideration {
 
     const totalCurrencyAmount = totalItemsAmount(currencies);
 
-    const [operators, resolvedNonce] = await Promise.all([
-      this._getConduitOperators(offerer, conduitKey),
-      nonce ?? this.getNonce(offerer),
-    ]);
+    const operator = this.config.conduitKeyToConduit[conduitKey];
 
-    const balancesAndApprovals = await getBalancesAndApprovals({
-      owner: offerer,
-      items: offerItems,
-      criterias: [],
-      multicallProvider: this.multicallProvider,
-      operators,
-    });
+    const [resolvedNonce, balancesAndApprovals] = await Promise.all([
+      nonce ?? this.getNonce(offerer),
+      getBalancesAndApprovals({
+        owner: offerer,
+        items: offerItems,
+        criterias: [],
+        multicallProvider: this.multicallProvider,
+        operator,
+      }),
+    ]);
 
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
@@ -287,7 +250,7 @@ export class Consideration {
       criterias: [],
       balancesAndApprovals,
       throwOnInsufficientBalances: checkBalancesAndApprovals,
-      operators,
+      operator,
     });
 
     const approvalActions = checkBalancesAndApprovals
@@ -603,7 +566,7 @@ export class Consideration {
     tips = [],
     extraData = "0x",
     accountAddress,
-    conduitKey = NO_CONDUIT,
+    conduitKey = this.defaultConduitKey,
   }: {
     order: OrderWithNonce;
     unitsToFill?: BigNumberish;
@@ -621,10 +584,10 @@ export class Consideration {
 
     const fulfillerAddress = await fulfiller.getAddress();
 
-    const [offererOperators, fulfillerOperators] = await Promise.all([
-      this._getConduitOperators(offerer, orderParameters.conduitKey),
-      this._getConduitOperators(fulfillerAddress, conduitKey),
-    ]);
+    const offererOperator =
+      this.config.conduitKeyToConduit[orderParameters.conduitKey];
+
+    const fulfillerOperator = this.config.conduitKeyToConduit[conduitKey];
 
     const [
       offererBalancesAndApprovals,
@@ -637,7 +600,7 @@ export class Consideration {
         items: offer,
         criterias: offerCriteria,
         multicallProvider: this.multicallProvider,
-        operators: offererOperators,
+        operator: offererOperator,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
@@ -646,7 +609,7 @@ export class Consideration {
         items: [...offer, ...consideration],
         criterias: [...offerCriteria, ...considerationCriteria],
         multicallProvider: this.multicallProvider,
-        operators: fulfillerOperators,
+        operator: fulfillerOperator,
       }),
       this.multicallProvider.getBlock("latest"),
       this.getOrderStatus(this.getOrderHash(orderParameters)),
@@ -688,8 +651,8 @@ export class Consideration {
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
         conduitKey,
-        offererOperators,
-        fulfillerOperators,
+        offererOperator,
+        fulfillerOperator,
         signer: fulfiller,
         tips: tipConsiderationItems,
       });
@@ -713,8 +676,8 @@ export class Consideration {
       timeBasedItemParams,
       conduitKey,
       signer: fulfiller,
-      offererOperators,
-      fulfillerOperators,
+      offererOperator,
+      fulfillerOperator,
     });
   }
 
@@ -724,7 +687,7 @@ export class Consideration {
   public async fulfillOrders({
     fulfillOrderDetails,
     accountAddress,
-    conduitKey = NO_CONDUIT,
+    conduitKey = this.defaultConduitKey,
   }: {
     conduitKey?: string;
     fulfillOrderDetails: {
@@ -741,17 +704,12 @@ export class Consideration {
 
     const fulfillerAddress = await fulfiller.getAddress();
 
-    const [allOffererOperators, fulfillerOperators] = await Promise.all([
-      Promise.all(
-        fulfillOrderDetails.map(({ order }) =>
-          this._getConduitOperators(
-            order.parameters.offerer,
-            order.parameters.conduitKey
-          )
-        )
-      ),
-      this._getConduitOperators(fulfillerAddress, conduitKey),
-    ]);
+    const allOffererOperators = fulfillOrderDetails.map(
+      ({ order }) =>
+        this.config.conduitKeyToConduit[order.parameters.conduitKey]
+    );
+
+    const fulfillerOperator = this.config.conduitKeyToConduit[conduitKey];
 
     const allOfferItems = fulfillOrderDetails.flatMap(
       ({ order }) => order.parameters.offer
@@ -779,7 +737,7 @@ export class Consideration {
             owner: order.parameters.offerer,
             items: order.parameters.offer,
             criterias: offerCriteria,
-            operators: allOffererOperators[i],
+            operator: allOffererOperators[i],
             multicallProvider: this.multicallProvider,
           })
         )
@@ -790,7 +748,7 @@ export class Consideration {
         owner: fulfillerAddress,
         items: [...allOfferItems, ...allConsiderationItems],
         criterias: [...allOfferCriteria, ...allConsiderationCriteria],
-        operators: fulfillerOperators,
+        operator: fulfillerOperator,
         multicallProvider: this.multicallProvider,
       }),
       this.multicallProvider.getBlock("latest"),
@@ -815,7 +773,7 @@ export class Consideration {
           })) ?? [],
         extraData: orderDetails.extraData ?? "0x",
         offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
-        offererOperators: allOffererOperators[index],
+        offererOperator: allOffererOperators[index],
       })
     );
 
@@ -826,7 +784,7 @@ export class Consideration {
       currentBlockTimestamp: currentBlock.timestamp,
       ascendingAmountTimestampBuffer:
         this.config.ascendingAmountFulfillmentBuffer,
-      fulfillerOperators,
+      fulfillerOperator,
       signer: fulfiller,
       conduitKey,
     });

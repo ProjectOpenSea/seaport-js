@@ -518,14 +518,12 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     });
 
     it("skips balance and approval validation if consideration config is set to skip on order creation", async () => {
-      const { considerationContract, testErc721, legacyProxyRegistry } =
-        fixture;
+      const { considerationContract, testErc721 } = fixture;
 
       const consideration = new Consideration(ethers.provider, {
         balanceAndApprovalChecksOnOrderCreation: false,
         overrides: {
           contractAddress: considerationContract.address,
-          legacyProxyRegistryAddress: legacyProxyRegistry.address,
         },
       });
 
