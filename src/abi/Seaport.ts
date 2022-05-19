@@ -6,21 +6,6 @@ const SeaportABI = [
         name: "conduitController",
         type: "address",
       },
-      {
-        internalType: "address",
-        name: "legacyProxyRegistry",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "legacyTokenTransferProxy",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "requiredProxyImplementation",
-        type: "address",
-      },
     ],
     stateMutability: "nonpayable",
     type: "constructor",
@@ -166,6 +151,17 @@ const SeaportABI = [
     type: "error",
   },
   {
+    inputs: [
+      {
+        internalType: "address",
+        name: "conduit",
+        type: "address",
+      },
+    ],
+    name: "InvalidCallToConduit",
+    type: "error",
+  },
+  {
     inputs: [],
     name: "InvalidCanceller",
     type: "error",
@@ -210,11 +206,6 @@ const SeaportABI = [
   {
     inputs: [],
     name: "InvalidProof",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "InvalidProxyImplementation",
     type: "error",
   },
   {
@@ -673,7 +664,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "bool",
-        name: "",
+        name: "cancelled",
         type: "bool",
       },
     ],
@@ -872,7 +863,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "bool",
-        name: "",
+        name: "fulfilled",
         type: "bool",
       },
     ],
@@ -1100,6 +1091,11 @@ const SeaportABI = [
         name: "fulfillerConduitKey",
         type: "bytes32",
       },
+      {
+        internalType: "uint256",
+        name: "maximumFulfilled",
+        type: "uint256",
+      },
     ],
     name: "fulfillAvailableAdvancedOrders",
     outputs: [
@@ -1154,35 +1150,238 @@ const SeaportABI = [
           },
         ],
         internalType: "struct Execution[]",
-        name: "standardExecutions",
+        name: "executions",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            components: [
+              {
+                internalType: "address",
+                name: "offerer",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "zone",
+                type: "address",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ItemType",
+                    name: "itemType",
+                    type: "uint8",
+                  },
+                  {
+                    internalType: "address",
+                    name: "token",
+                    type: "address",
+                  },
+                  {
+                    internalType: "uint256",
+                    name: "identifierOrCriteria",
+                    type: "uint256",
+                  },
+                  {
+                    internalType: "uint256",
+                    name: "startAmount",
+                    type: "uint256",
+                  },
+                  {
+                    internalType: "uint256",
+                    name: "endAmount",
+                    type: "uint256",
+                  },
+                ],
+                internalType: "struct OfferItem[]",
+                name: "offer",
+                type: "tuple[]",
+              },
+              {
+                components: [
+                  {
+                    internalType: "enum ItemType",
+                    name: "itemType",
+                    type: "uint8",
+                  },
+                  {
+                    internalType: "address",
+                    name: "token",
+                    type: "address",
+                  },
+                  {
+                    internalType: "uint256",
+                    name: "identifierOrCriteria",
+                    type: "uint256",
+                  },
+                  {
+                    internalType: "uint256",
+                    name: "startAmount",
+                    type: "uint256",
+                  },
+                  {
+                    internalType: "uint256",
+                    name: "endAmount",
+                    type: "uint256",
+                  },
+                  {
+                    internalType: "address payable",
+                    name: "recipient",
+                    type: "address",
+                  },
+                ],
+                internalType: "struct ConsiderationItem[]",
+                name: "consideration",
+                type: "tuple[]",
+              },
+              {
+                internalType: "enum OrderType",
+                name: "orderType",
+                type: "uint8",
+              },
+              {
+                internalType: "uint256",
+                name: "startTime",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "endTime",
+                type: "uint256",
+              },
+              {
+                internalType: "bytes32",
+                name: "zoneHash",
+                type: "bytes32",
+              },
+              {
+                internalType: "uint256",
+                name: "salt",
+                type: "uint256",
+              },
+              {
+                internalType: "bytes32",
+                name: "conduitKey",
+                type: "bytes32",
+              },
+              {
+                internalType: "uint256",
+                name: "totalOriginalConsiderationItems",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct OrderParameters",
+            name: "parameters",
+            type: "tuple",
+          },
+          {
+            internalType: "bytes",
+            name: "signature",
+            type: "bytes",
+          },
+        ],
+        internalType: "struct Order[]",
+        name: "orders",
         type: "tuple[]",
       },
       {
         components: [
           {
-            internalType: "address",
-            name: "token",
-            type: "address",
+            internalType: "uint256",
+            name: "orderIndex",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "itemIndex",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct FulfillmentComponent[][]",
+        name: "offerFulfillments",
+        type: "tuple[][]",
+      },
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "orderIndex",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "itemIndex",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct FulfillmentComponent[][]",
+        name: "considerationFulfillments",
+        type: "tuple[][]",
+      },
+      {
+        internalType: "bytes32",
+        name: "fulfillerConduitKey",
+        type: "bytes32",
+      },
+      {
+        internalType: "uint256",
+        name: "maximumFulfilled",
+        type: "uint256",
+      },
+    ],
+    name: "fulfillAvailableOrders",
+    outputs: [
+      {
+        internalType: "bool[]",
+        name: "availableOrders",
+        type: "bool[]",
+      },
+      {
+        components: [
+          {
+            components: [
+              {
+                internalType: "enum ItemType",
+                name: "itemType",
+                type: "uint8",
+              },
+              {
+                internalType: "address",
+                name: "token",
+                type: "address",
+              },
+              {
+                internalType: "uint256",
+                name: "identifier",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "amount",
+                type: "uint256",
+              },
+              {
+                internalType: "address payable",
+                name: "recipient",
+                type: "address",
+              },
+            ],
+            internalType: "struct ReceivedItem",
+            name: "item",
+            type: "tuple",
           },
           {
             internalType: "address",
-            name: "from",
+            name: "offerer",
             type: "address",
-          },
-          {
-            internalType: "address",
-            name: "to",
-            type: "address",
-          },
-          {
-            internalType: "uint256[]",
-            name: "tokenIds",
-            type: "uint256[]",
-          },
-          {
-            internalType: "uint256[]",
-            name: "amounts",
-            type: "uint256[]",
           },
           {
             internalType: "bytes32",
@@ -1190,8 +1389,8 @@ const SeaportABI = [
             type: "bytes32",
           },
         ],
-        internalType: "struct BatchExecution[]",
-        name: "batchExecutions",
+        internalType: "struct Execution[]",
+        name: "executions",
         type: "tuple[]",
       },
     ],
@@ -1314,7 +1513,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "bool",
-        name: "",
+        name: "fulfilled",
         type: "bool",
       },
     ],
@@ -1466,7 +1665,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "bool",
-        name: "",
+        name: "fulfilled",
         type: "bool",
       },
     ],
@@ -1485,7 +1684,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "uint256",
-        name: "",
+        name: "nonce",
         type: "uint256",
       },
     ],
@@ -1620,7 +1819,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "bytes32",
-        name: "",
+        name: "orderHash",
         type: "bytes32",
       },
     ],
@@ -1678,6 +1877,11 @@ const SeaportABI = [
     inputs: [],
     name: "information",
     outputs: [
+      {
+        internalType: "string",
+        name: "version",
+        type: "string",
+      },
       {
         internalType: "bytes32",
         name: "domainSeparator",
@@ -1964,44 +2168,7 @@ const SeaportABI = [
           },
         ],
         internalType: "struct Execution[]",
-        name: "standardExecutions",
-        type: "tuple[]",
-      },
-      {
-        components: [
-          {
-            internalType: "address",
-            name: "token",
-            type: "address",
-          },
-          {
-            internalType: "address",
-            name: "from",
-            type: "address",
-          },
-          {
-            internalType: "address",
-            name: "to",
-            type: "address",
-          },
-          {
-            internalType: "uint256[]",
-            name: "tokenIds",
-            type: "uint256[]",
-          },
-          {
-            internalType: "uint256[]",
-            name: "amounts",
-            type: "uint256[]",
-          },
-          {
-            internalType: "bytes32",
-            name: "conduitKey",
-            type: "bytes32",
-          },
-        ],
-        internalType: "struct BatchExecution[]",
-        name: "batchExecutions",
+        name: "executions",
         type: "tuple[]",
       },
     ],
@@ -2233,48 +2400,24 @@ const SeaportABI = [
           },
         ],
         internalType: "struct Execution[]",
-        name: "standardExecutions",
-        type: "tuple[]",
-      },
-      {
-        components: [
-          {
-            internalType: "address",
-            name: "token",
-            type: "address",
-          },
-          {
-            internalType: "address",
-            name: "from",
-            type: "address",
-          },
-          {
-            internalType: "address",
-            name: "to",
-            type: "address",
-          },
-          {
-            internalType: "uint256[]",
-            name: "tokenIds",
-            type: "uint256[]",
-          },
-          {
-            internalType: "uint256[]",
-            name: "amounts",
-            type: "uint256[]",
-          },
-          {
-            internalType: "bytes32",
-            name: "conduitKey",
-            type: "bytes32",
-          },
-        ],
-        internalType: "struct BatchExecution[]",
-        name: "batchExecutions",
+        name: "executions",
         type: "tuple[]",
       },
     ],
     stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "name",
+    outputs: [
+      {
+        internalType: "string",
+        name: "contractName",
+        type: "string",
+      },
+    ],
+    stateMutability: "pure",
     type: "function",
   },
   {
@@ -2417,7 +2560,7 @@ const SeaportABI = [
     outputs: [
       {
         internalType: "bool",
-        name: "",
+        name: "validated",
         type: "bool",
       },
     ],
@@ -2425,5 +2568,4 @@ const SeaportABI = [
     type: "function",
   },
 ];
-
 export { SeaportABI };

@@ -14,7 +14,7 @@ import {
 } from "./constants";
 import type { Seaport as SeaportContract } from "./typechain/Seaport";
 import type {
-  ConsiderationConfig,
+  SeaportConfig,
   CreateOrderAction,
   CreateOrderInput,
   ExchangeAction,
@@ -64,7 +64,7 @@ export class Seaport {
   // https://www.npmjs.com/package/@0xsequence/multicall
   private multicallProvider: multicallProviders.MulticallProvider;
 
-  private config: Required<Omit<ConsiderationConfig, "overrides">>;
+  private config: Required<Omit<SeaportConfig, "overrides">>;
 
   private defaultConduitKey: string;
 
@@ -81,7 +81,7 @@ export class Seaport {
       balanceAndApprovalChecksOnOrderCreation = true,
       network = Network.MAINNET,
       conduitKeyToConduit,
-    }: ConsiderationConfig
+    }: SeaportConfig
   ) {
     this.provider = provider;
     this.multicallProvider = new multicallProviders.MulticallProvider(provider);

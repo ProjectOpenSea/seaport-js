@@ -113,7 +113,7 @@ describeWithFixture(
         });
 
         describe("with ETH", () => {
-          it.only("3 ERC721 <=> ETH", async () => {
+          it("3 ERC721 <=> ETH", async () => {
             const { seaport, testErc721 } = fixture;
 
             const firstOrderUseCase = await seaport.createOrder(
