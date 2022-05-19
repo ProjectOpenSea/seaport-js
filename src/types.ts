@@ -5,7 +5,7 @@ import {
   Overrides,
   PopulatedTransaction,
 } from "ethers";
-import { ItemType, Network, OrderType } from "./constants";
+import { ItemType, OrderType } from "./constants";
 
 export type SeaportConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
@@ -13,9 +13,6 @@ export type SeaportConfig = {
 
   // Allow users to optionally skip balance and approval checks on order creation
   balanceAndApprovalChecksOnOrderCreation?: boolean;
-
-  // Mainly used for defaulting the contract address
-  network?: Network;
 
   // A mapping of conduit key to conduit
   conduitKeyToConduit?: Record<string, string>;

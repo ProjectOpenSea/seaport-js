@@ -3,14 +3,14 @@ import { BigNumberish, Contract, ethers, providers } from "ethers";
 import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
 import { SeaportABI } from "./abi/Seaport";
 import {
-  CONSIDERATION_CONTRACT_NAME,
-  CONSIDERATION_CONTRACT_VERSION,
+  SEAPORT_CONTRACT_NAME,
+  SEAPORT_CONTRACT_VERSION,
   EIP_712_ORDER_TYPE,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
-  Network,
   NO_CONDUIT,
   OrderType,
+  CROSS_CHAIN_CONSIDERATION_ADDRESS,
 } from "./constants";
 import type { Seaport as SeaportContract } from "./typechain/Seaport";
 import type {
@@ -79,7 +79,6 @@ export class Seaport {
       // Five minute buffer
       ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
-      network = Network.MAINNET,
       conduitKeyToConduit,
     }: SeaportConfig
   ) {
@@ -87,7 +86,7 @@ export class Seaport {
     this.multicallProvider = new multicallProviders.MulticallProvider(provider);
 
     this.contract = new Contract(
-      overrides?.contractAddress ?? "",
+      overrides?.contractAddress ?? CROSS_CHAIN_CONSIDERATION_ADDRESS,
       SeaportABI,
       this.multicallProvider
     ) as SeaportContract;
@@ -95,7 +94,6 @@ export class Seaport {
     this.config = {
       ascendingAmountFulfillmentBuffer,
       balanceAndApprovalChecksOnOrderCreation,
-      network,
       conduitKeyToConduit: {
         ...KNOWN_CONDUIT_KEYS_TO_CONDUIT,
         [NO_CONDUIT]: this.contract.address,
@@ -293,8 +291,8 @@ export class Seaport {
     const { chainId } = await this.provider.getNetwork();
 
     return {
-      name: CONSIDERATION_CONTRACT_NAME,
-      version: CONSIDERATION_CONTRACT_VERSION,
+      name: SEAPORT_CONTRACT_NAME,
+      version: SEAPORT_CONTRACT_VERSION,
       chainId,
       verifyingContract: this.contract.address,
     };

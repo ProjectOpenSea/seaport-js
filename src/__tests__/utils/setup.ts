@@ -29,7 +29,7 @@ export const describeWithFixture = (
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {
-      const ConsiderationFactory = await ethers.getContractFactory("Seaport");
+      const SeaportFactory = await ethers.getContractFactory("Seaport");
 
       const ConduitControllerFactory = await ethers.getContractFactory(
         "ConduitController"
@@ -37,7 +37,7 @@ export const describeWithFixture = (
 
       const conduitController = await ConduitControllerFactory.deploy();
 
-      const seaportContract = await ConsiderationFactory.deploy(
+      const seaportContract = await SeaportFactory.deploy(
         conduitController.address
       );
 

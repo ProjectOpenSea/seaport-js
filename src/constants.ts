@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers";
 
-export const CONSIDERATION_CONTRACT_NAME = "Seaport";
-export const CONSIDERATION_CONTRACT_VERSION = "1";
+export const SEAPORT_CONTRACT_NAME = "Seaport";
+export const SEAPORT_CONTRACT_VERSION = "1";
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
     { name: "offerer", type: "address" },
@@ -79,7 +79,5 @@ export const NO_CONDUIT =
 // Supply here any known conduit keys as well as their conduits
 export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {};
 
-export enum Network {
-  MAINNET = 1,
-  RINKEBY = 4,
-}
+export const CROSS_CHAIN_CONSIDERATION_ADDRESS =
+  "0x00000000006cee72100d161c57ada5bb2be1ca79";
