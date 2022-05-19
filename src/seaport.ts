@@ -1,5 +1,11 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumberish, Contract, ethers, providers } from "ethers";
+import {
+  BigNumberish,
+  Contract,
+  ethers,
+  PayableOverrides,
+  providers,
+} from "ethers";
 import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
 import { SeaportABI } from "./abi/Seaport";
 import {
@@ -27,6 +33,7 @@ import type {
   OrderWithNonce,
   TipInputItem,
   TransactionMethods,
+  Fulfillment,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -680,14 +687,19 @@ export class Seaport {
   }
 
   /**
-   * Fulfills a list of orders in a best-effort fashion
+   * Fulfills an order through best-effort fashion. Orders that fail will not revert the whole transaction
+   * unless there's an issue with approvals or balance checks
+   * @param input
+   * @param input.fulfillOrderDetails list of helper order details
+   * @param input.accountAddress the account to fulfill orders on
+   * @param input.conduitKey the key from which to source approvals from
+   * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
     fulfillOrderDetails,
     accountAddress,
     conduitKey = this.defaultConduitKey,
   }: {
-    conduitKey?: string;
     fulfillOrderDetails: {
       order: OrderWithNonce;
       unitsToFill?: BigNumberish;
@@ -697,6 +709,7 @@ export class Seaport {
       extraData?: string;
     }[];
     accountAddress?: string;
+    conduitKey?: string;
   }) {
     const fulfiller = await this.provider.getSigner(accountAddress);
 
@@ -786,5 +799,31 @@ export class Seaport {
       signer: fulfiller,
       conduitKey,
     });
+  }
+
+  /**
+   * NOTE: Largely incomplete. Does NOT do any balance or approval checks.
+   * Just exposes the bare bones matchOrders where clients will have to supply
+   * their own overrides as needed.
+   * @param input
+   * @param input.orders the list of orders to match
+   * @param input.fulfillments the list of fulfillments to match offer and considerations
+   * @param overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @returns set of transaction methods for matching orders
+   */
+  public matchOrders({
+    orders,
+    fulfillments,
+    overrides,
+  }: {
+    orders: OrderWithNonce[];
+    fulfillments: Fulfillment[];
+    overrides?: PayableOverrides;
+  }): TransactionMethods {
+    return getTransactionMethods(this.contract, "matchOrders", [
+      orders,
+      fulfillments,
+      overrides,
+    ]);
   }
 }
