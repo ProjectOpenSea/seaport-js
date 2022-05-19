@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers";
 
-export const CONSIDERATION_CONTRACT_NAME = "Consideration";
-export const CONSIDERATION_CONTRACT_VERSION = "rc.1";
+export const CONSIDERATION_CONTRACT_NAME = "Seaport";
+export const CONSIDERATION_CONTRACT_VERSION = "1";
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
     { name: "offerer", type: "address" },

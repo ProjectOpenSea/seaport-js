@@ -8,7 +8,7 @@ import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to sign an order", (fixture) => {
   it("should be a valid order", async () => {
-    const { considerationContract, consideration, testErc721 } = fixture;
+    const { seaportContract, seaport, testErc721 } = fixture;
     const [offerer, zone, randomSigner] = await ethers.getSigners();
 
     const startTime = 0;
@@ -45,7 +45,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       },
     ];
 
-    const nonce = await considerationContract.getNonce(offerer.address);
+    const nonce = await seaportContract.getNonce(offerer.address);
 
     const orderParameters = {
       offerer: offerer.address,
@@ -61,7 +61,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       conduitKey: NO_CONDUIT,
     };
 
-    const signature = await consideration.signOrder(
+    const signature = await seaport.signOrder(
       orderParameters,
       nonce.toNumber()
     );
@@ -75,7 +75,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     };
 
     // Use a random address to verify that the signature is valid
-    const isValid = await considerationContract
+    const isValid = await seaportContract
       .connect(randomSigner)
       .callStatic.validate([order]);
 

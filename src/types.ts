@@ -7,7 +7,7 @@ import {
 } from "ethers";
 import { ItemType, Network, OrderType } from "./constants";
 
-export type ConsiderationConfig = {
+export type SeaportConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
   ascendingAmountFulfillmentBuffer?: number;
 

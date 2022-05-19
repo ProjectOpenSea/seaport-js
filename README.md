@@ -1,6 +1,6 @@
-# Consideration Javascript Library
+# Seaport Javascript Library
 
-This project contains a set of utilities to help interface with the Consideration contract.
+This project contains a set of utilities to help interface with the Seaport contract.
 
 ## Installation
 

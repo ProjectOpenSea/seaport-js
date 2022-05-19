@@ -8,10 +8,10 @@ import {
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
   BasicOrderParametersStruct,
-  Consideration,
+  Seaport,
   FulfillmentComponentStruct,
   OrderStruct,
-} from "../typechain/Consideration";
+} from "../typechain/Seaport";
 import type {
   AdvancedOrder,
   ConsiderationItem,
@@ -178,7 +178,7 @@ const offerAndConsiderationFulfillmentMapping: {
 
 export async function fulfillBasicOrder({
   order,
-  considerationContract,
+  seaportContract,
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
   timeBasedItemParams,
@@ -189,7 +189,7 @@ export async function fulfillBasicOrder({
   conduitKey = NO_CONDUIT,
 }: {
   order: Order;
-  considerationContract: Consideration;
+  seaportContract: Seaport;
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   timeBasedItemParams: TimeBasedItemParams;
@@ -282,7 +282,7 @@ export async function fulfillBasicOrder({
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
-      considerationContract.connect(signer),
+      seaportContract.connect(signer),
       "fulfillBasicOrder",
       [basicOrderParameters, payableOverrides]
     ),
@@ -306,7 +306,7 @@ export async function fulfillStandardOrder({
   considerationCriteria,
   tips = [],
   extraData,
-  considerationContract,
+  seaportContract,
   offererBalancesAndApprovals,
   fulfillerBalancesAndApprovals,
   offererOperator,
@@ -323,7 +323,7 @@ export async function fulfillStandardOrder({
   considerationCriteria: InputCriteria[];
   tips?: ConsiderationItem[];
   extraData?: string;
-  considerationContract: Consideration;
+  seaportContract: Seaport;
   offererBalancesAndApprovals: BalancesAndApprovals;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   offererOperator: string;
@@ -420,7 +420,7 @@ export async function fulfillStandardOrder({
     type: "exchange",
     transactionMethods: useAdvanced
       ? getTransactionMethods(
-          considerationContract.connect(signer),
+          seaportContract.connect(signer),
           "fulfillAdvancedOrder",
           [
             {
@@ -440,11 +440,11 @@ export async function fulfillStandardOrder({
             payableOverrides,
           ]
         )
-      : getTransactionMethods(
-          considerationContract.connect(signer),
-          "fulfillOrder",
-          [orderAccountingForTips, conduitKey, payableOverrides]
-        ),
+      : getTransactionMethods(seaportContract.connect(signer), "fulfillOrder", [
+          orderAccountingForTips,
+          conduitKey,
+          payableOverrides,
+        ]),
   } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;
@@ -492,7 +492,7 @@ export type FulfillOrdersMetadata = {
 
 export async function fulfillAvailableOrders({
   ordersMetadata,
-  considerationContract,
+  seaportContract,
   fulfillerBalancesAndApprovals,
   fulfillerOperator,
   currentBlockTimestamp,
@@ -501,7 +501,7 @@ export async function fulfillAvailableOrders({
   signer,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
-  considerationContract: Consideration;
+  seaportContract: Seaport;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   fulfillerOperator: string;
   currentBlockTimestamp: number;
@@ -658,7 +658,7 @@ export async function fulfillAvailableOrders({
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
-      considerationContract.connect(signer),
+      seaportContract.connect(signer),
       "fulfillAvailableAdvancedOrders",
       [
         advancedOrdersWithTips,
@@ -676,6 +676,7 @@ export async function fulfillAvailableOrders({
         offerFulfillments,
         considerationFulfillments,
         conduitKey,
+        advancedOrdersWithTips.length,
         payableOverrides,
       ]
     ),
