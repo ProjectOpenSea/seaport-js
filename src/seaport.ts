@@ -1,7 +1,7 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { BigNumberish, Contract, ethers, providers } from "ethers";
 import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
-import { ConsiderationABI } from "./abi/Consideration";
+import { SeaportABI } from "./abi/Seaport";
 import {
   CONSIDERATION_CONTRACT_NAME,
   CONSIDERATION_CONTRACT_VERSION,
@@ -12,7 +12,7 @@ import {
   NO_CONDUIT,
   OrderType,
 } from "./constants";
-import type { Consideration as ConsiderationContract } from "./typechain/Consideration";
+import type { Seaport as SeaportContract } from "./typechain/Seaport";
 import type {
   ConsiderationConfig,
   CreateOrderAction,
@@ -52,9 +52,9 @@ import {
 } from "./utils/order";
 import { executeAllActions, getTransactionMethods } from "./utils/usecase";
 
-export class Consideration {
+export class Seaport {
   // Provides the raw interface to the contract for flexibility
-  public contract: ConsiderationContract;
+  public contract: SeaportContract;
 
   private provider: providers.JsonRpcProvider;
 
@@ -70,7 +70,7 @@ export class Consideration {
 
   /**
    * @param provider - The provider to use for web3-related calls
-   * @param considerationConfig - A config to provide flexibility in the usage of Consideration
+   * @param considerationConfig - A config to provide flexibility in the usage of Seaport
    */
   public constructor(
     provider: providers.JsonRpcProvider,
@@ -88,9 +88,9 @@ export class Consideration {
 
     this.contract = new Contract(
       overrides?.contractAddress ?? "",
-      ConsiderationABI,
+      SeaportABI,
       this.multicallProvider
-    ) as ConsiderationContract;
+    ) as SeaportContract;
 
     this.config = {
       ascendingAmountFulfillmentBuffer,
@@ -134,13 +134,13 @@ export class Consideration {
    * or a signature request that will then be supplied into the final Order struct, ready to be fulfilled.
    *
    * @param input
-   * @param input.conduitKey The conduitKey key to derive where to source your approvals from. Defaults to 0 which refers to the Consideration contract.
+   * @param input.conduitKey The conduitKey key to derive where to source your approvals from. Defaults to 0 which refers to the Seaport contract.
    *                         Another special value is address(1) will refer to the legacy proxy. All other must derive to the specified address.
    * @param input.zone The zone of the order. Defaults to the zero address.
    * @param input.startTime The start time of the order. Defaults to the current unix time.
    * @param input.endTime The end time of the order. Defaults to "never end".
    *                      It is HIGHLY recommended to pass in an explicit end time
-   * @param input.offer The items you are willing to offer. This is a condensed version of the Consideration struct OfferItem for convenience
+   * @param input.offer The items you are willing to offer. This is a condensed version of the Seaport struct OfferItem for convenience
    * @param input.consideration The items that will go to their respective recipients upon receiving your offer.
    * @param input.nonce The nonce from which to create the order with. Automatically fetched from the contract if not provided
    * @param input.allowPartialFills Whether to allow the order to be partially filled
@@ -646,7 +646,7 @@ export class Consideration {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
       return fulfillBasicOrder({
         order: sanitizedOrder,
-        considerationContract: this.contract,
+        seaportContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
@@ -670,7 +670,7 @@ export class Consideration {
       considerationCriteria,
       tips: tipConsiderationItems,
       extraData,
-      considerationContract: this.contract,
+      seaportContract: this.contract,
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
       timeBasedItemParams,
@@ -779,7 +779,7 @@ export class Consideration {
 
     return fulfillAvailableOrders({
       ordersMetadata,
-      considerationContract: this.contract,
+      seaportContract: this.contract,
       fulfillerBalancesAndApprovals,
       currentBlockTimestamp: currentBlock.timestamp,
       ascendingAmountTimestampBuffer:

@@ -5,7 +5,7 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
+import { ItemType, MAX_INT, OrderType } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
@@ -81,9 +81,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC721 <=> ETH", async () => {
-        const { consideration } = fixture;
+        const { seaport } = fixture;
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -109,7 +109,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -149,7 +149,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC721 <=> ERC20", async () => {
-        const { consideration, testErc20 } = fixture;
+        const { seaport, testErc20 } = fixture;
 
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
@@ -168,7 +168,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           )
         );
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -194,7 +194,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -209,16 +209,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
-            fulfiller.address,
-            consideration.contract.address
-          )
+          await testErc20.allowance(fulfiller.address, seaport.contract.address)
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];
@@ -292,9 +289,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC721 <=> ETH", async () => {
-        const { consideration } = fixture;
+        const { seaport } = fixture;
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -320,7 +317,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -360,7 +357,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC721 <=> ERC20", async () => {
-        const { consideration, testErc20 } = fixture;
+        const { seaport, testErc20 } = fixture;
 
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
@@ -378,7 +375,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           )
         );
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -404,7 +401,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -419,16 +416,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
-            fulfiller.address,
-            consideration.contract.address
-          )
+          await testErc20.allowance(fulfiller.address, seaport.contract.address)
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];
@@ -506,9 +500,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC1155 <=> ETH", async () => {
-        const { consideration, testErc1155 } = fixture;
+        const { seaport, testErc1155 } = fixture;
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -534,7 +528,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -584,7 +578,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC1155 <=> ERC20", async () => {
-        const { consideration, testErc20, testErc1155 } = fixture;
+        const { seaport, testErc20, testErc1155 } = fixture;
 
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
@@ -603,7 +597,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           )
         );
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -629,7 +623,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -644,16 +638,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
-            fulfiller.address,
-            consideration.contract.address
-          )
+          await testErc20.allowance(fulfiller.address, seaport.contract.address)
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];
@@ -739,9 +730,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC1155 <=> ETH", async () => {
-        const { consideration, testErc1155 } = fixture;
+        const { seaport, testErc1155 } = fixture;
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -767,7 +758,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -817,7 +808,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC1155 <=> ERC20", async () => {
-        const { consideration, testErc20, testErc1155 } = fixture;
+        const { seaport, testErc20, testErc1155 } = fixture;
 
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
@@ -835,7 +826,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           )
         );
 
-        const { executeAllActions } = await consideration.createOrder(
+        const { executeAllActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -861,7 +852,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -876,16 +867,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
-            fulfiller.address,
-            consideration.contract.address
-          )
+          await testErc20.allowance(fulfiller.address, seaport.contract.address)
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];

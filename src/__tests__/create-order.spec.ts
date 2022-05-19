@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { formatBytes32String, parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { Consideration } from "../consideration";
+import { Seaport } from "../seaport";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import { ApprovalAction, CreateOrderAction } from "../types";
 import { generateRandomSalt } from "../utils/order";
@@ -9,7 +9,7 @@ import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
-    const { considerationContract, consideration, testErc721 } = fixture;
+    const { seaportContract, seaport, testErc721 } = fixture;
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
@@ -18,7 +18,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { actions } = await consideration.createOrder({
+    const { actions } = await seaport.createOrder({
       startTime,
       endTime,
       salt,
@@ -47,7 +47,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
-      operator: considerationContract.address,
+      operator: seaportContract.address,
     });
 
     await approvalAction.transactionMethods.transact();
@@ -56,7 +56,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        considerationContract.address
+        seaportContract.address
       )
     ).to.be.true;
 
@@ -108,7 +108,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       signature: order.signature,
     });
 
-    const isValid = await considerationContract
+    const isValid = await seaportContract
       .connect(randomSigner)
       .callStatic.validate([
         {
@@ -125,8 +125,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 
   it("should create an order that offers ERC20 for ERC721", async () => {
-    const { considerationContract, consideration, testErc20, testErc721 } =
-      fixture;
+    const { seaportContract, seaport, testErc20, testErc721 } = fixture;
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
@@ -136,7 +135,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { actions } = await consideration.createOrder({
+    const { actions } = await seaport.createOrder({
       startTime,
       endTime,
       salt,
@@ -166,14 +165,14 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: "0",
       itemType: ItemType.ERC20,
       transactionMethods: approvalAction.transactionMethods,
-      operator: considerationContract.address,
+      operator: seaportContract.address,
     });
 
     await approvalAction.transactionMethods.transact();
 
     // NFT should now be approved
     expect(
-      await testErc20.allowance(offerer.address, considerationContract.address)
+      await testErc20.allowance(offerer.address, seaportContract.address)
     ).to.equal(MAX_INT);
 
     const createOrderAction = actions[1] as CreateOrderAction;
@@ -224,7 +223,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       signature: order.signature,
     });
 
-    const isValid = await considerationContract
+    const isValid = await seaportContract
       .connect(randomSigner)
       .callStatic.validate([
         {
@@ -241,8 +240,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 
   it("should create an order with multiple item types after setting needed approvals", async () => {
-    const { considerationContract, consideration, testErc721, testErc1155 } =
-      fixture;
+    const { seaportContract, seaport, testErc721, testErc1155 } = fixture;
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
@@ -252,7 +250,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { actions } = await consideration.createOrder({
+    const { actions } = await seaport.createOrder({
       startTime,
       endTime,
       salt,
@@ -282,13 +280,13 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        considerationContract.address
+        seaportContract.address
       )
     ).to.be.false;
     expect(
       await testErc1155.isApprovedForAll(
         offerer.address,
-        considerationContract.address
+        seaportContract.address
       )
     ).to.be.false;
 
@@ -300,7 +298,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
-      operator: considerationContract.address,
+      operator: seaportContract.address,
     });
 
     await approvalAction.transactionMethods.transact();
@@ -309,7 +307,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        considerationContract.address
+        seaportContract.address
       )
     ).to.be.true;
 
@@ -321,7 +319,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC1155,
       transactionMethods: erc1155ApprovalAction.transactionMethods,
-      operator: considerationContract.address,
+      operator: seaportContract.address,
     });
 
     await erc1155ApprovalAction.transactionMethods.transact();
@@ -330,7 +328,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc1155.isApprovedForAll(
         offerer.address,
-        considerationContract.address
+        seaportContract.address
       )
     ).to.be.true;
 
@@ -389,7 +387,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       signature: order.signature,
     });
 
-    const isValid = await considerationContract
+    const isValid = await seaportContract
       .connect(randomSigner)
       .callStatic.validate([
         {
@@ -407,7 +405,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
   describe("check validations", () => {
     it("throws if currencies are different", async () => {
-      const { consideration, testErc721, testErc20 } = fixture;
+      const { seaport, testErc721, testErc20 } = fixture;
 
       const [offerer, zone] = await ethers.getSigners();
       const nftId = "1";
@@ -418,7 +416,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       await testErc20.mint(offerer.address, 1);
 
       await expect(
-        consideration.createOrder({
+        seaport.createOrder({
           startTime,
           endTime,
           salt,
@@ -447,7 +445,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     });
 
     it("throws if offerer does not have sufficient balances", async () => {
-      const { consideration, testErc721, testErc20 } = fixture;
+      const { seaport, testErc721, testErc20 } = fixture;
 
       const [offerer, zone] = await ethers.getSigners();
       const nftId = "1";
@@ -476,9 +474,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         fees: [{ recipient: zone.address, basisPoints: 250 }],
       } as const;
 
-      await expect(
-        consideration.createOrder(createOrderInput)
-      ).to.be.rejectedWith(
+      await expect(seaport.createOrder(createOrderInput)).to.be.rejectedWith(
         "The offerer does not have the amount needed to create or fulfill."
       );
 
@@ -487,11 +483,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         .transferFrom(zone.address, offerer.address, nftId);
 
       // It should not throw now as the offerer has sufficient balance
-      await consideration.createOrder(createOrderInput);
+      await seaport.createOrder(createOrderInput);
 
       // Now it should as the offerer does not have any ERC20
       await expect(
-        consideration.createOrder({
+        seaport.createOrder({
           ...createOrderInput,
           offer: [
             {
@@ -518,12 +514,12 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     });
 
     it("skips balance and approval validation if consideration config is set to skip on order creation", async () => {
-      const { considerationContract, testErc721 } = fixture;
+      const { seaportContract, testErc721 } = fixture;
 
-      const consideration = new Consideration(ethers.provider, {
+      const seaport = new Seaport(ethers.provider, {
         balanceAndApprovalChecksOnOrderCreation: false,
         overrides: {
-          contractAddress: considerationContract.address,
+          contractAddress: seaportContract.address,
         },
       });
 
@@ -534,7 +530,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       const salt = generateRandomSalt();
       await testErc721.mint(randomSigner.address, nftId);
 
-      const { actions } = await consideration.createOrder({
+      const { actions } = await seaport.createOrder({
         startTime,
         endTime,
         salt,
@@ -603,7 +599,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         signature: order.signature,
       });
 
-      const isValid = await considerationContract
+      const isValid = await seaportContract
         .connect(randomSigner)
         .callStatic.validate([
           {
@@ -621,7 +617,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 
   it("returns a valid message to sign", async () => {
-    const { considerationContract, consideration, testErc721 } = fixture;
+    const { seaportContract, seaport, testErc721 } = fixture;
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
@@ -630,7 +626,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { actions } = await consideration.createOrder({
+    const { actions } = await seaport.createOrder({
       startTime,
       endTime,
       salt,
@@ -659,7 +655,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
-      operator: considerationContract.address,
+      operator: seaportContract.address,
     });
 
     await approvalAction.transactionMethods.transact();
@@ -668,7 +664,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        considerationContract.address
+        seaportContract.address
       )
     ).to.be.true;
 
@@ -685,7 +681,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       order.signature
     );
 
-    const isValid = await considerationContract
+    const isValid = await seaportContract
       .connect(randomSigner)
       .callStatic.validate([
         {
@@ -702,7 +698,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 
   it("should have the same order hash as on the contract", async () => {
-    const { considerationContract, consideration, testErc721 } = fixture;
+    const { seaportContract, seaport, testErc721 } = fixture;
 
     const [offerer, zone] = await ethers.getSigners();
     const nftId = "1";
@@ -711,7 +707,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
 
-    const { executeAllActions } = await consideration.createOrder({
+    const { executeAllActions } = await seaport.createOrder({
       startTime,
       endTime,
       salt,
@@ -734,11 +730,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const order = await executeAllActions();
 
-    const contractOrderHash = await considerationContract.getOrderHash(
+    const contractOrderHash = await seaportContract.getOrderHash(
       order.parameters
     );
 
-    const localOrderHash = consideration.getOrderHash(order.parameters);
+    const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
   });

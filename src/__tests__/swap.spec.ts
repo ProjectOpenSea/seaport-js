@@ -86,9 +86,9 @@ describeWithFixture(
       });
 
       it("2 ERC721s <=> ERC721", async () => {
-        const { consideration, testErc721 } = fixture;
+        const { seaport, testErc721 } = fixture;
 
-        const { actions: createActions } = await consideration.createOrder(
+        const { actions: createActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -102,7 +102,7 @@ describeWithFixture(
           identifierOrCriteria: nftId2,
           itemType: ItemType.ERC721,
           transactionMethods: createApprovalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await createApprovalAction.transactionMethods.transact();
@@ -118,7 +118,7 @@ describeWithFixture(
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -133,7 +133,7 @@ describeWithFixture(
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
@@ -141,7 +141,7 @@ describeWithFixture(
         expect(
           await secondTestErc721.isApprovedForAll(
             fulfiller.address,
-            consideration.contract.address
+            seaport.contract.address
           )
         ).to.be.true;
 
@@ -220,9 +220,9 @@ describeWithFixture(
       });
 
       it("2 ERC1155s <=> ERC1155", async () => {
-        const { consideration, testErc1155 } = fixture;
+        const { seaport, testErc1155 } = fixture;
 
-        const { actions: createActions } = await consideration.createOrder(
+        const { actions: createActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -236,7 +236,7 @@ describeWithFixture(
           identifierOrCriteria: nftId2,
           itemType: ItemType.ERC1155,
           transactionMethods: createApprovalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await createApprovalAction.transactionMethods.transact();
@@ -252,7 +252,7 @@ describeWithFixture(
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -267,7 +267,7 @@ describeWithFixture(
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC1155,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
@@ -275,7 +275,7 @@ describeWithFixture(
         expect(
           await secondTestErc1155.isApprovedForAll(
             fulfiller.address,
-            consideration.contract.address
+            seaport.contract.address
           )
         ).to.be.true;
 
@@ -359,9 +359,9 @@ describeWithFixture(
       });
 
       it("ERC721 + WETH <=> ERC721 + WETH", async () => {
-        const { consideration, testErc20, testErc721 } = fixture;
+        const { seaport, testErc20, testErc721 } = fixture;
 
-        const { actions: createActions } = await consideration.createOrder(
+        const { actions: createActions } = await seaport.createOrder(
           standardCreateOrderInput
         );
 
@@ -375,7 +375,7 @@ describeWithFixture(
           identifierOrCriteria: nftId,
           itemType: ItemType.ERC721,
           transactionMethods: createApprovalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await createApprovalAction.transactionMethods.transact();
@@ -388,7 +388,7 @@ describeWithFixture(
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: createErc20ApprovalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await createErc20ApprovalAction.transactionMethods.transact();
@@ -404,7 +404,7 @@ describeWithFixture(
             multicallProvider
           );
 
-        const { actions } = await consideration.fulfillOrder({
+        const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
         });
@@ -419,7 +419,7 @@ describeWithFixture(
           identifierOrCriteria: nftId2,
           itemType: ItemType.ERC721,
           transactionMethods: approvalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await approvalAction.transactionMethods.transact();
@@ -427,7 +427,7 @@ describeWithFixture(
         expect(
           await testErc721.isApprovedForAll(
             fulfiller.address,
-            consideration.contract.address
+            seaport.contract.address
           )
         ).to.be.true;
 
@@ -439,16 +439,13 @@ describeWithFixture(
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: secondApprovalAction.transactionMethods,
-          operator: consideration.contract.address,
+          operator: seaport.contract.address,
         });
 
         await secondApprovalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
-            fulfiller.address,
-            consideration.contract.address
-          )
+          await testErc20.allowance(fulfiller.address, seaport.contract.address)
         ).to.eq(MAX_INT);
 
         const fulfillAction = actions[2];

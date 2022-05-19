@@ -194,7 +194,7 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
 /**
  * 1. The offerer should have sufficient balance of all offered items.
  * 2. If the order does not indicate proxy utilization, the offerer should have sufficient approvals set
- *    for the Consideration contract for all offered ERC20, ERC721, and ERC1155 items.
+ *    for the Seaport contract for all offered ERC20, ERC721, and ERC1155 items.
  * 3. If the order does indicate proxy utilization, the offerer should have sufficient approvals set
  *    for their respective proxy contract for all offered ERC20, ERC721, and ERC1155 items.
  */
@@ -249,7 +249,7 @@ export const validateOfferBalancesAndApprovals = ({
  *    an ERC20 item and requires an ERC721 item to the offerer and the same ERC20 item to another recipient,
  *    the fulfiller needs to own the ERC721 item but does not need to own the ERC20 item as it will be sourced from the offerer.
  * 3. If the fulfiller does not elect to utilize a proxy, they need to have sufficient approvals set for the
- *    Consideration contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order except
+ *    Seaport contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order except
  *    for ERC20 items with an item type that matches the order's offered item type.
  * 4. If the fulfiller does elect to utilize a proxy, they need to have sufficient approvals set for their
  *    respective proxy contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order
@@ -318,7 +318,7 @@ export const validateBasicFulfillBalancesAndApprovals = ({
  *    and the same ERC20 item to another recipient with an amount less than or equal to the offered amount,
  *    the fulfiller does not need to own the ERC20 item as it will first be received from the offerer.
  * 3. If the fulfiller does not elect to utilize a proxy, they need to have sufficient approvals set for the
- *    Consideration contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order.
+ *    Seaport contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order.
  * 4. If the fulfiller does elect to utilize a proxy, they need to have sufficient approvals set for their
  *    respective proxy contract for all ERC20, ERC721, and ERC1155 consideration items on the fulfilled order.
  * 5. If the fulfilled order specifies Ether (or other native tokens) as consideration items, the fulfiller must

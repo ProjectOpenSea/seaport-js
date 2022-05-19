@@ -67,9 +67,9 @@ describeWithFixture(
 
         describe("with ETH", () => {
           it("ERC721 <=> ETH", async () => {
-            const { consideration } = fixture;
+            const { seaport } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -82,7 +82,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -107,8 +107,8 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ETH (already validated order)", async () => {
-            const { consideration } = fixture;
-            const { executeAllActions } = await consideration.createOrder(
+            const { seaport } = fixture;
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -117,7 +117,7 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -129,9 +129,7 @@ describeWithFixture(
               action.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await consideration
-              .approveOrders([order], offerer.address)
-              .transact();
+            await seaport.approveOrders([order], offerer.address).transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -176,9 +174,9 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ERC20", async () => {
-            const { consideration, testErc20 } = fixture;
+            const { seaport, testErc20 } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -191,7 +189,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -204,7 +202,7 @@ describeWithFixture(
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: consideration.contract.address,
+              operator: seaport.contract.address,
             });
 
             await approvalAction.transactionMethods.transact();
@@ -212,7 +210,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                consideration.contract.address
+                seaport.contract.address
               )
             ).to.equal(MAX_INT);
 
@@ -239,9 +237,9 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ERC20 (already validated order)", async () => {
-            const { consideration, testErc20 } = fixture;
+            const { seaport, testErc20 } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -257,7 +255,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const revertedUseCase = await consideration.fulfillOrder({
+            const revertedUseCase = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -272,7 +270,7 @@ describeWithFixture(
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: consideration.contract.address,
+              operator: seaport.contract.address,
             });
 
             await approvalAction.transactionMethods.transact();
@@ -280,7 +278,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                consideration.contract.address
+                seaport.contract.address
               )
             ).to.equal(MAX_INT);
 
@@ -295,9 +293,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await consideration
-              .approveOrders([order], offerer.address)
-              .transact();
+            await seaport.approveOrders([order], offerer.address).transact();
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
@@ -344,9 +340,9 @@ describeWithFixture(
         });
 
         it("ERC20 <=> ERC721", async () => {
-          const { consideration, testErc721 } = fixture;
+          const { seaport, testErc721 } = fixture;
 
-          const { executeAllActions } = await consideration.createOrder(
+          const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
             offerer.address
           );
@@ -360,7 +356,7 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder({
+          const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
           });
@@ -373,7 +369,7 @@ describeWithFixture(
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC721,
             transactionMethods: approvalAction.transactionMethods,
-            operator: consideration.contract.address,
+            operator: seaport.contract.address,
           });
 
           await approvalAction.transactionMethods.transact();
@@ -381,7 +377,7 @@ describeWithFixture(
           expect(
             await testErc721.isApprovedForAll(
               fulfiller.address,
-              consideration.contract.address
+              seaport.contract.address
             )
           ).to.be.true;
 
@@ -437,9 +433,9 @@ describeWithFixture(
 
         describe("with ETH", () => {
           it("ERC1155 <=> ETH", async () => {
-            const { consideration } = fixture;
+            const { seaport } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
               offerer.address
             );
@@ -453,7 +449,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -481,8 +477,8 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ETH (already validated order)", async () => {
-            const { consideration } = fixture;
-            const { executeAllActions } = await consideration.createOrder(
+            const { seaport } = fixture;
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -491,7 +487,7 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -503,9 +499,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await consideration
-              .approveOrders([order], offerer.address)
-              .transact();
+            await seaport.approveOrders([order], offerer.address).transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -556,9 +550,9 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ERC20", async () => {
-            const { consideration, testErc20 } = fixture;
+            const { seaport, testErc20 } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -571,7 +565,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -584,7 +578,7 @@ describeWithFixture(
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: consideration.contract.address,
+              operator: seaport.contract.address,
             });
 
             await approvalAction.transactionMethods.transact();
@@ -592,7 +586,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                consideration.contract.address
+                seaport.contract.address
               )
             ).to.equal(MAX_INT);
 
@@ -619,9 +613,9 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ERC20 (already validated order)", async () => {
-            const { consideration, testErc20 } = fixture;
+            const { seaport, testErc20 } = fixture;
 
-            const { executeAllActions } = await consideration.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -637,7 +631,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await consideration.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
             });
@@ -650,7 +644,7 @@ describeWithFixture(
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: consideration.contract.address,
+              operator: seaport.contract.address,
             });
 
             await approvalAction.transactionMethods.transact();
@@ -658,7 +652,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                consideration.contract.address
+                seaport.contract.address
               )
             ).to.equal(MAX_INT);
 
@@ -668,9 +662,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await consideration
-              .approveOrders([order], offerer.address)
-              .transact();
+            await seaport.approveOrders([order], offerer.address).transact();
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
@@ -696,7 +688,7 @@ describeWithFixture(
 
       describe("[Accept offer] I want to accept an offer for my single ERC1155", async () => {
         beforeEach(async () => {
-          const { testErc1155, considerationContract, testErc20 } = fixture;
+          const { testErc1155, seaportContract, testErc20 } = fixture;
 
           await testErc1155.mint(fulfiller.address, nftId, erc1155Amount);
           await testErc20.mint(offerer.address, parseEther("10").toString());
@@ -704,7 +696,7 @@ describeWithFixture(
           // Approving offerer amount for convenience
           await testErc20
             .connect(offerer)
-            .approve(considerationContract.address, MAX_INT);
+            .approve(seaportContract.address, MAX_INT);
 
           standardCreateOrderInput = {
             offer: [
@@ -728,9 +720,9 @@ describeWithFixture(
         });
 
         it("ERC20 <=> ERC1155", async () => {
-          const { consideration, testErc1155 } = fixture;
+          const { seaport, testErc1155 } = fixture;
 
-          const { executeAllActions } = await consideration.createOrder(
+          const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
             offerer.address
           );
@@ -744,7 +736,7 @@ describeWithFixture(
               multicallProvider
             );
 
-          const { actions } = await consideration.fulfillOrder({
+          const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
           });
@@ -757,7 +749,7 @@ describeWithFixture(
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC1155,
             transactionMethods: approvalAction.transactionMethods,
-            operator: consideration.contract.address,
+            operator: seaport.contract.address,
           });
 
           await approvalAction.transactionMethods.transact();
@@ -765,7 +757,7 @@ describeWithFixture(
           expect(
             await testErc1155.isApprovedForAll(
               fulfiller.address,
-              consideration.contract.address
+              seaport.contract.address
             )
           ).to.be.true;
 

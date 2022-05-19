@@ -1,4 +1,4 @@
-const ConsiderationABI = [
+const SeaportABI = [
   {
     inputs: [
       {
@@ -2426,4 +2426,4 @@ const ConsiderationABI = [
   },
 ];
 
-export { ConsiderationABI };
+export { SeaportABI };
