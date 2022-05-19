@@ -205,7 +205,7 @@ export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
 export type FulfillmentComponent = {
   orderIndex: number;
   itemIndex: number;
-};
+}[];
 
 export type Fulfillment = {
   offerComponents: FulfillmentComponent[];
