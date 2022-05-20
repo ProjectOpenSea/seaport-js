@@ -16,7 +16,7 @@ import {
   MAX_INT,
   NO_CONDUIT,
   OrderType,
-  CROSS_CHAIN_CONSIDERATION_ADDRESS,
+  CROSS_CHAIN_SEAPORT_ADDRESS,
 } from "./constants";
 import type { Seaport as SeaportContract } from "./typechain/Seaport";
 import type {
@@ -93,7 +93,7 @@ export class Seaport {
     this.multicallProvider = new multicallProviders.MulticallProvider(provider);
 
     this.contract = new Contract(
-      overrides?.contractAddress ?? CROSS_CHAIN_CONSIDERATION_ADDRESS,
+      overrides?.contractAddress ?? CROSS_CHAIN_SEAPORT_ADDRESS,
       SeaportABI,
       this.multicallProvider
     ) as SeaportContract;
@@ -397,12 +397,12 @@ export class Seaport {
 
   /**
    * Approves a list of orders on-chain. This allows accounts to fulfill the order without requiring
-   * a signature
+   * a signature. Can also check if an order is valid using `callStatic`
    * @param orders list of order structs
    * @param accountAddress optional account address to approve orders.
    * @returns the set of transaction methods that can be used
    */
-  public approveOrders(
+  public validate(
     orders: Order[],
     accountAddress?: string
   ): TransactionMethods {

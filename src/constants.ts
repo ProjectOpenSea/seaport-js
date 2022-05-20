@@ -79,5 +79,5 @@ export const NO_CONDUIT =
 // Supply here any known conduit keys as well as their conduits
 export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {};
 
-export const CROSS_CHAIN_CONSIDERATION_ADDRESS =
+export const CROSS_CHAIN_SEAPORT_ADDRESS =
   "0x00000000006cee72100d161c57ada5bb2be1ca79";

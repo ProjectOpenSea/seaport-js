@@ -129,7 +129,7 @@ describeWithFixture(
               action.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await seaport.approveOrders([order], offerer.address).transact();
+            await seaport.validate([order], offerer.address).transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -293,7 +293,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await seaport.approveOrders([order], offerer.address).transact();
+            await seaport.validate([order], offerer.address).transact();
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
@@ -499,7 +499,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await seaport.approveOrders([order], offerer.address).transact();
+            await seaport.validate([order], offerer.address).transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -662,7 +662,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await seaport.approveOrders([order], offerer.address).transact();
+            await seaport.validate([order], offerer.address).transact();
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
