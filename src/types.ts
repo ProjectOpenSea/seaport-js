@@ -1,11 +1,13 @@
 import {
   BigNumber,
   BigNumberish,
+  Contract,
   ContractTransaction,
   Overrides,
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType } from "./constants";
+import { ERC721, ERC20 } from "./typechain";
 
 export type SeaportConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
@@ -154,9 +156,14 @@ export type OrderWithNonce = {
   signature: string;
 };
 
-export type TransactionMethods = {
+export type ContractMethodReturnType<
+  T extends Contract,
+  U extends keyof T["callStatic"]
+> = Awaited<ReturnType<T["callStatic"][U]>>;
+
+export type TransactionMethods<T = unknown> = {
   buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
-  callStatic: <T>(overrides?: Overrides) => Promise<T>;
+  callStatic: (overrides?: Overrides) => Promise<T>;
   estimateGas: (overrides?: Overrides) => Promise<BigNumber>;
   transact: (overrides?: Overrides) => Promise<ContractTransaction>;
 };
@@ -167,12 +174,14 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   operator: string;
-  transactionMethods: TransactionMethods;
+  transactionMethods:
+    | TransactionMethods<ContractMethodReturnType<ERC721, "setApprovalForAll">>
+    | TransactionMethods<ContractMethodReturnType<ERC20, "approve">>;
 };
 
-export type ExchangeAction = {
+export type ExchangeAction<T = unknown> = {
   type: "exchange";
-  transactionMethods: TransactionMethods;
+  transactionMethods: TransactionMethods<T>;
 };
 
 export type CreateOrderAction = {
@@ -188,15 +197,15 @@ export type CreateOrderActions = readonly [
   CreateOrderAction
 ];
 
-export type OrderExchangeActions = readonly [
+export type OrderExchangeActions<T> = readonly [
   ...ApprovalAction[],
-  ExchangeAction
+  ExchangeAction<T>
 ];
 
 export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
   actions: T extends CreateOrderAction
     ? CreateOrderActions
-    : OrderExchangeActions;
+    : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
   executeAllActions: () => Promise<
     T extends CreateOrderAction ? OrderWithNonce : ContractTransaction
   >;

@@ -5,13 +5,14 @@ import {
   ethers,
   providers,
 } from "ethers";
-import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
+  Seaport as SeaportContract,
   BasicOrderParametersStruct,
   Seaport,
   FulfillmentComponentStruct,
   OrderStruct,
 } from "../typechain/Seaport";
+import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
   AdvancedOrder,
   ConsiderationItem,
@@ -21,6 +22,7 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
+  ContractMethodReturnType,
 } from "../types";
 import { getApprovalActions } from "./approval";
 import {
@@ -198,7 +200,13 @@ export async function fulfillBasicOrder({
   signer: providers.JsonRpcSigner;
   tips?: ConsiderationItem[];
   conduitKey: string;
-}): Promise<OrderUseCase<ExchangeAction>> {
+}): Promise<
+  OrderUseCase<
+    ExchangeAction<
+      ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">
+    >
+  >
+> {
   const { offer, consideration } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
 
@@ -286,7 +294,7 @@ export async function fulfillBasicOrder({
       "fulfillBasicOrder",
       [basicOrderParameters, payableOverrides]
     ),
-  } as ExchangeAction;
+  } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;
 
@@ -331,7 +339,16 @@ export async function fulfillStandardOrder({
   conduitKey: string;
   timeBasedItemParams: TimeBasedItemParams;
   signer: providers.JsonRpcSigner;
-}): Promise<OrderUseCase<ExchangeAction>> {
+}): Promise<
+  OrderUseCase<
+    ExchangeAction<
+      ContractMethodReturnType<
+        SeaportContract,
+        "fulfillAdvancedOrder" | "fulfillOrder"
+      >
+    >
+  >
+> {
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills = unitsToFill
@@ -508,7 +525,16 @@ export async function fulfillAvailableOrders({
   ascendingAmountTimestampBuffer: number;
   conduitKey: string;
   signer: providers.JsonRpcSigner;
-}): Promise<OrderUseCase<ExchangeAction>> {
+}): Promise<
+  OrderUseCase<
+    ExchangeAction<
+      ContractMethodReturnType<
+        SeaportContract,
+        "fulfillAvailableAdvancedOrders"
+      >
+    >
+  >
+> {
   const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
     ...orderMetadata,
     order: validateAndSanitizeFromOrderStatus(

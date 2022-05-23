@@ -4,6 +4,7 @@ import {
   ExchangeAction,
   OrderUseCase,
   TransactionMethods,
+  ContractMethodReturnType,
 } from "../types";
 
 export const executeAllActions = async <
@@ -55,7 +56,7 @@ export const getTransactionMethods = <
   contract: T,
   method: U,
   args: Parameters<T["functions"][U]>
-): TransactionMethods => {
+): TransactionMethods<ContractMethodReturnType<T, U>> => {
   const lastArg = args[args.length - 1];
 
   let initialOverrides: Overrides;
