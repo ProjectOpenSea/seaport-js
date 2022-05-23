@@ -1,40 +1,38 @@
-# TODO: get back to this
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
+name: main workflow
 
-# name: main workflow
+env:
+  GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
-# env:
-#   GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+jobs:
+  tests:
+    runs-on: ubuntu-latest
 
-# jobs:
-#   tests:
-#     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-#     steps:
-#       - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.11.0"
+          cache: yarn
+          registry-url: "https://npm.pkg.github.com"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v2
-#         with:
-#           node-version: "16.11.0"
-#           cache: yarn
-#           registry-url: "https://npm.pkg.github.com"
-#         env:
-#           NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+      - name: Install dependencies
+        run: yarn install --immutable --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+          PKG_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
-#       - name: Install dependencies
-#         run: yarn install --immutable --ignore-scripts
-#         env:
-#           NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
-#           PKG_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+      - name: Build
+        run: yarn build
 
-#       - name: Build
-#         run: yarn build
-
-#       - name: Run tests
-#         run: yarn test
+      - name: Run tests
+        run: yarn test
