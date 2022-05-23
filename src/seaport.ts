@@ -34,6 +34,7 @@ import type {
   TipInputItem,
   TransactionMethods,
   Fulfillment,
+  ContractMethodReturnType,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -372,7 +373,7 @@ export class Seaport {
   public cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string
-  ): TransactionMethods {
+  ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this.provider.getSigner(accountAddress);
 
     return getTransactionMethods(this.contract.connect(signer), "cancel", [
@@ -385,7 +386,11 @@ export class Seaport {
    * @param offerer the account to bulk cancel orders on
    * @returns the set of transaction methods that can be used
    */
-  public bulkCancelOrders(offerer?: string): TransactionMethods {
+  public bulkCancelOrders(
+    offerer?: string
+  ): TransactionMethods<
+    ContractMethodReturnType<SeaportContract, "incrementNonce">
+  > {
     const signer = this.provider.getSigner(offerer);
 
     return getTransactionMethods(
@@ -405,7 +410,7 @@ export class Seaport {
   public validate(
     orders: Order[],
     accountAddress?: string
-  ): TransactionMethods {
+  ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this.provider.getSigner(accountAddress);
 
     return getTransactionMethods(this.contract.connect(signer), "validate", [
@@ -581,7 +586,16 @@ export class Seaport {
     extraData?: string;
     accountAddress?: string;
     conduitKey?: string;
-  }): Promise<OrderUseCase<ExchangeAction>> {
+  }): Promise<
+    OrderUseCase<
+      ExchangeAction<
+        ContractMethodReturnType<
+          SeaportContract,
+          "fulfillBasicOrder" | "fulfillOrder" | "fulfillAdvancedOrder"
+        >
+      >
+    >
+  > {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
@@ -819,7 +833,9 @@ export class Seaport {
     orders: OrderWithNonce[];
     fulfillments: Fulfillment[];
     overrides?: PayableOverrides;
-  }): TransactionMethods {
+  }): TransactionMethods<
+    ContractMethodReturnType<SeaportContract, "matchOrders">
+  > {
     return getTransactionMethods(this.contract, "matchOrders", [
       orders,
       fulfillments,
