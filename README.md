@@ -31,7 +31,7 @@ import { Seaport } from "seaport-js";
 
 const provider = ethers.getDefaultProvider();
 
-const seaport = new Seaport(ethers.provider);
+const seaport = new Seaport(provider);
 ```
 
 Look at the relevant definitions in `seaport.ts` in order to see the different functionality this library offers.
