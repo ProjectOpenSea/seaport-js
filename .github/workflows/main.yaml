@@ -21,6 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable --ignore-scripts
+
       - name: Run linters
         run: yarn lint
 
@@ -29,14 +30,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: "16.11.0"
           cache: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Install dependencies
         run: yarn install --immutable --ignore-scripts
