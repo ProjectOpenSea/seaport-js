@@ -10,6 +10,20 @@ env:
   GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16.11.0"
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable --ignore-scripts
+      - name: Run linters
+        run: yarn lint
+
   tests:
     runs-on: ubuntu-latest
 
@@ -21,15 +35,11 @@ jobs:
         with:
           node-version: "16.11.0"
           cache: yarn
-          registry-url: "https://npm.pkg.github.com"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Install dependencies
         run: yarn install --immutable --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
-          PKG_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Build
         run: yarn build
