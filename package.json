@@ -1,7 +1,8 @@
 {
-  "name": "consideration-js",
+  "name": "seaport-js",
   "version": "0.0.1",
   "license": "MIT",
+  "author": "OpenSea Developers",
   "main": "lib/index.js",
   "scripts": {
     "build": "yarn hardhat compile && yarn tsc -p tsconfig.build.json",
