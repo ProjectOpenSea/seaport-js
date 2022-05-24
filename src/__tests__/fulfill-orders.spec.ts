@@ -580,10 +580,8 @@ describeWithFixture(
               secondTestErc1155.balanceOf(fulfiller.address, nftId),
             ]);
 
-            expect(balances).to.deep.equal([
-              BigNumber.from(10),
-              BigNumber.from(erc1155Amount),
-            ]);
+            expect(balances[0]).to.equal(BigNumber.from(10));
+            expect(balances[1]).to.equal(BigNumber.from(erc1155Amount));
 
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
@@ -689,10 +687,8 @@ describeWithFixture(
               secondTestErc1155.balanceOf(fulfiller.address, nftId),
             ]);
 
-            expect(balances).to.deep.equal([
-              BigNumber.from(10),
-              BigNumber.from(erc1155Amount),
-            ]);
+            expect(balances[0]).to.equal(BigNumber.from(10));
+            expect(balances[1]).to.equal(BigNumber.from(erc1155Amount));
 
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
@@ -879,10 +875,8 @@ describeWithFixture(
             secondTestErc1155.balanceOf(secondOfferer.address, nftId),
           ]);
 
-          expect(balances).to.deep.equal([
-            BigNumber.from(10),
-            BigNumber.from(erc1155Amount),
-          ]);
+          expect(balances[0]).to.equal(BigNumber.from(10));
+          expect(balances[1]).to.equal(BigNumber.from(erc1155Amount));
 
           expect(fulfillAvailableOrdersSpy).calledOnce;
         });
