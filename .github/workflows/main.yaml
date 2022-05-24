@@ -22,6 +22,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable --ignore-scripts
 
+      - name: Build
+        run: yarn build
+
       - name: Run linters
         run: yarn lint
 
