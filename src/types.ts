@@ -159,6 +159,7 @@ export type OrderWithNonce = {
 export type ContractMethodReturnType<
   T extends Contract,
   U extends keyof T["callStatic"]
+  // eslint-disable-next-line no-undef
 > = Awaited<ReturnType<T["callStatic"][U]>>;
 
 export type TransactionMethods<T = unknown> = {

@@ -251,13 +251,15 @@ export class Seaport {
     const checkBalancesAndApprovals =
       this.config.balanceAndApprovalChecksOnOrderCreation;
 
-    const insufficientApprovals = validateOfferBalancesAndApprovals({
-      offer: offerItems,
-      criterias: [],
-      balancesAndApprovals,
-      throwOnInsufficientBalances: checkBalancesAndApprovals,
-      operator,
-    });
+    const insufficientApprovals = checkBalancesAndApprovals
+      ? validateOfferBalancesAndApprovals({
+          offer: offerItems,
+          criterias: [],
+          balancesAndApprovals,
+          throwOnInsufficientBalances: checkBalancesAndApprovals,
+          operator,
+        })
+      : [];
 
     const approvalActions = checkBalancesAndApprovals
       ? await getApprovalActions(insufficientApprovals, signer)
