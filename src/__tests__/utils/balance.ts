@@ -1,6 +1,5 @@
-import { BigNumber, BigNumberish, ContractReceipt } from "ethers";
+import { BigNumber, BigNumberish, ContractReceipt, providers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
-import { JsonRpcProvider } from "ethers/node_modules/@ethersproject/providers";
 import { Item, Order, OrderStatus } from "../../types";
 import { balanceOf } from "../../utils/balance";
 
@@ -15,7 +14,7 @@ import {
 
 export const setBalance = async (
   address: string,
-  provider: JsonRpcProvider,
+  provider: providers.JsonRpcProvider,
   amountEth = parseEther("10000").toHexString().replace("0x0", "0x")
 ) => {
   await provider.send("hardhat_setBalance", [
