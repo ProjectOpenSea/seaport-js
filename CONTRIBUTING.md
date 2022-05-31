@@ -8,6 +8,10 @@ We currently use [yarn](https://yarnpkg.com/getting-started/install) to manage d
 
 Then, run `yarn` after `yarn` is installed
 
+In order to enable pre-commit hooks, install husky:
+
+`npx husky install`
+
 ## Running tests
 
 To run the tests:

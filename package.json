@@ -9,7 +9,6 @@
     "check-types": "tsc --noEmit -p src/__tests__/tsconfig.json",
     "check-types:incremental": "yarn check-types --incremental",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
-    "postinstall": "husky install",
     "lint": "concurrently \"yarn check-types\" \"yarn eslint:check\" \"yarn prettier:check\" \"yarn prettier:check:package.json\"",
     "prepack": "yarn build",
     "test": "yarn hardhat test",
