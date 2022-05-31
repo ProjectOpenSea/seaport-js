@@ -8703,9 +8703,9 @@ scryptsy@^1.2.1:
   dependencies:
     pbkdf2 "^3.0.3"
 
-"seaport@https://github.com/ProjectOpenSea/seaport.git#890717dccc10780e6436aac485ca125065aa01f6":
+"seaport@https://github.com/ProjectOpenSea/seaport.git#195f0e1e50cd9f72a49e5379596a5eede0ea65b2":
   version "1.0.1"
-  resolved "https://github.com/ProjectOpenSea/seaport.git#890717dccc10780e6436aac485ca125065aa01f6"
+  resolved "https://github.com/ProjectOpenSea/seaport.git#195f0e1e50cd9f72a49e5379596a5eede0ea65b2"
   dependencies:
     ethers "^5.5.3"
     ethers-eip712 "^0.2.0"
