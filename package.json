@@ -10,7 +10,7 @@
     "check-types:incremental": "yarn check-types --incremental",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
     "lint": "concurrently \"yarn check-types\" \"yarn eslint:check\" \"yarn prettier:check\" \"yarn prettier:check:package.json\"",
-    "prepack": "yarn build",
+    "prepare": "husky install && yarn build",
     "test": "yarn hardhat test",
     "prettier:check": "prettier --check .",
     "prettier:check:package.json": "yarn prettier-package-json --list-different",
