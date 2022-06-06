@@ -824,21 +824,27 @@ export class Seaport {
    * @param input
    * @param input.orders the list of orders to match
    * @param input.fulfillments the list of fulfillments to match offer and considerations
-   * @param overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param accountAddress Optional address for which to match the order with
    * @returns set of transaction methods for matching orders
    */
-  public matchOrders({
-    orders,
-    fulfillments,
-    overrides,
-  }: {
-    orders: OrderWithNonce[];
-    fulfillments: Fulfillment[];
-    overrides?: PayableOverrides;
-  }): TransactionMethods<
+  public matchOrders(
+    {
+      orders,
+      fulfillments,
+      overrides,
+    }: {
+      orders: OrderWithNonce[];
+      fulfillments: Fulfillment[];
+      overrides?: PayableOverrides;
+    },
+    accountAddress?: string
+  ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
-    return getTransactionMethods(this.contract, "matchOrders", [
+    const signer = this.provider.getSigner(accountAddress);
+
+    return getTransactionMethods(this.contract.connect(signer), "matchOrders", [
       orders,
       fulfillments,
       overrides,
