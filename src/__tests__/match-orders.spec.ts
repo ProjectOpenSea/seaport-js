@@ -56,8 +56,8 @@ const constructPrivateListingCounterOrder = (
           itemType: paymentItems[0].itemType,
           token: paymentItems[0].token,
           identifierOrCriteria: paymentItems[0].identifierOrCriteria,
-          startAmount: aggregatedStartAmount.mul(2).toString(),
-          endAmount: aggregatedEndAmount.mul(2).toString(),
+          startAmount: aggregatedStartAmount.toString(),
+          endAmount: aggregatedEndAmount.toString(),
         },
       ],
       // The consideration here is empty as the original private listing order supplies
@@ -227,7 +227,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               privateListingRecipient.address
             )
-            .transact({ gasLimit: 30000000 });
+            .transact();
 
           const receipt = await transaction.wait();
 
