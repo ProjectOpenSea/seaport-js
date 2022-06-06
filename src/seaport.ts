@@ -828,18 +828,17 @@ export class Seaport {
    * @param accountAddress Optional address for which to match the order with
    * @returns set of transaction methods for matching orders
    */
-  public matchOrders(
-    {
-      orders,
-      fulfillments,
-      overrides,
-    }: {
-      orders: (OrderWithNonce | Order)[];
-      fulfillments: Fulfillment[];
-      overrides?: PayableOverrides;
-    },
-    accountAddress?: string
-  ): TransactionMethods<
+  public matchOrders({
+    orders,
+    fulfillments,
+    overrides,
+    accountAddress,
+  }: {
+    orders: (OrderWithNonce | Order)[];
+    fulfillments: Fulfillment[];
+    overrides?: PayableOverrides;
+    accountAddress?: string;
+  }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
     const signer = this.provider.getSigner(accountAddress);

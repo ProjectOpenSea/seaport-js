@@ -91,16 +91,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           const transaction = await seaport
-            .matchOrders(
-              {
-                orders: [order, counterOrder],
-                fulfillments,
-                overrides: {
-                  value: counterOrder.parameters.offer[0].startAmount,
-                },
+            .matchOrders({
+              orders: [order, counterOrder],
+              fulfillments,
+              overrides: {
+                value: counterOrder.parameters.offer[0].startAmount,
               },
-              privateListingRecipient.address
-            )
+              accountAddress: privateListingRecipient.address,
+            })
             .transact();
 
           const receipt = await transaction.wait();
@@ -174,14 +172,12 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           ).to.equal(MAX_INT);
 
           const transaction = await seaport
-            .matchOrders(
-              {
-                orders: [order, counterOrder],
-                fulfillments,
-              },
-              privateListingRecipient.address
-            )
-            .transact({ gasLimit: 3000000 });
+            .matchOrders({
+              orders: [order, counterOrder],
+              fulfillments,
+              accountAddress: privateListingRecipient.address,
+            })
+            .transact();
 
           const receipt = await transaction.wait();
 
@@ -256,16 +252,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           const transaction = await seaport
-            .matchOrders(
-              {
-                orders: [order, counterOrder],
-                fulfillments,
-                overrides: {
-                  value: counterOrder.parameters.offer[0].startAmount,
-                },
+            .matchOrders({
+              orders: [order, counterOrder],
+              fulfillments,
+              overrides: {
+                value: counterOrder.parameters.offer[0].startAmount,
               },
-              privateListingRecipient.address
-            )
+              accountAddress: privateListingRecipient.address,
+            })
             .transact();
 
           const receipt = await transaction.wait();
@@ -339,14 +333,12 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           ).to.equal(MAX_INT);
 
           const transaction = await seaport
-            .matchOrders(
-              {
-                orders: [order, counterOrder],
-                fulfillments,
-              },
-              privateListingRecipient.address
-            )
-            .transact({ gasLimit: 3000000 });
+            .matchOrders({
+              orders: [order, counterOrder],
+              fulfillments,
+              accountAddress: privateListingRecipient.address,
+            })
+            .transact();
 
           const receipt = await transaction.wait();
 
