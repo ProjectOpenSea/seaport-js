@@ -834,7 +834,7 @@ export class Seaport {
       fulfillments,
       overrides,
     }: {
-      orders: OrderWithNonce[];
+      orders: (OrderWithNonce | Order)[];
       fulfillments: Fulfillment[];
       overrides?: PayableOverrides;
     },
