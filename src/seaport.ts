@@ -18,7 +18,6 @@ import {
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
 } from "./constants";
-import type { Seaport as SeaportContract } from "./typechain/Seaport";
 import type {
   SeaportConfig,
   CreateOrderAction,
@@ -33,8 +32,9 @@ import type {
   OrderWithNonce,
   TipInputItem,
   TransactionMethods,
-  Fulfillment,
   ContractMethodReturnType,
+  MatchOrdersFulfillment,
+  SeaportContract,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -835,7 +835,7 @@ export class Seaport {
     accountAddress,
   }: {
     orders: (OrderWithNonce | Order)[];
-    fulfillments: Fulfillment[];
+    fulfillments: MatchOrdersFulfillment[];
     overrides?: PayableOverrides;
     accountAddress?: string;
   }): TransactionMethods<

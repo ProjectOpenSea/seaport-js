@@ -1,9 +1,14 @@
+import type {
+  OrderStruct,
+  Seaport as DefaultSeaportContract,
+} from "./typechain/Seaport";
 import {
   BigNumber,
   BigNumberish,
   Contract,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType } from "./constants";
@@ -220,4 +225,60 @@ export type FulfillmentComponent = {
 export type Fulfillment = {
   offerComponents: FulfillmentComponent[];
   considerationComponents: FulfillmentComponent[];
+};
+
+export type MatchOrdersFulfillment = {
+  offerComponents: {
+    orderIndex: BigNumberish;
+    itemIndex: BigNumberish;
+  }[];
+  considerationComponents: {
+    orderIndex: BigNumberish;
+    itemIndex: BigNumberish;
+  }[];
+};
+
+export type SeaportContract = DefaultSeaportContract & {
+  encodeFunctionData(
+    functionFragment: "matchOrders",
+    values: [OrderStruct[], MatchOrdersFulfillment[]]
+  ): string;
+
+  matchOrders(
+    orders: OrderStruct[],
+    fulfillments: MatchOrdersFulfillment[],
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  functions: DefaultSeaportContract["functions"] & {
+    matchOrders(
+      orders: OrderStruct[],
+      fulfillments: MatchOrdersFulfillment[],
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+  };
+
+  callStatic: DefaultSeaportContract["callStatic"] & {
+    matchOrders(
+      orders: OrderStruct[],
+      fulfillments: MatchOrdersFulfillment[],
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+  };
+
+  estimateGas: DefaultSeaportContract["estimateGas"] & {
+    matchOrders(
+      orders: OrderStruct[],
+      fulfillments: MatchOrdersFulfillment[],
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+  };
+
+  populateTranscation: DefaultSeaportContract["populateTransaction"] & {
+    matchOrders(
+      orders: OrderStruct[],
+      fulfillments: MatchOrdersFulfillment[],
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+  };
 };

@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { Fulfillment, Order, OrderWithNonce } from "../../../types";
+import { MatchOrdersFulfillment, Order, OrderWithNonce } from "../../../types";
 import { isCurrencyItem } from "../../../utils/item";
 import { generateRandomSalt } from "../../../utils/order";
 
@@ -63,8 +63,8 @@ export const constructPrivateListingCounterOrder = (
 
 export const getPrivateListingFulfillments = (
   privateListingOrder: OrderWithNonce
-): Fulfillment[] => {
-  const nftRelatedFulfillments: Fulfillment[] = [];
+): MatchOrdersFulfillment[] => {
+  const nftRelatedFulfillments: MatchOrdersFulfillment[] = [];
 
   // For the original order, we need to match everything offered with every consideration item
   // on the original order that's set to go to the private listing recipient
@@ -87,18 +87,18 @@ export const getPrivateListingFulfillments = (
         {
           orderIndex: 0,
           itemIndex: offerIndex,
-        } as any,
+        },
       ],
       considerationComponents: [
         {
           orderIndex: 0,
           itemIndex: considerationIndex,
-        } as any,
+        },
       ],
     });
   });
 
-  const currencyRelatedFulfillments: Fulfillment[] = [];
+  const currencyRelatedFulfillments: MatchOrdersFulfillment[] = [];
 
   // For the original order, we need to match everything offered with every consideration item
   // on the original order that's set to go to the private listing recipient
@@ -114,13 +114,13 @@ export const getPrivateListingFulfillments = (
           {
             orderIndex: 1,
             itemIndex: 0,
-          } as any,
+          },
         ],
         considerationComponents: [
           {
             orderIndex: 0,
             itemIndex: considerationIndex,
-          } as any,
+          },
         ],
       });
     }
