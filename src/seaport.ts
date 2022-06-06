@@ -825,7 +825,7 @@ export class Seaport {
    * @param input.orders the list of orders to match
    * @param input.fulfillments the list of fulfillments to match offer and considerations
    * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
-   * @param accountAddress Optional address for which to match the order with
+   * @param input.accountAddress Optional address for which to match the order with
    * @returns set of transaction methods for matching orders
    */
   public matchOrders({
