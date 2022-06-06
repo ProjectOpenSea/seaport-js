@@ -1,10 +1,11 @@
+import { getApprovalActions } from "../utils/approval";
 import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 
-import { ItemType } from "../constants";
+import { ItemType, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import {
   getBalancesForFulfillOrder,
@@ -15,6 +16,8 @@ import {
   getPrivateListingFulfillments,
 } from "./utils/examples/privateListings";
 import { describeWithFixture } from "./utils/setup";
+import { getTransactionMethods } from "../utils/usecase";
+import { expect } from "chai";
 
 describeWithFixture("As a user I want to match an order", (fixture) => {
   let offerer: SignerWithAddress;
@@ -86,7 +89,6 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               privateListingRecipient.address,
               multicallProvider
             );
-          console.log(ownerToTokenToIdentifierBalances);
 
           const transaction = await seaport
             .matchOrders(
@@ -138,7 +140,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
         });
 
         it("ERC721 <=> ERC20", async () => {
-          const { seaport } = fixture;
+          const { seaport, testErc20 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput
@@ -158,6 +160,18 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               privateListingRecipient.address,
               multicallProvider
             );
+
+          await getTransactionMethods(
+            testErc20.connect(privateListingRecipient),
+            "approve",
+            [seaport.contract.address, MAX_INT]
+          ).transact();
+          expect(
+            await testErc20.allowance(
+              privateListingRecipient.address,
+              seaport.contract.address
+            )
+          ).to.equal(MAX_INT);
 
           const transaction = await seaport
             .matchOrders(
