@@ -1,6 +1,6 @@
 import type {
   OrderStruct,
-  Seaport as DefaultSeaportContract,
+  Seaport as TypeChainSeaportContract,
 } from "./typechain/Seaport";
 import {
   BigNumber,
@@ -239,7 +239,7 @@ export type MatchOrdersFulfillment = {
 
 // Overrides matchOrders types to fix fulfillments type which is generated
 // by TypeChain incorrectly
-export type SeaportContract = DefaultSeaportContract & {
+export type SeaportContract = TypeChainSeaportContract & {
   encodeFunctionData(
     functionFragment: "matchOrders",
     values: [OrderStruct[], MatchOrdersFulfillment[]]
@@ -251,7 +251,7 @@ export type SeaportContract = DefaultSeaportContract & {
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  functions: DefaultSeaportContract["functions"] & {
+  functions: TypeChainSeaportContract["functions"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
@@ -259,7 +259,7 @@ export type SeaportContract = DefaultSeaportContract & {
     ): Promise<ContractTransaction>;
   };
 
-  callStatic: DefaultSeaportContract["callStatic"] & {
+  callStatic: TypeChainSeaportContract["callStatic"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
@@ -267,7 +267,7 @@ export type SeaportContract = DefaultSeaportContract & {
     ): Promise<ContractTransaction>;
   };
 
-  estimateGas: DefaultSeaportContract["estimateGas"] & {
+  estimateGas: TypeChainSeaportContract["estimateGas"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
@@ -275,7 +275,7 @@ export type SeaportContract = DefaultSeaportContract & {
     ): Promise<BigNumber>;
   };
 
-  populateTranscation: DefaultSeaportContract["populateTransaction"] & {
+  populateTranscation: TypeChainSeaportContract["populateTransaction"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
