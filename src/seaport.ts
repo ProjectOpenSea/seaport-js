@@ -18,7 +18,6 @@ import {
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
 } from "./constants";
-import type { Seaport as SeaportContract } from "./typechain/Seaport";
 import type {
   SeaportConfig,
   CreateOrderAction,
@@ -33,8 +32,9 @@ import type {
   OrderWithNonce,
   TipInputItem,
   TransactionMethods,
-  Fulfillment,
   ContractMethodReturnType,
+  MatchOrdersFulfillment,
+  SeaportContract,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -824,21 +824,26 @@ export class Seaport {
    * @param input
    * @param input.orders the list of orders to match
    * @param input.fulfillments the list of fulfillments to match offer and considerations
-   * @param overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param input.accountAddress Optional address for which to match the order with
    * @returns set of transaction methods for matching orders
    */
   public matchOrders({
     orders,
     fulfillments,
     overrides,
+    accountAddress,
   }: {
-    orders: OrderWithNonce[];
-    fulfillments: Fulfillment[];
+    orders: (OrderWithNonce | Order)[];
+    fulfillments: MatchOrdersFulfillment[];
     overrides?: PayableOverrides;
+    accountAddress?: string;
   }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
-    return getTransactionMethods(this.contract, "matchOrders", [
+    const signer = this.provider.getSigner(accountAddress);
+
+    return getTransactionMethods(this.contract.connect(signer), "matchOrders", [
       orders,
       fulfillments,
       overrides,
