@@ -227,17 +227,18 @@ export type Fulfillment = {
   considerationComponents: FulfillmentComponent[];
 };
 
-export type MatchOrdersFulfillment = {
-  offerComponents: {
-    orderIndex: BigNumberish;
-    itemIndex: BigNumberish;
-  }[];
-  considerationComponents: {
-    orderIndex: BigNumberish;
-    itemIndex: BigNumberish;
-  }[];
+type MatchOrdersFulfillmentComponent = {
+  orderIndex: number;
+  itemIndex: number;
 };
 
+export type MatchOrdersFulfillment = {
+  offerComponents: MatchOrdersFulfillmentComponent[];
+  considerationComponents: MatchOrdersFulfillmentComponent[];
+};
+
+// Overrides matchOrders types to fix fulfillments type which is generated
+// by TypeChain incorrectly
 export type SeaportContract = DefaultSeaportContract & {
   encodeFunctionData(
     functionFragment: "matchOrders",

@@ -16,13 +16,13 @@ export const constructPrivateListingCounterOrder = (
 
   if (!paymentItems.every((item) => isCurrencyItem(item))) {
     throw new Error(
-      "The consideration for the private listing did not contain only currency items."
+      "The consideration for the private listing did not contain only currency items"
     );
   }
   if (
     !paymentItems.every((item) => item.itemType === paymentItems[0].itemType)
   ) {
-    throw new Error("Not all currency items were the same for private order.");
+    throw new Error("Not all currency items were the same for private order");
   }
 
   const { aggregatedStartAmount, aggregatedEndAmount } = paymentItems.reduce(
