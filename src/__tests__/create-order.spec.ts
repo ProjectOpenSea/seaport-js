@@ -103,7 +103,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
         conduitKey: NO_CONDUIT,
-        nonce: 0,
+        counter: 0,
       },
       signature: order.signature,
     });
@@ -218,7 +218,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
         conduitKey: NO_CONDUIT,
-        nonce: 0,
+        counter: 0,
       },
       signature: order.signature,
     });
@@ -382,7 +382,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: formatBytes32String("0"),
         conduitKey: NO_CONDUIT,
-        nonce: 0,
+        counter: 0,
       },
       signature: order.signature,
     });
@@ -594,7 +594,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           zone: ethers.constants.AddressZero,
           zoneHash: formatBytes32String("0"),
           conduitKey: NO_CONDUIT,
-          nonce: 0,
+          counter: 0,
         },
         signature: order.signature,
       });

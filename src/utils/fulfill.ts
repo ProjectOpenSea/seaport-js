@@ -321,6 +321,7 @@ export async function fulfillStandardOrder({
   fulfillerOperator,
   timeBasedItemParams,
   conduitKey,
+  recipientAddress,
   signer,
 }: {
   order: Order;
@@ -337,6 +338,7 @@ export async function fulfillStandardOrder({
   offererOperator: string;
   fulfillerOperator: string;
   conduitKey: string;
+  recipientAddress: string;
   timeBasedItemParams: TimeBasedItemParams;
   signer: providers.JsonRpcSigner;
 }): Promise<
@@ -454,6 +456,7 @@ export async function fulfillStandardOrder({
                 })
               : [],
             conduitKey,
+            recipientAddress,
             payableOverrides,
           ]
         )
@@ -516,6 +519,7 @@ export async function fulfillAvailableOrders({
   ascendingAmountTimestampBuffer,
   conduitKey,
   signer,
+  recipientAddress,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
   seaportContract: Seaport;
@@ -525,6 +529,7 @@ export async function fulfillAvailableOrders({
   ascendingAmountTimestampBuffer: number;
   conduitKey: string;
   signer: providers.JsonRpcSigner;
+  recipientAddress: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -702,6 +707,7 @@ export async function fulfillAvailableOrders({
         offerFulfillments,
         considerationFulfillments,
         conduitKey,
+        recipientAddress,
         advancedOrdersWithTips.length,
         payableOverrides,
       ]

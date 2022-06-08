@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers";
 
 export const SEAPORT_CONTRACT_NAME = "Seaport";
-export const SEAPORT_CONTRACT_VERSION = "1";
+export const SEAPORT_CONTRACT_VERSION = "1.1";
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
     { name: "offerer", type: "address" },
@@ -14,7 +14,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "zoneHash", type: "bytes32" },
     { name: "salt", type: "uint256" },
     { name: "conduitKey", type: "bytes32" },
-    { name: "nonce", type: "uint256" },
+    { name: "counter", type: "uint256" },
   ],
   OfferItem: [
     { name: "itemType", type: "uint8" },

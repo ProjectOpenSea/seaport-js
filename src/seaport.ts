@@ -29,7 +29,7 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
-  OrderWithNonce,
+  OrderWithCounter,
   TipInputItem,
   TransactionMethods,
   ContractMethodReturnType,
@@ -148,7 +148,7 @@ export class Seaport {
    *                      It is HIGHLY recommended to pass in an explicit end time
    * @param input.offer The items you are willing to offer. This is a condensed version of the Seaport struct OfferItem for convenience
    * @param input.consideration The items that will go to their respective recipients upon receiving your offer.
-   * @param input.nonce The nonce from which to create the order with. Automatically fetched from the contract if not provided
+   * @param input.counter The counter from which to create the order with. Automatically fetched from the contract if not provided
    * @param input.allowPartialFills Whether to allow the order to be partially filled
    * @param input.restrictedByZone Whether the order should be restricted by zone
    * @param input.fees Convenience array to apply fees onto the order. The fees will be deducted from the
@@ -166,7 +166,7 @@ export class Seaport {
       endTime = MAX_INT.toString(),
       offer,
       consideration,
-      nonce,
+      counter,
       allowPartialFills,
       restrictedByZone,
       fees,
@@ -203,8 +203,8 @@ export class Seaport {
 
     const operator = this.config.conduitKeyToConduit[conduitKey];
 
-    const [resolvedNonce, balancesAndApprovals] = await Promise.all([
-      nonce ?? this.getNonce(offerer),
+    const [resolvedCounter, balancesAndApprovals] = await Promise.all([
+      counter ?? this.getCounter(offerer),
       getBalancesAndApprovals({
         owner: offerer,
         items: offerItems,
@@ -237,7 +237,7 @@ export class Seaport {
       offerer,
       zone,
       // TODO: Placeholder
-      zoneHash: formatBytes32String(resolvedNonce.toString()),
+      zoneHash: formatBytes32String(resolvedCounter.toString()),
       startTime,
       endTime,
       orderType,
@@ -268,17 +268,17 @@ export class Seaport {
     const createOrderAction = {
       type: "create",
       getMessageToSign: () => {
-        return this._getMessageToSign(orderParameters, resolvedNonce);
+        return this._getMessageToSign(orderParameters, resolvedCounter);
       },
       createOrder: async () => {
         const signature = await this.signOrder(
           orderParameters,
-          resolvedNonce,
+          resolvedCounter,
           offerer
         );
 
         return {
-          parameters: { ...orderParameters, nonce: resolvedNonce },
+          parameters: { ...orderParameters, counter: resolvedCounter },
           signature,
         };
       },
@@ -289,7 +289,7 @@ export class Seaport {
     return {
       actions,
       executeAllActions: () =>
-        executeAllActions(actions) as Promise<OrderWithNonce>,
+        executeAllActions(actions) as Promise<OrderWithCounter>,
     };
   }
 
@@ -311,18 +311,18 @@ export class Seaport {
   /**
    * Returns a raw message to be signed using EIP-712
    * @param orderParameters order parameter struct
-   * @param nonce nonce of the order
+   * @param counter counter of the order
    * @returns JSON string of the message to be signed
    */
   private async _getMessageToSign(
     orderParameters: OrderParameters,
-    nonce: number
+    counter: number
   ) {
     const domainData = await this._getDomainData();
 
     const orderComponents: OrderComponents = {
       ...orderParameters,
-      nonce,
+      counter,
     };
 
     return JSON.stringify(
@@ -337,13 +337,13 @@ export class Seaport {
   /**
    * Submits a request to your provider to sign the order. Signed orders are used for off-chain order books.
    * @param orderParameters standard order parameter struct
-   * @param nonce nonce of the offerer
+   * @param counter counter of the offerer
    * @param accountAddress optional account address from which to sign the order with.
    * @returns the order signature
    */
   public async signOrder(
     orderParameters: OrderParameters,
-    nonce: number,
+    counter: number,
     accountAddress?: string
   ): Promise<string> {
     const signer = this.provider.getSigner(accountAddress);
@@ -352,7 +352,7 @@ export class Seaport {
 
     const orderComponents: OrderComponents = {
       ...orderParameters,
-      nonce,
+      counter,
     };
 
     const signature = await signer._signTypedData(
@@ -391,13 +391,13 @@ export class Seaport {
   public bulkCancelOrders(
     offerer?: string
   ): TransactionMethods<
-    ContractMethodReturnType<SeaportContract, "incrementNonce">
+    ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
     const signer = this.provider.getSigner(offerer);
 
     return getTransactionMethods(
       this.contract.connect(signer),
-      "incrementNonce",
+      "incrementCounter",
       []
     );
   }
@@ -430,12 +430,14 @@ export class Seaport {
   }
 
   /**
-   * Gets the nonce of a given offerer
-   * @param offerer the offerer to get the nonce of
-   * @returns nonce as a number
+   * Gets the counter of a given offerer
+   * @param offerer the offerer to get the counter of
+   * @returns counter as a number
    */
-  public getNonce(offerer: string): Promise<number> {
-    return this.contract.getNonce(offerer).then((nonce) => nonce.toNumber());
+  public getCounter(offerer: string): Promise<number> {
+    return this.contract
+      .getCounter(offerer)
+      .then((counter) => counter.toNumber());
   }
 
   /**
@@ -448,7 +450,7 @@ export class Seaport {
     const considerationItemTypeString =
       "ConsiderationItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount,address recipient)";
     const orderComponentsPartialTypeString =
-      "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 nonce)";
+      "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)";
     const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
 
     const offerItemTypeHash = ethers.utils.keccak256(
@@ -544,7 +546,7 @@ export class Seaport {
           orderComponents.zoneHash.slice(2),
           orderComponents.salt.slice(2).padStart(64, "0"),
           orderComponents.conduitKey.slice(2).padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.nonce)
+          ethers.BigNumber.from(orderComponents.counter)
             .toHexString()
             .slice(2)
             .padStart(64, "0"),
@@ -568,6 +570,8 @@ export class Seaport {
    * @param input.extraData extra data supplied to the order
    * @param input.accountAddress optional address from which to fulfill the order from
    * @param input.conduitKey the conduitKey to source approvals from
+   * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
+   *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -579,8 +583,9 @@ export class Seaport {
     extraData = "0x",
     accountAddress,
     conduitKey = this.defaultConduitKey,
+    recipientAddress = ethers.constants.AddressZero,
   }: {
-    order: OrderWithNonce;
+    order: OrderWithCounter;
     unitsToFill?: BigNumberish;
     offerCriteria?: InputCriteria[];
     considerationCriteria?: InputCriteria[];
@@ -588,6 +593,7 @@ export class Seaport {
     extraData?: string;
     accountAddress?: string;
     conduitKey?: string;
+    recipientAddress?: string;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -658,10 +664,13 @@ export class Seaport {
       recipient: tip.recipient,
     }));
 
+    const isRecipientSelf = recipientAddress === ethers.constants.AddressZero;
+
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.
     if (
       !unitsToFill &&
+      isRecipientSelf &&
       shouldUseBasicFulfill(sanitizedOrder.parameters, totalFilled)
     ) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
@@ -699,6 +708,7 @@ export class Seaport {
       signer: fulfiller,
       offererOperator,
       fulfillerOperator,
+      recipientAddress,
     });
   }
 
@@ -709,15 +719,18 @@ export class Seaport {
    * @param input.fulfillOrderDetails list of helper order details
    * @param input.accountAddress the account to fulfill orders on
    * @param input.conduitKey the key from which to source approvals from
+   * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
+   *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
     fulfillOrderDetails,
     accountAddress,
     conduitKey = this.defaultConduitKey,
+    recipientAddress = ethers.constants.AddressZero,
   }: {
     fulfillOrderDetails: {
-      order: OrderWithNonce;
+      order: OrderWithCounter;
       unitsToFill?: BigNumberish;
       offerCriteria?: InputCriteria[];
       considerationCriteria?: InputCriteria[];
@@ -726,6 +739,7 @@ export class Seaport {
     }[];
     accountAddress?: string;
     conduitKey?: string;
+    recipientAddress?: string;
   }) {
     const fulfiller = await this.provider.getSigner(accountAddress);
 
@@ -814,6 +828,7 @@ export class Seaport {
       fulfillerOperator,
       signer: fulfiller,
       conduitKey,
+      recipientAddress,
     });
   }
 
@@ -834,7 +849,7 @@ export class Seaport {
     overrides,
     accountAddress,
   }: {
-    orders: (OrderWithNonce | Order)[];
+    orders: (OrderWithCounter | Order)[];
     fulfillments: MatchOrdersFulfillment[];
     overrides?: PayableOverrides;
     accountAddress?: string;
