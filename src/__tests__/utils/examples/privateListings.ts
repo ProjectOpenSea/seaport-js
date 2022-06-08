@@ -1,10 +1,14 @@
 import { BigNumber } from "ethers";
-import { MatchOrdersFulfillment, Order, OrderWithNonce } from "../../../types";
+import {
+  MatchOrdersFulfillment,
+  Order,
+  OrderWithCounter,
+} from "../../../types";
 import { isCurrencyItem } from "../../../utils/item";
 import { generateRandomSalt } from "../../../utils/order";
 
 export const constructPrivateListingCounterOrder = (
-  order: OrderWithNonce,
+  order: OrderWithCounter,
   privateSaleRecipient: string
 ): Order => {
   // Counter order offers up all the items in the private listing consideration
@@ -62,7 +66,7 @@ export const constructPrivateListingCounterOrder = (
 };
 
 export const getPrivateListingFulfillments = (
-  privateListingOrder: OrderWithNonce
+  privateListingOrder: OrderWithCounter
 ): MatchOrdersFulfillment[] => {
   const nftRelatedFulfillments: MatchOrdersFulfillment[] = [];
 

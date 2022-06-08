@@ -45,7 +45,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       },
     ];
 
-    const nonce = await seaportContract.getNonce(offerer.address);
+    const counter = await seaportContract.getCounter(offerer.address);
 
     const orderParameters = {
       offerer: offerer.address,
@@ -57,13 +57,13 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       salt,
       startTime,
       endTime,
-      zoneHash: formatBytes32String(nonce.toString()),
+      zoneHash: formatBytes32String(counter.toString()),
       conduitKey: NO_CONDUIT,
     };
 
     const signature = await seaport.signOrder(
       orderParameters,
-      nonce.toNumber()
+      counter.toNumber()
     );
 
     const order = {

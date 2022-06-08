@@ -20,7 +20,7 @@
     "@0xsequence/multicall": "0.39.0",
     "ethers": "5.6.7",
     "merkletreejs": "0.2.31",
-    "seaport": "https://github.com/ProjectOpenSea/seaport.git#b28bfb064ffbe5dd45edf4237485c6e412c10234"
+    "seaport": "https://github.com/ProjectOpenSea/seaport.git#76e508657888e3ec84039e1da269c822826991ef"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "2.0.5",
