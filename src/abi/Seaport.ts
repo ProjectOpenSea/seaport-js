@@ -381,7 +381,7 @@ const SeaportABI = [
       {
         indexed: false,
         internalType: "uint256",
-        name: "newNonce",
+        name: "newCounter",
         type: "uint256",
       },
       {
@@ -391,7 +391,7 @@ const SeaportABI = [
         type: "address",
       },
     ],
-    name: "NonceIncremented",
+    name: "CounterIncremented",
     type: "event",
   },
   {
@@ -443,7 +443,7 @@ const SeaportABI = [
       {
         indexed: false,
         internalType: "address",
-        name: "fulfiller",
+        name: "recipient",
         type: "address",
       },
       {
@@ -651,7 +651,7 @@ const SeaportABI = [
           },
           {
             internalType: "uint256",
-            name: "nonce",
+            name: "counter",
             type: "uint256",
           },
         ],
@@ -857,6 +857,11 @@ const SeaportABI = [
         internalType: "bytes32",
         name: "fulfillerConduitKey",
         type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "recipient",
+        type: "address",
       },
     ],
     name: "fulfillAdvancedOrder",
@@ -1090,6 +1095,11 @@ const SeaportABI = [
         internalType: "bytes32",
         name: "fulfillerConduitKey",
         type: "bytes32",
+      },
+      {
+        internalType: "address",
+        name: "recipient",
+        type: "address",
       },
       {
         internalType: "uint256",
@@ -1680,11 +1690,11 @@ const SeaportABI = [
         type: "address",
       },
     ],
-    name: "getNonce",
+    name: "getCounter",
     outputs: [
       {
         internalType: "uint256",
-        name: "nonce",
+        name: "counter",
         type: "uint256",
       },
     ],
@@ -1806,7 +1816,7 @@ const SeaportABI = [
           },
           {
             internalType: "uint256",
-            name: "nonce",
+            name: "counter",
             type: "uint256",
           },
         ],
@@ -1862,11 +1872,11 @@ const SeaportABI = [
   },
   {
     inputs: [],
-    name: "incrementNonce",
+    name: "incrementCounter",
     outputs: [
       {
         internalType: "uint256",
-        name: "newNonce",
+        name: "newCounter",
         type: "uint256",
       },
     ],
@@ -2568,4 +2578,5 @@ const SeaportABI = [
     type: "function",
   },
 ];
+
 export { SeaportABI };

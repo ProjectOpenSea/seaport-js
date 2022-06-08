@@ -64,7 +64,7 @@ export type OrderParameters = {
   conduitKey: string;
 };
 
-export type OrderComponents = OrderParameters & { nonce: number };
+export type OrderComponents = OrderParameters & { counter: number };
 
 export type Order = {
   parameters: OrderParameters;
@@ -136,7 +136,7 @@ export type CreateOrderInput = {
   endTime?: string;
   offer: readonly CreateInputItem[];
   consideration: readonly ConsiderationInputItem[];
-  nonce?: number;
+  counter?: number;
   fees?: readonly Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
@@ -156,7 +156,7 @@ export type OrderStatus = {
   totalSize: BigNumber;
 };
 
-export type OrderWithNonce = {
+export type OrderWithCounter = {
   parameters: OrderComponents;
   signature: string;
 };
@@ -193,7 +193,7 @@ export type ExchangeAction<T = unknown> = {
 export type CreateOrderAction = {
   type: "create";
   getMessageToSign: () => Promise<string>;
-  createOrder: () => Promise<OrderWithNonce>;
+  createOrder: () => Promise<OrderWithCounter>;
 };
 
 export type TransactionAction = ApprovalAction | ExchangeAction;
@@ -213,7 +213,7 @@ export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
     ? CreateOrderActions
     : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
   executeAllActions: () => Promise<
-    T extends CreateOrderAction ? OrderWithNonce : ContractTransaction
+    T extends CreateOrderAction ? OrderWithCounter : ContractTransaction
   >;
 };
 
