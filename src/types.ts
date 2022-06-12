@@ -12,7 +12,8 @@ import {
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType } from "./constants";
-import { ERC721, ERC20 } from "./typechain";
+import type { ERC721 } from "./typechain/ERC721";
+import type { ERC20 } from "./typechain/ERC20";
 
 export type SeaportConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
