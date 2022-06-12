@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "lib",
-    "target": "es2017",
+    "target": "es5",
     "lib": ["dom", "esnext"],
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
