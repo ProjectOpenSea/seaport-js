@@ -88,7 +88,7 @@ export class Seaport {
       ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
       conduitKeyToConduit,
-    }: SeaportConfig
+    }: SeaportConfig = {}
   ) {
     this.provider = provider;
     this.multicallProvider = new multicallProviders.MulticallProvider(provider);
