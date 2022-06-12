@@ -18,10 +18,7 @@ module.exports = {
     ecmaVersion: 12,
   },
   rules: {
-    "node/no-unsupported-features/es-syntax": [
-      "error",
-      { ignores: ["modules"] },
-    ],
+    "n/no-unsupported-features/es-syntax": ["error", { ignores: ["modules"] }],
     "no-unused-expressions": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",
