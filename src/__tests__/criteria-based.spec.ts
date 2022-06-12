@@ -8,6 +8,7 @@ import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
+import { MerkleTree } from "../utils/merkletree";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -86,7 +87,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              offerCriteria: [{ identifier: nftId, proof: [] }],
               accountAddress: fulfiller.address,
             });
 
@@ -156,7 +157,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              offerCriteria: [{ identifier: nftId, proof: [] }],
               accountAddress: fulfiller.address,
             });
 
@@ -260,9 +261,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
 
-              considerationCriteria: [
-                { identifier: nftId, validIdentifiers: [] },
-              ],
+              considerationCriteria: [{ identifier: nftId, proof: [] }],
               accountAddress: fulfiller.address,
             });
 
@@ -384,7 +383,10 @@ describeWithFixture(
             const { actions: revertedActions } = await seaport.fulfillOrder({
               order,
               offerCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId2] },
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId2]).getProof(nftId2),
+                },
               ],
               accountAddress: fulfiller.address,
             });
@@ -409,7 +411,7 @@ describeWithFixture(
               offerCriteria: [
                 {
                   identifier: nftId3,
-                  validIdentifiers: [nftId, nftId3],
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
                 },
               ],
               accountAddress: fulfiller.address,
@@ -479,7 +481,10 @@ describeWithFixture(
               order,
 
               offerCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId2),
+                },
               ],
               accountAddress: fulfiller.address,
             });
@@ -521,7 +526,10 @@ describeWithFixture(
               order,
 
               offerCriteria: [
-                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId3,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
+                },
               ],
 
               accountAddress: fulfiller.address,
@@ -607,7 +615,10 @@ describeWithFixture(
             const { actions: revertedActions } = await seaport.fulfillOrder({
               order,
               considerationCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId2),
+                },
               ],
               accountAddress: fulfiller.address,
             });
@@ -668,7 +679,10 @@ describeWithFixture(
               order,
 
               considerationCriteria: [
-                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId3,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
+                },
               ],
 
               accountAddress: fulfiller.address,
@@ -738,7 +752,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              offerCriteria: [{ identifier: nftId, proof: [] }],
               accountAddress: fulfiller.address,
             });
 
@@ -790,7 +804,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
+              offerCriteria: [{ identifier: nftId, proof: [] }],
               accountAddress: fulfiller.address,
             });
 
@@ -879,9 +893,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
 
-              considerationCriteria: [
-                { identifier: nftId, validIdentifiers: [] },
-              ],
+              considerationCriteria: [{ identifier: nftId, proof: [] }],
               accountAddress: fulfiller.address,
             });
 
@@ -989,7 +1001,10 @@ describeWithFixture(
             const { actions: revertedActions } = await seaport.fulfillOrder({
               order,
               offerCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId2] },
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId2]).getProof(nftId2),
+                },
               ],
               accountAddress: fulfiller.address,
             });
@@ -1014,7 +1029,7 @@ describeWithFixture(
               offerCriteria: [
                 {
                   identifier: nftId3,
-                  validIdentifiers: [nftId, nftId3],
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
                 },
               ],
               accountAddress: fulfiller.address,
@@ -1070,7 +1085,10 @@ describeWithFixture(
               order,
 
               offerCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId2),
+                },
               ],
               accountAddress: fulfiller.address,
             });
@@ -1112,7 +1130,10 @@ describeWithFixture(
               order,
 
               offerCriteria: [
-                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId3,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
+                },
               ],
 
               accountAddress: fulfiller.address,
@@ -1185,7 +1206,10 @@ describeWithFixture(
             const { actions: revertedActions } = await seaport.fulfillOrder({
               order,
               considerationCriteria: [
-                { identifier: nftId2, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId2),
+                },
               ],
               accountAddress: fulfiller.address,
             });
@@ -1246,7 +1270,10 @@ describeWithFixture(
               order,
 
               considerationCriteria: [
-                { identifier: nftId3, validIdentifiers: [nftId, nftId3] },
+                {
+                  identifier: nftId3,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
+                },
               ],
 
               accountAddress: fulfiller.address,
@@ -1309,10 +1336,8 @@ describeWithFixture(
 
           const { actions } = await seaport.fulfillOrder({
             order,
-            offerCriteria: [{ identifier: nftId, validIdentifiers: [] }],
-            considerationCriteria: [
-              { identifier: nftId2, validIdentifiers: [] },
-            ],
+            offerCriteria: [{ identifier: nftId, proof: [] }],
+            considerationCriteria: [{ identifier: nftId2, proof: [] }],
             accountAddress: fulfiller.address,
           });
 
@@ -1398,9 +1423,17 @@ describeWithFixture(
 
           const { actions: revertedActions } = await seaport.fulfillOrder({
             order,
-            offerCriteria: [{ identifier: nftId2, validIdentifiers: [nftId2] }],
+            offerCriteria: [
+              {
+                identifier: nftId2,
+                proof: new MerkleTree([nftId2]).getProof(nftId2),
+              },
+            ],
             considerationCriteria: [
-              { identifier: nftId2, validIdentifiers: [nftId2, nftId3] },
+              {
+                identifier: nftId2,
+                proof: new MerkleTree([nftId2, nftId3]).getProof(nftId2),
+              },
             ],
             accountAddress: fulfiller.address,
           });
@@ -1435,10 +1468,16 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             offerCriteria: [
-              { identifier: nftId, validIdentifiers: [nftId, nftId3] },
+              {
+                identifier: nftId,
+                proof: new MerkleTree([nftId, nftId3]).getProof(nftId),
+              },
             ],
             considerationCriteria: [
-              { identifier: nftId2, validIdentifiers: [nftId2, nftId3] },
+              {
+                identifier: nftId2,
+                proof: new MerkleTree([nftId2, nftId3]).getProof(nftId2),
+              },
             ],
             accountAddress: fulfiller.address,
           });

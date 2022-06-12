@@ -1,6 +1,4 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
-import { keccak256 } from "ethers/lib/utils";
-import { MerkleTree } from "merkletreejs";
 import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants";
 import type {
   ConsiderationItem,
@@ -11,8 +9,8 @@ import type {
   Order,
   OrderParameters,
 } from "../types";
-import { hashIdentifier } from "./criteria";
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
+import { MerkleTree } from "./merkletree";
 
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: BigNumberish) =>
   BigNumber.from(amount)
@@ -74,11 +72,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   if ("itemType" in item) {
     // Convert this to a criteria based item
     if ("identifiers" in item) {
-      const leaves = (item.identifiers ?? []).map(hashIdentifier);
-
-      const tree = new MerkleTree(leaves, keccak256, {
-        sort: true,
-      });
+      const tree = new MerkleTree(item.identifiers);
 
       return {
         itemType:
@@ -86,9 +80,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
             ? ItemType.ERC721_WITH_CRITERIA
             : ItemType.ERC1155_WITH_CRITERIA,
         token: item.token,
-        identifierOrCriteria: tree.getRoot().toString("hex")
-          ? tree.getHexRoot()
-          : "0",
+        identifierOrCriteria: tree.getRoot(),
         startAmount: item.amount ?? "1",
         endAmount: item.endAmount ?? item.amount ?? "1",
       };
