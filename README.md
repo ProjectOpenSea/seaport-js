@@ -19,7 +19,7 @@ We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versio
 Then, in your project, run:
 
 ```
-npm install --save seaport-js
+npm install --save @opensea/seaport-js
 ```
 
 ## Getting Started
@@ -27,7 +27,7 @@ npm install --save seaport-js
 Instantiate your instance of seaport using your ethers provider:
 
 ```JavaScript
-import { Seaport } from "seaport-js";
+import { Seaport } from "@opensea/seaport-js";
 
 const provider = ethers.getDefaultProvider();
 
