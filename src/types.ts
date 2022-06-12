@@ -146,7 +146,7 @@ export type CreateOrderInput = {
 
 export type InputCriteria = {
   identifier: string;
-  validIdentifiers: string[];
+  proof: string[];
 };
 
 export type OrderStatus = {
