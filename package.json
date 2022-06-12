@@ -1,8 +1,10 @@
 {
-  "name": "seaport-js",
+  "name": "@opensea/seaport-js",
   "version": "1.0.0",
+  "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
+  "homepage": "https://github.com/ProjectOpenSea/seaport-js#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ProjectOpenSea/seaport-js.git"
@@ -14,6 +16,10 @@
   "files": [
     "lib"
   ],
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
   "scripts": {
     "build": "hardhat compile && tsc -p tsconfig.build.json",
     "check-types": "tsc --noEmit -p src/__tests__/tsconfig.json",
@@ -26,6 +32,7 @@
     "prettier:check:package.json": "prettier-package-json --list-different",
     "prettier:fix": "prettier --write ."
   },
+  "types": "lib/index.d.ts",
   "dependencies": {
     "@0xsequence/multicall": "0.39.0",
     "ethers": "5.6.7",
@@ -62,7 +69,7 @@
     "prettier": "2.5.1",
     "prettier-package-json": "2.6.3",
     "prettier-plugin-solidity": "1.0.0-beta.13",
-    "seaport": "https://github.com/ProjectOpenSea/seaport.git#76e508657888e3ec84039e1da269c822826991ef",
+    "seaport": "git+https://github.com/ProjectOpenSea/seaport.git#76e508657888e3ec84039e1da269c822826991ef",
     "sinon": "13.0.1",
     "sinon-chai": "3.7.0",
     "solhint": "3.3.7",
