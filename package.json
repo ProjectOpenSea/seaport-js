@@ -21,7 +21,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "build": "hardhat compile && tsc -p tsconfig.build.json",
+    "build": "hardhat compile && microbundle --tsconfig tsconfig.build.json",
     "check-types": "tsc --noEmit -p src/__tests__/tsconfig.json",
     "check-types:incremental": "npm run check-types --incremental",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
@@ -32,6 +32,7 @@
     "prettier:check:package.json": "prettier-package-json --list-different",
     "prettier:fix": "prettier --write ."
   },
+  "sideEffects": false,
   "types": "lib/index.d.ts",
   "dependencies": {
     "@0xsequence/multicall": "0.39.0",
@@ -66,6 +67,7 @@
     "hardhat-gas-reporter": "1.0.8",
     "husky": ">=6",
     "lint-staged": ">=10",
+    "microbundle": "^0.15.0",
     "prettier": "2.5.1",
     "prettier-package-json": "2.6.3",
     "prettier-plugin-solidity": "1.0.0-beta.13",

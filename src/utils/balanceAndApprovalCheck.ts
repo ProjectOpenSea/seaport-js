@@ -4,8 +4,8 @@ import { ItemType, MAX_INT } from "../constants";
 import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
 import { balanceOf } from "./balance";
-import { getItemToCriteriaMap } from "./criteria";
 import {
+  getItemToCriteriaMap,
   getSummedTokenAndIdentifierAmounts,
   isErc1155Item,
   isErc20Item,

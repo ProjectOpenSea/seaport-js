@@ -31,7 +31,7 @@ import {
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balanceAndApprovalCheck";
-import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria";
+import { generateCriteriaResolvers } from "./criteria";
 import { gcd } from "./gcd";
 import {
   getMaximumSizeForOrder,
@@ -41,6 +41,7 @@ import {
   isErc721Item,
   isNativeCurrencyItem,
   TimeBasedItemParams,
+  getItemToCriteriaMap,
 } from "./item";
 import {
   areAllCurrenciesSame,

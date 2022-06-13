@@ -1,7 +1,6 @@
 import { BigNumber } from "ethers";
 import { ItemType } from "../constants";
 import type { InputCriteria, Item, Order, OrderParameters } from "../types";
-import { getItemToCriteriaMap } from "./criteria";
 import { findGcd } from "./gcd";
 
 export const isCurrencyItem = ({ itemType }: Item) =>
@@ -139,4 +138,18 @@ export const getMaximumSizeForOrder = ({
   ]);
 
   return findGcd(amounts);
+};
+
+export const getItemToCriteriaMap = (
+  items: Item[],
+  criterias: InputCriteria[]
+) => {
+  const criteriasCopy = [...criterias];
+
+  return items.reduce((map, item) => {
+    if (isCriteriaItem(item.itemType)) {
+      map.set(item, criteriasCopy.shift() as InputCriteria);
+    }
+    return map;
+  }, new Map<Item, InputCriteria>());
 };
