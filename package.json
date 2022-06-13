@@ -67,7 +67,7 @@
     "hardhat-gas-reporter": "1.0.8",
     "husky": ">=6",
     "lint-staged": ">=10",
-    "microbundle": "^0.15.0",
+    "microbundle": "0.15.0",
     "prettier": "2.5.1",
     "prettier-package-json": "2.6.3",
     "prettier-plugin-solidity": "1.0.0-beta.13",
