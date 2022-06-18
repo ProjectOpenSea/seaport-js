@@ -78,9 +78,6 @@
     "typechain": "7.0.1",
     "typescript": "4.6.2"
   },
-  "engines": {
-    "node": ">=14"
-  },
   "lint-staged": {
     "package.json": [
       "prettier-package-json --write",
