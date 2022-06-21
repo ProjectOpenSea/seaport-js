@@ -355,11 +355,28 @@ export class Seaport {
       counter,
     };
 
-    const signature = await signer._signTypedData(
-      domainData,
-      EIP_712_ORDER_TYPE,
-      orderComponents
-    );
+    let signature: string;
+    try {
+      signature = await signer._signTypedData(
+        domainData,
+        EIP_712_ORDER_TYPE,
+        orderComponents
+      );
+    } catch {
+      // Fallback to normal sign typed data for node providers, without using stringified message
+      // https://github.com/coinbase/coinbase-wallet-sdk/issues/60
+      const signerAddress = await signer.getAddress();
+      const message = _TypedDataEncoder.getPayload(
+        domainData,
+        EIP_712_ORDER_TYPE,
+        orderComponents
+      );
+
+      signature = await this.provider.send("eth_signTypedData", [
+        signerAddress,
+        message,
+      ]);
+    }
 
     // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
     return ethers.utils.splitSignature(signature).compact;
