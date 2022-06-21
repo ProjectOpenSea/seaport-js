@@ -42,7 +42,6 @@
     "@nomiclabs/hardhat-ethers": "2.0.5",
     "@nomiclabs/hardhat-waffle": "2.0.3",
     "@rari-capital/solmate": "6.2.0",
-    "@truffle/hdwallet-provider": "2.0.9",
     "@typechain/ethers-v5": "9.0.0",
     "@typechain/hardhat": "5.0.0",
     "@types/chai": "4.3.0",
