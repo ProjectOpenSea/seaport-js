@@ -79,7 +79,6 @@ const transaction = executeAllFulfillActions()
 const [offerer, fulfiller] = await ethers.getSigners();
 const { executeAllActions } = await seaport.createOrder({
   offer: [
-
     {
       amount: parseEther("10").toString(),
       // WETH
