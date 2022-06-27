@@ -15,6 +15,7 @@ import {
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
   NO_CONDUIT,
+  OPENSEA_CONDUIT_KEY,
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
 } from "./constants";
@@ -75,6 +76,8 @@ export class Seaport {
   private config: Required<Omit<SeaportConfig, "overrides">>;
 
   private defaultConduitKey: string;
+
+  readonly OPENSEA_CONDUIT_KEY: string = OPENSEA_CONDUIT_KEY;
 
   /**
    * @param provider - The provider to use for web3-related calls
