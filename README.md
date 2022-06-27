@@ -45,7 +45,8 @@ Many of the main core flows return _use cases_. What this means is that if you w
 #### Listing an ERC-721 for 10 ETH and fulfilling it
 
 ```
-const [offerer, fulfiller] = await ethers.getSigners();
+const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 const { executeAllActions } = await seaport.createOrder({
   offer: [
     {
@@ -57,17 +58,17 @@ const { executeAllActions } = await seaport.createOrder({
   consideration: [
     {
       amount: parseEther("10").toString(),
-      recipient: offerer.address,
+      recipient: offerer,
     }
   ],
-  accountAddress: offerer.address
+  accountAddress: offerer
 });
 
 const order = await executeAllActions();
 
 const { executeAllActions: executeAllFulfillActions } = await seaport.fulfillOrder({
   order,
-  accountAddress: fulfiller.address,
+  accountAddress: fulfiller,
 });
 
 const transaction = executeAllFulfillActions()
@@ -76,7 +77,8 @@ const transaction = executeAllFulfillActions()
 #### Making an offer for an ERC-721 for 10 WETH and fulfilling it
 
 ```
-const [offerer, fulfiller] = await ethers.getSigners();
+const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 const { executeAllActions } = await seaport.createOrder({
   offer: [
     {
@@ -90,10 +92,10 @@ const { executeAllActions } = await seaport.createOrder({
       itemType: ItemType.ERC721,
       token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
       identifier: "1",
-      recipient: offerer.address
+      recipient: offerer
     },
   ],
-  accountAddress: offerer.address
+  accountAddress: offerer
 });
 
 const order = await executeAllActions();
