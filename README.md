@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/ProjectOpenSea/seaport-js/badge.svg?branch=master)](https://coveralls.io/github/ProjectOpenSea/opensea-js?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/ProjectOpenSea/seaport-js/badge.svg?branch=main)](https://coveralls.io/github/ProjectOpenSea/seaport-js?branch=main)
 
 # Seaport.js
 
