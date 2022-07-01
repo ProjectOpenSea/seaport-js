@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/ProjectOpenSea/seaport-js/badge.svg?branch=master)](https://coveralls.io/github/ProjectOpenSea/opensea-js?branch=master)
+
 # Seaport.js
 
 [Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.
