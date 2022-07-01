@@ -6,7 +6,7 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
-import { CreateOrderInput, CurrencyItem, OrderComponents } from "../types";
+import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import {
   getBalancesForFulfillOrder,
