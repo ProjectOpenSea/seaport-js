@@ -66,6 +66,7 @@ export class Seaport {
   public contract: SeaportContract;
 
   private provider: providers.JsonRpcProvider;
+  private signer?: ethers.Wallet;
 
   // Use the multicall provider for reads for batching and performance optimisations
   // NOTE: Do NOT await between sequential requests if you're intending to batch
@@ -81,10 +82,12 @@ export class Seaport {
 
   /**
    * @param provider - The provider to use for web3-related calls
+   * @param signer - The signer used to sign your accounts
    * @param considerationConfig - A config to provide flexibility in the usage of Seaport
    */
   public constructor(
     provider: providers.JsonRpcProvider,
+    signer: ethers.Wallet,
     {
       overrides,
       // Five minute buffer
@@ -94,12 +97,13 @@ export class Seaport {
     }: SeaportConfig = {}
   ) {
     this.provider = provider;
+    this.signer = signer;
     this.multicallProvider = new multicallProviders.MulticallProvider(provider);
 
     this.contract = new Contract(
       overrides?.contractAddress ?? CROSS_CHAIN_SEAPORT_ADDRESS,
       SeaportABI,
-      this.multicallProvider
+      signer ?? this.multicallProvider
     ) as SeaportContract;
 
     this.config = {
@@ -177,7 +181,8 @@ export class Seaport {
     }: CreateOrderInput,
     accountAddress?: string
   ): Promise<OrderUseCase<CreateOrderAction>> {
-    const signer = await this.provider.getSigner(accountAddress);
+    const signer =
+      this.signer ?? (await this.provider.getSigner(accountAddress));
     const offerer = await signer.getAddress();
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
@@ -349,7 +354,7 @@ export class Seaport {
     counter: number,
     accountAddress?: string
   ): Promise<string> {
-    const signer = this.provider.getSigner(accountAddress);
+    const signer = this.signer ?? this.provider.getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
 
@@ -357,7 +362,6 @@ export class Seaport {
       ...orderParameters,
       counter,
     };
-
     const signature = await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
@@ -379,7 +383,7 @@ export class Seaport {
     orders: OrderComponents[],
     accountAddress?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
-    const signer = this.provider.getSigner(accountAddress);
+    const signer = this.signer ?? this.provider.getSigner(accountAddress);
 
     return getTransactionMethods(this.contract.connect(signer), "cancel", [
       orders,
@@ -396,7 +400,7 @@ export class Seaport {
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
-    const signer = this.provider.getSigner(offerer);
+    const signer = this.signer ?? this.provider.getSigner(offerer);
 
     return getTransactionMethods(
       this.contract.connect(signer),
@@ -416,7 +420,7 @@ export class Seaport {
     orders: Order[],
     accountAddress?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
-    const signer = this.provider.getSigner(accountAddress);
+    const signer = this.signer ?? this.provider.getSigner(accountAddress);
 
     return getTransactionMethods(this.contract.connect(signer), "validate", [
       orders,
@@ -610,7 +614,7 @@ export class Seaport {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
-    const fulfiller = await this.provider.getSigner(accountAddress);
+    const fulfiller = this.signer ?? this.provider.getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
 
@@ -744,7 +748,8 @@ export class Seaport {
     conduitKey?: string;
     recipientAddress?: string;
   }) {
-    const fulfiller = await this.provider.getSigner(accountAddress);
+    const fulfiller =
+      this.signer ?? (await this.provider.getSigner(accountAddress));
 
     const fulfillerAddress = await fulfiller.getAddress();
 
@@ -859,7 +864,7 @@ export class Seaport {
   }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
-    const signer = this.provider.getSigner(accountAddress);
+    const signer = this.signer ?? this.provider.getSigner(accountAddress);
 
     return getTransactionMethods(this.contract.connect(signer), "matchOrders", [
       orders,

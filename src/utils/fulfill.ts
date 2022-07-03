@@ -197,7 +197,7 @@ export async function fulfillBasicOrder({
   timeBasedItemParams: TimeBasedItemParams;
   offererOperator: string;
   fulfillerOperator: string;
-  signer: providers.JsonRpcSigner;
+  signer: providers.JsonRpcSigner | ethers.Wallet;
   tips?: ConsiderationItem[];
   conduitKey: string;
 }): Promise<
@@ -340,7 +340,7 @@ export async function fulfillStandardOrder({
   conduitKey: string;
   recipientAddress: string;
   timeBasedItemParams: TimeBasedItemParams;
-  signer: providers.JsonRpcSigner;
+  signer: providers.JsonRpcSigner | ethers.Wallet;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -530,7 +530,7 @@ export async function fulfillAvailableOrders({
   currentBlockTimestamp: number;
   ascendingAmountTimestampBuffer: number;
   conduitKey: string;
-  signer: providers.JsonRpcSigner;
+  signer: providers.JsonRpcSigner | ethers.Wallet;
   recipientAddress: string;
 }): Promise<
   OrderUseCase<
