@@ -82,19 +82,19 @@ export class Seaport {
 
   /**
    * @param provider - The provider to use for web3-related calls
-   * @param signer - The signer used to sign your accounts
    * @param considerationConfig - A config to provide flexibility in the usage of Seaport
+   * @param signer - The signer used to sign your accounts
    */
   public constructor(
     provider: providers.JsonRpcProvider,
-    signer: ethers.Wallet,
     {
       overrides,
       // Five minute buffer
       ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
       conduitKeyToConduit,
-    }: SeaportConfig = {}
+    }: SeaportConfig = {},
+    signer?: ethers.Wallet
   ) {
     this.provider = provider;
     this.signer = signer;
