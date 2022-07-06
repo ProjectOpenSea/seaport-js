@@ -1,4 +1,5 @@
 [![Version][version-badge]][version-link]
+[![npm][npm-badge]][npm-link]
 [![Test CI][ci-badge]][ci-link]
 [![Code Coverage][coverage-badge]][coverage-link]
 [![License][license-badge]][license-link]
@@ -128,6 +129,8 @@ See [the contributing guide](CONTRIBUTING.md) for detailed instructions on how t
 [seaport-link]: https://github.com/ProjectOpenSea/seaport
 [version-badge]: https://img.shields.io/github/package-json/v/ProjectOpenSea/seaport-js
 [version-link]: https://github.com/ProjectOpenSea/seaport-js/releases
+[npm-badge]: https://img.shields.io/npm/v/@opensea/seaport-js?color=red
+[npm-link]: https://www.npmjs.com/package/@opensea/seaport-js
 [ci-badge]: https://github.com/ProjectOpenSea/seaport-js/actions/workflows/main.yaml/badge.svg
 [ci-link]: https://github.com/ProjectOpenSea/seaport-js/actions/workflows/main.yaml
 [coverage-badge]: https://codecov.io/gh/ProjectOpenSea/seaport-js/branch/main/graph/badge.svg
