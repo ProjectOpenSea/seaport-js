@@ -1,8 +1,13 @@
-[![Coverage Status](https://coveralls.io/repos/github/ProjectOpenSea/seaport-js/badge.svg?branch=main)](https://coveralls.io/github/ProjectOpenSea/seaport-js?branch=main)
+[![Version][version-badge]][version-link]
+[![Test CI][ci-badge]][ci-link]
+[![Code Coverage][coverage-badge]][coverage-link]
+[![License][license-badge]][license-link]
+[![Docs][docs-badge]][docs-link]
+[![Discussions][discussions-badge]][discussions-link]
 
 # Seaport.js
 
-[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.
+[Seaport][seaport-link] is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.
 
 - [Synopsis](#synopsis)
 - [Installation](#installation)
@@ -12,7 +17,7 @@
 
 ## Synopsis
 
-This is a JavaScript library to help interface with Seaport. It includes various helper methods and constants that makes interfacing with Seaport easier. These include creating orders, fulfilling orders, doing the necessary balance and approval checks, and more. We recommend taking a look at the [Seaport](https://github.com/ProjectOpenSea/seaport) docs to get a better understanding of how the Seaport marketplace works.
+This is a JavaScript library to help interface with Seaport. It includes various helper methods and constants that makes interfacing with Seaport easier. These include creating orders, fulfilling orders, doing the necessary balance and approval checks, and more. We recommend taking a look at the [Seaport][seaport-link] docs to get a better understanding of how the Seaport marketplace works.
 
 ## Installation
 
@@ -20,7 +25,7 @@ We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versio
 
 Then, in your project, run:
 
-```
+```console
 npm install --save @opensea/seaport-js
 ```
 
@@ -28,7 +33,7 @@ npm install --save @opensea/seaport-js
 
 Instantiate your instance of seaport using your ethers provider:
 
-```JavaScript
+```js
 import { Seaport } from "@opensea/seaport-js";
 
 const provider = ethers.getDefaultProvider();
@@ -46,7 +51,7 @@ Many of the main core flows return _use cases_. What this means is that if you w
 
 #### Listing an ERC-721 for 10 ETH and fulfilling it
 
-```
+```js
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 const { executeAllActions } = await seaport.createOrder({
@@ -55,30 +60,31 @@ const { executeAllActions } = await seaport.createOrder({
       itemType: ItemType.ERC721,
       token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
       identifier: "1",
-    }
+    },
   ],
   consideration: [
     {
       amount: parseEther("10").toString(),
       recipient: offerer,
-    }
+    },
   ],
-  accountAddress: offerer
+  accountAddress: offerer,
 });
 
 const order = await executeAllActions();
 
-const { executeAllActions: executeAllFulfillActions } = await seaport.fulfillOrder({
-  order,
-  accountAddress: fulfiller,
-});
+const { executeAllActions: executeAllFulfillActions } =
+  await seaport.fulfillOrder({
+    order,
+    accountAddress: fulfiller,
+  });
 
-const transaction = executeAllFulfillActions()
+const transaction = executeAllFulfillActions();
 ```
 
 #### Making an offer for an ERC-721 for 10 WETH and fulfilling it
 
-```
+```js
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 const { executeAllActions } = await seaport.createOrder({
@@ -86,7 +92,7 @@ const { executeAllActions } = await seaport.createOrder({
     {
       amount: parseEther("10").toString(),
       // WETH
-      token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+      token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     },
   ],
   consideration: [
@@ -94,22 +100,41 @@ const { executeAllActions } = await seaport.createOrder({
       itemType: ItemType.ERC721,
       token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
       identifier: "1",
-      recipient: offerer
+      recipient: offerer,
     },
   ],
-  accountAddress: offerer
+  accountAddress: offerer,
 });
 
 const order = await executeAllActions();
 
-const { executeAllActions: executeAllFulfillActions } = await seaport.fulfillOrder({
-  order,
-  accountAddress: fulfiller.address,
-});
+const { executeAllActions: executeAllFulfillActions } =
+  await seaport.fulfillOrder({
+    order,
+    accountAddress: fulfiller.address,
+  });
 
-const transaction = executeAllFulfillActions()
+const transaction = executeAllFulfillActions();
 ```
 
 ## Contributing
 
 See [the contributing guide](CONTRIBUTING.md) for detailed instructions on how to get started with this project.
+
+## License
+
+[MIT](LICENSE) Copyright 2022 Ozone Networks, Inc.
+
+[seaport-link]: https://github.com/ProjectOpenSea/seaport
+[version-badge]: https://img.shields.io/github/package-json/v/ProjectOpenSea/seaport-js
+[version-link]: https://github.com/ProjectOpenSea/seaport-js/releases
+[ci-badge]: https://github.com/ProjectOpenSea/seaport-js/actions/workflows/main.yaml/badge.svg
+[ci-link]: https://github.com/ProjectOpenSea/seaport-js/actions/workflows/main.yaml
+[coverage-badge]: https://codecov.io/gh/ProjectOpenSea/seaport-js/branch/main/graph/badge.svg
+[coverage-link]: https://codecov.io/gh/ProjectOpenSea/seaport-js
+[license-badge]: https://img.shields.io/github/license/ProjectOpenSea/seaport-js
+[license-link]: https://github.com/ProjectOpenSea/seaport-js/blob/main/LICENSE
+[docs-badge]: https://img.shields.io/badge/Seaport.js-documentation-informational
+[docs-link]: https://github.com/ProjectOpenSea/seaport-js/blob/main/README.md#getting-started
+[discussions-badge]: https://img.shields.io/badge/Seaport.js-discussions-blueviolet
+[discussions-link]: https://github.com/ProjectOpenSea/seaport-js/discussions
