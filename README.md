@@ -47,7 +47,7 @@ const provider = new ethers.providers.Web3Provider(window.ethereum);
 const seaport = new Seaport(provider);
 ```
 
-#### Through an RPC Provider (i.e. Alchemy)
+#### Through a RPC Provider (i.e. Alchemy)
 
 ```js
 import { Seaport } from "@opensea/seaport-js";
@@ -68,7 +68,7 @@ import { ethers } from "ethers";
 
 const signer = new ethers.Wallet("YOUR_PK");
 
-const seaport = new Seaport(provider);
+const seaport = new Seaport(signer);
 ```
 
 Look at the relevant definitions in `seaport.ts` in order to see the different functionality this library offers.
