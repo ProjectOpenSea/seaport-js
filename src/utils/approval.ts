@@ -1,5 +1,5 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, Contract, providers } from "ethers";
+import { BigNumber, Contract, Signer } from "ethers";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
@@ -46,7 +46,7 @@ export const approvedItemAmount = async (
  */
 export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
-  signer: providers.JsonRpcSigner
+  signer: Signer
 ): Promise<ApprovalAction[]> {
   return Promise.all(
     insufficientApprovals
