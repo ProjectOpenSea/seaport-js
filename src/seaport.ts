@@ -87,7 +87,7 @@ export class Seaport {
    * @param considerationConfig - A config to provide flexibility in the usage of Seaport
    */
   public constructor(
-    providerOrSigner: providers.JsonRpcProvider | ethers.Wallet,
+    providerOrSigner: providers.JsonRpcProvider | Signer,
     {
       overrides,
       // Five minute buffer
@@ -96,10 +96,18 @@ export class Seaport {
       conduitKeyToConduit,
     }: SeaportConfig = {}
   ) {
-    this.provider =
-      providerOrSigner instanceof ethers.Wallet
-        ? providerOrSigner.provider
-        : providerOrSigner;
+    const provider =
+      providerOrSigner instanceof providers.Provider
+        ? providerOrSigner
+        : providerOrSigner.provider;
+
+    if (!provider) {
+      throw new Error(
+        "Either a provider or custom signer with provider must be provided"
+      );
+    }
+
+    this.provider = provider;
 
     this.multicallProvider = new multicallProviders.MulticallProvider(
       this.provider
