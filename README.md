@@ -89,22 +89,24 @@ Many of the main core flows return _use cases_. What this means is that if you w
 ```js
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
-const { executeAllActions } = await seaport.createOrder({
-  offer: [
-    {
-      itemType: ItemType.ERC721,
-      token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
-      identifier: "1",
-    },
-  ],
-  consideration: [
-    {
-      amount: parseEther("10").toString(),
-      recipient: offerer,
-    },
-  ],
-  accountAddress: offerer,
-});
+const { executeAllActions } = await seaport.createOrder(
+  {
+    offer: [
+      {
+        itemType: ItemType.ERC721,
+        token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
+        identifier: "1",
+      },
+    ],
+    consideration: [
+      {
+        amount: parseEther("10").toString(),
+        recipient: offerer,
+      },
+    ],
+  },
+  offerer
+);
 
 const order = await executeAllActions();
 
@@ -122,24 +124,26 @@ const transaction = executeAllFulfillActions();
 ```js
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
-const { executeAllActions } = await seaport.createOrder({
-  offer: [
-    {
-      amount: parseEther("10").toString(),
-      // WETH
-      token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-    },
-  ],
-  consideration: [
-    {
-      itemType: ItemType.ERC721,
-      token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
-      identifier: "1",
-      recipient: offerer,
-    },
-  ],
-  accountAddress: offerer,
-});
+const { executeAllActions } = await seaport.createOrder(
+  {
+    offer: [
+      {
+        amount: parseEther("10").toString(),
+        // WETH
+        token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      },
+    ],
+    consideration: [
+      {
+        itemType: ItemType.ERC721,
+        token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
+        identifier: "1",
+        recipient: offerer,
+      },
+    ],
+  },
+  offerer
+);
 
 const order = await executeAllActions();
 
