@@ -100,6 +100,9 @@ export class Seaport {
       providerOrSigner instanceof providers.Provider
         ? providerOrSigner
         : providerOrSigner.provider;
+    this.signer = (providerOrSigner as Signer)._isSigner
+      ? (providerOrSigner as Signer)
+      : undefined;
 
     if (!provider) {
       throw new Error(
