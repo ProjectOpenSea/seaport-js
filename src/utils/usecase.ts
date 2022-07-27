@@ -15,7 +15,8 @@ export const executeAllActions = async <
   for (let i = 0; i < actions.length - 1; i++) {
     const action = actions[i];
     if (action.type === "approval") {
-      await action.transactionMethods.transact();
+      const tx = await action.transactionMethods.transact();
+      await tx.wait();
     }
   }
 
