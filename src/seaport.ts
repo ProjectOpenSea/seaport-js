@@ -37,6 +37,10 @@ import type {
   MatchOrdersFulfillment,
   SeaportContract,
   Signer,
+  MatchOrderUseCase,
+  CreateMatchOrderAction,
+  ApprovalAction,
+  MatchApprovalAction,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -136,15 +140,24 @@ export class Seaport {
   }
 
   private _getSigner(accountAddress?: string): Signer {
-    if (this.signer) {
-      return this.signer;
-    }
-
     if (!(this.provider instanceof providers.JsonRpcProvider)) {
       throw new Error("Either signer or a JsonRpcProvider must be provided");
     }
 
-    return this.provider.getSigner(accountAddress);
+    /**
+     * If accountAddress is passed in explicitly, we should use that as the signer
+     */
+
+    if (accountAddress) {
+      console.log("here");
+      return this.provider.getSigner(accountAddress);
+    }
+
+    if (this.signer) {
+      return this.signer;
+    }
+
+    return this.provider.getSigner();
   }
 
   /**
@@ -325,6 +338,125 @@ export class Seaport {
       actions,
       executeAllActions: () =>
         executeAllActions(actions) as Promise<OrderWithCounter>,
+    };
+  }
+
+  public async createMatchOrder(
+    {
+      conduitKey = this.defaultConduitKey,
+      zone = ethers.constants.AddressZero,
+      startTime = Math.floor(Date.now() / 1000).toString(),
+      endTime = MAX_INT.toString(),
+      offer,
+      consideration,
+      counter,
+      allowPartialFills,
+      restrictedByZone,
+      fees,
+      salt = generateRandomSalt(),
+    }: CreateOrderInput,
+    offerer: string
+  ): Promise<MatchOrderUseCase<CreateMatchOrderAction>> {
+    const offerItems = offer.map(mapInputItemToOfferItem);
+    const considerationItems = [
+      ...consideration.map((consideration) => ({
+        ...mapInputItemToOfferItem(consideration),
+        recipient: consideration.recipient ?? offerer,
+      })),
+    ];
+
+    if (
+      !areAllCurrenciesSame({
+        offer: offerItems,
+        consideration: considerationItems,
+      })
+    ) {
+      throw new Error(
+        "All currency tokens in the order must be the same token"
+      );
+    }
+
+    const currencies = [...offerItems, ...considerationItems].filter(
+      isCurrencyItem
+    );
+
+    const totalCurrencyAmount = totalItemsAmount(currencies);
+
+    const operator = this.config.conduitKeyToConduit[conduitKey];
+
+    const [resolvedCounter, balancesAndApprovals] = await Promise.all([
+      counter ?? this.getCounter(offerer),
+      getBalancesAndApprovals({
+        owner: offerer,
+        items: offerItems,
+        criterias: [],
+        multicallProvider: this.multicallProvider,
+        operator,
+      }),
+    ]);
+
+    const orderType = this._getOrderTypeFromOrderOptions({
+      allowPartialFills,
+      restrictedByZone,
+    });
+
+    const considerationItemsWithFees = [
+      ...deductFees(considerationItems, fees),
+      ...(currencies.length
+        ? fees?.map((fee) =>
+            feeToConsiderationItem({
+              fee,
+              token: currencies[0].token,
+              baseAmount: totalCurrencyAmount.startAmount,
+              baseEndAmount: totalCurrencyAmount.endAmount,
+            })
+          ) ?? []
+        : []),
+    ];
+
+    const orderParameters: OrderParameters = {
+      offerer,
+      zone,
+      // TODO: Placeholder
+      zoneHash: formatBytes32String(resolvedCounter.toString()),
+      startTime,
+      endTime,
+      orderType,
+      offer: offerItems,
+      consideration: considerationItemsWithFees,
+      totalOriginalConsiderationItems: considerationItemsWithFees.length,
+      salt,
+      conduitKey,
+    };
+
+    const checkBalancesAndApprovals =
+      this.config.balanceAndApprovalChecksOnOrderCreation;
+
+    const insufficientApprovals = checkBalancesAndApprovals
+      ? validateOfferBalancesAndApprovals({
+          offer: offerItems,
+          criterias: [],
+          balancesAndApprovals,
+          throwOnInsufficientBalances: checkBalancesAndApprovals,
+          operator,
+        })
+      : [];
+
+    const approvalActions: MatchApprovalAction[] = checkBalancesAndApprovals
+      ? await getApprovalActions(insufficientApprovals, this.signer!)
+      : [];
+
+    const createOrderAction: CreateMatchOrderAction = {
+      type: "create",
+      getMessageToSign: () => {
+        return this._getMessageToSign(orderParameters, resolvedCounter);
+      },
+    } as const;
+
+    const actions = [...approvalActions, createOrderAction] as const;
+
+    return {
+      actions,
     };
   }
 

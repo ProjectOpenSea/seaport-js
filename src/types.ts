@@ -242,6 +242,34 @@ export type OrderUseCase<T extends CreateOrderAction | ExchangeAction> = {
   >;
 };
 
+export type CreateMatchOrderAction = Omit<CreateOrderAction, "createOrder">;
+export type ExchangeMatchOrderAction<T = unknown> = Omit<
+  ExchangeAction<T>,
+  "transactionMethods"
+>;
+
+export type MatchApprovalAction = Omit<ApprovalAction, "transactionMethods">;
+
+export type MatchOrderExchangeActions<T> = readonly [
+  ...MatchApprovalAction[],
+  ExchangeMatchOrderAction<T>
+];
+
+export type CreateMatchOrderActions = readonly [
+  ...MatchApprovalAction[],
+  CreateMatchOrderAction
+];
+
+export type MatchOrderUseCase<
+  T extends CreateMatchOrderAction | ExchangeMatchOrderAction
+> = {
+  actions: T extends CreateMatchOrderAction
+    ? CreateMatchOrderActions
+    : MatchOrderExchangeActions<
+        T extends ExchangeMatchOrderAction<infer U> ? U : never
+      >;
+};
+
 export type FulfillmentComponent = {
   orderIndex: number;
   itemIndex: number;

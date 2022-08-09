@@ -22,6 +22,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
   let offerer: SignerWithAddress;
   let zone: SignerWithAddress;
   let privateListingRecipient: SignerWithAddress;
+
   let privateListingCreateOrderInput: CreateOrderInput;
   let multicallProvider: providers.MulticallProvider;
   const nftId = "1";
@@ -29,7 +30,13 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
   const erc1155ListingQuantity = "1";
 
   beforeEach(async () => {
-    [offerer, zone, privateListingRecipient] = await ethers.getSigners();
+    /**
+     * The first signer is the Seaport.js client signer, so we ignore it
+     * as the client signer is decoupled from the offerer and fulfiller
+     * in matchOrders calls
+     */
+
+    [, offerer, zone, privateListingRecipient] = await ethers.getSigners();
 
     multicallProvider = new providers.MulticallProvider(ethers.provider);
   });
@@ -72,7 +79,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
+            offerer.address
           );
 
           const order = await executeAllActions();
@@ -141,7 +149,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport, testErc20 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
+            offerer.address
           );
 
           const order = await executeAllActions();
@@ -233,7 +242,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
+            offerer.address
           );
 
           const order = await executeAllActions();
@@ -302,7 +312,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport, testErc20 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
+            offerer.address
           );
 
           const order = await executeAllActions();

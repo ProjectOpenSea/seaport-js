@@ -28,6 +28,7 @@
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
     "lint": "concurrently \"npm run check-types\" \"npm run eslint:check\" \"npm run prettier:check\" \"npm run prettier:check:package.json\"",
     "prepare": "husky install && npm run build",
+    "publish": "yalc push",
     "test": "hardhat test",
     "prettier:check": "prettier --check .",
     "prettier:check:package.json": "prettier-package-json --list-different",
@@ -37,7 +38,8 @@
   "dependencies": {
     "@0xsequence/multicall": "^0.39.0",
     "ethers": "^5.6.7",
-    "merkletreejs": "^0.2.31"
+    "merkletreejs": "^0.2.31",
+    "yarn": "^1.22.19"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
