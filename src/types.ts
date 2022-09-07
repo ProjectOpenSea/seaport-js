@@ -166,6 +166,7 @@ export type CreateOrderInput = {
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
   useProxy?: boolean;
+  domain?: string;
   salt?: string;
 };
 

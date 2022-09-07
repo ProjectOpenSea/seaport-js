@@ -57,6 +57,7 @@ import {
   deductFees,
   feeToConsiderationItem,
   generateRandomSalt,
+  generateRandomSaltWithDomain,
   mapInputItemToOfferItem,
   totalItemsAmount,
 } from "./utils/order";
@@ -205,7 +206,8 @@ export class Seaport {
       allowPartialFills,
       restrictedByZone,
       fees,
-      salt = generateRandomSalt(),
+      domain,
+      salt = domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt(),
     }: CreateOrderInput,
     accountAddress?: string
   ): Promise<OrderUseCase<CreateOrderAction>> {

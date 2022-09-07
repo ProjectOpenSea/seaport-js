@@ -1,4 +1,5 @@
 import { BigNumber, BigNumberish, ethers } from "ethers";
+import { concat, keccak256, randomBytes, toUtf8Bytes } from "ethers/lib/utils";
 import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants";
 import type {
   ConsiderationItem,
@@ -272,7 +273,11 @@ export const mapOrderAmountsFromUnitsToFill = (
 };
 
 export const generateRandomSalt = () => {
-  return `0x${Buffer.from(ethers.utils.randomBytes(16)).toString("hex")}`;
+  return `0x${Buffer.from(ethers.utils.randomBytes(12)).toString("hex").padStart(8, "0")}`;
 };
+
+export const generateRandomSaltWithDomain = (domain: string) => {
+  return `0x${Buffer.from(concat([keccak256(toUtf8Bytes(domain)).slice(2,10), randomBytes(8)])).toString("hex")}`;
+}
 
 export const shouldUseMatchForFulfill = () => true;
