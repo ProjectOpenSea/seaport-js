@@ -273,11 +273,17 @@ export const mapOrderAmountsFromUnitsToFill = (
 };
 
 export const generateRandomSalt = () => {
-  return `0x${Buffer.from(ethers.utils.randomBytes(12)).toString("hex").padStart(8, "0")}`;
+  return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(24, "0")}`;
 };
 
 export const generateRandomSaltWithDomain = (domain: string) => {
-  return `0x${Buffer.from(concat([keccak256(toUtf8Bytes(domain)).slice(2,10), randomBytes(8)])).toString("hex")}`;
-}
+  return `0x${Buffer.from(
+    concat([
+      keccak256(toUtf8Bytes(domain)).slice(0, 10),
+      Uint8Array.from(Array(20).fill(0)),
+      randomBytes(8),
+    ])
+  ).toString("hex")}`;
+};
 
 export const shouldUseMatchForFulfill = () => true;
