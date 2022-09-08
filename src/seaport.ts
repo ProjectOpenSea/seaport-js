@@ -207,7 +207,9 @@ export class Seaport {
       restrictedByZone,
       fees,
       domain,
-      salt = domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt(),
+      salt = domain
+        ? generateRandomSaltWithDomain(domain)
+        : generateRandomSalt(),
     }: CreateOrderInput,
     accountAddress?: string
   ): Promise<OrderUseCase<CreateOrderAction>> {
