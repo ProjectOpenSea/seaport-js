@@ -189,7 +189,8 @@ export class Seaport {
    * @param input.restrictedByZone Whether the order should be restricted by zone
    * @param input.fees Convenience array to apply fees onto the order. The fees will be deducted from the
    *                   existing consideration items and then tacked on as new consideration items
-   * @param input.salt Random salt
+   * @param input.domain An optional domain to be hashed and included in the first four bytes of the random salt.
+   * @param input.salt Random salt including the hashed domain if one is provided
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
    * @returns a use case containing the list of actions needed to be performed in order to create the order
