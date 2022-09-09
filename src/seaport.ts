@@ -190,7 +190,7 @@ export class Seaport {
    * @param input.fees Convenience array to apply fees onto the order. The fees will be deducted from the
    *                   existing consideration items and then tacked on as new consideration items
    * @param input.domain An optional domain to be hashed and included in the first four bytes of the random salt.
-   * @param input.salt Random salt including the hashed domain if one is provided
+   * @param input.saltOverride Arbitrary salt. If not passed in, a random salt will be generated with the first four bytes being the domain hash or empty.
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
    * @returns a use case containing the list of actions needed to be performed in order to create the order
@@ -208,9 +208,7 @@ export class Seaport {
       restrictedByZone,
       fees,
       domain,
-      salt = domain
-        ? generateRandomSaltWithDomain(domain)
-        : generateRandomSalt(),
+      salt,
     }: CreateOrderInput,
     accountAddress?: string
   ): Promise<OrderUseCase<CreateOrderAction>> {
@@ -273,6 +271,12 @@ export class Seaport {
         : []),
     ];
 
+    const saltParam = salt
+      ? salt
+      : domain
+      ? generateRandomSaltWithDomain(domain)
+      : generateRandomSalt();
+
     const orderParameters: OrderParameters = {
       offerer,
       zone,
@@ -284,7 +288,7 @@ export class Seaport {
       offer: offerItems,
       consideration: considerationItemsWithFees,
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
-      salt,
+      salt: saltParam,
       conduitKey,
     };
 

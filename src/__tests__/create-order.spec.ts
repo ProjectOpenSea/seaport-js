@@ -752,12 +752,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const endTime = MAX_INT.toString();
     const domain = "opensea.io";
     const openseaMagicValue = "0x360c6ebe";
-    const salt = generateRandomSaltWithDomain(domain);
 
     const { executeAllActions } = await seaport.createOrder({
       startTime,
       endTime,
-      salt,
+      domain,
       offer: [
         {
           itemType: ItemType.ERC721,
@@ -784,7 +783,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(salt.slice(0, 10)).eq(openseaMagicValue);
+    expect(order.parameters.salt.slice(0, 10)).eq(openseaMagicValue);
   });
 
   it("should create an order with a salt with the first four bytes being empty if no domain is given", async () => {
@@ -795,7 +794,48 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     await testErc721.mint(offerer.address, nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
-    const salt = generateRandomSalt();
+
+    const { executeAllActions } = await seaport.createOrder({
+      startTime,
+      endTime,
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifier: nftId,
+        },
+      ],
+      consideration: [
+        {
+          amount: ethers.utils.parseEther("10").toString(),
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
+
+    const order = await executeAllActions();
+
+    const contractOrderHash = await seaportContract.getOrderHash(
+      order.parameters
+    );
+
+    const localOrderHash = seaport.getOrderHash(order.parameters);
+
+    expect(contractOrderHash).eq(localOrderHash);
+    expect(order.parameters.salt.slice(0, 10)).eq("0x00000000");
+  });
+
+  it("should create an order with the passed in salt", async () => {
+    const { seaportContract, seaport, testErc721 } = fixture;
+
+    const [offerer, zone] = await ethers.getSigners();
+    const nftId = "1";
+    await testErc721.mint(offerer.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const salt = "0xabc";
 
     const { executeAllActions } = await seaport.createOrder({
       startTime,
@@ -827,6 +867,6 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(salt.slice(0, 10)).eq("0x00000000");
+    expect(order.parameters.salt).eq("0xabc");
   });
 });
