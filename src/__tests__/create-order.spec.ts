@@ -4,10 +4,7 @@ import { ethers } from "hardhat";
 import { Seaport } from "../seaport";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import { ApprovalAction, CreateOrderAction } from "../types";
-import {
-  generateRandomSalt,
-  generateRandomSaltWithDomain,
-} from "../utils/order";
+import { generateRandomSalt } from "../utils/order";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {

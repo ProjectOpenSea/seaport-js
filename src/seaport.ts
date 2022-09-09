@@ -271,11 +271,9 @@ export class Seaport {
         : []),
     ];
 
-    const saltFollowingConditional = salt
-      ? salt
-      : domain
-      ? generateRandomSaltWithDomain(domain)
-      : generateRandomSalt();
+    const saltFollowingConditional =
+      salt ||
+      (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
 
     const orderParameters: OrderParameters = {
       offerer,
