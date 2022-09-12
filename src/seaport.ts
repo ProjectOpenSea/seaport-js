@@ -57,6 +57,7 @@ import {
   deductFees,
   feeToConsiderationItem,
   generateRandomSalt,
+  generateRandomSaltWithDomain,
   mapInputItemToOfferItem,
   totalItemsAmount,
 } from "./utils/order";
@@ -188,7 +189,8 @@ export class Seaport {
    * @param input.restrictedByZone Whether the order should be restricted by zone
    * @param input.fees Convenience array to apply fees onto the order. The fees will be deducted from the
    *                   existing consideration items and then tacked on as new consideration items
-   * @param input.salt Random salt
+   * @param input.domain An optional domain to be hashed and included in the first four bytes of the random salt.
+   * @param input.salt Arbitrary salt. If not passed in, a random salt will be generated with the first four bytes being the domain hash or empty.
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
    * @returns a use case containing the list of actions needed to be performed in order to create the order
@@ -205,7 +207,8 @@ export class Seaport {
       allowPartialFills,
       restrictedByZone,
       fees,
-      salt = generateRandomSalt(),
+      domain,
+      salt,
     }: CreateOrderInput,
     accountAddress?: string
   ): Promise<OrderUseCase<CreateOrderAction>> {
@@ -268,6 +271,10 @@ export class Seaport {
         : []),
     ];
 
+    const saltFollowingConditional =
+      salt ||
+      (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
+
     const orderParameters: OrderParameters = {
       offerer,
       zone,
@@ -279,7 +286,7 @@ export class Seaport {
       offer: offerItems,
       consideration: considerationItemsWithFees,
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
-      salt,
+      salt: saltFollowingConditional,
       conduitKey,
     };
 
