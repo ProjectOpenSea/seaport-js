@@ -848,7 +848,5 @@ export const getAdvancedOrderNumeratorDenominator = (
 };
 
 export const getTagFromDomain = (domain: string) => {
-  console.log(keccak256(toUtf8Bytes(domain)).slice(0, 10).replace(/^(0x)/, ""));
-
   return keccak256(toUtf8Bytes(domain)).slice(0, 10).replace(/^(0x)/, "");
 };

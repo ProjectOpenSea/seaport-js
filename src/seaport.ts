@@ -909,29 +909,30 @@ export class Seaport {
    * @param input.accountAddress Optional address for which to match the order with
    * @returns set of transaction methods for matching orders
    */
-  public matchOrders(
-    {
-      orders,
-      fulfillments,
-      overrides,
-      accountAddress,
-    }: {
-      orders: (OrderWithCounter | Order)[];
-      fulfillments: MatchOrdersFulfillment[];
-      overrides?: PayableOverrides;
-      accountAddress?: string;
-    },
-    domain?: string
-  ): TransactionMethods<
+  public matchOrders({
+    orders,
+    fulfillments,
+    overrides,
+    accountAddress,
+    domain = "",
+  }: {
+    orders: (OrderWithCounter | Order)[];
+    fulfillments: MatchOrdersFulfillment[];
+    overrides?: PayableOverrides;
+    accountAddress?: string;
+    domain?: string;
+  }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
     const signer = this._getSigner(accountAddress);
+
+    const tag = domain ? getTagFromDomain(domain) : "";
 
     return getTransactionMethods(
       this.contract.connect(signer),
       "matchOrders",
       [orders, fulfillments, overrides],
-      domain
+      tag
     );
   }
 }
