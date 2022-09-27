@@ -5,6 +5,7 @@ import {
   ethers,
   Signer,
 } from "ethers";
+import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import type {
   Seaport as SeaportContract,
   BasicOrderParametersStruct,
@@ -189,7 +190,7 @@ export async function fulfillBasicOrder({
   signer,
   tips = [],
   conduitKey = NO_CONDUIT,
-  domain = "",
+  domain,
 }: {
   order: Order;
   seaportContract: Seaport;
@@ -289,13 +290,15 @@ export async function fulfillBasicOrder({
     signer
   );
 
+  const tag = domain ? getTagFromDomain(domain) : "";
+
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
       seaportContract.connect(signer),
       "fulfillBasicOrder",
       [basicOrderParameters, payableOverrides],
-      domain
+      tag
     ),
   } as const;
 
@@ -326,7 +329,7 @@ export async function fulfillStandardOrder({
   conduitKey,
   recipientAddress,
   signer,
-  domain = "",
+  domain,
 }: {
   order: Order;
   unitsToFill?: BigNumberish;
@@ -442,6 +445,8 @@ export async function fulfillStandardOrder({
     unitsToFill
   );
 
+  const tag = domain ? getTagFromDomain(domain) : "";
+
   const exchangeAction = {
     type: "exchange",
     transactionMethods: useAdvanced
@@ -466,13 +471,13 @@ export async function fulfillStandardOrder({
             recipientAddress,
             payableOverrides,
           ],
-          domain
+          tag
         )
       : getTransactionMethods(
           seaportContract.connect(signer),
           "fulfillOrder",
           [orderAccountingForTips, conduitKey, payableOverrides],
-          domain
+          tag
         ),
   } as const;
 
@@ -529,7 +534,7 @@ export async function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
-  domain = "",
+  domain,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
   seaportContract: Seaport;
@@ -697,6 +702,8 @@ export async function fulfillAvailableOrders({
   const { offerFulfillments, considerationFulfillments } =
     generateFulfillOrdersFulfillments(ordersMetadata);
 
+  const tag = domain ? getTagFromDomain(domain) : "";
+
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
@@ -722,7 +729,7 @@ export async function fulfillAvailableOrders({
         advancedOrdersWithTips.length,
         payableOverrides,
       ],
-      domain
+      tag
     ),
   } as const;
 
@@ -838,4 +845,10 @@ export const getAdvancedOrderNumeratorDenominator = (
   const denominator = unitsToFill ? maxUnits.div(unitsGcd) : BigNumber.from(1);
 
   return { numerator, denominator };
+};
+
+export const getTagFromDomain = (domain: string) => {
+  console.log(keccak256(toUtf8Bytes(domain)).slice(0, 10).replace(/^(0x)/, ""));
+
+  return keccak256(toUtf8Bytes(domain)).slice(0, 10).replace(/^(0x)/, "");
 };

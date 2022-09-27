@@ -48,6 +48,7 @@ import {
   fulfillBasicOrder,
   FulfillOrdersMetadata,
   fulfillStandardOrder,
+  getTagFromDomain,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
@@ -421,11 +422,13 @@ export class Seaport {
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
+    const tag = domain ? getTagFromDomain(domain) : "";
+
     return getTransactionMethods(
       this.contract.connect(signer),
       "cancel",
       [orders],
-      domain
+      tag
     );
   }
 
@@ -442,11 +445,13 @@ export class Seaport {
   > {
     const signer = this._getSigner(offerer);
 
+    const tag = domain ? getTagFromDomain(domain) : "";
+
     return getTransactionMethods(
       this.contract.connect(signer),
       "incrementCounter",
       [],
-      domain
+      tag
     );
   }
 
@@ -464,11 +469,13 @@ export class Seaport {
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
+    const tag = domain ? getTagFromDomain(domain) : "";
+
     return getTransactionMethods(
       this.contract.connect(signer),
       "validate",
       [orders],
-      domain
+      tag
     );
   }
 

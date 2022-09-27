@@ -25,6 +25,7 @@ describeWithFixture(
     let fulfillBasicOrderSpy: sinon.SinonSpy;
     const nftId = "1";
     const erc1155Amount = "3";
+    const OPENSEA_DOMAIN = "opensea.io";
 
     beforeEach(async () => {
       fulfillBasicOrderSpy = sinon.spy(fulfill, "fulfillBasicOrder");
@@ -85,6 +86,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             expect(actions.length).to.eq(1);
@@ -120,6 +122,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const action = actions[0];
@@ -192,6 +195,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const approvalAction = actions[0];
@@ -258,6 +262,7 @@ describeWithFixture(
             const revertedUseCase = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const actions = revertedUseCase.actions;
@@ -359,6 +364,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -452,6 +458,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const fulfillAction = actions[0];
@@ -490,6 +497,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const fulfillAction = actions[0];
@@ -568,6 +576,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const approvalAction = actions[0];
@@ -634,6 +643,7 @@ describeWithFixture(
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             const approvalAction = actions[0];
@@ -739,6 +749,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
           });
 
           const approvalAction = actions[0];

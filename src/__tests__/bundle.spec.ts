@@ -32,6 +32,8 @@ describeWithFixture(
     const nftId2 = "2";
     const erc1155Amount = "3";
 
+    const ENS_VISION_DOMAIN = "ens.vision";
+
     beforeEach(async () => {
       [offerer, zone, fulfiller] = await ethers.getSigners();
       multicallProvider = new providers.MulticallProvider(ethers.provider);
@@ -109,6 +111,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           expect(actions.length).to.eq(1);
@@ -121,6 +124,11 @@ describeWithFixture(
           });
 
           const transaction = await action.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
+
           const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
@@ -178,6 +186,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -208,6 +217,10 @@ describeWithFixture(
           });
 
           const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
 
           const receipt = await transaction.wait();
 
@@ -296,6 +309,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -367,6 +381,10 @@ describeWithFixture(
           });
 
           const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
 
           const receipt = await transaction.wait();
 
@@ -451,6 +469,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           expect(actions.length).to.eq(1);
@@ -460,6 +479,11 @@ describeWithFixture(
           expect(action.type).eq("exchange");
 
           const transaction = await action.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
+
           const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
@@ -522,6 +546,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -552,6 +577,10 @@ describeWithFixture(
           });
 
           const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
 
           const receipt = await transaction.wait();
 
@@ -646,6 +675,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -738,6 +768,10 @@ describeWithFixture(
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
+
           const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
@@ -829,6 +863,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           expect(actions.length).to.eq(1);
@@ -838,6 +873,11 @@ describeWithFixture(
           expect(action.type).eq("exchange");
 
           const transaction = await action.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
+
           const receipt = await transaction.wait();
 
           await verifyBalancesAfterFulfill({
@@ -896,6 +936,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -926,6 +967,10 @@ describeWithFixture(
           });
 
           const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
 
           const receipt = await transaction.wait();
 
@@ -1018,6 +1063,7 @@ describeWithFixture(
           const { actions } = await seaport.fulfillOrder({
             order,
             accountAddress: fulfiller.address,
+            domain: ENS_VISION_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -1089,6 +1135,10 @@ describeWithFixture(
           });
 
           const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(
+            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+          );
 
           const receipt = await transaction.wait();
 
