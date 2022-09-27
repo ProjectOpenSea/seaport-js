@@ -200,6 +200,7 @@ export async function fulfillBasicOrder({
   signer: Signer;
   tips?: ConsiderationItem[];
   conduitKey: string;
+  suffix?: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -292,7 +293,8 @@ export async function fulfillBasicOrder({
     transactionMethods: getTransactionMethods(
       seaportContract.connect(signer),
       "fulfillBasicOrder",
-      [basicOrderParameters, payableOverrides]
+      [basicOrderParameters, payableOverrides],
+      suffix
     ),
   } as const;
 
@@ -341,6 +343,7 @@ export async function fulfillStandardOrder({
   recipientAddress: string;
   timeBasedItemParams: TimeBasedItemParams;
   signer: Signer;
+  suffix?: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -460,13 +463,15 @@ export async function fulfillStandardOrder({
             conduitKey,
             recipientAddress,
             payableOverrides,
-          ]
+          ],
+          suffix
         )
-      : getTransactionMethods(seaportContract.connect(signer), "fulfillOrder", [
-          orderAccountingForTips,
-          conduitKey,
-          payableOverrides,
-        ]),
+      : getTransactionMethods(
+          seaportContract.connect(signer),
+          "fulfillOrder",
+          [orderAccountingForTips, conduitKey, payableOverrides],
+          suffix
+        ),
   } as const;
 
   const actions = [...approvalActions, exchangeAction] as const;
@@ -712,7 +717,8 @@ export async function fulfillAvailableOrders({
         recipientAddress,
         advancedOrdersWithTips.length,
         payableOverrides,
-      ]
+      ],
+      suffix
     ),
   } as const;
 

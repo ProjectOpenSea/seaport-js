@@ -416,13 +416,17 @@ export class Seaport {
    */
   public cancelOrders(
     orders: OrderComponents[],
-    accountAddress?: string
+    accountAddress?: string,
+    suffix?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
-    return getTransactionMethods(this.contract.connect(signer), "cancel", [
-      orders,
-    ]);
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "cancel",
+      [orders],
+      suffix
+    );
   }
 
   /**
@@ -431,7 +435,8 @@ export class Seaport {
    * @returns the set of transaction methods that can be used
    */
   public bulkCancelOrders(
-    offerer?: string
+    offerer?: string,
+    suffix?: string
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
@@ -440,7 +445,8 @@ export class Seaport {
     return getTransactionMethods(
       this.contract.connect(signer),
       "incrementCounter",
-      []
+      [],
+      suffix
     );
   }
 
@@ -453,13 +459,17 @@ export class Seaport {
    */
   public validate(
     orders: Order[],
-    accountAddress?: string
+    accountAddress?: string,
+    suffix?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
-    return getTransactionMethods(this.contract.connect(signer), "validate", [
-      orders,
-    ]);
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "validate",
+      [orders],
+      suffix
+    );
   }
 
   /**
