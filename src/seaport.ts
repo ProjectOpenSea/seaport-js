@@ -417,7 +417,7 @@ export class Seaport {
   public cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string,
-    suffix?: string
+    domain?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
@@ -425,7 +425,7 @@ export class Seaport {
       this.contract.connect(signer),
       "cancel",
       [orders],
-      suffix
+      domain
     );
   }
 
@@ -436,7 +436,7 @@ export class Seaport {
    */
   public bulkCancelOrders(
     offerer?: string,
-    suffix?: string
+    domain?: string
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
@@ -446,7 +446,7 @@ export class Seaport {
       this.contract.connect(signer),
       "incrementCounter",
       [],
-      suffix
+      domain
     );
   }
 
@@ -460,7 +460,7 @@ export class Seaport {
   public validate(
     orders: Order[],
     accountAddress?: string,
-    suffix?: string
+    domain?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
@@ -468,7 +468,7 @@ export class Seaport {
       this.contract.connect(signer),
       "validate",
       [orders],
-      suffix
+      domain
     );
   }
 
@@ -636,7 +636,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
-    suffix = "",
+    domain = "",
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -647,7 +647,7 @@ export class Seaport {
     accountAddress?: string;
     conduitKey?: string;
     recipientAddress?: string;
-    suffix?: string;
+    domain?: string;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -739,7 +739,7 @@ export class Seaport {
         fulfillerOperator,
         signer: fulfiller,
         tips: tipConsiderationItems,
-        suffix,
+        domain,
       });
     }
 
@@ -764,7 +764,7 @@ export class Seaport {
       offererOperator,
       fulfillerOperator,
       recipientAddress,
-      suffix,
+      domain,
     });
   }
 
@@ -784,7 +784,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
-    suffix = "",
+    domain = "",
   }: {
     fulfillOrderDetails: {
       order: OrderWithCounter;
@@ -797,7 +797,7 @@ export class Seaport {
     accountAddress?: string;
     conduitKey?: string;
     recipientAddress?: string;
-    suffix?: string;
+    domain?: string;
   }) {
     const fulfiller = this._getSigner(accountAddress);
 
@@ -887,7 +887,7 @@ export class Seaport {
       signer: fulfiller,
       conduitKey,
       recipientAddress,
-      suffix,
+      domain,
     });
   }
 
@@ -914,7 +914,7 @@ export class Seaport {
       overrides?: PayableOverrides;
       accountAddress?: string;
     },
-    suffix?: string
+    domain?: string
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
@@ -924,7 +924,7 @@ export class Seaport {
       this.contract.connect(signer),
       "matchOrders",
       [orders, fulfillments, overrides],
-      suffix
+      domain
     );
   }
 }

@@ -189,7 +189,7 @@ export async function fulfillBasicOrder({
   signer,
   tips = [],
   conduitKey = NO_CONDUIT,
-  suffix = "",
+  domain = "",
 }: {
   order: Order;
   seaportContract: Seaport;
@@ -201,7 +201,7 @@ export async function fulfillBasicOrder({
   signer: Signer;
   tips?: ConsiderationItem[];
   conduitKey: string;
-  suffix?: string;
+  domain?: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -295,7 +295,7 @@ export async function fulfillBasicOrder({
       seaportContract.connect(signer),
       "fulfillBasicOrder",
       [basicOrderParameters, payableOverrides],
-      suffix
+      domain
     ),
   } as const;
 
@@ -326,7 +326,7 @@ export async function fulfillStandardOrder({
   conduitKey,
   recipientAddress,
   signer,
-  suffix = "",
+  domain = "",
 }: {
   order: Order;
   unitsToFill?: BigNumberish;
@@ -345,7 +345,7 @@ export async function fulfillStandardOrder({
   recipientAddress: string;
   timeBasedItemParams: TimeBasedItemParams;
   signer: Signer;
-  suffix?: string;
+  domain?: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -466,13 +466,13 @@ export async function fulfillStandardOrder({
             recipientAddress,
             payableOverrides,
           ],
-          suffix
+          domain
         )
       : getTransactionMethods(
           seaportContract.connect(signer),
           "fulfillOrder",
           [orderAccountingForTips, conduitKey, payableOverrides],
-          suffix
+          domain
         ),
   } as const;
 
@@ -529,7 +529,7 @@ export async function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
-  suffix = "",
+  domain = "",
 }: {
   ordersMetadata: FulfillOrdersMetadata;
   seaportContract: Seaport;
@@ -540,7 +540,7 @@ export async function fulfillAvailableOrders({
   conduitKey: string;
   signer: Signer;
   recipientAddress: string;
-  suffix?: string;
+  domain?: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<
@@ -722,7 +722,7 @@ export async function fulfillAvailableOrders({
         advancedOrdersWithTips.length,
         payableOverrides,
       ],
-      suffix
+      domain
     ),
   } as const;
 

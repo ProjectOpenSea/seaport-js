@@ -61,7 +61,7 @@ export const getTransactionMethods = <
   contract: T,
   method: U,
   args: Parameters<T["functions"][U]>,
-  suffix: string = ""
+  domain: string = ""
 ): TransactionMethods<ContractMethodReturnType<T, U>> => {
   const lastArg = args[args.length - 1];
 
@@ -77,7 +77,8 @@ export const getTransactionMethods = <
     const populatedTransaction = await contract.populateTransaction[
       method as string
     ](...[...args, mergedOverrides]);
-    populatedTransaction.data = populatedTransaction.data + suffix;
+    populatedTransaction.data =
+      populatedTransaction.data + domain.replace(/^(0x)/, "");
     return populatedTransaction;
   };
 
