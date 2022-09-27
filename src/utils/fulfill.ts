@@ -189,6 +189,7 @@ export async function fulfillBasicOrder({
   signer,
   tips = [],
   conduitKey = NO_CONDUIT,
+  suffix = "",
 }: {
   order: Order;
   seaportContract: Seaport;
@@ -325,6 +326,7 @@ export async function fulfillStandardOrder({
   conduitKey,
   recipientAddress,
   signer,
+  suffix = "",
 }: {
   order: Order;
   unitsToFill?: BigNumberish;
@@ -527,6 +529,7 @@ export async function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
+  suffix = "",
 }: {
   ordersMetadata: FulfillOrdersMetadata;
   seaportContract: Seaport;
@@ -537,6 +540,7 @@ export async function fulfillAvailableOrders({
   conduitKey: string;
   signer: Signer;
   recipientAddress: string;
+  suffix?: string;
 }): Promise<
   OrderUseCase<
     ExchangeAction<

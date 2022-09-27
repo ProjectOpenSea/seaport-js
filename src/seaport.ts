@@ -636,6 +636,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
+    suffix = "",
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -646,6 +647,7 @@ export class Seaport {
     accountAddress?: string;
     conduitKey?: string;
     recipientAddress?: string;
+    suffix?: string;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -737,6 +739,7 @@ export class Seaport {
         fulfillerOperator,
         signer: fulfiller,
         tips: tipConsiderationItems,
+        suffix,
       });
     }
 
@@ -761,6 +764,7 @@ export class Seaport {
       offererOperator,
       fulfillerOperator,
       recipientAddress,
+      suffix,
     });
   }
 
@@ -780,6 +784,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
+    suffix = "",
   }: {
     fulfillOrderDetails: {
       order: OrderWithCounter;
@@ -792,6 +797,7 @@ export class Seaport {
     accountAddress?: string;
     conduitKey?: string;
     recipientAddress?: string;
+    suffix?: string;
   }) {
     const fulfiller = this._getSigner(accountAddress);
 
@@ -881,6 +887,7 @@ export class Seaport {
       signer: fulfiller,
       conduitKey,
       recipientAddress,
+      suffix,
     });
   }
 
@@ -895,25 +902,29 @@ export class Seaport {
    * @param input.accountAddress Optional address for which to match the order with
    * @returns set of transaction methods for matching orders
    */
-  public matchOrders({
-    orders,
-    fulfillments,
-    overrides,
-    accountAddress,
-  }: {
-    orders: (OrderWithCounter | Order)[];
-    fulfillments: MatchOrdersFulfillment[];
-    overrides?: PayableOverrides;
-    accountAddress?: string;
-  }): TransactionMethods<
+  public matchOrders(
+    {
+      orders,
+      fulfillments,
+      overrides,
+      accountAddress,
+    }: {
+      orders: (OrderWithCounter | Order)[];
+      fulfillments: MatchOrdersFulfillment[];
+      overrides?: PayableOverrides;
+      accountAddress?: string;
+    },
+    suffix?: string
+  ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
     const signer = this._getSigner(accountAddress);
 
-    return getTransactionMethods(this.contract.connect(signer), "matchOrders", [
-      orders,
-      fulfillments,
-      overrides,
-    ]);
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "matchOrders",
+      [orders, fulfillments, overrides],
+      suffix
+    );
   }
 }
