@@ -13,6 +13,7 @@ import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
 } from "./utils/balance";
+import { getTagFromDomain } from "../utils/usecase";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(
@@ -126,7 +127,7 @@ describeWithFixture(
           const transaction = await action.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -219,7 +220,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -383,7 +384,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -481,7 +482,7 @@ describeWithFixture(
           const transaction = await action.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -579,7 +580,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -769,7 +770,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -875,7 +876,7 @@ describeWithFixture(
           const transaction = await action.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -969,7 +970,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();
@@ -1137,7 +1138,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            fulfill.getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN)
           );
 
           const receipt = await transaction.wait();

@@ -1,4 +1,5 @@
 import { CallOverrides, Contract, Overrides, PayableOverrides } from "ethers";
+import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 
 import {
   CreateOrderAction,
@@ -61,7 +62,7 @@ export const getTransactionMethods = <
   contract: T,
   method: U,
   args: Parameters<T["functions"][U]>,
-  tag: string = ""
+  domain: string = ""
 ): TransactionMethods<ContractMethodReturnType<T, U>> => {
   const lastArg = args[args.length - 1];
 
@@ -77,6 +78,9 @@ export const getTransactionMethods = <
     const populatedTransaction = await contract.populateTransaction[
       method as string
     ](...[...args, mergedOverrides]);
+
+    const tag = getTagFromDomain(domain);
+
     populatedTransaction.data = populatedTransaction.data + tag;
     return populatedTransaction;
   };
@@ -105,4 +109,8 @@ export const getTransactionMethods = <
     },
     buildTransaction,
   };
+};
+
+export const getTagFromDomain = (domain: string) => {
+  return keccak256(toUtf8Bytes(domain)).slice(2, 10);
 };
