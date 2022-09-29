@@ -412,6 +412,7 @@ export class Seaport {
    *
    * @param orders list of order components
    * @param accountAddress optional account address from which to cancel the orders from.
+   * @param domain optional domain to be hashed and appended to calldata
    * @returns the set of transaction methods that can be used
    */
   public cancelOrders(
@@ -432,6 +433,7 @@ export class Seaport {
   /**
    * Bulk cancels all existing orders for a given account
    * @param offerer the account to bulk cancel orders on
+   * @param domain optional domain to be hashed and appended to calldata
    * @returns the set of transaction methods that can be used
    */
   public bulkCancelOrders(
@@ -455,6 +457,7 @@ export class Seaport {
    * a signature. Can also check if an order is valid using `callStatic`
    * @param orders list of order structs
    * @param accountAddress optional account address to approve orders.
+   * @param domain optional domain to be hashed and appended to calldata
    * @returns the set of transaction methods that can be used
    */
   public validate(
@@ -624,6 +627,7 @@ export class Seaport {
    * @param input.conduitKey the conduitKey to source approvals from
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
+   * @param input.domain optional domain to be hashed and appended to calldata
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -777,6 +781,7 @@ export class Seaport {
    * @param input.conduitKey the key from which to source approvals from
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
+   * @param input.domain optional domain to be hashed and appended to calldata
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
@@ -900,6 +905,7 @@ export class Seaport {
    * @param input.fulfillments the list of fulfillments to match offer and considerations
    * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
    * @param input.accountAddress Optional address for which to match the order with
+   * @param input.domain optional domain to be hashed and appended to calldata
    * @returns set of transaction methods for matching orders
    */
   public matchOrders({
