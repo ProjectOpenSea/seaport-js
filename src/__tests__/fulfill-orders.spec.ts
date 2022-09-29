@@ -29,6 +29,9 @@ describeWithFixture(
     const erc1155Amount = "3";
     const erc1155Amount2 = "7";
 
+    const OPENSEA_DOMAIN = "opensea.io";
+    const OPENSEA_TAG = "360c6ebe";
+
     beforeEach(async () => {
       fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
 
@@ -142,6 +145,7 @@ describeWithFixture(
                 { order: thirdOrder },
               ],
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             expect(actions.length).to.eq(1);
@@ -150,7 +154,15 @@ describeWithFixture(
 
             expect(action.type).eq("exchange");
 
-            await action.transactionMethods.transact();
+            expect(
+              (await action.transactionMethods.buildTransaction()).data?.slice(
+                -8
+              )
+            ).to.eq(OPENSEA_TAG);
+
+            const transaction = await action.transactionMethods.transact();
+
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
             const owners = await Promise.all([
               testErc721.ownerOf(nftId),
@@ -232,6 +244,7 @@ describeWithFixture(
                 { order: thirdOrder },
               ],
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             expect(actions.length).to.eq(2);
@@ -258,7 +271,16 @@ describeWithFixture(
 
             const fulfillAction = actions[1];
 
-            await fulfillAction.transactionMethods.transact();
+            expect(
+              (
+                await fulfillAction.transactionMethods.buildTransaction()
+              ).data?.slice(-8)
+            ).to.eq(OPENSEA_TAG);
+
+            const transaction =
+              await fulfillAction.transactionMethods.transact();
+
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
             const owners = await Promise.all([
               testErc721.ownerOf(nftId),
@@ -375,6 +397,7 @@ describeWithFixture(
               { order: thirdOrder },
             ],
             accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -444,7 +467,15 @@ describeWithFixture(
             transactionMethods: fulfillAction.transactionMethods,
           });
 
-          await fulfillAction.transactionMethods.transact();
+          expect(
+            (
+              await fulfillAction.transactionMethods.buildTransaction()
+            ).data?.slice(-8)
+          ).to.eq(OPENSEA_TAG);
+
+          const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
           const owners = await Promise.all([
             testErc721.ownerOf(nftId),
@@ -565,6 +596,7 @@ describeWithFixture(
                 { order: thirdOrder },
               ],
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             expect(actions.length).to.eq(1);
@@ -573,7 +605,15 @@ describeWithFixture(
 
             expect(action.type).eq("exchange");
 
-            await action.transactionMethods.transact();
+            expect(
+              (await action.transactionMethods.buildTransaction()).data?.slice(
+                -8
+              )
+            ).to.eq(OPENSEA_TAG);
+
+            const transaction = await action.transactionMethods.transact();
+
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
             const balances = await Promise.all([
               testErc1155.balanceOf(fulfiller.address, nftId),
@@ -654,6 +694,7 @@ describeWithFixture(
                 { order: thirdOrder },
               ],
               accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
             });
 
             expect(actions.length).to.eq(2);
@@ -680,7 +721,16 @@ describeWithFixture(
 
             const fulfillAction = actions[1];
 
-            await fulfillAction.transactionMethods.transact();
+            expect(
+              (
+                await fulfillAction.transactionMethods.buildTransaction()
+              ).data?.slice(-8)
+            ).to.eq(OPENSEA_TAG);
+
+            const transaction =
+              await fulfillAction.transactionMethods.transact();
+
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
             const balances = await Promise.all([
               testErc1155.balanceOf(fulfiller.address, nftId),
@@ -799,6 +849,7 @@ describeWithFixture(
               { order: thirdOrder },
             ],
             accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
           });
 
           const approvalAction = actions[0];
@@ -868,7 +919,15 @@ describeWithFixture(
             transactionMethods: fulfillAction.transactionMethods,
           });
 
-          await fulfillAction.transactionMethods.transact();
+          expect(
+            (
+              await fulfillAction.transactionMethods.buildTransaction()
+            ).data?.slice(-8)
+          ).to.eq(OPENSEA_TAG);
+
+          const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
           const balances = await Promise.all([
             testErc1155.balanceOf(offerer.address, nftId),

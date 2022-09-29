@@ -9,6 +9,7 @@ import { ItemType, MAX_INT, OrderType } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { generateRandomSalt } from "../utils/order";
+import { getTagFromDomain } from "../utils/usecase";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -30,6 +31,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
   const nftId = "1";
   const erc1155Amount = "5";
+
+  const GEM_DOMAIN = "gem.xyz";
 
   beforeEach(async () => {
     [offerer, zone, fulfiller] = await ethers.getSigners();
@@ -112,6 +115,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(1);
@@ -124,6 +128,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await action.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -197,6 +203,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(2);
@@ -226,6 +233,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await fulfillAction.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -320,6 +329,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(1);
@@ -332,6 +342,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await action.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -404,6 +416,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(2);
@@ -433,6 +446,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await fulfillAction.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -531,6 +546,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(1);
@@ -543,6 +559,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await action.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -626,6 +644,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(2);
@@ -655,6 +674,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await fulfillAction.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -761,6 +782,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(1);
@@ -773,6 +795,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await action.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 
@@ -855,6 +879,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { actions } = await seaport.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
+          domain: GEM_DOMAIN,
         });
 
         expect(actions.length).to.eq(2);
@@ -884,6 +909,8 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         });
 
         const transaction = await fulfillAction.transactionMethods.transact();
+
+        expect(transaction.data.slice(-8)).to.eq(getTagFromDomain(GEM_DOMAIN));
 
         const receipt = await transaction.wait();
 

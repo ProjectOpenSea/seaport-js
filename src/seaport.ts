@@ -412,26 +412,33 @@ export class Seaport {
    *
    * @param orders list of order components
    * @param accountAddress optional account address from which to cancel the orders from.
+   * @param domain optional domain to be hashed and appended to calldata
    * @returns the set of transaction methods that can be used
    */
   public cancelOrders(
     orders: OrderComponents[],
-    accountAddress?: string
+    accountAddress?: string,
+    domain?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
-    return getTransactionMethods(this.contract.connect(signer), "cancel", [
-      orders,
-    ]);
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "cancel",
+      [orders],
+      domain
+    );
   }
 
   /**
    * Bulk cancels all existing orders for a given account
    * @param offerer the account to bulk cancel orders on
+   * @param domain optional domain to be hashed and appended to calldata
    * @returns the set of transaction methods that can be used
    */
   public bulkCancelOrders(
-    offerer?: string
+    offerer?: string,
+    domain?: string
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
@@ -440,7 +447,8 @@ export class Seaport {
     return getTransactionMethods(
       this.contract.connect(signer),
       "incrementCounter",
-      []
+      [],
+      domain
     );
   }
 
@@ -449,17 +457,22 @@ export class Seaport {
    * a signature. Can also check if an order is valid using `callStatic`
    * @param orders list of order structs
    * @param accountAddress optional account address to approve orders.
+   * @param domain optional domain to be hashed and appended to calldata
    * @returns the set of transaction methods that can be used
    */
   public validate(
     orders: Order[],
-    accountAddress?: string
+    accountAddress?: string,
+    domain?: string
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
-    return getTransactionMethods(this.contract.connect(signer), "validate", [
-      orders,
-    ]);
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "validate",
+      [orders],
+      domain
+    );
   }
 
   /**
@@ -614,6 +627,7 @@ export class Seaport {
    * @param input.conduitKey the conduitKey to source approvals from
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
+   * @param input.domain optional domain to be hashed and appended to calldata
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -626,6 +640,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
+    domain = "",
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -636,6 +651,7 @@ export class Seaport {
     accountAddress?: string;
     conduitKey?: string;
     recipientAddress?: string;
+    domain?: string;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -727,6 +743,7 @@ export class Seaport {
         fulfillerOperator,
         signer: fulfiller,
         tips: tipConsiderationItems,
+        domain,
       });
     }
 
@@ -751,6 +768,7 @@ export class Seaport {
       offererOperator,
       fulfillerOperator,
       recipientAddress,
+      domain,
     });
   }
 
@@ -763,6 +781,7 @@ export class Seaport {
    * @param input.conduitKey the key from which to source approvals from
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
+   * @param input.domain optional domain to be hashed and appended to calldata
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
@@ -770,6 +789,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
+    domain = "",
   }: {
     fulfillOrderDetails: {
       order: OrderWithCounter;
@@ -782,6 +802,7 @@ export class Seaport {
     accountAddress?: string;
     conduitKey?: string;
     recipientAddress?: string;
+    domain?: string;
   }) {
     const fulfiller = this._getSigner(accountAddress);
 
@@ -871,6 +892,7 @@ export class Seaport {
       signer: fulfiller,
       conduitKey,
       recipientAddress,
+      domain,
     });
   }
 
@@ -883,6 +905,7 @@ export class Seaport {
    * @param input.fulfillments the list of fulfillments to match offer and considerations
    * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
    * @param input.accountAddress Optional address for which to match the order with
+   * @param input.domain optional domain to be hashed and appended to calldata
    * @returns set of transaction methods for matching orders
    */
   public matchOrders({
@@ -890,20 +913,23 @@ export class Seaport {
     fulfillments,
     overrides,
     accountAddress,
+    domain = "",
   }: {
     orders: (OrderWithCounter | Order)[];
     fulfillments: MatchOrdersFulfillment[];
     overrides?: PayableOverrides;
     accountAddress?: string;
+    domain?: string;
   }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
     const signer = this._getSigner(accountAddress);
 
-    return getTransactionMethods(this.contract.connect(signer), "matchOrders", [
-      orders,
-      fulfillments,
-      overrides,
-    ]);
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "matchOrders",
+      [orders, fulfillments, overrides],
+      domain
+    );
   }
 }
