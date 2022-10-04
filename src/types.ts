@@ -1,3 +1,4 @@
+import type { DomainRegistry as TypeChainDomainRegistryContract } from "./typechain/DomainRegistry";
 import type {
   OrderStruct,
   Seaport as TypeChainSeaportContract,
@@ -309,3 +310,5 @@ export type SeaportContract = TypeChainSeaportContract & {
     ): Promise<PopulatedTransaction>;
   };
 };
+
+export type DomainRegistryContract = TypeChainDomainRegistryContract;

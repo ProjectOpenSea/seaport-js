@@ -5,6 +5,7 @@ import type {
   TestERC20,
   TestERC1155,
   Seaport as SeaportContract,
+  DomainRegistry,
 } from "../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -16,6 +17,7 @@ chai.use(sinonChai);
 type Fixture = {
   seaportContract: SeaportContract;
   seaport: Seaport;
+  domainRegistry: DomainRegistry;
   testErc721: TestERC721;
   testErc20: TestERC20;
   testErc1155: TestERC1155;
@@ -49,6 +51,12 @@ export const describeWithFixture = (
         },
       });
 
+      const DomainRegistryFactory = await ethers.getContractFactory(
+        "DomainRegistry"
+      );
+      const domainRegistry = await DomainRegistryFactory.deploy();
+      await domainRegistry.deployed();
+
       const TestERC721 = await ethers.getContractFactory("TestERC721");
       const testErc721 = await TestERC721.deploy();
       await testErc721.deployed();
@@ -65,6 +73,7 @@ export const describeWithFixture = (
       // to pass a reference to an object that you we mutate.
       fixture.seaportContract = seaportContract;
       fixture.seaport = seaport;
+      fixture.domainRegistry = domainRegistry;
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;
       fixture.testErc20 = testErc20;

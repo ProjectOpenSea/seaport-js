@@ -1,12 +1,19 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import {
+  BigNumber,
   BigNumberish,
   Contract,
   ethers,
   PayableOverrides,
   providers,
 } from "ethers";
-import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
+import {
+  AbiCoder,
+  formatBytes32String,
+  keccak256,
+  _TypedDataEncoder,
+} from "ethers/lib/utils";
+import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABI } from "./abi/Seaport";
 import {
   SEAPORT_CONTRACT_NAME,
@@ -18,11 +25,13 @@ import {
   OPENSEA_CONDUIT_KEY,
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
+  DOMAIN_REGISTRY_ADDRESS,
 } from "./constants";
 import type {
   SeaportConfig,
   CreateOrderAction,
   CreateOrderInput,
+  DomainRegistryContract,
   ExchangeAction,
   InputCriteria,
   Order,
@@ -66,6 +75,8 @@ import { executeAllActions, getTransactionMethods } from "./utils/usecase";
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
   public contract: SeaportContract;
+
+  public domainRegistry: DomainRegistryContract;
 
   private provider: providers.Provider;
 
@@ -122,6 +133,12 @@ export class Seaport {
       SeaportABI,
       this.multicallProvider
     ) as SeaportContract;
+
+    this.domainRegistry = new Contract(
+      DOMAIN_REGISTRY_ADDRESS,
+      DomainRegistryABI,
+      this.multicallProvider
+    ) as DomainRegistryContract;
 
     this.config = {
       ascendingAmountFulfillmentBuffer,
@@ -931,5 +948,22 @@ export class Seaport {
       [orders, fulfillments, overrides],
       domain
     );
+  }
+
+  public async setDomain(
+    domain: string
+  ): Promise<ethers.providers.TransactionResponse> {
+    const populatedTransaction = await this.domainRegistry.populateTransaction[
+      "setDomain"
+    ](domain);
+    return this.domainRegistry.signer.sendTransaction(populatedTransaction);
+  }
+
+  public async getDomain(tag: string, index: BigNumber): Promise<string> {
+    return this.domainRegistry.getDomain(tag, index);
+  }
+
+  public async getDomains(tag: string): Promise<string[]> {
+    return this.domainRegistry.getDomains(tag);
   }
 }
