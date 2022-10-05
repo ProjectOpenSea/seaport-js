@@ -964,7 +964,30 @@ export class Seaport {
     return this.domainRegistry.getDomain(tag, index);
   }
 
-  public async getDomains(tag: string): Promise<string[]> {
+  public async getDomains(
+    tag: string,
+    shouldThrow?: boolean
+  ): Promise<string[]> {
+    try {
+      if (shouldThrow) {
+        throw "should throw";
+      }
+
+      this.domainRegistry.getDomains(tag);
+    } catch (error) {
+      const totalDomains = (
+        await this.domainRegistry.getNumberOfDomains(tag)
+      ).toNumber();
+
+      const domainArray = Promise.all(
+        [...Array(totalDomains).keys()].map((i) =>
+          this.domainRegistry.getDomain(tag, i)
+        )
+      );
+
+      return domainArray;
+    }
+
     return this.domainRegistry.getDomains(tag);
   }
 
