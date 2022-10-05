@@ -960,6 +960,10 @@ export class Seaport {
     );
   }
 
+  public async getNumberOfDomains(tag: string): Promise<BigNumber> {
+    return this.domainRegistry.getNumberOfDomains(tag);
+  }
+
   public getDomain(tag: string, index: number): Promise<string> {
     return this.domainRegistry.getDomain(tag, index);
   }
@@ -989,9 +993,5 @@ export class Seaport {
     }
 
     return this.domainRegistry.getDomains(tag);
-  }
-
-  public async getNumberOfDomains(tag: string): Promise<BigNumber> {
-    return this.domainRegistry.getNumberOfDomains(tag);
   }
 }
