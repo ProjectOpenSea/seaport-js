@@ -974,7 +974,7 @@ export class Seaport {
   ): Promise<string[]> {
     try {
       if (shouldThrow) {
-        throw "should throw";
+        throw Error;
       }
 
       this.domainRegistry.getDomains(tag);
