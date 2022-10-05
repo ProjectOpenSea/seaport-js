@@ -947,7 +947,7 @@ export class Seaport {
 
   public setDomain(
     domain: string,
-    accountAddress: string
+    accountAddress?: string
   ): TransactionMethods<
     ContractMethodReturnType<DomainRegistryContract, "setDomain">
   > {
@@ -977,7 +977,7 @@ export class Seaport {
         throw Error;
       }
 
-      this.domainRegistry.getDomains(tag);
+      return this.domainRegistry.getDomains(tag);
     } catch (error) {
       const totalDomains = (
         await this.domainRegistry.getNumberOfDomains(tag)
@@ -991,7 +991,5 @@ export class Seaport {
 
       return domainArray;
     }
-
-    return this.domainRegistry.getDomains(tag);
   }
 }
