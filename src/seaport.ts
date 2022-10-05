@@ -7,12 +7,7 @@ import {
   PayableOverrides,
   providers,
 } from "ethers";
-import {
-  AbiCoder,
-  formatBytes32String,
-  keccak256,
-  _TypedDataEncoder,
-} from "ethers/lib/utils";
+import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
 import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABI } from "./abi/Seaport";
 import {
@@ -950,17 +945,39 @@ export class Seaport {
     );
   }
 
-  public async setDomain(
-    domain: string
-  ): Promise<ethers.providers.TransactionResponse> {
-    const populatedTransaction = await this.domainRegistry.populateTransaction[
-      "setDomain"
-    ](domain);
-    return this.domainRegistry.signer.sendTransaction(populatedTransaction);
+  public setDomain(
+    domain: string,
+    accountAddress?: string
+  ): TransactionMethods<
+    ContractMethodReturnType<DomainRegistryContract, "setDomain">
+  > {
+    // const populatedTransaction = await this.domainRegistry.populateTransaction[
+    //   "setDomain"
+    // ](domain);
+    // console.log(populatedTransaction);
+    // return this.domainRegistry.signer.sendTransaction(populatedTransaction);
+
+    const signer = this._getSigner(accountAddress);
+
+    return getTransactionMethods(
+      this.domainRegistry.connect(signer),
+      "setDomain",
+      [domain]
+    );
   }
 
-  public async getDomain(tag: string, index: BigNumber): Promise<string> {
-    return this.domainRegistry.getDomain(tag, index);
+  public getDomain(
+    tag: string,
+    index: BigNumber,
+    accountAddress?: string
+  ): Promise<string> {
+    const signer = this._getSigner(accountAddress);
+
+    return getTransactionMethods(
+      this.domainRegistry.connect(signer),
+      "getDomain",
+      [tag, index]
+    ).callStatic();
   }
 
   public async getDomains(tag: string): Promise<string[]> {
