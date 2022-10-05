@@ -1,5 +1,6 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import {
+  BigNumber,
   BigNumberish,
   Contract,
   ethers,
@@ -965,5 +966,9 @@ export class Seaport {
 
   public async getDomains(tag: string): Promise<string[]> {
     return this.domainRegistry.getDomains(tag);
+  }
+
+  public async getNumberOfDomains(tag: string): Promise<BigNumber> {
+    return this.domainRegistry.getNumberOfDomains(tag);
   }
 }
