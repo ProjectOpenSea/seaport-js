@@ -1,5 +1,6 @@
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import {
+  BigNumber,
   BigNumberish,
   Contract,
   ethers,
@@ -7,6 +8,7 @@ import {
   providers,
 } from "ethers";
 import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
+import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABI } from "./abi/Seaport";
 import {
   SEAPORT_CONTRACT_NAME,
@@ -18,11 +20,13 @@ import {
   OPENSEA_CONDUIT_KEY,
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
+  DOMAIN_REGISTRY_ADDRESS,
 } from "./constants";
 import type {
   SeaportConfig,
   CreateOrderAction,
   CreateOrderInput,
+  DomainRegistryContract,
   ExchangeAction,
   InputCriteria,
   Order,
@@ -66,6 +70,8 @@ import { executeAllActions, getTransactionMethods } from "./utils/usecase";
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
   public contract: SeaportContract;
+
+  public domainRegistry: DomainRegistryContract;
 
   private provider: providers.Provider;
 
@@ -122,6 +128,12 @@ export class Seaport {
       SeaportABI,
       this.multicallProvider
     ) as SeaportContract;
+
+    this.domainRegistry = new Contract(
+      overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS,
+      DomainRegistryABI,
+      this.multicallProvider
+    ) as DomainRegistryContract;
 
     this.config = {
       ascendingAmountFulfillmentBuffer,
@@ -931,5 +943,53 @@ export class Seaport {
       [orders, fulfillments, overrides],
       domain
     );
+  }
+
+  public setDomain(
+    domain: string,
+    accountAddress?: string
+  ): TransactionMethods<
+    ContractMethodReturnType<DomainRegistryContract, "setDomain">
+  > {
+    const signer = this._getSigner(accountAddress);
+
+    return getTransactionMethods(
+      this.domainRegistry.connect(signer),
+      "setDomain",
+      [domain]
+    );
+  }
+
+  public async getNumberOfDomains(tag: string): Promise<BigNumber> {
+    return this.domainRegistry.getNumberOfDomains(tag);
+  }
+
+  public getDomain(tag: string, index: number): Promise<string> {
+    return this.domainRegistry.getDomain(tag, index);
+  }
+
+  public async getDomains(
+    tag: string,
+    shouldThrow?: boolean
+  ): Promise<string[]> {
+    try {
+      if (shouldThrow) {
+        throw Error;
+      }
+
+      return this.domainRegistry.getDomains(tag);
+    } catch (error) {
+      const totalDomains = (
+        await this.domainRegistry.getNumberOfDomains(tag)
+      ).toNumber();
+
+      const domainArray = Promise.all(
+        [...Array(totalDomains).keys()].map((i) =>
+          this.domainRegistry.getDomain(tag, i)
+        )
+      );
+
+      return domainArray;
+    }
   }
 }
