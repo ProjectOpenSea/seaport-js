@@ -11,29 +11,49 @@ describeWithFixture("As a user I want to register a domain", (fixture) => {
   const OPENSEA_DOMAIN = "opensea.io";
   const OPENSEA_TAG = keccak256(toUtf8Bytes(OPENSEA_DOMAIN)).slice(0, 10);
 
-  const exampleTag = "0xa9059cbb";
   const expectedExampleDomainArray = [
     "join_tg_invmru_haha_fd06787(address,bool)",
     "func_2093253501(bytes)",
     "transfer(bytes4[9],bytes5[6],int48[11])",
     "many_msg_babbage(bytes1)",
   ];
+  const exampleTag = keccak256(
+    toUtf8Bytes(expectedExampleDomainArray[0])
+  ).slice(0, 10);
 
   beforeEach(async () => {
     [user] = await ethers.getSigners();
   });
 
-  it("I want to register a domain", async () => {
+  it("Should return the proper domain for a given tag", async () => {
     const { seaport } = fixture;
 
     await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
 
-    console.log(
-      await seaport.getDomain(OPENSEA_TAG, BigNumber.from(0), user.address)
-    );
+    expect(await seaport.getDomain(OPENSEA_TAG, 0)).to.eq(OPENSEA_DOMAIN);
+  });
 
-    expect(
-      await seaport.getDomain(OPENSEA_TAG, BigNumber.from(0), user.address)
-    ).to.eq(OPENSEA_DOMAIN);
+  it("Should return the array of registered domains for a given tag", async () => {
+    const { seaport } = fixture;
+
+    await seaport
+      .setDomain(expectedExampleDomainArray[0], user.address)
+      .transact();
+
+    await seaport
+      .setDomain(expectedExampleDomainArray[1], user.address)
+      .transact();
+
+    await seaport
+      .setDomain(expectedExampleDomainArray[2], user.address)
+      .transact();
+
+    await seaport
+      .setDomain(expectedExampleDomainArray[3], user.address)
+      .transact();
+
+    expect(await seaport.getDomains(exampleTag)).to.deep.eq(
+      expectedExampleDomainArray
+    );
   });
 });

@@ -30,6 +30,7 @@ export type SeaportConfig = {
 
   overrides?: {
     contractAddress?: string;
+    domainRegistryAddress?: string;
     // A default conduit key to use when creating and fulfilling orders
     defaultConduitKey?: string;
   };

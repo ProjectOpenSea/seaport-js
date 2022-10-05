@@ -3,6 +3,7 @@ import {
   BigNumber,
   BigNumberish,
   Contract,
+  ContractTransaction,
   ethers,
   PayableOverrides,
   providers,
@@ -130,7 +131,7 @@ export class Seaport {
     ) as SeaportContract;
 
     this.domainRegistry = new Contract(
-      DOMAIN_REGISTRY_ADDRESS,
+      overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS,
       DomainRegistryABI,
       this.multicallProvider
     ) as DomainRegistryContract;
@@ -947,16 +948,10 @@ export class Seaport {
 
   public setDomain(
     domain: string,
-    accountAddress?: string
+    accountAddress: string
   ): TransactionMethods<
     ContractMethodReturnType<DomainRegistryContract, "setDomain">
   > {
-    // const populatedTransaction = await this.domainRegistry.populateTransaction[
-    //   "setDomain"
-    // ](domain);
-    // console.log(populatedTransaction);
-    // return this.domainRegistry.signer.sendTransaction(populatedTransaction);
-
     const signer = this._getSigner(accountAddress);
 
     return getTransactionMethods(
@@ -966,18 +961,8 @@ export class Seaport {
     );
   }
 
-  public getDomain(
-    tag: string,
-    index: BigNumber,
-    accountAddress?: string
-  ): Promise<string> {
-    const signer = this._getSigner(accountAddress);
-
-    return getTransactionMethods(
-      this.domainRegistry.connect(signer),
-      "getDomain",
-      [tag, index]
-    ).callStatic();
+  public getDomain(tag: string, index: number): Promise<string> {
+    return this.domainRegistry.getDomain(tag, index);
   }
 
   public async getDomains(tag: string): Promise<string[]> {

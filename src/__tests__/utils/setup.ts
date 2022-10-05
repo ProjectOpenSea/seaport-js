@@ -45,17 +45,18 @@ export const describeWithFixture = (
 
       await seaportContract.deployed();
 
-      const seaport = new Seaport(ethers.provider, {
-        overrides: {
-          contractAddress: seaportContract.address,
-        },
-      });
-
       const DomainRegistryFactory = await ethers.getContractFactory(
         "DomainRegistry"
       );
       const domainRegistry = await DomainRegistryFactory.deploy();
       await domainRegistry.deployed();
+
+      const seaport = new Seaport(ethers.provider, {
+        overrides: {
+          contractAddress: seaportContract.address,
+          domainRegistryAddress: domainRegistry.address,
+        },
+      });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");
       const testErc721 = await TestERC721.deploy();
