@@ -23,7 +23,7 @@ describeWithFixture("As a user I want to register a domain", (fixture) => {
     [setter, getter] = await ethers.getSigners();
   });
 
-  describe("I want to register a domain", async () => {
+  it("I want to register a domain", async () => {
     const { seaport } = fixture;
 
     await seaport.setDomain(OPENSEA_DOMAIN);
