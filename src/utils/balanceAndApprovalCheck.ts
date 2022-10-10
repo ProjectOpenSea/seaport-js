@@ -215,7 +215,7 @@ export const validateOfferBalancesAndApprovals = ({
 } & Pick<OrderParameters, "offer"> & {
     criterias: InputCriteria[];
   }): InsufficientApprovals => {
-  const { insufficientBalances, insufficientApprovals } =
+  let { insufficientBalances, insufficientApprovals } =
     getInsufficientBalanceAndApprovalAmounts({
       balancesAndApprovals,
       tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
@@ -227,6 +227,16 @@ export const validateOfferBalancesAndApprovals = ({
       }),
       operator,
     });
+
+  // bypass the balance & approval check for ERC721
+  insufficientBalances = insufficientBalances.filter(
+    (each) =>
+      ![ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(each.itemType)
+  );
+  insufficientApprovals = insufficientApprovals.filter(
+    (each) =>
+      ![ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(each.itemType)
+  );
 
   if (throwOnInsufficientBalances && insufficientBalances.length > 0) {
     throw new Error(
