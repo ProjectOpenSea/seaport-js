@@ -11,3 +11,6 @@ artifacts
 
 .vscode
 .DS_Store
+.idea
+
+pnpm-lock.yaml

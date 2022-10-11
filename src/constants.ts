@@ -1,11 +1,37 @@
 import { BigNumber } from "ethers";
+import { mapKeys, mapValues, pickBy } from "lodash";
 
-export const SEAPORT_CONTRACT_NAME = "Seaport";
+import DEPLOYED_CONTRACTS from "./deployed-contracts.json";
+
+export type ContractName = keyof typeof DEPLOYED_CONTRACTS;
+
+type ContractAddress = string;
+export type ContractMap = Record<ContractName, ContractAddress>;
+
+// map 'UniswapV3' in DEPLOYED_CONTRACTS to 'UNI-V3-POS'
+const NORMALIZED_DEPLOYED_CONTRACTS = mapKeys(DEPLOYED_CONTRACTS, (_v, k) =>
+  k === "UniswapV3" ? "UNI-V3-POS" : k
+);
+
+const extractContractMapFromDeployedContracts = (network: "goerli") => {
+  const rawContractMap = mapValues(NORMALIZED_DEPLOYED_CONTRACTS, (it) =>
+    network in it ? it[network].address : null
+  );
+  // ignore invalid(length is not 42) contract address
+  return pickBy(
+    rawContractMap,
+    (v, k) => v?.length === 42 || k === "ConduitKey"
+  ) as ContractMap;
+};
+
+export const CONTRACT_MAP: ContractMap = {
+  ...extractContractMapFromDeployedContracts("goerli"),
+};
+
+export const SEAPORT_CONTRACT_NAME = "ParaSpace";
 export const SEAPORT_CONTRACT_VERSION = "1.1";
-export const OPENSEA_CONDUIT_KEY =
-  "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000";
-export const OPENSEA_CONDUIT_ADDRESS =
-  "0x1e0049783f008a0085193e00003d00cd54003c71";
+export const OPENSEA_CONDUIT_KEY = CONTRACT_MAP.ConduitKey;
+export const OPENSEA_CONDUIT_ADDRESS = CONTRACT_MAP.Conduit;
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
     { name: "offerer", type: "address" },
@@ -85,8 +111,7 @@ export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {
   [OPENSEA_CONDUIT_KEY]: OPENSEA_CONDUIT_ADDRESS,
 };
 
-export const CROSS_CHAIN_SEAPORT_ADDRESS =
-  "0x00000000006c3852cbef3e08e8df289169ede581";
+export const CROSS_CHAIN_SEAPORT_ADDRESS = CONTRACT_MAP.Seaport;
 
 export const DOMAIN_REGISTRY_ADDRESS =
   "0x000000000DaD0DE04D2B2D4a5A74581EBA94124A";
