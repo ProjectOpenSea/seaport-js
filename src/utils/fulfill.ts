@@ -178,7 +178,7 @@ const offerAndConsiderationFulfillmentMapping: {
   },
 } as const;
 
-export async function fulfillBasicOrder({
+export function fulfillBasicOrder({
   order,
   seaportContract,
   offererBalancesAndApprovals,
@@ -202,12 +202,8 @@ export async function fulfillBasicOrder({
   tips?: ConsiderationItem[];
   conduitKey: string;
   domain?: string;
-}): Promise<
-  OrderUseCase<
-    ExchangeAction<
-      ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">
-    >
-  >
+}): OrderUseCase<
+  ExchangeAction<ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">>
 > {
   const { offer, consideration } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
@@ -284,10 +280,7 @@ export async function fulfillBasicOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(
-    insufficientApprovals,
-    signer
-  );
+  const approvalActions = getApprovalActions(insufficientApprovals, signer);
 
   const exchangeAction = {
     type: "exchange",
@@ -308,7 +301,7 @@ export async function fulfillBasicOrder({
   };
 }
 
-export async function fulfillStandardOrder({
+export function fulfillStandardOrder({
   order,
   unitsToFill = 0,
   totalSize,
@@ -346,13 +339,11 @@ export async function fulfillStandardOrder({
   timeBasedItemParams: TimeBasedItemParams;
   signer: Signer;
   domain?: string;
-}): Promise<
-  OrderUseCase<
-    ExchangeAction<
-      ContractMethodReturnType<
-        SeaportContract,
-        "fulfillAdvancedOrder" | "fulfillOrder"
-      >
+}): OrderUseCase<
+  ExchangeAction<
+    ContractMethodReturnType<
+      SeaportContract,
+      "fulfillAdvancedOrder" | "fulfillOrder"
     >
   >
 > {
@@ -419,10 +410,7 @@ export async function fulfillStandardOrder({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(
-    insufficientApprovals,
-    signer
-  );
+  const approvalActions = getApprovalActions(insufficientApprovals, signer);
 
   const isGift = recipientAddress !== ethers.constants.AddressZero;
 
