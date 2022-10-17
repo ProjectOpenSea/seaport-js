@@ -297,7 +297,7 @@ export const validateBasicFulfillBalancesAndApprovals = ({
     (item) => item.itemType !== offer[0].itemType
   );
 
-  const { insufficientBalances, insufficientApprovals } =
+  let { insufficientBalances, insufficientApprovals } =
     getInsufficientBalanceAndApprovalAmounts({
       balancesAndApprovals: fulfillerBalancesAndApprovals,
       tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
@@ -310,7 +310,15 @@ export const validateBasicFulfillBalancesAndApprovals = ({
       }),
       operator: fulfillerOperator,
     });
-
+  // bypass the balance & approval check for ERC721
+  insufficientBalances = insufficientBalances.filter(
+    (each) =>
+      ![ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(each.itemType)
+  );
+  insufficientApprovals = insufficientApprovals.filter(
+    (each) =>
+      ![ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(each.itemType)
+  );
   if (insufficientBalances.length > 0) {
     throw new Error(
       "The fulfiller does not have the balances needed to fulfill."
