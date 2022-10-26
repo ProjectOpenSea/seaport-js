@@ -7,40 +7,39 @@ import {
   PayableOverrides,
   providers,
 } from "ethers";
-import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
+import { _TypedDataEncoder, formatBytes32String } from "ethers/lib/utils";
 import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABI } from "./abi/Seaport";
 import {
-  SEAPORT_CONTRACT_NAME,
-  SEAPORT_CONTRACT_VERSION,
+  CROSS_CHAIN_SEAPORT_ADDRESS,
+  DOMAIN_REGISTRY_ADDRESS,
   EIP_712_ORDER_TYPE,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
   NO_CONDUIT,
-  OPENSEA_CONDUIT_KEY,
   OrderType,
-  CROSS_CHAIN_SEAPORT_ADDRESS,
-  DOMAIN_REGISTRY_ADDRESS,
+  SEAPORT_CONTRACT_NAME,
+  SEAPORT_CONTRACT_VERSION,
 } from "./constants";
 import type {
-  SeaportConfig,
+  ContractMethodReturnType,
   CreateOrderAction,
   CreateOrderInput,
   DomainRegistryContract,
   ExchangeAction,
   InputCriteria,
+  MatchOrdersFulfillment,
   Order,
   OrderComponents,
   OrderParameters,
   OrderStatus,
   OrderUseCase,
   OrderWithCounter,
-  TipInputItem,
-  TransactionMethods,
-  ContractMethodReturnType,
-  MatchOrdersFulfillment,
+  SeaportConfig,
   SeaportContract,
   Signer,
+  TipInputItem,
+  TransactionMethods,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -87,8 +86,6 @@ export class Seaport {
 
   private defaultConduitKey: string;
 
-  readonly OPENSEA_CONDUIT_KEY: string = OPENSEA_CONDUIT_KEY;
-
   /**
    * @param providerOrSigner - The provider or signer to use for web3-related calls
    * @param considerationConfig - A config to provide flexibility in the usage of Seaport
@@ -103,6 +100,9 @@ export class Seaport {
       conduitKeyToConduit,
     }: SeaportConfig = {}
   ) {
+    if (!overrides?.contractAddress) {
+      throw new Error("Seaport Contract is required !");
+    }
     const provider =
       providerOrSigner instanceof providers.Provider
         ? providerOrSigner

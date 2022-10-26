@@ -1,6 +1,6 @@
 {
   "name": "@paraspace/seaport-js",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
@@ -44,7 +44,6 @@
     "normalize-url": ">=4.5.1",
     "async": ">=2.6.4",
     "node-fetch": ">=2.6.7",
-    "lodash": ">=4.17.21",
     "got": ">=11.8.5",
     "cross-fetch": ">=2.2.6",
     "ws": ">=5.2.3",
@@ -55,7 +54,6 @@
   "dependencies": {
     "@0xsequence/multicall": "^0.39.0",
     "ethers": "^5.6.7",
-    "lodash": "^4.17.21",
     "merkletreejs": "^0.2.31"
   },
   "devDependencies": {
@@ -66,7 +64,6 @@
     "@typechain/hardhat": "^5.0.0",
     "@types/chai": "^4.3.0",
     "@types/chai-as-promised": "^7.1.5",
-    "@types/lodash": "^4.14.186",
     "@types/mocha": "^9.1.1",
     "@types/node": "^12.20.47",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
