@@ -50,7 +50,8 @@
     "ws": ">=5.2.3",
     "path-parse": ">=1.0.7",
     "elliptic": ">=6.5.4",
-    "yargs-parser": ">=5.0.1"
+    "yargs-parser": ">=5.0.1",
+    "minimatch": ">=3.0.5"
   },
   "dependencies": {
     "@0xsequence/multicall": "^0.39.0",
