@@ -147,6 +147,49 @@ describeWithFixture(
           expect(fulfillStandardOrderSpy).calledOnce;
         });
 
+        it("ERC1155 <=> ETH fails due to rounding error", async () => {
+          const { seaport, testErc1155 } = fixture;
+
+          // maker creates partially fillable listing with amount of 3
+          standardCreateOrderInput.offer = [
+            {
+              itemType: ItemType.ERC1155,
+              token: testErc1155.address,
+              amount: "3",
+              identifier: nftId,
+            },
+          ];
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          // taker tries to buy 2 of the items
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          await expect(action.transactionMethods.transact()).to.be.revertedWith(
+            "BadFraction"
+          );
+        });
+
         it("ERC1155 <=> ERC20", async () => {
           const { seaport, testErc20, testErc1155 } = fixture;
 
