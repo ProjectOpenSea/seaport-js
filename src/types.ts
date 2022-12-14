@@ -119,7 +119,18 @@ export type Erc721ItemWithCriteria = {
   endAmount?: string;
 };
 
-type Erc721Item = BasicErc721Item | Erc721ItemWithCriteria;
+export type Erc721ItemWithMerkleRoot = {
+  itemType: ItemType.ERC721;
+  token: string;
+  criteria: string;
+  amount?: string;
+  endAmount?: string;
+};
+
+type Erc721Item =
+  | BasicErc721Item
+  | Erc721ItemWithCriteria
+  | Erc721ItemWithMerkleRoot;
 
 export type BasicErc1155Item = {
   itemType: ItemType.ERC1155;
@@ -137,7 +148,18 @@ export type Erc1155ItemWithCriteria = {
   endAmount?: string;
 };
 
-type Erc1155Item = BasicErc1155Item | Erc1155ItemWithCriteria;
+export type Erc1155ItemWithMerkleRoot = {
+  itemType: ItemType.ERC1155;
+  token: string;
+  criteria: string;
+  amount: string;
+  endAmount?: string;
+};
+
+type Erc1155Item =
+  | BasicErc1155Item
+  | Erc1155ItemWithCriteria
+  | Erc1155ItemWithMerkleRoot;
 
 export type CurrencyItem = {
   token?: string;

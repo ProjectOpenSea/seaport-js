@@ -6,6 +6,7 @@ import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import { ApprovalAction, CreateOrderAction } from "../types";
 import { generateRandomSalt } from "../utils/order";
 import { describeWithFixture } from "./utils/setup";
+import { MerkleTree } from "../utils/merkletree";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
@@ -372,6 +373,238 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             itemType: ItemType.ERC1155,
             startAmount: "1",
             token: testErc1155.address,
+          },
+        ],
+        offerer: offerer.address,
+        orderType: OrderType.FULL_OPEN,
+        salt,
+        startTime,
+        totalOriginalConsiderationItems: 2,
+        zone: ethers.constants.AddressZero,
+        zoneHash: formatBytes32String("0"),
+        conduitKey: NO_CONDUIT,
+        counter: 0,
+      },
+      signature: order.signature,
+    });
+
+    const isValid = await seaportContract
+      .connect(randomSigner)
+      .callStatic.validate([
+        {
+          parameters: {
+            ...order.parameters,
+            totalOriginalConsiderationItems:
+              order.parameters.consideration.length,
+          },
+          signature: order.signature,
+        },
+      ]);
+
+    expect(isValid).to.be.true;
+  });
+
+  it("should create an order that offers ERC20 for multiple ERC721, based on a list of token ids", async () => {
+    const { seaportContract, seaport, testErc20, testErc721 } = fixture;
+
+    const [offerer, zone, randomSigner] = await ethers.getSigners();
+    const nftId = "1";
+    const root = new MerkleTree([nftId]).getRoot();
+    await testErc20.mint(offerer.address, parseEther("10").toString());
+    await testErc721.mint(randomSigner.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const salt = generateRandomSalt();
+
+    const { actions } = await seaport.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          token: testErc20.address,
+          amount: parseEther("10").toString(),
+        },
+      ],
+      consideration: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifiers: [nftId],
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
+
+    const approvalAction = actions[0] as ApprovalAction;
+
+    expect(approvalAction).to.be.deep.equal({
+      type: "approval",
+      token: testErc20.address,
+      identifierOrCriteria: "0",
+      itemType: ItemType.ERC20,
+      transactionMethods: approvalAction.transactionMethods,
+      operator: seaportContract.address,
+    });
+
+    await approvalAction.transactionMethods.transact();
+
+    // NFT should now be approved
+    expect(
+      await testErc20.allowance(offerer.address, seaportContract.address)
+    ).to.equal(MAX_INT);
+
+    const createOrderAction = actions[1] as CreateOrderAction;
+    const order = await createOrderAction.createOrder();
+
+    expect(createOrderAction.type).to.equal("create");
+    expect(order).to.deep.equal({
+      parameters: {
+        consideration: [
+          {
+            endAmount: "1",
+            identifierOrCriteria: root,
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            startAmount: "1",
+            token: testErc721.address,
+            recipient: offerer.address,
+          },
+          {
+            endAmount: ethers.utils.parseEther(".25").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            recipient: zone.address,
+            startAmount: ethers.utils.parseEther(".25").toString(),
+            token: testErc20.address,
+          },
+        ],
+        endTime,
+        offer: [
+          {
+            // Fees were deducted
+            endAmount: ethers.utils.parseEther("10").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            startAmount: ethers.utils.parseEther("10").toString(),
+            token: testErc20.address,
+          },
+        ],
+        offerer: offerer.address,
+        orderType: OrderType.FULL_OPEN,
+        salt,
+        startTime,
+        totalOriginalConsiderationItems: 2,
+        zone: ethers.constants.AddressZero,
+        zoneHash: formatBytes32String("0"),
+        conduitKey: NO_CONDUIT,
+        counter: 0,
+      },
+      signature: order.signature,
+    });
+
+    const isValid = await seaportContract
+      .connect(randomSigner)
+      .callStatic.validate([
+        {
+          parameters: {
+            ...order.parameters,
+            totalOriginalConsiderationItems:
+              order.parameters.consideration.length,
+          },
+          signature: order.signature,
+        },
+      ]);
+
+    expect(isValid).to.be.true;
+  });
+
+  it("should create an order that offers ERC20 for multiple ERC721, based on custom criteria", async () => {
+    const { seaportContract, seaport, testErc20, testErc721 } = fixture;
+
+    const [offerer, zone, randomSigner] = await ethers.getSigners();
+    const nftId = "1";
+    const root = new MerkleTree([nftId]).getRoot();
+    await testErc20.mint(offerer.address, parseEther("10").toString());
+    await testErc721.mint(randomSigner.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const salt = generateRandomSalt();
+
+    const { actions } = await seaport.createOrder({
+      startTime,
+      endTime,
+      salt,
+      offer: [
+        {
+          token: testErc20.address,
+          amount: parseEther("10").toString(),
+        },
+      ],
+      consideration: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          criteria: root,
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: zone.address, basisPoints: 250 }],
+    });
+
+    const approvalAction = actions[0] as ApprovalAction;
+
+    expect(approvalAction).to.be.deep.equal({
+      type: "approval",
+      token: testErc20.address,
+      identifierOrCriteria: "0",
+      itemType: ItemType.ERC20,
+      transactionMethods: approvalAction.transactionMethods,
+      operator: seaportContract.address,
+    });
+
+    await approvalAction.transactionMethods.transact();
+
+    // NFT should now be approved
+    expect(
+      await testErc20.allowance(offerer.address, seaportContract.address)
+    ).to.equal(MAX_INT);
+
+    const createOrderAction = actions[1] as CreateOrderAction;
+    const order = await createOrderAction.createOrder();
+
+    expect(createOrderAction.type).to.equal("create");
+    expect(order).to.deep.equal({
+      parameters: {
+        consideration: [
+          {
+            endAmount: "1",
+            identifierOrCriteria: root,
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            startAmount: "1",
+            token: testErc721.address,
+            recipient: offerer.address,
+          },
+          {
+            endAmount: ethers.utils.parseEther(".25").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            recipient: zone.address,
+            startAmount: ethers.utils.parseEther(".25").toString(),
+            token: testErc20.address,
+          },
+        ],
+        endTime,
+        offer: [
+          {
+            // Fees were deducted
+            endAmount: ethers.utils.parseEther("10").toString(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            startAmount: ethers.utils.parseEther("10").toString(),
+            token: testErc20.address,
           },
         ],
         offerer: offerer.address,
