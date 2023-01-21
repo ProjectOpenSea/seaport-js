@@ -46,7 +46,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
 
     const counter = await seaportContract.getCounter(offerer.address);
 
-    const orderParameters = {
+    const orderComponents = {
       offerer: offerer.address,
       zone: ethers.constants.AddressZero,
       offer,
@@ -58,17 +58,15 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       endTime,
       zoneHash: ethers.constants.HashZero,
       conduitKey: NO_CONDUIT,
+      counter: counter.toNumber(),
     };
 
-    const signature = await seaport.signOrder(
-      orderParameters,
-      counter.toNumber()
-    );
+    const signature = await seaport.signOrder(orderComponents);
 
     const order = {
       parameters: {
-        ...orderParameters,
-        totalOriginalConsiderationItems: orderParameters.consideration.length,
+        ...orderComponents,
+        totalOriginalConsiderationItems: orderComponents.consideration.length,
       },
       signature,
     };

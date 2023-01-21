@@ -35,7 +35,6 @@ import type {
   InputCriteria,
   Order,
   OrderComponents,
-  OrderParameters,
   OrderStatus,
   OrderUseCase,
   OrderWithCounter,
@@ -160,39 +159,6 @@ export class Seaport {
     this.defaultConduitKey = overrides?.defaultConduitKey ?? NO_CONDUIT;
   }
 
-  private _getSigner(accountAddress?: string): Signer {
-    if (this.signer) {
-      return this.signer;
-    }
-
-    if (!(this.provider instanceof providers.JsonRpcProvider)) {
-      throw new Error("Either signer or a JsonRpcProvider must be provided");
-    }
-
-    return this.provider.getSigner(accountAddress);
-  }
-
-  /**
-   * Returns the corresponding order type based on whether it allows partial fills and is restricted by zone
-   *
-   * @param input
-   * @param input.allowPartialFills Whether or not the order can be partially filled
-   * @param input.restrictedByZone Whether or not the order can only be filled/cancelled by the zone
-   * @returns the order type
-   */
-  private _getOrderTypeFromOrderOptions({
-    allowPartialFills,
-    restrictedByZone,
-  }: Pick<CreateOrderInput, "allowPartialFills" | "restrictedByZone">) {
-    if (allowPartialFills) {
-      return restrictedByZone
-        ? OrderType.PARTIAL_RESTRICTED
-        : OrderType.PARTIAL_OPEN;
-    }
-
-    return restrictedByZone ? OrderType.FULL_RESTRICTED : OrderType.FULL_OPEN;
-  }
-
   /**
    * Returns a use case that will create an order.
    * The use case will contain the list of actions necessary to finish creating an order.
@@ -220,6 +186,107 @@ export class Seaport {
    * @returns a use case containing the list of actions needed to be performed in order to create the order
    */
   public async createOrder(
+    input: CreateOrderInput,
+    accountAddress?: string
+  ): Promise<OrderUseCase<CreateOrderAction>> {
+    const signer = this._getSigner(accountAddress);
+    const offerer = await signer.getAddress();
+
+    const { orderComponents, approvalActions } = await this._formatOrder(
+      signer,
+      offerer,
+      input
+    );
+
+    const createOrderAction = {
+      type: "create",
+      getMessageToSign: () => {
+        return this._getMessageToSign(orderComponents);
+      },
+      createOrder: async () => {
+        const signature = await this.signOrder(orderComponents, offerer);
+
+        return {
+          parameters: orderComponents,
+          signature,
+        };
+      },
+    } as const;
+
+    const actions = [...approvalActions, createOrderAction] as const;
+
+    return {
+      actions,
+      executeAllActions: () =>
+        executeAllActions(actions) as Promise<OrderWithCounter>,
+    };
+  }
+
+  /**
+   * Returns a use case that will create bulk orders.
+   * The use case will contain the list of actions necessary to finish creating the orders.
+   * The list of actions will either be an approval if approvals are necessary
+   * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
+   *
+   * @param input See {@link createOrder} for more details about the input parameters.
+   * @returns a use case containing the list of actions needed to be performed in order to create the orders
+   */
+  public async createBulkOrders(
+    createOrderInput: CreateOrderInput[],
+    accountAddress?: string
+  ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
+    const signer = this._getSigner(accountAddress);
+    const offerer = await signer.getAddress();
+
+    const allApprovalActions: ApprovalAction[] = [];
+    const allOrderComponents: OrderComponents[] = [];
+
+    for (const input of createOrderInput) {
+      const { orderComponents, approvalActions } = await this._formatOrder(
+        signer,
+        offerer,
+        input
+      );
+
+      allOrderComponents.push(orderComponents);
+
+      // Dedupe approvals by token address
+      for (const approval of approvalActions) {
+        if (
+          allApprovalActions.find((a) => a.token === approval.token) ===
+          undefined
+        ) {
+          allApprovalActions.push(approval);
+        }
+      }
+    }
+
+    const createBulkOrdersAction = {
+      type: "createBulk",
+      getMessageToSign: () => {
+        return this._getBulkMessageToSign(allOrderComponents);
+      },
+      createBulkOrders: async () => {
+        const orders = await this.signBulkOrder(allOrderComponents, offerer);
+        return orders;
+      },
+    } as const;
+
+    const actions = [...allApprovalActions, createBulkOrdersAction] as const;
+
+    return {
+      actions,
+      executeAllActions: () =>
+        executeAllActions(actions) as Promise<OrderWithCounter[]>,
+    };
+  }
+
+  /**
+   * Formats an order for creation.
+   */
+  private async _formatOrder(
+    signer: Signer,
+    offerer: string,
     {
       conduitKey = this.defaultConduitKey,
       zone = ethers.constants.AddressZero,
@@ -233,11 +300,8 @@ export class Seaport {
       fees,
       domain,
       salt,
-    }: CreateOrderInput,
-    accountAddress?: string
-  ): Promise<OrderUseCase<CreateOrderAction>> {
-    const signer = this._getSigner(accountAddress);
-    const offerer = await signer.getAddress();
+    }: CreateOrderInput
+  ) {
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
       ...consideration.map((consideration) => ({
@@ -299,7 +363,7 @@ export class Seaport {
       salt ||
       (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
 
-    const orderParameters: OrderParameters = {
+    const orderComponents: OrderComponents = {
       offerer,
       zone,
       zoneHash: ethers.constants.HashZero,
@@ -311,6 +375,7 @@ export class Seaport {
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
       salt: saltFollowingConditional,
       conduitKey,
+      counter: resolvedCounter,
     };
 
     const checkBalancesAndApprovals =
@@ -330,192 +395,40 @@ export class Seaport {
       ? await getApprovalActions(insufficientApprovals, signer)
       : [];
 
-    const createOrderAction = {
-      type: "create",
-      getMessageToSign: () => {
-        return this._getMessageToSign(orderParameters, resolvedCounter);
-      },
-      createOrder: async () => {
-        const signature = await this.signOrder(
-          orderParameters,
-          resolvedCounter,
-          offerer
-        );
+    return { orderComponents, approvalActions };
+  }
 
-        return {
-          parameters: { ...orderParameters, counter: resolvedCounter },
-          signature,
-        };
-      },
-    } as const;
+  private _getSigner(accountAddress?: string): Signer {
+    if (this.signer) {
+      return this.signer;
+    }
 
-    const actions = [...approvalActions, createOrderAction] as const;
+    if (!(this.provider instanceof providers.JsonRpcProvider)) {
+      throw new Error("Either signer or a JsonRpcProvider must be provided");
+    }
 
-    return {
-      actions,
-      executeAllActions: () =>
-        executeAllActions(actions) as Promise<OrderWithCounter>,
-    };
+    return this.provider.getSigner(accountAddress);
   }
 
   /**
-   * Returns a use case that will create bulk orders.
-   * The use case will contain the list of actions necessary to finish creating the orders.
-   * The list of actions will either be an approval if approvals are necessary
-   * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
+   * Returns the corresponding order type based on whether it allows partial fills and is restricted by zone
    *
-   * @param input See {@link createOrder} for more details about the input parameters.
-   * @returns a use case containing the list of actions needed to be performed in order to create the orders
+   * @param input
+   * @param input.allowPartialFills Whether or not the order can be partially filled
+   * @param input.restrictedByZone Whether or not the order can only be filled/cancelled by the zone
+   * @returns the order type
    */
-  public async createBulkOrders(
-    createOrderInput: CreateOrderInput[],
-    accountAddress?: string
-  ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
-    const signer = this._getSigner(accountAddress);
-    const offerer = await signer.getAddress();
-    const offererCounter = await this.getCounter(offerer);
-
-    const allApprovalActions: ApprovalAction[] = [];
-    const allOrderComponents: OrderComponents[] = [];
-
-    for (const input of createOrderInput) {
-      input.conduitKey ??= this.defaultConduitKey;
-      input.zone ??= ethers.constants.AddressZero;
-      input.startTime ??= Math.floor(Date.now() / 1000).toString();
-      input.endTime ??= MAX_INT.toString();
-      const {
-        conduitKey,
-        zone,
-        startTime,
-        endTime,
-        offer,
-        consideration,
-        counter,
-        allowPartialFills,
-        restrictedByZone,
-        fees,
-        domain,
-        salt,
-      } = input;
-      const offerItems = offer.map(mapInputItemToOfferItem);
-      const considerationItems = [
-        ...consideration.map((consideration) => ({
-          ...mapInputItemToOfferItem(consideration),
-          recipient: consideration.recipient ?? offerer,
-        })),
-      ];
-
-      if (
-        !areAllCurrenciesSame({
-          offer: offerItems,
-          consideration: considerationItems,
-        })
-      ) {
-        throw new Error(
-          "All currency tokens in the order must be the same token"
-        );
-      }
-
-      const currencies = [...offerItems, ...considerationItems].filter(
-        isCurrencyItem
-      );
-
-      const totalCurrencyAmount = totalItemsAmount(currencies);
-
-      const operator = this.config.conduitKeyToConduit[conduitKey];
-
-      const balancesAndApprovals = await getBalancesAndApprovals({
-        owner: offerer,
-        items: offerItems,
-        criterias: [],
-        multicallProvider: this.multicallProvider,
-        operator,
-      });
-
-      const orderType = this._getOrderTypeFromOrderOptions({
-        allowPartialFills,
-        restrictedByZone,
-      });
-
-      const considerationItemsWithFees = [
-        ...deductFees(considerationItems, fees),
-        ...(currencies.length
-          ? fees?.map((fee) =>
-              feeToConsiderationItem({
-                fee,
-                token: currencies[0].token,
-                baseAmount: totalCurrencyAmount.startAmount,
-                baseEndAmount: totalCurrencyAmount.endAmount,
-              })
-            ) ?? []
-          : []),
-      ];
-
-      const saltFollowingConditional =
-        salt ||
-        (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
-
-      const orderComponents: OrderComponents = {
-        offerer,
-        zone,
-        zoneHash: ethers.constants.HashZero,
-        startTime,
-        endTime,
-        orderType,
-        offer: offerItems,
-        consideration: considerationItemsWithFees,
-        totalOriginalConsiderationItems: considerationItemsWithFees.length,
-        salt: saltFollowingConditional,
-        conduitKey,
-        counter: counter ?? offererCounter,
-      };
-
-      const checkBalancesAndApprovals =
-        this.config.balanceAndApprovalChecksOnOrderCreation;
-
-      const insufficientApprovals = checkBalancesAndApprovals
-        ? validateOfferBalancesAndApprovals({
-            offer: offerItems,
-            criterias: [],
-            balancesAndApprovals,
-            throwOnInsufficientBalances: checkBalancesAndApprovals,
-            operator,
-          })
-        : [];
-
-      const approvalActions = checkBalancesAndApprovals
-        ? await getApprovalActions(insufficientApprovals, signer)
-        : [];
-
-      for (const approvalAction of approvalActions) {
-        if (
-          allApprovalActions.find((a) => a.token === approvalAction.token) ===
-          undefined
-        ) {
-          allApprovalActions.push(approvalAction);
-        }
-      }
-      allOrderComponents.push(orderComponents);
+  private _getOrderTypeFromOrderOptions({
+    allowPartialFills,
+    restrictedByZone,
+  }: Pick<CreateOrderInput, "allowPartialFills" | "restrictedByZone">) {
+    if (allowPartialFills) {
+      return restrictedByZone
+        ? OrderType.PARTIAL_RESTRICTED
+        : OrderType.PARTIAL_OPEN;
     }
 
-    const createBulkOrdersAction = {
-      type: "createBulk",
-      getMessageToSign: () => {
-        return this._getBulkMessageToSign(allOrderComponents);
-      },
-      createBulkOrders: async () => {
-        const orders = await this.signBulkOrder(allOrderComponents, offerer);
-        return orders;
-      },
-    } as const;
-
-    const actions = [...allApprovalActions, createBulkOrdersAction] as const;
-
-    return {
-      actions,
-      executeAllActions: () =>
-        executeAllActions(actions) as Promise<OrderWithCounter[]>,
-    };
+    return restrictedByZone ? OrderType.FULL_RESTRICTED : OrderType.FULL_OPEN;
   }
 
   /**
@@ -542,19 +455,10 @@ export class Seaport {
   /**
    * Returns a raw message to be signed using EIP-712
    * @param orderParameters order parameter struct
-   * @param counter counter of the order
    * @returns JSON string of the message to be signed
    */
-  private async _getMessageToSign(
-    orderParameters: OrderParameters,
-    counter: number
-  ) {
+  private async _getMessageToSign(orderComponents: OrderComponents) {
     const domainData = await this._getDomainData();
-
-    const orderComponents: OrderComponents = {
-      ...orderParameters,
-      counter,
-    };
 
     return JSON.stringify(
       _TypedDataEncoder.getPayload(
@@ -585,24 +489,17 @@ export class Seaport {
 
   /**
    * Submits a request to your provider to sign the order. Signed orders are used for off-chain order books.
-   * @param orderParameters standard order parameter struct
-   * @param counter counter of the offerer
+   * @param orderComponents standard order parameter struct
    * @param accountAddress optional account address from which to sign the order with.
    * @returns the order signature
    */
   public async signOrder(
-    orderParameters: OrderParameters,
-    counter: number,
+    orderComponents: OrderComponents,
     accountAddress?: string
   ): Promise<string> {
     const signer = this._getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
-
-    const orderComponents: OrderComponents = {
-      ...orderParameters,
-      counter,
-    };
 
     const signature = await signer._signTypedData(
       domainData,
