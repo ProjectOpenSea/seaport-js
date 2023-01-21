@@ -7,12 +7,15 @@ import {
   PayableOverrides,
   providers,
 } from "ethers";
-import { formatBytes32String, _TypedDataEncoder } from "ethers/lib/utils";
+import { _TypedDataEncoder } from "ethers/lib/utils";
 import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABI } from "./abi/Seaport";
+import { SeaportABIv12 } from "./abi/Seaport_v1_2";
 import {
   SEAPORT_CONTRACT_NAME,
+  SEAPORT_CONTRACT_NAME_ALPHA,
   SEAPORT_CONTRACT_VERSION,
+  SEAPORT_CONTRACT_VERSION_V1_2,
   EIP_712_ORDER_TYPE,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
@@ -21,6 +24,7 @@ import {
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
   DOMAIN_REGISTRY_ADDRESS,
+  CROSS_CHAIN_SEAPORT_V1_2_ADDRESS,
 } from "./constants";
 import type {
   SeaportConfig,
@@ -41,12 +45,15 @@ import type {
   MatchOrdersFulfillment,
   SeaportContract,
   Signer,
+  ApprovalAction,
+  CreateBulkOrdersAction,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
   getBalancesAndApprovals,
   validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck";
+import { getBulkOrderTree } from "./utils/eip712/bulk-orders";
 import {
   fulfillAvailableOrders,
   fulfillBasicOrder,
@@ -101,6 +108,7 @@ export class Seaport {
       ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
       conduitKeyToConduit,
+      seaportVersion = "1.1",
     }: SeaportConfig = {}
   ) {
     const provider =
@@ -124,8 +132,11 @@ export class Seaport {
     );
 
     this.contract = new Contract(
-      overrides?.contractAddress ?? CROSS_CHAIN_SEAPORT_ADDRESS,
-      SeaportABI,
+      overrides?.contractAddress ??
+        (seaportVersion === "1.2"
+          ? CROSS_CHAIN_SEAPORT_V1_2_ADDRESS
+          : CROSS_CHAIN_SEAPORT_ADDRESS),
+      seaportVersion === "1.2" ? SeaportABIv12 : SeaportABI,
       this.multicallProvider
     ) as SeaportContract;
 
@@ -143,6 +154,7 @@ export class Seaport {
         [NO_CONDUIT]: this.contract.address,
         ...conduitKeyToConduit,
       },
+      seaportVersion,
     };
 
     this.defaultConduitKey = overrides?.defaultConduitKey ?? NO_CONDUIT;
@@ -290,8 +302,7 @@ export class Seaport {
     const orderParameters: OrderParameters = {
       offerer,
       zone,
-      // TODO: Placeholder
-      zoneHash: formatBytes32String(resolvedCounter.toString()),
+      zoneHash: ethers.constants.HashZero,
       startTime,
       endTime,
       orderType,
@@ -348,6 +359,166 @@ export class Seaport {
   }
 
   /**
+   * Returns a use case that will create bulk orders.
+   * The use case will contain the list of actions necessary to finish creating the orders.
+   * The list of actions will either be an approval if approvals are necessary
+   * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
+   *
+   * @param input See {@link createOrder} for more details about the input parameters.
+   * @returns a use case containing the list of actions needed to be performed in order to create the orders
+   */
+  public async createBulkOrders(
+    createOrderInput: CreateOrderInput[],
+    accountAddress?: string
+  ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
+    const signer = this._getSigner(accountAddress);
+    const offerer = await signer.getAddress();
+    const offererCounter = await this.getCounter(offerer);
+
+    const allApprovalActions: ApprovalAction[] = [];
+    const allOrderComponents: OrderComponents[] = [];
+
+    for (const input of createOrderInput) {
+      input.conduitKey ??= this.defaultConduitKey;
+      input.zone ??= ethers.constants.AddressZero;
+      input.startTime ??= Math.floor(Date.now() / 1000).toString();
+      input.endTime ??= MAX_INT.toString();
+      const {
+        conduitKey,
+        zone,
+        startTime,
+        endTime,
+        offer,
+        consideration,
+        counter,
+        allowPartialFills,
+        restrictedByZone,
+        fees,
+        domain,
+        salt,
+      } = input;
+      const offerItems = offer.map(mapInputItemToOfferItem);
+      const considerationItems = [
+        ...consideration.map((consideration) => ({
+          ...mapInputItemToOfferItem(consideration),
+          recipient: consideration.recipient ?? offerer,
+        })),
+      ];
+
+      if (
+        !areAllCurrenciesSame({
+          offer: offerItems,
+          consideration: considerationItems,
+        })
+      ) {
+        throw new Error(
+          "All currency tokens in the order must be the same token"
+        );
+      }
+
+      const currencies = [...offerItems, ...considerationItems].filter(
+        isCurrencyItem
+      );
+
+      const totalCurrencyAmount = totalItemsAmount(currencies);
+
+      const operator = this.config.conduitKeyToConduit[conduitKey];
+
+      const balancesAndApprovals = await getBalancesAndApprovals({
+        owner: offerer,
+        items: offerItems,
+        criterias: [],
+        multicallProvider: this.multicallProvider,
+        operator,
+      });
+
+      const orderType = this._getOrderTypeFromOrderOptions({
+        allowPartialFills,
+        restrictedByZone,
+      });
+
+      const considerationItemsWithFees = [
+        ...deductFees(considerationItems, fees),
+        ...(currencies.length
+          ? fees?.map((fee) =>
+              feeToConsiderationItem({
+                fee,
+                token: currencies[0].token,
+                baseAmount: totalCurrencyAmount.startAmount,
+                baseEndAmount: totalCurrencyAmount.endAmount,
+              })
+            ) ?? []
+          : []),
+      ];
+
+      const saltFollowingConditional =
+        salt ||
+        (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
+
+      const orderComponents: OrderComponents = {
+        offerer,
+        zone,
+        zoneHash: ethers.constants.HashZero,
+        startTime,
+        endTime,
+        orderType,
+        offer: offerItems,
+        consideration: considerationItemsWithFees,
+        totalOriginalConsiderationItems: considerationItemsWithFees.length,
+        salt: saltFollowingConditional,
+        conduitKey,
+        counter: counter ?? offererCounter,
+      };
+
+      const checkBalancesAndApprovals =
+        this.config.balanceAndApprovalChecksOnOrderCreation;
+
+      const insufficientApprovals = checkBalancesAndApprovals
+        ? validateOfferBalancesAndApprovals({
+            offer: offerItems,
+            criterias: [],
+            balancesAndApprovals,
+            throwOnInsufficientBalances: checkBalancesAndApprovals,
+            operator,
+          })
+        : [];
+
+      const approvalActions = checkBalancesAndApprovals
+        ? await getApprovalActions(insufficientApprovals, signer)
+        : [];
+
+      for (const approvalAction of approvalActions) {
+        if (
+          allApprovalActions.find((a) => a.token === approvalAction.token) ===
+          undefined
+        ) {
+          allApprovalActions.push(approvalAction);
+        }
+      }
+      allOrderComponents.push(orderComponents);
+    }
+
+    const createBulkOrdersAction = {
+      type: "createBulk",
+      getMessageToSign: () => {
+        return this._getBulkMessageToSign(allOrderComponents);
+      },
+      createBulkOrders: async () => {
+        const orders = await this.signBulkOrder(allOrderComponents, offerer);
+        return orders;
+      },
+    } as const;
+
+    const actions = [...allApprovalActions, createBulkOrdersAction] as const;
+
+    return {
+      actions,
+      executeAllActions: () =>
+        executeAllActions(actions) as Promise<OrderWithCounter[]>,
+    };
+  }
+
+  /**
    * Returns the domain data used when signing typed data
    * @returns domain data
    */
@@ -355,8 +526,14 @@ export class Seaport {
     const { chainId } = await this.provider.getNetwork();
 
     return {
-      name: SEAPORT_CONTRACT_NAME,
-      version: SEAPORT_CONTRACT_VERSION,
+      name:
+        this.config.seaportVersion === "1.2"
+          ? SEAPORT_CONTRACT_NAME_ALPHA
+          : SEAPORT_CONTRACT_NAME,
+      version:
+        this.config.seaportVersion === "1.2"
+          ? SEAPORT_CONTRACT_VERSION_V1_2
+          : SEAPORT_CONTRACT_VERSION,
       chainId,
       verifyingContract: this.contract.address,
     };
@@ -389,6 +566,24 @@ export class Seaport {
   }
 
   /**
+   * Returns a raw bulk order message to be signed using EIP-712
+   * @param orderParameters order parameter struct
+   * @param counter counter of the order
+   * @returns JSON string of the message to be signed
+   */
+  private async _getBulkMessageToSign(orderComponents: OrderComponents[]) {
+    const domainData = await this._getDomainData();
+
+    const tree = getBulkOrderTree(orderComponents);
+    const bulkOrderType = tree.types;
+    const chunks = tree.getDataToSign();
+
+    return JSON.stringify(
+      _TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks })
+    );
+  }
+
+  /**
    * Submits a request to your provider to sign the order. Signed orders are used for off-chain order books.
    * @param orderParameters standard order parameter struct
    * @param counter counter of the offerer
@@ -417,6 +612,38 @@ export class Seaport {
 
     // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
     return ethers.utils.splitSignature(signature).compact;
+  }
+
+  /**
+   * Submits a request to your provider to sign the bulk order. Signed orders are used for off-chain order books.
+   * @param orderComponents standard order components struct
+   * @param accountAddress optional account address from which to sign the order with.
+   * @returns the orders with their signatures
+   */
+  public async signBulkOrder(
+    orderComponents: OrderComponents[],
+    accountAddress?: string
+  ): Promise<OrderWithCounter[]> {
+    const signer = this._getSigner(accountAddress);
+
+    const domainData = await this._getDomainData();
+
+    const tree = getBulkOrderTree(orderComponents);
+    const bulkOrderType = tree.types;
+    const chunks = tree.getDataToSign();
+    let signature = await signer._signTypedData(domainData, bulkOrderType, {
+      tree: chunks,
+    });
+
+    // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
+    signature = ethers.utils.splitSignature(signature).compact;
+
+    const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
+      parameters,
+      signature: tree.getEncodedProofAndSignature(i, signature),
+    }));
+
+    return orders;
   }
 
   /**
