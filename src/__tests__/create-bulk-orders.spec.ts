@@ -16,12 +16,15 @@ describeWithFixture(
       const { seaportv12Contract, seaportv12, testErc721 } = fixture;
 
       const [offerer, zone, randomSigner] = await ethers.getSigners();
+
       const nftId1 = "1";
       const nftId2 = "2";
       const nftId3 = "3";
-      await testErc721.mint(offerer.address, nftId1);
-      await testErc721.mint(offerer.address, nftId2);
-      await testErc721.mint(offerer.address, nftId3);
+      const nftIds = [nftId1, nftId2, nftId3];
+      for (const nftId of nftIds) {
+        await testErc721.mint(offerer.address, nftId);
+      }
+
       const startTime = "0";
       const endTime = MAX_INT.toString();
       const salt = generateRandomSalt();
@@ -86,7 +89,6 @@ describeWithFixture(
 
       // Validate each order
       for (const [index, order] of createdOrders.entries()) {
-        const nftIds = [nftId1, nftId2, nftId3];
         expect(order).to.deep.equal({
           parameters: {
             consideration: [
