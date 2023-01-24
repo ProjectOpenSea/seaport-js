@@ -1,5 +1,3 @@
-/* eslint-disable no-dupe-class-members */
-/* eslint-disable no-unused-vars */
 import { Logger } from "@ethersproject/logger";
 import { hexZeroPad } from "ethers/lib/utils";
 
@@ -60,6 +58,7 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
     }
   }
 
+  /* eslint-disable no-dupe-class-members */
   static from<Types extends EIP712TypeDefinitions>(
     types: Types
   ): DefaultMap<Types>;
@@ -77,6 +76,7 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
     if (type) return defaultValues[type];
     return defaultValues;
   }
+  /* eslint-enable no-dupe-class-members */
 
   getDefaultValue(type: string): any {
     if (this.defaultValues[type]) return this.defaultValues[type];
