@@ -237,11 +237,13 @@ export class Seaport {
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
+    const offererCounter = await this.getCounter(offerer);
 
     const allApprovalActions: ApprovalAction[] = [];
     const allOrderComponents: OrderComponents[] = [];
 
     for (const input of createOrderInput) {
+      input.counter ??= offererCounter;
       const { orderComponents, approvalActions } = await this._formatOrder(
         signer,
         offerer,
@@ -329,17 +331,6 @@ export class Seaport {
 
     const operator = this.config.conduitKeyToConduit[conduitKey];
 
-    const [resolvedCounter, balancesAndApprovals] = await Promise.all([
-      counter ?? this.getCounter(offerer),
-      getBalancesAndApprovals({
-        owner: offerer,
-        items: offerItems,
-        criterias: [],
-        multicallProvider: this.multicallProvider,
-        operator,
-      }),
-    ]);
-
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
       restrictedByZone,
@@ -375,25 +366,31 @@ export class Seaport {
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
       salt: saltFollowingConditional,
       conduitKey,
-      counter: resolvedCounter,
+      counter: counter ?? (await this.getCounter(offerer)),
     };
 
-    const checkBalancesAndApprovals =
-      this.config.balanceAndApprovalChecksOnOrderCreation;
+    const approvalActions: ApprovalAction[] = [];
 
-    const insufficientApprovals = checkBalancesAndApprovals
-      ? validateOfferBalancesAndApprovals({
-          offer: offerItems,
-          criterias: [],
-          balancesAndApprovals,
-          throwOnInsufficientBalances: checkBalancesAndApprovals,
-          operator,
-        })
-      : [];
+    if (this.config.balanceAndApprovalChecksOnOrderCreation) {
+      const balancesAndApprovals = await getBalancesAndApprovals({
+        owner: offerer,
+        items: offerItems,
+        criterias: [],
+        multicallProvider: this.multicallProvider,
+        operator,
+      });
 
-    const approvalActions = checkBalancesAndApprovals
-      ? await getApprovalActions(insufficientApprovals, signer)
-      : [];
+      const insufficientApprovals = validateOfferBalancesAndApprovals({
+        offer: offerItems,
+        criterias: [],
+        balancesAndApprovals,
+        throwOnInsufficientBalances: true,
+        operator,
+      });
+
+      const approvals = await getApprovalActions(insufficientApprovals, signer);
+      approvalActions.push(...approvals);
+    }
 
     return { orderComponents, approvalActions };
   }
@@ -507,7 +504,7 @@ export class Seaport {
       orderComponents
     );
 
-    // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
+    // Use EIP-2098 compact signatures to save gas.
     return ethers.utils.splitSignature(signature).compact;
   }
 
@@ -524,15 +521,18 @@ export class Seaport {
     const signer = this._getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
-
     const tree = getBulkOrderTree(orderComponents);
     const bulkOrderType = tree.types;
     const chunks = tree.getDataToSign();
-    let signature = await signer._signTypedData(domainData, bulkOrderType, {
-      tree: chunks,
-    });
+    const value = { tree: chunks };
 
-    // Use EIP-2098 compact signatures to save gas. https://eips.ethereum.org/EIPS/eip-2098
+    let signature = await signer._signTypedData(
+      domainData,
+      bulkOrderType,
+      value
+    );
+
+    // Use EIP-2098 compact signatures to save gas.
     signature = ethers.utils.splitSignature(signature).compact;
 
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
