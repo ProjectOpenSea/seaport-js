@@ -658,6 +658,7 @@ export class Seaport {
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
     domain = "",
+    exactApproval = false,
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -669,6 +670,7 @@ export class Seaport {
     conduitKey?: string;
     recipientAddress?: string;
     domain?: string;
+    exactApproval?: boolean;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -749,44 +751,50 @@ export class Seaport {
       shouldUseBasicFulfill(sanitizedOrder.parameters, totalFilled)
     ) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder({
+      return fulfillBasicOrder(
+        {
+          order: sanitizedOrder,
+          seaportContract: this.contract,
+          offererBalancesAndApprovals,
+          fulfillerBalancesAndApprovals,
+          timeBasedItemParams,
+          conduitKey,
+          offererOperator,
+          fulfillerOperator,
+          signer: fulfiller,
+          tips: tipConsiderationItems,
+          domain,
+        },
+        exactApproval
+      );
+    }
+
+    // Else, we fallback to the standard fulfill order
+    return fulfillStandardOrder(
+      {
         order: sanitizedOrder,
+        unitsToFill,
+        totalFilled,
+        totalSize: totalSize.eq(0)
+          ? getMaximumSizeForOrder(sanitizedOrder)
+          : totalSize,
+        offerCriteria,
+        considerationCriteria,
+        tips: tipConsiderationItems,
+        extraData,
         seaportContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
         conduitKey,
+        signer: fulfiller,
         offererOperator,
         fulfillerOperator,
-        signer: fulfiller,
-        tips: tipConsiderationItems,
+        recipientAddress,
         domain,
-      });
-    }
-
-    // Else, we fallback to the standard fulfill order
-    return fulfillStandardOrder({
-      order: sanitizedOrder,
-      unitsToFill,
-      totalFilled,
-      totalSize: totalSize.eq(0)
-        ? getMaximumSizeForOrder(sanitizedOrder)
-        : totalSize,
-      offerCriteria,
-      considerationCriteria,
-      tips: tipConsiderationItems,
-      extraData,
-      seaportContract: this.contract,
-      offererBalancesAndApprovals,
-      fulfillerBalancesAndApprovals,
-      timeBasedItemParams,
-      conduitKey,
-      signer: fulfiller,
-      offererOperator,
-      fulfillerOperator,
-      recipientAddress,
-      domain,
-    });
+      },
+      Boolean(exactApproval)
+    );
   }
 
   /**
@@ -807,6 +815,7 @@ export class Seaport {
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
     domain = "",
+    exactApproval = false,
   }: {
     fulfillOrderDetails: {
       order: OrderWithCounter;
@@ -820,6 +829,7 @@ export class Seaport {
     conduitKey?: string;
     recipientAddress?: string;
     domain?: string;
+    exactApproval?: boolean;
   }) {
     const fulfiller = this._getSigner(accountAddress);
 
@@ -910,6 +920,7 @@ export class Seaport {
       conduitKey,
       recipientAddress,
       domain,
+      exactApproval,
     });
   }
 
