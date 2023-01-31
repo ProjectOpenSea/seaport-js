@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { formatBytes32String, parseEther } from "ethers/lib/utils";
+import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { Seaport } from "../seaport";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
@@ -101,7 +101,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
-        zoneHash: formatBytes32String("0"),
+        zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
         counter: 0,
       },
@@ -216,7 +216,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
-        zoneHash: formatBytes32String("0"),
+        zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
         counter: 0,
       },
@@ -380,7 +380,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         startTime,
         totalOriginalConsiderationItems: 2,
         zone: ethers.constants.AddressZero,
-        zoneHash: formatBytes32String("0"),
+        zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
         counter: 0,
       },
@@ -592,7 +592,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           startTime,
           totalOriginalConsiderationItems: 2,
           zone: ethers.constants.AddressZero,
-          zoneHash: formatBytes32String("0"),
+          zoneHash: ethers.constants.HashZero,
           conduitKey: NO_CONDUIT,
           counter: 0,
         },

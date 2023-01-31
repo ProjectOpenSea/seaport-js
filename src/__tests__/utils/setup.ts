@@ -5,6 +5,7 @@ import type {
   TestERC20,
   TestERC1155,
   Seaport as SeaportContract,
+  SeaportAlphaVersion as Seaportv12Contract,
   DomainRegistry,
 } from "../../typechain";
 import chai from "chai";
@@ -16,7 +17,9 @@ chai.use(sinonChai);
 
 type Fixture = {
   seaportContract: SeaportContract;
+  seaportv12Contract: Seaportv12Contract;
   seaport: Seaport;
+  seaportv12: Seaport;
   domainRegistry: DomainRegistry;
   testErc721: TestERC721;
   testErc20: TestERC20;
@@ -33,6 +36,10 @@ export const describeWithFixture = (
     beforeEach(async () => {
       const SeaportFactory = await ethers.getContractFactory("Seaport");
 
+      const Seaportv12Factory = await ethers.getContractFactory(
+        "SeaportAlphaVersion"
+      );
+
       const ConduitControllerFactory = await ethers.getContractFactory(
         "ConduitController"
       );
@@ -40,6 +47,10 @@ export const describeWithFixture = (
       const conduitController = await ConduitControllerFactory.deploy();
 
       const seaportContract = await SeaportFactory.deploy(
+        conduitController.address
+      );
+
+      const seaportv12Contract = await Seaportv12Factory.deploy(
         conduitController.address
       );
 
@@ -58,6 +69,14 @@ export const describeWithFixture = (
         },
       });
 
+      const seaportv12 = new Seaport(ethers.provider, {
+        overrides: {
+          contractAddress: seaportv12Contract.address,
+          domainRegistryAddress: domainRegistry.address,
+        },
+        seaportVersion: "1.2",
+      });
+
       const TestERC721 = await ethers.getContractFactory("TestERC721");
       const testErc721 = await TestERC721.deploy();
       await testErc721.deployed();
@@ -73,7 +92,9 @@ export const describeWithFixture = (
       // In order for cb to get the correct fixture values we have
       // to pass a reference to an object that you we mutate.
       fixture.seaportContract = seaportContract;
+      fixture.seaportv12Contract = seaportv12Contract;
       fixture.seaport = seaport;
+      fixture.seaportv12 = seaportv12;
       fixture.domainRegistry = domainRegistry;
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;
