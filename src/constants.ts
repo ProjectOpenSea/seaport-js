@@ -1,12 +1,45 @@
 import { BigNumber } from "ethers";
 
 export const SEAPORT_CONTRACT_NAME = "Seaport";
+export const SEAPORT_CONTRACT_NAME_ALPHA = "Seaport-alpha";
 export const SEAPORT_CONTRACT_VERSION = "1.1";
+export const SEAPORT_CONTRACT_VERSION_V1_2 = "1.2";
 export const OPENSEA_CONDUIT_KEY =
   "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000";
 export const OPENSEA_CONDUIT_ADDRESS =
   "0x1e0049783f008a0085193e00003d00cd54003c71";
 export const EIP_712_ORDER_TYPE = {
+  OrderComponents: [
+    { name: "offerer", type: "address" },
+    { name: "zone", type: "address" },
+    { name: "offer", type: "OfferItem[]" },
+    { name: "consideration", type: "ConsiderationItem[]" },
+    { name: "orderType", type: "uint8" },
+    { name: "startTime", type: "uint256" },
+    { name: "endTime", type: "uint256" },
+    { name: "zoneHash", type: "bytes32" },
+    { name: "salt", type: "uint256" },
+    { name: "conduitKey", type: "bytes32" },
+    { name: "counter", type: "uint256" },
+  ],
+  OfferItem: [
+    { name: "itemType", type: "uint8" },
+    { name: "token", type: "address" },
+    { name: "identifierOrCriteria", type: "uint256" },
+    { name: "startAmount", type: "uint256" },
+    { name: "endAmount", type: "uint256" },
+  ],
+  ConsiderationItem: [
+    { name: "itemType", type: "uint8" },
+    { name: "token", type: "address" },
+    { name: "identifierOrCriteria", type: "uint256" },
+    { name: "startAmount", type: "uint256" },
+    { name: "endAmount", type: "uint256" },
+    { name: "recipient", type: "address" },
+  ],
+};
+export const EIP_712_BULK_ORDER_TYPE = {
+  BulkOrder: [{ name: "tree", type: "OrderComponents[2][2][2][2][2][2][2]" }],
   OrderComponents: [
     { name: "offerer", type: "address" },
     { name: "zone", type: "address" },
@@ -87,6 +120,9 @@ export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {
 
 export const CROSS_CHAIN_SEAPORT_ADDRESS =
   "0x00000000006c3852cbef3e08e8df289169ede581";
+
+export const CROSS_CHAIN_SEAPORT_V1_2_ADDRESS =
+  "0x000000000090d2b159528c290616cf919b24e1d9";
 
 export const DOMAIN_REGISTRY_ADDRESS =
   "0x000000000DaD0DE04D2B2D4a5A74581EBA94124A";
