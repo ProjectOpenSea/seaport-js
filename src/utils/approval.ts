@@ -64,7 +64,8 @@ export function getApprovalActions(
           identifierOrCriteria,
           requiredApprovedAmount,
         }) => {
-          if (isErc721Item(itemType) || isErc1155Item(itemType)) {
+          const isErc1155 = isErc1155Item(itemType);
+          if (isErc721Item(itemType) || isErc1155) {
             // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
             const contract = new Contract(token, ERC721ABI, signer) as ERC721;
 
@@ -76,8 +77,11 @@ export function getApprovalActions(
               operator,
               transactionMethods: getTransactionMethods(
                 contract.connect(signer),
-                "setApprovalForAll",
-                [operator, true]
+                exactApproval && !isErc1155 ? "approve" : "setApprovalForAll",
+                [
+                  operator,
+                  exactApproval && !isErc1155 ? identifierOrCriteria : true,
+                ]
               ),
             };
           } else {
