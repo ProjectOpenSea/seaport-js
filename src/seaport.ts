@@ -183,6 +183,7 @@ export class Seaport {
    * @param input.salt Arbitrary salt. If not passed in, a random salt will be generated with the first four bytes being the domain hash or empty.
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
+   * @param exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the list of actions needed to be performed in order to create the order
    */
   public async createOrder(
@@ -231,6 +232,7 @@ export class Seaport {
    * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
    *
    * @param input See {@link createOrder} for more details about the input parameters.
+   * @param exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the list of actions needed to be performed in order to create the orders
    */
   public async createBulkOrders(
@@ -773,6 +775,7 @@ export class Seaport {
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
+   * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -921,7 +924,7 @@ export class Seaport {
         recipientAddress,
         domain,
       },
-      Boolean(exactApproval)
+      exactApproval
     );
   }
 
@@ -935,6 +938,7 @@ export class Seaport {
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
+   * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
