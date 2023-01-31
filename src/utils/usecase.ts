@@ -25,11 +25,14 @@ export const executeAllActions = async <
 
   const finalAction = actions[actions.length - 1] as T;
 
-  return finalAction.type === "create"
-    ? await finalAction.createOrder()
-    : finalAction.type === "createBulk"
-    ? await finalAction.createBulkOrders()
-    : await finalAction.transactionMethods.transact();
+  switch (finalAction.type) {
+    case "create":
+      return finalAction.createOrder();
+    case "createBulk":
+      return finalAction.createBulkOrders();
+    default:
+      return finalAction.transactionMethods.transact();
+  }
 };
 
 const instanceOfOverrides = <
