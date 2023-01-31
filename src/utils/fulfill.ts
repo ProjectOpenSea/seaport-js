@@ -178,31 +178,34 @@ const offerAndConsiderationFulfillmentMapping: {
   },
 } as const;
 
-export async function fulfillBasicOrder({
-  order,
-  seaportContract,
-  offererBalancesAndApprovals,
-  fulfillerBalancesAndApprovals,
-  timeBasedItemParams,
-  offererOperator,
-  fulfillerOperator,
-  signer,
-  tips = [],
-  conduitKey = NO_CONDUIT,
-  domain,
-}: {
-  order: Order;
-  seaportContract: Seaport;
-  offererBalancesAndApprovals: BalancesAndApprovals;
-  fulfillerBalancesAndApprovals: BalancesAndApprovals;
-  timeBasedItemParams: TimeBasedItemParams;
-  offererOperator: string;
-  fulfillerOperator: string;
-  signer: Signer;
-  tips?: ConsiderationItem[];
-  conduitKey: string;
-  domain?: string;
-}): Promise<
+export async function fulfillBasicOrder(
+  {
+    order,
+    seaportContract,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    timeBasedItemParams,
+    offererOperator,
+    fulfillerOperator,
+    signer,
+    tips = [],
+    conduitKey = NO_CONDUIT,
+    domain,
+  }: {
+    order: Order;
+    seaportContract: Seaport;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    timeBasedItemParams: TimeBasedItemParams;
+    offererOperator: string;
+    fulfillerOperator: string;
+    signer: Signer;
+    tips?: ConsiderationItem[];
+    conduitKey: string;
+    domain?: string;
+  },
+  exactApproval: boolean
+): Promise<
   OrderUseCase<
     ExchangeAction<
       ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">
@@ -286,6 +289,7 @@ export async function fulfillBasicOrder({
 
   const approvalActions = await getApprovalActions(
     insufficientApprovals,
+    exactApproval,
     signer
   );
 
@@ -308,45 +312,48 @@ export async function fulfillBasicOrder({
   };
 }
 
-export async function fulfillStandardOrder({
-  order,
-  unitsToFill = 0,
-  totalSize,
-  totalFilled,
-  offerCriteria,
-  considerationCriteria,
-  tips = [],
-  extraData,
-  seaportContract,
-  offererBalancesAndApprovals,
-  fulfillerBalancesAndApprovals,
-  offererOperator,
-  fulfillerOperator,
-  timeBasedItemParams,
-  conduitKey,
-  recipientAddress,
-  signer,
-  domain,
-}: {
-  order: Order;
-  unitsToFill?: BigNumberish;
-  totalFilled: BigNumber;
-  totalSize: BigNumber;
-  offerCriteria: InputCriteria[];
-  considerationCriteria: InputCriteria[];
-  tips?: ConsiderationItem[];
-  extraData?: string;
-  seaportContract: Seaport;
-  offererBalancesAndApprovals: BalancesAndApprovals;
-  fulfillerBalancesAndApprovals: BalancesAndApprovals;
-  offererOperator: string;
-  fulfillerOperator: string;
-  conduitKey: string;
-  recipientAddress: string;
-  timeBasedItemParams: TimeBasedItemParams;
-  signer: Signer;
-  domain?: string;
-}): Promise<
+export async function fulfillStandardOrder(
+  {
+    order,
+    unitsToFill = 0,
+    totalSize,
+    totalFilled,
+    offerCriteria,
+    considerationCriteria,
+    tips = [],
+    extraData,
+    seaportContract,
+    offererBalancesAndApprovals,
+    fulfillerBalancesAndApprovals,
+    offererOperator,
+    fulfillerOperator,
+    timeBasedItemParams,
+    conduitKey,
+    recipientAddress,
+    signer,
+    domain,
+  }: {
+    order: Order;
+    unitsToFill?: BigNumberish;
+    totalFilled: BigNumber;
+    totalSize: BigNumber;
+    offerCriteria: InputCriteria[];
+    considerationCriteria: InputCriteria[];
+    tips?: ConsiderationItem[];
+    extraData?: string;
+    seaportContract: Seaport;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    fulfillerBalancesAndApprovals: BalancesAndApprovals;
+    offererOperator: string;
+    fulfillerOperator: string;
+    conduitKey: string;
+    recipientAddress: string;
+    timeBasedItemParams: TimeBasedItemParams;
+    signer: Signer;
+    domain?: string;
+  },
+  exactApproval: boolean
+): Promise<
   OrderUseCase<
     ExchangeAction<
       ContractMethodReturnType<
@@ -421,6 +428,7 @@ export async function fulfillStandardOrder({
 
   const approvalActions = await getApprovalActions(
     insufficientApprovals,
+    exactApproval,
     signer
   );
 
@@ -529,6 +537,7 @@ export async function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
+  exactApproval,
   domain,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
@@ -540,6 +549,7 @@ export async function fulfillAvailableOrders({
   conduitKey: string;
   signer: Signer;
   recipientAddress: string;
+  exactApproval: boolean;
   domain?: string;
 }): Promise<
   OrderUseCase<
@@ -665,6 +675,7 @@ export async function fulfillAvailableOrders({
 
   const approvalActions = await getApprovalActions(
     totalInsufficientApprovals,
+    exactApproval,
     signer
   );
 

@@ -183,11 +183,13 @@ export class Seaport {
    * @param input.salt Arbitrary salt. If not passed in, a random salt will be generated with the first four bytes being the domain hash or empty.
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
+   * @param exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the list of actions needed to be performed in order to create the order
    */
   public async createOrder(
     input: CreateOrderInput,
-    accountAddress?: string
+    accountAddress?: string,
+    exactApproval?: boolean
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
@@ -195,6 +197,7 @@ export class Seaport {
     const { orderComponents, approvalActions } = await this._formatOrder(
       signer,
       offerer,
+      Boolean(exactApproval),
       input
     );
 
@@ -229,11 +232,13 @@ export class Seaport {
    * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
    *
    * @param input See {@link createOrder} for more details about the input parameters.
+   * @param exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the list of actions needed to be performed in order to create the orders
    */
   public async createBulkOrders(
     createOrderInput: CreateOrderInput[],
-    accountAddress?: string
+    accountAddress?: string,
+    exactApproval?: boolean
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
@@ -247,6 +252,7 @@ export class Seaport {
       const { orderComponents, approvalActions } = await this._formatOrder(
         signer,
         offerer,
+        Boolean(exactApproval),
         input
       );
 
@@ -289,6 +295,7 @@ export class Seaport {
   private async _formatOrder(
     signer: Signer,
     offerer: string,
+    exactApproval: boolean,
     {
       conduitKey = this.defaultConduitKey,
       zone = ethers.constants.AddressZero,
@@ -388,7 +395,11 @@ export class Seaport {
         operator,
       });
 
-      const approvals = await getApprovalActions(insufficientApprovals, signer);
+      const approvals = await getApprovalActions(
+        insufficientApprovals,
+        exactApproval,
+        signer
+      );
       approvalActions.push(...approvals);
     }
 
@@ -764,6 +775,7 @@ export class Seaport {
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
+   * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -777,6 +789,7 @@ export class Seaport {
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
     domain = "",
+    exactApproval = false,
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -788,6 +801,7 @@ export class Seaport {
     conduitKey?: string;
     recipientAddress?: string;
     domain?: string;
+    exactApproval?: boolean;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -868,44 +882,50 @@ export class Seaport {
       shouldUseBasicFulfill(sanitizedOrder.parameters, totalFilled)
     ) {
       // TODO: Use fulfiller proxy if there are approvals needed directly, but none needed for proxy
-      return fulfillBasicOrder({
+      return fulfillBasicOrder(
+        {
+          order: sanitizedOrder,
+          seaportContract: this.contract,
+          offererBalancesAndApprovals,
+          fulfillerBalancesAndApprovals,
+          timeBasedItemParams,
+          conduitKey,
+          offererOperator,
+          fulfillerOperator,
+          signer: fulfiller,
+          tips: tipConsiderationItems,
+          domain,
+        },
+        exactApproval
+      );
+    }
+
+    // Else, we fallback to the standard fulfill order
+    return fulfillStandardOrder(
+      {
         order: sanitizedOrder,
+        unitsToFill,
+        totalFilled,
+        totalSize: totalSize.eq(0)
+          ? getMaximumSizeForOrder(sanitizedOrder)
+          : totalSize,
+        offerCriteria,
+        considerationCriteria,
+        tips: tipConsiderationItems,
+        extraData,
         seaportContract: this.contract,
         offererBalancesAndApprovals,
         fulfillerBalancesAndApprovals,
         timeBasedItemParams,
         conduitKey,
+        signer: fulfiller,
         offererOperator,
         fulfillerOperator,
-        signer: fulfiller,
-        tips: tipConsiderationItems,
+        recipientAddress,
         domain,
-      });
-    }
-
-    // Else, we fallback to the standard fulfill order
-    return fulfillStandardOrder({
-      order: sanitizedOrder,
-      unitsToFill,
-      totalFilled,
-      totalSize: totalSize.eq(0)
-        ? getMaximumSizeForOrder(sanitizedOrder)
-        : totalSize,
-      offerCriteria,
-      considerationCriteria,
-      tips: tipConsiderationItems,
-      extraData,
-      seaportContract: this.contract,
-      offererBalancesAndApprovals,
-      fulfillerBalancesAndApprovals,
-      timeBasedItemParams,
-      conduitKey,
-      signer: fulfiller,
-      offererOperator,
-      fulfillerOperator,
-      recipientAddress,
-      domain,
-    });
+      },
+      exactApproval
+    );
   }
 
   /**
@@ -918,6 +938,7 @@ export class Seaport {
    * @param input.recipientAddress optional recipient to forward the offer to as opposed to the fulfiller.
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
+   * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
@@ -926,6 +947,7 @@ export class Seaport {
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
     domain = "",
+    exactApproval = false,
   }: {
     fulfillOrderDetails: {
       order: OrderWithCounter;
@@ -939,6 +961,7 @@ export class Seaport {
     conduitKey?: string;
     recipientAddress?: string;
     domain?: string;
+    exactApproval?: boolean;
   }) {
     const fulfiller = this._getSigner(accountAddress);
 
@@ -1029,6 +1052,7 @@ export class Seaport {
       conduitKey,
       recipientAddress,
       domain,
+      exactApproval,
     });
   }
 
