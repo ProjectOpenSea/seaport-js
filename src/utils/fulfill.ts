@@ -537,6 +537,7 @@ export async function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
+  exactApproval,
   domain,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
