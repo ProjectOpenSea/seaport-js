@@ -56,39 +56,47 @@ export function getApprovalActions(
           index === insufficientApprovals.length - 1 ||
           insufficientApprovals[index + 1].token !== approval.token
       )
-      .map(async ({ token, operator, itemType, identifierOrCriteria }) => {
-        if (isErc721Item(itemType) || isErc1155Item(itemType)) {
-          // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-          const contract = new Contract(token, ERC721ABI, signer) as ERC721;
+      .map(
+        async ({
+          token,
+          operator,
+          itemType,
+          identifierOrCriteria,
+          requiredApprovedAmount,
+        }) => {
+          if (isErc721Item(itemType) || isErc1155Item(itemType)) {
+            // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
+            const contract = new Contract(token, ERC721ABI, signer) as ERC721;
 
-          return {
-            type: "approval",
-            token,
-            identifierOrCriteria,
-            itemType,
-            operator,
-            transactionMethods: getTransactionMethods(
-              contract.connect(signer),
-              "setApprovalForAll",
-              [operator, true]
-            ),
-          };
-        } else {
-          const contract = new Contract(token, ERC20ABI, signer) as ERC20;
+            return {
+              type: "approval",
+              token,
+              identifierOrCriteria,
+              itemType,
+              operator,
+              transactionMethods: getTransactionMethods(
+                contract.connect(signer),
+                "setApprovalForAll",
+                [operator, true]
+              ),
+            };
+          } else {
+            const contract = new Contract(token, ERC20ABI, signer) as ERC20;
 
-          return {
-            type: "approval",
-            token,
-            identifierOrCriteria,
-            itemType,
-            transactionMethods: getTransactionMethods(
-              contract.connect(signer),
-              "approve",
-              [operator, MAX_INT]
-            ),
-            operator,
-          };
+            return {
+              type: "approval",
+              token,
+              identifierOrCriteria,
+              itemType,
+              transactionMethods: getTransactionMethods(
+                contract.connect(signer),
+                "approve",
+                [operator, exactApproval ? requiredApprovedAmount : MAX_INT]
+              ),
+              operator,
+            };
+          }
         }
-      })
+      )
   );
 }
