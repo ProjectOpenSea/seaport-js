@@ -325,7 +325,7 @@ export type SeaportContract = TypeChainSeaportContract & {
     ): Promise<BigNumber>;
   };
 
-  populateTranscation: TypeChainSeaportContract["populateTransaction"] & {
+  populateTransaction: TypeChainSeaportContract["populateTransaction"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
