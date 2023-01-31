@@ -46,6 +46,7 @@ export const approvedItemAmount = async (
  */
 export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
+  exactApproval: boolean,
   signer: Signer
 ): Promise<ApprovalAction[]> {
   return Promise.all(

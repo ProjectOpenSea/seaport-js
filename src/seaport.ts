@@ -222,7 +222,8 @@ export class Seaport {
       domain,
       salt,
     }: CreateOrderInput,
-    accountAddress?: string
+    accountAddress?: string,
+    exactApproval?: boolean
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
@@ -316,7 +317,11 @@ export class Seaport {
       : [];
 
     const approvalActions = checkBalancesAndApprovals
-      ? await getApprovalActions(insufficientApprovals, signer)
+      ? await getApprovalActions(
+          insufficientApprovals,
+          Boolean(exactApproval),
+          signer
+        )
       : [];
 
     const createOrderAction = {
