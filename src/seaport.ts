@@ -187,7 +187,8 @@ export class Seaport {
    */
   public async createOrder(
     input: CreateOrderInput,
-    accountAddress?: string
+    accountAddress?: string,
+    exactApproval?: boolean
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
@@ -195,6 +196,7 @@ export class Seaport {
     const { orderComponents, approvalActions } = await this._formatOrder(
       signer,
       offerer,
+      Boolean(exactApproval),
       input
     );
 
@@ -233,7 +235,8 @@ export class Seaport {
    */
   public async createBulkOrders(
     createOrderInput: CreateOrderInput[],
-    accountAddress?: string
+    accountAddress?: string,
+    exactApproval?: boolean
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
@@ -247,6 +250,7 @@ export class Seaport {
       const { orderComponents, approvalActions } = await this._formatOrder(
         signer,
         offerer,
+        Boolean(exactApproval),
         input
       );
 
@@ -302,7 +306,7 @@ export class Seaport {
       restrictedByZone,
       fees,
       domain,
-      salt
+      salt,
     }: CreateOrderInput
   ) {
     const offerItems = offer.map(mapInputItemToOfferItem);
@@ -389,7 +393,11 @@ export class Seaport {
         operator,
       });
 
-      const approvals = await getApprovalActions(insufficientApprovals, exactApproval, signer);
+      const approvals = await getApprovalActions(
+        insufficientApprovals,
+        exactApproval,
+        signer
+      );
       approvalActions.push(...approvals);
     }
 
