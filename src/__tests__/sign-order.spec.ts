@@ -58,7 +58,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       endTime,
       zoneHash: ethers.constants.HashZero,
       conduitKey: NO_CONDUIT,
-      counter: counter.toNumber(),
+      counter,
     };
 
     const signature = await seaport.signOrder(orderComponents);

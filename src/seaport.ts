@@ -625,10 +625,8 @@ export class Seaport {
    * @param offerer the offerer to get the counter of
    * @returns counter as a number
    */
-  public getCounter(offerer: string): Promise<number> {
-    return this.contract
-      .getCounter(offerer)
-      .then((counter) => counter.toNumber());
+  public getCounter(offerer: string): Promise<BigNumber> {
+    return this.contract.getCounter(offerer);
   }
 
   /**
