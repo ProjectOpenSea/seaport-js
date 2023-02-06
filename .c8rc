@@ -1,5 +1,5 @@
 {
-    "reporter": ["lcov","text"],
-    "src": ["src"],
-    "exclude": ["hardhat.config.ts", "src/__tests__/*", "src/abi/*"]
+  "reporter": ["lcov", "text"],
+  "src": ["src"],
+  "exclude": ["hardhat.config.ts", "src/__tests__/*", "src/abi/*"]
 }
