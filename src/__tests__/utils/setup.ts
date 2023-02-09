@@ -5,7 +5,6 @@ import type {
   TestERC20,
   TestERC1155,
   Seaport as SeaportContract,
-  SeaportAlphaVersion as Seaportv12Contract,
   DomainRegistry,
 } from "../../typechain";
 import chai from "chai";
@@ -17,7 +16,7 @@ chai.use(sinonChai);
 
 type Fixture = {
   seaportContract: SeaportContract;
-  seaportv12Contract: Seaportv12Contract;
+  seaportv12Contract: SeaportContract;
   seaport: Seaport;
   seaportv12: Seaport;
   domainRegistry: DomainRegistry;
@@ -34,10 +33,12 @@ export const describeWithFixture = (
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {
-      const SeaportFactory = await ethers.getContractFactory("Seaport");
+      const SeaportFactory = await ethers.getContractFactory(
+        "seaport/contracts/Seaport.sol:Seaport"
+      );
 
       const Seaportv12Factory = await ethers.getContractFactory(
-        "SeaportAlphaVersion"
+        "seaport_v1_2/contracts/Seaport.sol:Seaport"
       );
 
       const ConduitControllerFactory = await ethers.getContractFactory(
@@ -46,13 +47,13 @@ export const describeWithFixture = (
 
       const conduitController = await ConduitControllerFactory.deploy();
 
-      const seaportContract = await SeaportFactory.deploy(
+      const seaportContract = (await SeaportFactory.deploy(
         conduitController.address
-      );
+      )) as SeaportContract;
 
-      const seaportv12Contract = await Seaportv12Factory.deploy(
+      const seaportv12Contract = (await Seaportv12Factory.deploy(
         conduitController.address
-      );
+      )) as SeaportContract;
 
       await seaportContract.deployed();
 

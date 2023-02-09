@@ -13,7 +13,6 @@ import { SeaportABI } from "./abi/Seaport";
 import { SeaportABIv12 } from "./abi/Seaport_v1_2";
 import {
   SEAPORT_CONTRACT_NAME,
-  SEAPORT_CONTRACT_NAME_ALPHA,
   SEAPORT_CONTRACT_VERSION,
   SEAPORT_CONTRACT_VERSION_V1_2,
   EIP_712_ORDER_TYPE,
@@ -447,10 +446,7 @@ export class Seaport {
     const { chainId } = await this.provider.getNetwork();
 
     return {
-      name:
-        this.config.seaportVersion === "1.2"
-          ? SEAPORT_CONTRACT_NAME_ALPHA
-          : SEAPORT_CONTRACT_NAME,
+      name: SEAPORT_CONTRACT_NAME,
       version:
         this.config.seaportVersion === "1.2"
           ? SEAPORT_CONTRACT_VERSION_V1_2
