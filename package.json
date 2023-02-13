@@ -28,10 +28,10 @@
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
     "lint": "concurrently \"npm run check-types\" \"npm run eslint:check\" \"npm run prettier:check\" \"npm run prettier:check:package.json\"",
     "prepare": "husky install && npm run build",
-    "test": "hardhat test",
     "prettier:check": "prettier --check .",
     "prettier:check:package.json": "prettier-package-json --list-different",
-    "prettier:fix": "prettier --write ."
+    "prettier:fix": "prettier --write .",
+    "test": "hardhat test"
   },
   "types": "lib/index.d.ts",
   "resolutions": {
@@ -92,7 +92,7 @@
     "prettier-package-json": "^2.6.3",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
     "seaport": "ProjectOpenSea/seaport#76e508657888e3ec84039e1da269c822826991ef",
-    "seaportv12": "ProjectOpenSea/seaport#1.2-alpha-deploy",
+    "seaport_v1_2": "ProjectOpenSea/seaport#1.2",
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
     "solhint": "^3.3.7",
