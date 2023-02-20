@@ -29,7 +29,7 @@ export type SeaportConfig = {
   conduitKeyToConduit?: Record<string, string>;
 
   // The Seaport version to use
-  seaportVersion?: "1.1" | "1.2";
+  seaportVersion?: "1.1" | "1.4";
 
   overrides?: {
     contractAddress?: string;

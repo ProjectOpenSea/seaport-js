@@ -75,7 +75,7 @@ export const describeWithFixture = (
           contractAddress: seaportv12Contract.address,
           domainRegistryAddress: domainRegistry.address,
         },
-        seaportVersion: "1.2",
+        seaportVersion: "1.4",
       });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");
