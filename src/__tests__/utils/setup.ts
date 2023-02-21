@@ -38,7 +38,7 @@ export const describeWithFixture = (
       );
 
       const Seaportv12Factory = await ethers.getContractFactory(
-        "seaport_v1_2/contracts/Seaport.sol:Seaport"
+        "seaport_v1_4/contracts/Seaport.sol:Seaport"
       );
 
       const ConduitControllerFactory = await ethers.getContractFactory(
