@@ -92,7 +92,7 @@
     "prettier-package-json": "^2.6.3",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
     "seaport": "ProjectOpenSea/seaport#76e508657888e3ec84039e1da269c822826991ef",
-    "seaport_v1_2": "ProjectOpenSea/seaport#1.2",
+    "seaport_v1_4": "ProjectOpenSea/seaport#1.4",
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
     "solhint": "^3.3.7",

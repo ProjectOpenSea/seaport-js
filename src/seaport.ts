@@ -10,11 +10,11 @@ import {
 import { _TypedDataEncoder } from "ethers/lib/utils";
 import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABI } from "./abi/Seaport";
-import { SeaportABIv12 } from "./abi/Seaport_v1_2";
+import { SeaportABIv14 } from "./abi/Seaport_v1_4";
 import {
   SEAPORT_CONTRACT_NAME,
   SEAPORT_CONTRACT_VERSION,
-  SEAPORT_CONTRACT_VERSION_V1_2,
+  SEAPORT_CONTRACT_VERSION_V1_4,
   EIP_712_ORDER_TYPE,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
@@ -23,7 +23,7 @@ import {
   OrderType,
   CROSS_CHAIN_SEAPORT_ADDRESS,
   DOMAIN_REGISTRY_ADDRESS,
-  CROSS_CHAIN_SEAPORT_V1_2_ADDRESS,
+  CROSS_CHAIN_SEAPORT_V1_4_ADDRESS,
 } from "./constants";
 import type {
   SeaportConfig,
@@ -131,10 +131,10 @@ export class Seaport {
 
     this.contract = new Contract(
       overrides?.contractAddress ??
-        (seaportVersion === "1.2"
-          ? CROSS_CHAIN_SEAPORT_V1_2_ADDRESS
+        (seaportVersion === "1.4"
+          ? CROSS_CHAIN_SEAPORT_V1_4_ADDRESS
           : CROSS_CHAIN_SEAPORT_ADDRESS),
-      seaportVersion === "1.2" ? SeaportABIv12 : SeaportABI,
+      seaportVersion === "1.4" ? SeaportABIv14 : SeaportABI,
       this.multicallProvider
     ) as SeaportContract;
 
@@ -448,8 +448,8 @@ export class Seaport {
     return {
       name: SEAPORT_CONTRACT_NAME,
       version:
-        this.config.seaportVersion === "1.2"
-          ? SEAPORT_CONTRACT_VERSION_V1_2
+        this.config.seaportVersion === "1.4"
+          ? SEAPORT_CONTRACT_VERSION_V1_4
           : SEAPORT_CONTRACT_VERSION,
       chainId,
       verifyingContract: this.contract.address,

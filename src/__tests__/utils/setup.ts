@@ -38,7 +38,7 @@ export const describeWithFixture = (
       );
 
       const Seaportv12Factory = await ethers.getContractFactory(
-        "seaport_v1_2/contracts/Seaport.sol:Seaport"
+        "seaport_v1_4/contracts/Seaport.sol:Seaport"
       );
 
       const ConduitControllerFactory = await ethers.getContractFactory(
@@ -75,7 +75,7 @@ export const describeWithFixture = (
           contractAddress: seaportv12Contract.address,
           domainRegistryAddress: domainRegistry.address,
         },
-        seaportVersion: "1.2",
+        seaportVersion: "1.4",
       });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");
