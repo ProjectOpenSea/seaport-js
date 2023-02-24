@@ -239,7 +239,7 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
-    if (this.config.seaportVersion !== "1.4") {
+    if (this.config.seaportVersion === "1.1") {
       throw new Error(
         "Bulk order signatures are only available on Seaport v1.4"
       );
