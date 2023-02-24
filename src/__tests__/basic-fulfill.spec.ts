@@ -27,6 +27,8 @@ describeWithFixture(
     const erc1155Amount = "3";
     const OPENSEA_DOMAIN = "opensea.io";
 
+    console.log("basic-fulfill");
+
     beforeEach(async () => {
       fulfillBasicOrderSpy = sinon.spy(fulfill, "fulfillBasicOrder");
 
