@@ -239,6 +239,12 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
+    if (this.config.seaportVersion !== "1.4") {
+      throw new Error(
+        "Bulk order signatures are only available on Seaport v1.4"
+      );
+    }
+
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
     const offererCounter = await this.getCounter(offerer);
