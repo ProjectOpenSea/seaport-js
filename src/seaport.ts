@@ -378,7 +378,7 @@ export class Seaport {
       totalOriginalConsiderationItems: considerationItemsWithFees.length,
       salt: saltFollowingConditional,
       conduitKey,
-      counter: counter ?? (await this.getCounter(offerer)),
+      counter: (counter ?? (await this.getCounter(offerer))).toString(),
     };
 
     const approvalActions: ApprovalAction[] = [];
