@@ -6,7 +6,6 @@ import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import { ApprovalAction, CreateOrderAction } from "../types";
 import { generateRandomSalt } from "../utils/order";
 import { describeWithFixture } from "./utils/setup";
-import { BigNumber } from "ethers";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
@@ -104,7 +103,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
-        counter: BigNumber.from(0),
+        counter: "0",
       },
       signature: order.signature,
     });
@@ -219,7 +218,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
-        counter: BigNumber.from(0),
+        counter: "0",
       },
       signature: order.signature,
     });
@@ -383,7 +382,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
-        counter: BigNumber.from(0),
+        counter: "0",
       },
       signature: order.signature,
     });
@@ -595,7 +594,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           zone: ethers.constants.AddressZero,
           zoneHash: ethers.constants.HashZero,
           conduitKey: NO_CONDUIT,
-          counter: BigNumber.from(0),
+          counter: "0",
         },
         signature: order.signature,
       });
