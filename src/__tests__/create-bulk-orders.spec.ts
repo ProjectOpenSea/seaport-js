@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import {
@@ -128,7 +129,7 @@ describeWithFixture(
             zone: ethers.constants.AddressZero,
             zoneHash: ethers.constants.HashZero,
             conduitKey: NO_CONDUIT,
-            counter: "0",
+            counter: BigNumber.from(0),
           },
           signature: order.signature,
         });
