@@ -84,9 +84,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC721 <=> ETH", async () => {
-        const { seaport } = fixture;
+        const { seaportv12 } = fixture;
 
-        const { executeAllActions } = await seaport.createOrder(
+        const { executeAllActions } = await seaportv12.createOrder(
           standardCreateOrderInput
         );
 
@@ -112,7 +112,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await seaport.fulfillOrder({
+        const { actions } = await seaportv12.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
           domain: GEM_DOMAIN,
@@ -298,9 +298,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
       });
 
       it("ERC721 <=> ETH", async () => {
-        const { seaport } = fixture;
+        const { seaportv12 } = fixture;
 
-        const { executeAllActions } = await seaport.createOrder(
+        const { executeAllActions } = await seaportv12.createOrder(
           standardCreateOrderInput
         );
 
@@ -326,7 +326,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         ]);
         await ethers.provider.send("evm_mine", []);
 
-        const { actions } = await seaport.fulfillOrder({
+        const { actions } = await seaportv12.fulfillOrder({
           order,
           accountAddress: fulfiller.address,
           domain: GEM_DOMAIN,

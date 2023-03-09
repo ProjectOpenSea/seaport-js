@@ -23,69 +23,69 @@ describeWithFixture(
     ).slice(0, 10);
 
     beforeEach(async () => {
-      const { seaport } = fixture;
+      const { seaportv12 } = fixture;
 
       [user] = await ethers.getSigners();
 
-      await seaport
+      await seaportv12
         .setDomain(expectedExampleDomainArray[0], user.address)
         .transact();
 
-      await seaport
+      await seaportv12
         .setDomain(expectedExampleDomainArray[1], user.address)
         .transact();
 
-      await seaport
+      await seaportv12
         .setDomain(expectedExampleDomainArray[2], user.address)
         .transact();
 
-      await seaport
+      await seaportv12
         .setDomain(expectedExampleDomainArray[3], user.address)
         .transact();
     });
 
     it("Should return the proper domain for a given tag", async () => {
-      const { seaport } = fixture;
+      const { seaportv12 } = fixture;
 
-      await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
+      await seaportv12.setDomain(OPENSEA_DOMAIN, user.address).transact();
 
-      expect(await seaport.getDomain(OPENSEA_TAG, 0)).to.eq(OPENSEA_DOMAIN);
+      expect(await seaportv12.getDomain(OPENSEA_TAG, 0)).to.eq(OPENSEA_DOMAIN);
 
-      expect(await seaport.getDomain(exampleTag, 0)).to.eq(
+      expect(await seaportv12.getDomain(exampleTag, 0)).to.eq(
         expectedExampleDomainArray[0]
       );
 
-      expect(await seaport.getDomain(exampleTag, 1)).to.eq(
+      expect(await seaportv12.getDomain(exampleTag, 1)).to.eq(
         expectedExampleDomainArray[1]
       );
 
-      expect(await seaport.getDomain(exampleTag, 2)).to.eq(
+      expect(await seaportv12.getDomain(exampleTag, 2)).to.eq(
         expectedExampleDomainArray[2]
       );
 
-      expect(await seaport.getDomain(exampleTag, 3)).to.eq(
+      expect(await seaportv12.getDomain(exampleTag, 3)).to.eq(
         expectedExampleDomainArray[3]
       );
     });
 
     it("Should return the array of registered domains for a given tag", async () => {
-      const { seaport } = fixture;
+      const { seaportv12 } = fixture;
 
-      expect(await seaport.getDomains(exampleTag)).to.deep.eq(
+      expect(await seaportv12.getDomains(exampleTag)).to.deep.eq(
         expectedExampleDomainArray
       );
     });
 
     it("Should return the number of registered domains for a given tag", async () => {
-      const { seaport } = fixture;
+      const { seaportv12 } = fixture;
 
-      expect(await seaport.getNumberOfDomains(exampleTag)).to.eq(4);
+      expect(await seaportv12.getNumberOfDomains(exampleTag)).to.eq(4);
     });
 
     it("Should return an array of domains even if getDomains should throw", async () => {
-      const { seaport } = fixture;
+      const { seaportv12 } = fixture;
 
-      expect(await seaport.getDomains(exampleTag, true)).to.deep.eq(
+      expect(await seaportv12.getDomains(exampleTag, true)).to.deep.eq(
         expectedExampleDomainArray
       );
     });
