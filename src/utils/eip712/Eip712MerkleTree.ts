@@ -17,12 +17,11 @@ import {
   hexToBuffer,
 } from "./utils";
 
-import type { OrderComponents } from "../../types";
 import type { EIP712TypeDefinitions } from "./defaults";
 
-type BulkOrderElements =
-  | [OrderComponents, OrderComponents]
-  | [BulkOrderElements, BulkOrderElements];
+type BulkOrderElements<T> =
+  | [T, T]
+  | [BulkOrderElements<T>, BulkOrderElements<T>];
 
 const getTree = (leaves: string[], defaultLeafHash: string) =>
   new MerkleTree(leaves.map(hexToBuffer), bufferKeccak, {
@@ -84,7 +83,7 @@ export class Eip712MerkleTree<BaseType extends Record<string, any> = any> {
     return encodeProof(i, proof, signature);
   }
 
-  getDataToSign(): BulkOrderElements {
+  getDataToSign(): BulkOrderElements<BaseType> {
     let layer = this.getCompleteElements() as any;
     while (layer.length > 2) {
       layer = chunk(layer, 2);
