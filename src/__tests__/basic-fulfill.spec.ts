@@ -68,9 +68,9 @@ describeWithFixture(
 
         describe("with ETH", () => {
           it("ERC721 <=> ETH", async () => {
-            const { seaportv12 } = fixture;
+            const { seaport } = fixture;
 
-            const { executeAllActions } = await seaportv12.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -83,7 +83,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await seaportv12.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
               domain: OPENSEA_DOMAIN,
@@ -109,8 +109,8 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ETH (already validated order)", async () => {
-            const { seaportv12 } = fixture;
-            const { executeAllActions } = await seaportv12.createOrder(
+            const { seaport } = fixture;
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -119,7 +119,7 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { actions } = await seaportv12.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
               domain: OPENSEA_DOMAIN,
@@ -132,7 +132,7 @@ describeWithFixture(
               action.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await seaportv12.validate([order], offerer.address).transact();
+            await seaport.validate([order], offerer.address).transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
@@ -439,9 +439,9 @@ describeWithFixture(
 
         describe("with ETH", () => {
           it("ERC1155 <=> ETH", async () => {
-            const { seaportv12 } = fixture;
+            const { seaport } = fixture;
 
-            const { executeAllActions } = await seaportv12.createOrder(
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
               offerer.address
             );
@@ -455,7 +455,7 @@ describeWithFixture(
                 multicallProvider
               );
 
-            const { actions } = await seaportv12.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
               domain: OPENSEA_DOMAIN,
@@ -484,8 +484,8 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ETH (already validated order)", async () => {
-            const { seaportv12 } = fixture;
-            const { executeAllActions } = await seaportv12.createOrder(
+            const { seaport } = fixture;
+            const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
             );
 
@@ -494,7 +494,7 @@ describeWithFixture(
             // Remove signature
             order.signature = "0x";
 
-            const { actions } = await seaportv12.fulfillOrder({
+            const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,
               domain: OPENSEA_DOMAIN,
@@ -507,7 +507,7 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact()
             ).to.be.revertedWith("InvalidSigner");
 
-            await seaportv12.validate([order], offerer.address).transact();
+            await seaport.validate([order], offerer.address).transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(

@@ -69,9 +69,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
 
       describe("with ETH", () => {
         it("ERC721 <=> ETH", async () => {
-          const { seaportv12 } = fixture;
+          const { seaport } = fixture;
 
-          const { executeAllActions } = await seaportv12.createOrder(
+          const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput
           );
 
@@ -90,7 +90,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               multicallProvider
             );
 
-          const transaction = await seaportv12
+          const transaction = await seaport
             .matchOrders({
               orders: [order, counterOrder],
               fulfillments,
@@ -230,9 +230,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
 
       describe("with ETH", () => {
         it("ERC1155 <=> ETH", async () => {
-          const { seaportv12 } = fixture;
+          const { seaport } = fixture;
 
-          const { executeAllActions } = await seaportv12.createOrder(
+          const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput
           );
 
@@ -251,7 +251,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               multicallProvider
             );
 
-          const transaction = await seaportv12
+          const transaction = await seaport
             .matchOrders({
               orders: [order, counterOrder],
               fulfillments,

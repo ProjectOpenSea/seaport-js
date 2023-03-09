@@ -44,13 +44,13 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
   });
 
   it("validate then bulk cancel orders", async () => {
-    const { seaportv12 } = fixture;
+    const { seaport } = fixture;
 
-    const { executeAllActions } = await seaportv12.createOrder(
+    const { executeAllActions } = await seaport.createOrder(
       standardCreateOrderInput
     );
     const executeAllActionsOnChainOrder = (
-      await seaportv12.createOrder(standardCreateOrderInput)
+      await seaport.createOrder(standardCreateOrderInput)
     ).executeAllActions;
 
     const offChainOrder = await executeAllActions();
@@ -59,17 +59,17 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     // Remove signature
     onChainOrder.signature = "0x";
 
-    await seaportv12.validate([onChainOrder], offerer.address).transact();
-    await seaportv12.bulkCancelOrders(offerer.address).transact();
+    await seaport.validate([onChainOrder], offerer.address).transact();
+    await seaport.bulkCancelOrders(offerer.address).transact();
 
     const { executeAllActions: executeAllFulfillActionsOffChainOrder } =
-      await seaportv12.fulfillOrder({
+      await seaport.fulfillOrder({
         order: offChainOrder,
         accountAddress: fulfiller.address,
       });
 
     const { executeAllActions: executeAllFulfillActionsOnChainOrder } =
-      await seaportv12.fulfillOrder({
+      await seaport.fulfillOrder({
         order: onChainOrder,
         accountAddress: fulfiller.address,
       });
@@ -77,15 +77,15 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     await expect(executeAllFulfillActionsOffChainOrder()).to.be.reverted;
     await expect(executeAllFulfillActionsOnChainOrder()).to.be.reverted;
 
-    expect(await seaportv12.getCounter(offerer.address)).to.deep.equal(
+    expect(await seaport.getCounter(offerer.address)).to.deep.equal(
       BigNumber.from(offChainOrder.parameters.counter).add(1)
     );
   });
 
   it("validate then cancel single order", async () => {
-    const { seaportv12 } = fixture;
+    const { seaport } = fixture;
 
-    const { executeAllActions } = await seaportv12.createOrder(
+    const { executeAllActions } = await seaport.createOrder(
       standardCreateOrderInput
     );
     const order = await executeAllActions();
@@ -93,17 +93,15 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     // Remove signature
     order.signature = "0x";
 
-    await seaportv12.validate([order], offerer.address).transact();
-    const orderHash = seaportv12.getOrderHash(order.parameters);
-    expect(await seaportv12.getOrderStatus(orderHash)).to.have.property(
+    await seaport.validate([order], offerer.address).transact();
+    const orderHash = seaport.getOrderHash(order.parameters);
+    expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isValidated",
       true
     );
 
-    await seaportv12
-      .cancelOrders([order.parameters], offerer.address)
-      .transact();
-    expect(await seaportv12.getOrderStatus(orderHash)).to.have.property(
+    await seaport.cancelOrders([order.parameters], offerer.address).transact();
+    expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isCancelled",
       true
     );
