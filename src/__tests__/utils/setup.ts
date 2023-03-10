@@ -68,6 +68,7 @@ export const describeWithFixture = (
           contractAddress: seaportContract.address,
           domainRegistryAddress: domainRegistry.address,
         },
+        seaportVersion: "1.1",
       });
 
       const seaportv12 = new Seaport(ethers.provider, {

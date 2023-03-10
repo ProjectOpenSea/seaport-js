@@ -521,6 +521,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         overrides: {
           contractAddress: seaportContract.address,
         },
+        seaportVersion: "1.1",
       });
 
       const [offerer, zone, randomSigner] = await ethers.getSigners();
