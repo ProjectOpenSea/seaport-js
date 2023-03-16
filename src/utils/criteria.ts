@@ -45,10 +45,9 @@ export const generateCriteriaResolvers = ({
       | typeof considerationCriteriaItems,
     criterias: InputCriteria[][]
   ) =>
-    criteriaItems.map(({ orderIndex, item, index, side }, i) => {
+    criteriaItems.map(({ orderIndex, item, index, side }) => {
       const merkleRoot = item.identifierOrCriteria || "0";
-      const inputCriteria: InputCriteria = criterias[orderIndex][i];
-
+      const inputCriteria: InputCriteria = criterias[orderIndex][index];
       return {
         orderIndex,
         index,
