@@ -6,7 +6,7 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
-import { CreateOrderInput, CurrencyItem } from "../types";
+import { CreateOrderInput, CurrencyItem, OrderWithCounter } from "../types";
 import * as fulfill from "../utils/fulfill";
 import { MerkleTree } from "../utils/merkletree";
 import {
@@ -24,6 +24,7 @@ describeWithFixture(
     let multicallProvider: providers.MulticallProvider;
 
     let fulfillStandardOrderSpy: sinon.SinonSpy;
+    let fulfillAvailableOrdersSpy: sinon.SinonSpy;
     let standardCreateOrderInput: CreateOrderInput;
 
     const nftId = "1";
@@ -36,10 +37,12 @@ describeWithFixture(
       multicallProvider = new providers.MulticallProvider(ethers.provider);
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
+      fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
     });
 
     afterEach(() => {
       fulfillStandardOrderSpy.restore();
+      fulfillAvailableOrdersSpy.restore();
     });
 
     describe("A criteria based ERC721 is to be transferred", async () => {
@@ -217,6 +220,7 @@ describeWithFixture(
             const { testErc721, testErc20 } = fixture;
 
             await testErc721.mint(fulfiller.address, nftId);
+            await testErc721.mint(fulfiller.address, nftId2);
             await testErc20.mint(offerer.address, parseEther("10").toString());
 
             standardCreateOrderInput = {
@@ -331,6 +335,121 @@ describeWithFixture(
             expect(ownerOfErc721).to.eq(offerer.address);
 
             expect(fulfillStandardOrderSpy).calledOnce;
+          });
+
+          it("ERC20 <=> ERC721 (multiple orders)", async () => {
+            const { seaport, testErc721, testErc20 } = fixture;
+
+            // Give offerer enough ERC20 to fulfill both orders
+            await testErc20.mint(offerer.address, parseEther("10").toString());
+
+            // Create two collection based offers
+            const orders: OrderWithCounter[] = [];
+            for (let i = 0; i < 2; i++) {
+              const { executeAllActions } = await seaport.createOrder(
+                standardCreateOrderInput,
+                offerer.address
+              );
+
+              const order = await executeAllActions();
+              orders.push(order);
+            }
+
+            const [initialFulfillerErc20Balance, initialZoneErc20Balance] =
+              await Promise.all([
+                testErc20.balanceOf(fulfiller.address),
+                testErc20.balanceOf(zone.address),
+              ]);
+
+            const fulfillmentNftIds = [nftId, nftId2];
+            const { actions } = await seaport.fulfillOrders({
+              fulfillOrderDetails: orders.map((order, i) => ({
+                order,
+                considerationCriteria: [
+                  { identifier: fulfillmentNftIds[i], proof: [] },
+                ],
+              })),
+              accountAddress: fulfiller.address,
+            });
+
+            const approvalAction = actions[0];
+
+            expect(approvalAction).to.deep.equal({
+              type: "approval",
+              token: testErc721.address,
+              identifierOrCriteria: nftId,
+              itemType: ItemType.ERC721_WITH_CRITERIA,
+              transactionMethods: approvalAction.transactionMethods,
+              operator: seaport.contract.address,
+            });
+
+            await approvalAction.transactionMethods.transact();
+
+            expect(
+              await testErc721.isApprovedForAll(
+                fulfiller.address,
+                seaport.contract.address
+              )
+            ).to.be.true;
+
+            // We also need to approve ERC-20 as we send that out as fees..
+            const secondApprovalAction = actions[1];
+
+            expect(secondApprovalAction).to.deep.equal({
+              type: "approval",
+              token: testErc20.address,
+              identifierOrCriteria: "0",
+              itemType: ItemType.ERC20,
+              transactionMethods: secondApprovalAction.transactionMethods,
+              operator: seaport.contract.address,
+            });
+
+            await secondApprovalAction.transactionMethods.transact();
+
+            expect(
+              await testErc20.allowance(
+                fulfiller.address,
+                seaport.contract.address
+              )
+            ).to.eq(MAX_INT);
+
+            const fulfillAction = actions[2];
+
+            expect(fulfillAction).to.be.deep.equal({
+              type: "exchange",
+              transactionMethods: fulfillAction.transactionMethods,
+            });
+
+            const transaction =
+              await fulfillAction.transactionMethods.transact();
+
+            const receipt = await transaction.wait();
+
+            expect(receipt.status).to.eq(1);
+
+            const [finalFulfillerErc20Balance, finalZoneErc20Balance] =
+              await Promise.all([
+                testErc20.balanceOf(fulfiller.address),
+                testErc20.balanceOf(zone.address),
+              ]);
+            expect(finalFulfillerErc20Balance).to.eq(
+              initialFulfillerErc20Balance.add(
+                parseEther("20").sub(parseEther("0.5")) // 0.5 in fees
+              )
+            );
+            expect(finalZoneErc20Balance).to.eq(
+              initialZoneErc20Balance.add(parseEther("0.5"))
+            );
+
+            const [ownerOfNftId1, ownerOfNftId2] = await Promise.all([
+              testErc721.ownerOf(nftId),
+              testErc721.ownerOf(nftId2),
+            ]);
+
+            expect(ownerOfNftId1).to.eq(offerer.address);
+            expect(ownerOfNftId2).to.eq(offerer.address);
+
+            expect(fulfillAvailableOrdersSpy).calledOnce;
           });
         });
       });
