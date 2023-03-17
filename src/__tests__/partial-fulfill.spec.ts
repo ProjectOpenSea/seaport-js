@@ -48,7 +48,7 @@ describeWithFixture(
     });
 
     describe("An ERC1155 is partially transferred", async () => {
-      describe("[Buy now] I want to partially buy an ERC1155", async () => {
+      describe.only("[Buy now] I want to partially buy an ERC1155", async () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -75,6 +75,100 @@ describeWithFixture(
             // 2.5% fee
             fees: [{ recipient: zone.address, basisPoints: 250 }],
           };
+        });
+
+        it("ERC1155 <=> ETH (Rounding error (InsufficientEtherSupplied))", async () => {
+          const { seaport, testErc1155 } = fixture;
+
+          // Mint 3 ERC1155s to offerer
+          await testErc1155.mint(offerer.address, nftId, 3);
+
+          standardCreateOrderInput = {
+            allowPartialFills: true,
+
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: testErc1155.address,
+                amount: "3",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("3").toString(),
+                recipient: offerer.address,
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: zone.address, basisPoints: 250 }],
+          };
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters)
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              fulfiller.address,
+              multicallProvider
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 1,
+            accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const transaction = await action.transactionMethods.transact();
+
+          const receipt = await transaction.wait();
+
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            offerer.address,
+            nftId
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            fulfiller.address,
+            nftId
+          );
+
+          expect(offererErc1155Balance).eq(BigNumber.from(2));
+          expect(fulfillerErc1155Balance).eq(BigNumber.from(1));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 1,
+            orderStatus,
+            fulfillerAddress: fulfiller.address,
+            multicallProvider,
+            fulfillReceipt: receipt,
+          });
+
+          expect(fulfillStandardOrderSpy).calledOnce;
         });
 
         it("ERC1155 <=> ETH", async () => {
