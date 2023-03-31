@@ -564,6 +564,96 @@ describeWithFixture(
             expect(fulfillStandardOrderSpy).calledTwice;
           });
 
+          it("ERC721 <=> ETH (custom merkle root)", async () => {
+            const { seaport, testErc721 } = fixture;
+
+            standardCreateOrderInput.offer = [
+              {
+                itemType: ItemType.ERC721,
+                token: testErc721.address,
+                // The offerer is willing to sell either token ID 1 or 3, but not 2
+                criteria: new MerkleTree([nftId, nftId3]).getRoot(),
+              },
+            ];
+
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput
+            );
+
+            const order = await executeAllActions();
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                fulfiller.address,
+                multicallProvider
+              );
+
+            const { actions: revertedActions } = await seaport.fulfillOrder({
+              order,
+              offerCriteria: [
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId2]).getProof(nftId2),
+                },
+              ],
+              accountAddress: fulfiller.address,
+            });
+
+            expect(revertedActions.length).to.eq(1);
+
+            const revertedFulfill = revertedActions[0];
+
+            expect(revertedFulfill).to.deep.equal({
+              type: "exchange",
+              transactionMethods: revertedFulfill.transactionMethods,
+            });
+
+            // Nft with ID 2 was not in the initial set of valid identifiers
+            await expect(
+              revertedFulfill.transactionMethods.transact()
+            ).to.be.revertedWith("InvalidProof()");
+
+            const { actions } = await seaport.fulfillOrder({
+              order,
+
+              offerCriteria: [
+                {
+                  identifier: nftId3,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
+                },
+              ],
+              accountAddress: fulfiller.address,
+            });
+
+            expect(actions.length).to.eq(1);
+
+            const action = actions[0];
+
+            expect(action).to.deep.equal({
+              type: "exchange",
+              transactionMethods: action.transactionMethods,
+            });
+
+            const transaction = await action.transactionMethods.transact();
+
+            const receipt = await transaction.wait();
+
+            await verifyBalancesAfterFulfill({
+              ownerToTokenToIdentifierBalances,
+              order,
+              fulfillerAddress: fulfiller.address,
+              multicallProvider,
+              fulfillReceipt: receipt,
+            });
+
+            const ownerOfErc721 = await testErc721.ownerOf(nftId3);
+
+            expect(ownerOfErc721).to.eq(fulfiller.address);
+
+            expect(fulfillStandardOrderSpy).calledTwice;
+          });
+
           it("ERC721 <=> ERC20", async () => {
             const { seaport, testErc20, testErc721 } = fixture;
 
@@ -1184,6 +1274,119 @@ describeWithFixture(
               consideration: standardCreateOrderInput.consideration.map(
                 (item) => ({ ...item, token: testErc20.address })
               ),
+            };
+
+            await testErc20.mint(
+              fulfiller.address,
+              BigNumber.from(
+                (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                  .amount
+              )
+            );
+
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput
+            );
+
+            const order = await executeAllActions();
+
+            const { actions: revertedActions } = await seaport.fulfillOrder({
+              order,
+
+              offerCriteria: [
+                {
+                  identifier: nftId2,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId2),
+                },
+              ],
+              accountAddress: fulfiller.address,
+            });
+
+            expect(revertedActions.length).to.eq(2);
+
+            const approvalAction = revertedActions[0];
+
+            expect(approvalAction).to.deep.equal({
+              type: "approval",
+              token: testErc20.address,
+              identifierOrCriteria: "0",
+              itemType: ItemType.ERC20,
+              transactionMethods: approvalAction.transactionMethods,
+              operator: seaport.contract.address,
+            });
+
+            await approvalAction.transactionMethods.transact();
+
+            expect(
+              await testErc20.allowance(
+                fulfiller.address,
+                seaport.contract.address
+              )
+            ).to.equal(MAX_INT);
+
+            const revertedFulfill = revertedActions[1];
+
+            expect(revertedFulfill).to.be.deep.equal({
+              type: "exchange",
+              transactionMethods: revertedFulfill.transactionMethods,
+            });
+
+            await expect(
+              revertedFulfill.transactionMethods.transact()
+            ).to.be.revertedWith("InvalidProof()");
+
+            const { actions } = await seaport.fulfillOrder({
+              order,
+
+              offerCriteria: [
+                {
+                  identifier: nftId3,
+                  proof: new MerkleTree([nftId, nftId3]).getProof(nftId3),
+                },
+              ],
+
+              accountAddress: fulfiller.address,
+            });
+
+            expect(actions.length).to.eq(1);
+
+            const action = actions[0];
+
+            expect(action).to.deep.equal({
+              type: "exchange",
+              transactionMethods: action.transactionMethods,
+            });
+
+            await action.transactionMethods.transact();
+
+            const balanceOfErc1155 = await testErc1155.balanceOf(
+              fulfiller.address,
+              nftId3
+            );
+
+            expect(balanceOfErc1155).to.eq(erc1155Amount);
+
+            expect(fulfillStandardOrderSpy).calledTwice;
+          });
+
+          it("ERC1155 <=> ERC20 (custom merkle root)", async () => {
+            const { seaport, testErc20, testErc1155 } = fixture;
+
+            // Use ERC20 instead of eth
+            standardCreateOrderInput = {
+              ...standardCreateOrderInput,
+              consideration: standardCreateOrderInput.consideration.map(
+                (item) => ({ ...item, token: testErc20.address })
+              ),
+              offer: [
+                {
+                  itemType: ItemType.ERC1155,
+                  token: testErc1155.address,
+                  // The offerer is willing to sell either token ID 1 or 3, but not 2
+                  criteria: new MerkleTree([nftId, nftId3]).getRoot(),
+                  amount: erc1155Amount,
+                },
+              ],
             };
 
             await testErc20.mint(
