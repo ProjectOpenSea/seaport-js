@@ -108,7 +108,6 @@ export const verifyBalancesAfterFulfill = async ({
   const orderWithAdjustedFills = unitsToFill
     ? mapOrderAmountsFromUnitsToFill(order, {
         unitsToFill,
-        totalFilled,
         totalSize,
       })
     : mapOrderAmountsFromFilledStatus(order, {

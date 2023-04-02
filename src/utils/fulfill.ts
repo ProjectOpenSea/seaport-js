@@ -368,7 +368,6 @@ export async function fulfillStandardOrder(
   const orderWithAdjustedFills = unitsToFill
     ? mapOrderAmountsFromUnitsToFill(order, {
         unitsToFill,
-        totalFilled,
         totalSize,
       })
     : // Else, we adjust the order by the remaining order left to be fulfilled
@@ -577,7 +576,6 @@ export async function fulfillAvailableOrders({
       order: orderMetadata.unitsToFill
         ? mapOrderAmountsFromUnitsToFill(orderMetadata.order, {
             unitsToFill: orderMetadata.unitsToFill,
-            totalFilled: orderMetadata.orderStatus.totalFilled,
             totalSize: orderMetadata.orderStatus.totalSize,
           })
         : // Else, we adjust the order by the remaining order left to be fulfilled
