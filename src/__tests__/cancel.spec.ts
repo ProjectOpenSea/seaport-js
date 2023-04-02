@@ -1,5 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType } from "../constants";
@@ -76,8 +77,8 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     await expect(executeAllFulfillActionsOffChainOrder()).to.be.reverted;
     await expect(executeAllFulfillActionsOnChainOrder()).to.be.reverted;
 
-    expect(await seaport.getCounter(offerer.address)).to.equal(
-      offChainOrder.parameters.counter + 1
+    expect(await seaport.getCounter(offerer.address)).to.deep.equal(
+      BigNumber.from(offChainOrder.parameters.counter).add(1)
     );
   });
 

@@ -204,6 +204,12 @@ export const mapOrderAmountsFromFilledStatus = (
   };
 };
 
+const multiplyDivision = (
+  amount: BigNumberish,
+  numerator: BigNumberish,
+  denominator: BigNumberish
+) => BigNumber.from(amount).mul(BigNumber.from(numerator)).div(denominator);
+
 /**
  * Maps order offer and consideration item amounts based on the units needed to fulfill
  * After applying the fraction, we can view this order as the "canonical" order for which we
@@ -214,9 +220,8 @@ export const mapOrderAmountsFromUnitsToFill = (
   order: Order,
   {
     unitsToFill,
-    totalFilled,
     totalSize,
-  }: { unitsToFill: BigNumberish; totalFilled: BigNumber; totalSize: BigNumber }
+  }: { unitsToFill: BigNumberish; totalSize: BigNumber }
 ): Order => {
   const unitsToFillBn = BigNumber.from(unitsToFill);
 
@@ -230,44 +235,34 @@ export const mapOrderAmountsFromUnitsToFill = (
     totalSize = maxUnits;
   }
 
-  // This is the percentage of the order that is left to be fulfilled, and therefore we can't fill more than that.
-  const remainingOrderPercentageToBeFilled = totalSize
-    .sub(totalFilled)
-    .mul(ONE_HUNDRED_PERCENT_BP)
-    .div(totalSize);
-
-  // i.e if totalSize is 8 and unitsToFill is 3, then we multiply every amount by 3 / 8
-  const unitsToFillBasisPoints = unitsToFillBn
-    .mul(ONE_HUNDRED_PERCENT_BP)
-    .div(maxUnits);
-
-  // We basically choose the lesser between the units requested to be filled and the actual remaining order amount left
-  // This is so that if a user tries to fulfill an order that is 1/2 filled, and supplies a fraction such as 3/4, the maximum
-  // amount to fulfill is 1/2 instead of 3/4
-  const basisPoints = remainingOrderPercentageToBeFilled.gt(
-    unitsToFillBasisPoints
-  )
-    ? unitsToFillBasisPoints
-    : remainingOrderPercentageToBeFilled;
-
   return {
     parameters: {
       ...order.parameters,
       offer: order.parameters.offer.map((item) => ({
         ...item,
-        startAmount: multiplyBasisPoints(
+        startAmount: multiplyDivision(
           item.startAmount,
-          basisPoints
+          unitsToFillBn,
+          totalSize
         ).toString(),
-        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
+        endAmount: multiplyDivision(
+          item.endAmount,
+          unitsToFillBn,
+          totalSize
+        ).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
         ...item,
-        startAmount: multiplyBasisPoints(
+        startAmount: multiplyDivision(
           item.startAmount,
-          basisPoints
+          unitsToFillBn,
+          totalSize
         ).toString(),
-        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
+        endAmount: multiplyDivision(
+          item.endAmount,
+          unitsToFillBn,
+          totalSize
+        ).toString(),
       })),
     },
     signature: order.signature,

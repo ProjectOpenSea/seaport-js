@@ -29,7 +29,7 @@ export type SeaportConfig = {
   conduitKeyToConduit?: Record<string, string>;
 
   // The Seaport version to use
-  seaportVersion?: "1.1" | "1.2";
+  seaportVersion?: "1.1" | "1.4";
 
   overrides?: {
     contractAddress?: string;
@@ -94,7 +94,7 @@ export type OrderParameters = {
   conduitKey: string;
 };
 
-export type OrderComponents = OrderParameters & { counter: number };
+export type OrderComponents = OrderParameters & { counter: BigNumberish };
 
 export type Order = {
   parameters: OrderParameters;
@@ -166,7 +166,7 @@ export type CreateOrderInput = {
   endTime?: string;
   offer: readonly CreateInputItem[];
   consideration: readonly ConsiderationInputItem[];
-  counter?: number;
+  counter?: BigNumberish;
   fees?: readonly Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;

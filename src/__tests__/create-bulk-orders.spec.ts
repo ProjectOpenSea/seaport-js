@@ -128,7 +128,7 @@ describeWithFixture(
             zone: ethers.constants.AddressZero,
             zoneHash: ethers.constants.HashZero,
             conduitKey: NO_CONDUIT,
-            counter: 0,
+            counter: "0",
           },
           signature: order.signature,
         });

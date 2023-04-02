@@ -103,7 +103,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
-        counter: 0,
+        counter: "0",
       },
       signature: order.signature,
     });
@@ -218,7 +218,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
-        counter: 0,
+        counter: "0",
       },
       signature: order.signature,
     });
@@ -382,7 +382,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         zone: ethers.constants.AddressZero,
         zoneHash: ethers.constants.HashZero,
         conduitKey: NO_CONDUIT,
-        counter: 0,
+        counter: "0",
       },
       signature: order.signature,
     });
@@ -521,6 +521,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         overrides: {
           contractAddress: seaportContract.address,
         },
+        seaportVersion: "1.1",
       });
 
       const [offerer, zone, randomSigner] = await ethers.getSigners();
@@ -594,7 +595,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           zone: ethers.constants.AddressZero,
           zoneHash: ethers.constants.HashZero,
           conduitKey: NO_CONDUIT,
-          counter: 0,
+          counter: "0",
         },
         signature: order.signature,
       });
