@@ -72,8 +72,11 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
   // Item is an NFT
   if ("itemType" in item) {
     // Convert this to a criteria based item
-    if ("identifiers" in item) {
-      const tree = new MerkleTree(item.identifiers);
+    if ("identifiers" in item || "criteria" in item) {
+      const root =
+        "criteria" in item
+          ? item.criteria
+          : new MerkleTree(item.identifiers).getRoot();
 
       return {
         itemType:
@@ -81,7 +84,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
             ? ItemType.ERC721_WITH_CRITERIA
             : ItemType.ERC1155_WITH_CRITERIA,
         token: item.token,
-        identifierOrCriteria: tree.getRoot(),
+        identifierOrCriteria: root,
         startAmount: item.amount ?? "1",
         endAmount: item.endAmount ?? item.amount ?? "1",
       };
