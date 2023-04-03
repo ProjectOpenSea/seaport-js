@@ -2,7 +2,7 @@ import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { parseEther } from "ethers/lib/utils";
+import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
 import { ItemType, MAX_INT, OrderType } from "../constants";
@@ -281,6 +281,133 @@ describeWithFixture(
 
           expect(
             await testErc20.allowance(
+              fulfiller.address,
+              seaport.contract.address
+            )
+          ).to.equal(MAX_INT);
+
+          const fulfillAction = actions[1];
+
+          expect(fulfillAction).to.be.deep.equal({
+            type: "exchange",
+            transactionMethods: fulfillAction.transactionMethods,
+          });
+
+          const transaction = await fulfillAction.transactionMethods.transact();
+
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            offerer.address,
+            nftId
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            fulfiller.address,
+            nftId
+          );
+
+          expect(offererErc1155Balance).eq(BigNumber.from(8));
+          expect(fulfillerErc1155Balance).eq(BigNumber.from(2));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 2,
+            orderStatus,
+            fulfillerAddress: fulfiller.address,
+            multicallProvider,
+            fulfillReceipt: receipt,
+          });
+
+          expect(fulfillStandardOrderSpy).calledOnce;
+        });
+
+        it("ERC1155 <=> ERC20 (6 decimals) doesn't fail due to rounding error", async () => {
+          const { seaport, testErc20USDC, testErc1155 } = fixture;
+
+          // broke out key params to make testing different values easier:
+          const unitsForSale = "3";
+          // for tokens with 6 decimals, the unit sale price needs to be restricted to a precision of up to two decimals only (!),
+          // to ensure broader compatibility with fees.
+          const pricePerUnit = "5.17";
+          const basisPoints = 243;
+
+          // maker creates partially fillable listing with amount of 3
+          standardCreateOrderInput.offer = [
+            {
+              itemType: ItemType.ERC1155,
+              token: testErc1155.address,
+              amount: unitsForSale,
+              identifier: nftId,
+            },
+          ];
+
+          // calculate total price (price per unit * units for sale) and fees
+          standardCreateOrderInput.consideration = [
+            {
+              // USDC (ERC20 w/ 6 decimals)
+              amount: parseUnits(pricePerUnit, 6).mul(unitsForSale).toString(),
+              recipient: offerer.address,
+              token: testErc20USDC.address,
+            },
+          ];
+          standardCreateOrderInput.fees = [
+            { recipient: zone.address, basisPoints },
+          ];
+
+          await testErc20USDC.mint(
+            fulfiller.address,
+            BigNumber.from(
+              (standardCreateOrderInput.consideration[0] as CurrencyItem).amount
+            ).mul("2")
+          );
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters)
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              fulfiller.address,
+              multicallProvider
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 2,
+            accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
+          });
+
+          expect(actions.length).to.eq(2);
+
+          const approvalAction = actions[0];
+
+          expect(approvalAction).to.deep.equal({
+            type: "approval",
+            token: testErc20USDC.address,
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            transactionMethods: approvalAction.transactionMethods,
+            operator: seaport.contract.address,
+          });
+
+          await approvalAction.transactionMethods.transact();
+
+          expect(
+            await testErc20USDC.allowance(
               fulfiller.address,
               seaport.contract.address
             )

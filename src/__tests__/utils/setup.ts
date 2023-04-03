@@ -6,6 +6,7 @@ import type {
   TestERC1155,
   Seaport as SeaportContract,
   DomainRegistry,
+  TestERC20USDC,
 } from "../../typechain";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -22,6 +23,7 @@ type Fixture = {
   domainRegistry: DomainRegistry;
   testErc721: TestERC721;
   testErc20: TestERC20;
+  testErc20USDC: TestERC20USDC;
   testErc1155: TestERC1155;
 };
 
@@ -91,6 +93,10 @@ export const describeWithFixture = (
       const testErc20 = await TestERC20.deploy();
       await testErc20.deployed();
 
+      const TestERC20USDC = await ethers.getContractFactory("TestERC20USDC");
+      const testErc20USDC = await TestERC20USDC.deploy();
+      await testErc20USDC.deployed();
+
       // In order for cb to get the correct fixture values we have
       // to pass a reference to an object that you we mutate.
       fixture.seaportContract = seaportContract;
@@ -101,6 +107,7 @@ export const describeWithFixture = (
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;
       fixture.testErc20 = testErc20;
+      fixture.testErc20USDC = testErc20USDC;
     });
 
     suiteCb(fixture as Fixture);
