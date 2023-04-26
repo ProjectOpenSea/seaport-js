@@ -16,9 +16,7 @@ chai.use(sinonChai);
 
 type Fixture = {
   seaportContract: SeaportContract;
-  seaportv15Contract: SeaportContract;
   seaport: Seaport;
-  seaportv15: Seaport;
   domainRegistry: DomainRegistry;
   testErc721: TestERC721;
   testErc20: TestERC20;
@@ -33,11 +31,7 @@ export const describeWithFixture = (
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {
-      const Seaportv14Factory = await ethers.getContractFactory(
-        "seaport_v1_4/contracts/Seaport.sol:Seaport"
-      );
-
-      const Seaportv15Factory = await ethers.getContractFactory(
+      const SeaportFactory = await ethers.getContractFactory(
         "seaport_v1_5/contracts/Seaport.sol:Seaport"
       );
 
@@ -47,15 +41,11 @@ export const describeWithFixture = (
 
       const conduitController = await ConduitControllerFactory.deploy();
 
-      const seaportv14Contract = (await Seaportv14Factory.deploy(
+      const seaportContract = (await SeaportFactory.deploy(
         conduitController.address
       )) as SeaportContract;
 
-      const seaportv15Contract = (await Seaportv15Factory.deploy(
-        conduitController.address
-      )) as SeaportContract;
-
-      await seaportv14Contract.deployed();
+      await seaportContract.deployed();
 
       const DomainRegistryFactory = await ethers.getContractFactory(
         "DomainRegistry"
@@ -63,17 +53,9 @@ export const describeWithFixture = (
       const domainRegistry = await DomainRegistryFactory.deploy();
       await domainRegistry.deployed();
 
-      const seaportv14 = new Seaport(ethers.provider, {
+      const seaport = new Seaport(ethers.provider, {
         overrides: {
-          contractAddress: seaportv14Contract.address,
-          domainRegistryAddress: domainRegistry.address,
-        },
-        seaportVersion: "1.4",
-      });
-
-      const seaportv15 = new Seaport(ethers.provider, {
-        overrides: {
-          contractAddress: seaportv15Contract.address,
+          contractAddress: seaportContract.address,
           domainRegistryAddress: domainRegistry.address,
         },
         seaportVersion: "1.5",
@@ -93,10 +75,8 @@ export const describeWithFixture = (
 
       // In order for cb to get the correct fixture values we have
       // to pass a reference to an object that you we mutate.
-      fixture.seaportContract = seaportv14Contract;
-      fixture.seaportv15Contract = seaportv15Contract;
-      fixture.seaport = seaportv14;
-      fixture.seaportv15 = seaportv15;
+      fixture.seaportContract = seaportContract;
+      fixture.seaport = seaport;
       fixture.domainRegistry = domainRegistry;
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;
