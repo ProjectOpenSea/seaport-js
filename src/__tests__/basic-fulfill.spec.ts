@@ -130,7 +130,7 @@ describeWithFixture(
             // Should revert because signature is empty
             await expect(
               action.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidSigner");
+            ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
 
@@ -296,7 +296,7 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidSigner");
+            ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
 
@@ -505,7 +505,7 @@ describeWithFixture(
             // Should revert because signature is empty
             await expect(
               fulfillAction.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidSigner");
+            ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
 
@@ -670,7 +670,7 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidSigner");
+            ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
 

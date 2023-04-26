@@ -13,7 +13,7 @@ describeWithFixture(
   "As a user I want to create bulk orders with one signature",
   (fixture) => {
     it("should create the orders after setting needed approvals", async () => {
-      const { seaportv12Contract, seaportv12, testErc721 } = fixture;
+      const { seaportContract, seaport, testErc721 } = fixture;
 
       const [offerer, zone, randomSigner] = await ethers.getSigners();
 
@@ -56,7 +56,7 @@ describeWithFixture(
         { ...order, offer: [{ ...order.offer[0], identifier: nftId3 }] },
       ];
 
-      const { actions } = await seaportv12.createBulkOrders(orders);
+      const { actions } = await seaport.createBulkOrders(orders);
 
       // Expect only one approval action for the collection of tokens nftId1-nftId3
       expect(actions.filter((a) => a.type === "approval")).to.have.lengthOf(1);
@@ -69,7 +69,7 @@ describeWithFixture(
         identifierOrCriteria: nftId1,
         itemType: ItemType.ERC721,
         transactionMethods: approvalAction.transactionMethods,
-        operator: seaportv12Contract.address,
+        operator: seaportContract.address,
       });
 
       await approvalAction.transactionMethods.transact();
@@ -78,7 +78,7 @@ describeWithFixture(
       expect(
         await testErc721.isApprovedForAll(
           offerer.address,
-          seaportv12Contract.address
+          seaportContract.address
         )
       ).to.be.true;
 
@@ -133,7 +133,7 @@ describeWithFixture(
           signature: order.signature,
         });
 
-        const isValid = await seaportv12Contract
+        const isValid = await seaportContract
           .connect(randomSigner)
           .callStatic.validate([
             {
