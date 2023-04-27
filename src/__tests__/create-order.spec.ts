@@ -1,7 +1,6 @@
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { Seaport } from "../seaport";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
 import { ApprovalAction, CreateOrderAction } from "../types";
 import { generateRandomSalt } from "../utils/order";
@@ -514,15 +513,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     });
 
     it("skips balance and approval validation if consideration config is set to skip on order creation", async () => {
-      const { seaportContract, testErc721 } = fixture;
+      const { seaport, seaportContract, testErc721 } = fixture;
 
-      const seaport = new Seaport(ethers.provider, {
-        balanceAndApprovalChecksOnOrderCreation: false,
-        overrides: {
-          contractAddress: seaportContract.address,
-        },
-        seaportVersion: "1.1",
-      });
+      (seaport as any).config.balanceAndApprovalChecksOnOrderCreation = false;
 
       const [offerer, zone, randomSigner] = await ethers.getSigners();
       const nftId = "1";
