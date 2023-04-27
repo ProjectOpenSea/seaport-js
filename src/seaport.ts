@@ -9,21 +9,20 @@ import {
 } from "ethers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
 import { DomainRegistryABI } from "./abi/DomainRegistry";
-import { SeaportABI } from "./abi/Seaport";
 import { SeaportABIv14 } from "./abi/Seaport_v1_4";
 import {
   SEAPORT_CONTRACT_NAME,
-  SEAPORT_CONTRACT_VERSION,
   SEAPORT_CONTRACT_VERSION_V1_4,
+  SEAPORT_CONTRACT_VERSION_V1_5,
   EIP_712_ORDER_TYPE,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
   NO_CONDUIT,
   OPENSEA_CONDUIT_KEY,
   OrderType,
-  CROSS_CHAIN_SEAPORT_ADDRESS,
   DOMAIN_REGISTRY_ADDRESS,
   CROSS_CHAIN_SEAPORT_V1_4_ADDRESS,
+  CROSS_CHAIN_SEAPORT_V1_5_ADDRESS,
 } from "./constants";
 import type {
   SeaportConfig,
@@ -131,10 +130,10 @@ export class Seaport {
 
     this.contract = new Contract(
       overrides?.contractAddress ??
-        (seaportVersion === "1.4"
-          ? CROSS_CHAIN_SEAPORT_V1_4_ADDRESS
-          : CROSS_CHAIN_SEAPORT_ADDRESS),
-      seaportVersion === "1.4" ? SeaportABIv14 : SeaportABI,
+        (seaportVersion === "1.5"
+          ? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS
+          : CROSS_CHAIN_SEAPORT_V1_4_ADDRESS),
+      SeaportABIv14,
       this.multicallProvider
     ) as SeaportContract;
 
@@ -239,12 +238,6 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
-    if (this.config.seaportVersion === "1.1") {
-      throw new Error(
-        "Bulk order signatures are only available on Seaport v1.4"
-      );
-    }
-
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
     const offererCounter = await this.getCounter(offerer);
@@ -454,9 +447,9 @@ export class Seaport {
     return {
       name: SEAPORT_CONTRACT_NAME,
       version:
-        this.config.seaportVersion === "1.4"
-          ? SEAPORT_CONTRACT_VERSION_V1_4
-          : SEAPORT_CONTRACT_VERSION,
+        this.config.seaportVersion === "1.5"
+          ? SEAPORT_CONTRACT_VERSION_V1_5
+          : SEAPORT_CONTRACT_VERSION_V1_4,
       chainId,
       verifyingContract: this.contract.address,
     };

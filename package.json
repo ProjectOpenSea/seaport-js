@@ -1,6 +1,6 @@
 {
   "name": "@opensea/seaport-js",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
@@ -91,8 +91,8 @@
     "prettier": "^2.5.1",
     "prettier-package-json": "^2.6.3",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
-    "seaport": "ProjectOpenSea/seaport#76e508657888e3ec84039e1da269c822826991ef",
     "seaport_v1_4": "ProjectOpenSea/seaport#1.4",
+    "seaport_v1_5": "ProjectOpenSea/seaport#1.5",
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
     "solhint": "^3.3.7",
