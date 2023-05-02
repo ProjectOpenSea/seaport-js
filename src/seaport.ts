@@ -105,7 +105,7 @@ export class Seaport {
       ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
       conduitKeyToConduit,
-      seaportVersion = "1.4",
+      seaportVersion = "1.5",
     }: SeaportConfig = {}
   ) {
     const provider =
