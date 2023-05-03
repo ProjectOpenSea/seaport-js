@@ -44,6 +44,8 @@ import type {
   Signer,
   ApprovalAction,
   CreateBulkOrdersAction,
+  AdvancedOrder,
+  Fulfillment,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -70,6 +72,7 @@ import {
   totalItemsAmount,
 } from "./utils/order";
 import { executeAllActions, getTransactionMethods } from "./utils/usecase";
+import { CriteriaResolverStruct } from "./typechain/Seaport";
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
@@ -1047,6 +1050,49 @@ export class Seaport {
       domain,
       exactApproval,
     });
+  }
+
+  /**
+   * NOTE: Largely incomplete. Does NOT do any balance or approval checks.
+   * Just exposes the bare bones matchAdvancedOrders where clients will have to supply
+   * their own overrides as needed.
+   * @param input
+   * @param input.orders the list of orders to match
+   * @param input.criteria the list of criteria resolvers
+   * @param input.fulfillments the list of fulfillments to match offer and considerations
+   * @param input.recipient the recipient of extra items
+   * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param input.accountAddress Optional address for which to match the order with
+   * @param input.domain optional domain to be hashed and appended to calldata
+   * @returns set of transaction methods for matching advanced orders
+   */
+  public matchAdvancedOrders({
+    orders,
+    criteria,
+    fulfillments,
+    recipient,
+    overrides,
+    accountAddress,
+    domain = "",
+  }: {
+    orders: AdvancedOrder[];
+    criteria: CriteriaResolverStruct[];
+    fulfillments: Fulfillment[];
+    recipient: string;
+    overrides?: PayableOverrides & { from?: string | Promise<string> };
+    accountAddress?: string;
+    domain?: string;
+  }): TransactionMethods<
+    ContractMethodReturnType<SeaportContract, "matchAdvancedOrders">
+  > {
+    const signer = this._getSigner(accountAddress);
+
+    return getTransactionMethods(
+      this.contract.connect(signer),
+      "matchAdvancedOrders",
+      [orders, criteria, fulfillments, recipient, overrides],
+      domain
+    );
   }
 
   /**
