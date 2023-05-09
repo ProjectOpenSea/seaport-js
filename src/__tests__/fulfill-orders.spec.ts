@@ -8,6 +8,7 @@ import { ItemType, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
+import { getTagFromDomain } from "../utils/usecase";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(
@@ -849,7 +850,8 @@ describeWithFixture(
               { order: thirdOrder },
             ],
             accountAddress: fulfiller.address,
-            domain: OPENSEA_DOMAIN,
+            // When domain is empty or undefined, it should not append any tag to the calldata.
+            domain: undefined,
           });
 
           const approvalAction = actions[0];
@@ -919,15 +921,18 @@ describeWithFixture(
             transactionMethods: fulfillAction.transactionMethods,
           });
 
-          expect(
-            (
-              await fulfillAction.transactionMethods.buildTransaction()
-            ).data?.slice(-8)
-          ).to.eq(OPENSEA_TAG);
+          // When domain is empty or undefined, it should not append any tag to the calldata.
+          const emptyDomainTag = getTagFromDomain("");
+          const dataForBuildTransaction = (
+            await fulfillAction.transactionMethods.buildTransaction()
+          ).data?.slice(-8);
+          expect(dataForBuildTransaction).to.not.eq(emptyDomainTag);
+          expect(dataForBuildTransaction).to.not.eq(OPENSEA_TAG);
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.not.eq(emptyDomainTag);
+          expect(transaction.data.slice(-8)).to.not.eq(OPENSEA_TAG);
 
           const balances = await Promise.all([
             testErc1155.balanceOf(offerer.address, nftId),

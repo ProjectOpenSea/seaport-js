@@ -84,10 +84,12 @@ export const getTransactionMethods = <
     const populatedTransaction = await contract.populateTransaction[
       method as string
     ](...[...args, mergedOverrides]);
+
     if (domain) {
       const tag = getTagFromDomain(domain);
       populatedTransaction.data = populatedTransaction.data + tag;
     }
+
     return populatedTransaction;
   };
 
