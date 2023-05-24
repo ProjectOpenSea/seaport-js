@@ -4,7 +4,6 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import sinon from "sinon";
 import { ItemType, MAX_INT, OrderType } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -16,6 +15,8 @@ import {
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 
+const sinon = require("sinon");
+
 const SECONDS_IN_WEEK = 604800;
 
 describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
@@ -24,7 +25,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
   let fulfiller: SignerWithAddress;
   let multicallProvider: providers.MulticallProvider;
 
-  let fulfillStandardOrderSpy: sinon.SinonSpy;
+  let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
   let standardCreateOrderInput: CreateOrderInput;
   let startTime: string;
   let endTime: string;
@@ -45,7 +46,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
     fulfillStandardOrderSpy.restore();
   });
 
-  describe("A single ERC721 is to be transferred", async () => {
+  describe("A single ERC721 is to be transferred", () => {
     describe("Ascending dutch auction", () => {
       beforeEach(async () => {
         const { testErc721 } = fixture;
@@ -474,7 +475,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
     });
   });
 
-  describe("Multiple ERC1155s are to be transferred", async () => {
+  describe("Multiple ERC1155s are to be transferred", () => {
     describe("Ascending dutch auction", () => {
       beforeEach(async () => {
         const { testErc1155 } = fixture;

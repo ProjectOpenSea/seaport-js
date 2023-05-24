@@ -178,7 +178,7 @@ const offerAndConsiderationFulfillmentMapping: {
   },
 } as const;
 
-export async function fulfillBasicOrder(
+export function fulfillBasicOrder(
   {
     order,
     seaportContract,
@@ -205,12 +205,8 @@ export async function fulfillBasicOrder(
     domain?: string;
   },
   exactApproval: boolean
-): Promise<
-  OrderUseCase<
-    ExchangeAction<
-      ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">
-    >
-  >
+): OrderUseCase<
+  ExchangeAction<ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">>
 > {
   const { offer, consideration } = order.parameters;
   const considerationIncludingTips = [...consideration, ...tips];
@@ -287,7 +283,7 @@ export async function fulfillBasicOrder(
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(
+  const approvalActions = getApprovalActions(
     insufficientApprovals,
     exactApproval,
     signer
@@ -312,7 +308,7 @@ export async function fulfillBasicOrder(
   };
 }
 
-export async function fulfillStandardOrder(
+export function fulfillStandardOrder(
   {
     order,
     unitsToFill = 0,
@@ -353,13 +349,11 @@ export async function fulfillStandardOrder(
     domain?: string;
   },
   exactApproval: boolean
-): Promise<
-  OrderUseCase<
-    ExchangeAction<
-      ContractMethodReturnType<
-        SeaportContract,
-        "fulfillAdvancedOrder" | "fulfillOrder"
-      >
+): OrderUseCase<
+  ExchangeAction<
+    ContractMethodReturnType<
+      SeaportContract,
+      "fulfillAdvancedOrder" | "fulfillOrder"
     >
   >
 > {
@@ -425,7 +419,7 @@ export async function fulfillStandardOrder(
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(
+  const approvalActions = getApprovalActions(
     insufficientApprovals,
     exactApproval,
     signer
@@ -526,7 +520,7 @@ export type FulfillOrdersMetadata = {
   offererOperator: string;
 }[];
 
-export async function fulfillAvailableOrders({
+export function fulfillAvailableOrders({
   ordersMetadata,
   seaportContract,
   fulfillerBalancesAndApprovals,
@@ -550,14 +544,9 @@ export async function fulfillAvailableOrders({
   recipientAddress: string;
   exactApproval: boolean;
   domain?: string;
-}): Promise<
-  OrderUseCase<
-    ExchangeAction<
-      ContractMethodReturnType<
-        SeaportContract,
-        "fulfillAvailableAdvancedOrders"
-      >
-    >
+}): OrderUseCase<
+  ExchangeAction<
+    ContractMethodReturnType<SeaportContract, "fulfillAvailableAdvancedOrders">
   >
 > {
   const sanitizedOrdersMetadata = ordersMetadata.map((orderMetadata) => ({
@@ -679,7 +668,7 @@ export async function fulfillAvailableOrders({
 
   const payableOverrides = { value: totalNativeAmount };
 
-  const approvalActions = await getApprovalActions(
+  const approvalActions = getApprovalActions(
     totalInsufficientApprovals,
     exactApproval,
     signer

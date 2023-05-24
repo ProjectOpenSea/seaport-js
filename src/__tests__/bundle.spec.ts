@@ -4,7 +4,6 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain-types";
 import { CreateOrderInput, CurrencyItem } from "../types";
@@ -16,6 +15,8 @@ import {
 import { getTagFromDomain } from "../utils/usecase";
 import { describeWithFixture } from "./utils/setup";
 
+const sinon = require("sinon");
+
 describeWithFixture(
   "As a user I want to buy now or accept an offer for a bundle of items",
   (fixture) => {
@@ -24,7 +25,7 @@ describeWithFixture(
     let fulfiller: SignerWithAddress;
     let multicallProvider: providers.MulticallProvider;
 
-    let fulfillStandardOrderSpy: sinon.SinonSpy;
+    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let secondTestErc721: TestERC721;
     let secondTestErc1155: TestERC1155;
     let standardCreateOrderInput: CreateOrderInput;
@@ -54,8 +55,8 @@ describeWithFixture(
       fulfillStandardOrderSpy.restore();
     });
 
-    describe("A bundle of ERC721s is to be transferred", async () => {
-      describe("[Buy now] I want to buy a bundle of ERC721s", async () => {
+    describe("A bundle of ERC721s is to be transferred", () => {
+      describe("[Buy now] I want to buy a bundle of ERC721s", () => {
         beforeEach(async () => {
           const { testErc721 } = fixture;
 
@@ -247,7 +248,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept an offer for my bundle of ERC721s", async () => {
+      describe("[Accept offer] I want to accept an offer for my bundle of ERC721s", () => {
         beforeEach(async () => {
           const { testErc20, testErc721 } = fixture;
 
@@ -411,8 +412,8 @@ describeWithFixture(
       });
     });
 
-    describe("A bundle of ERC721s and ERC1155s is to be transferred", async () => {
-      describe("[Buy now] I want to buy a bundle of ERC721s and ERC1155s", async () => {
+    describe("A bundle of ERC721s and ERC1155s is to be transferred", () => {
+      describe("[Buy now] I want to buy a bundle of ERC721s and ERC1155s", () => {
         beforeEach(async () => {
           const { testErc721, testErc1155 } = fixture;
 
@@ -612,7 +613,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept an offer for my bundle of ERC721s and ERC1155s", async () => {
+      describe("[Accept offer] I want to accept an offer for my bundle of ERC721s and ERC1155s", () => {
         beforeEach(async () => {
           const { testErc20, testErc721, testErc1155 } = fixture;
 
@@ -803,8 +804,8 @@ describeWithFixture(
       });
     });
 
-    describe("A bundle of ERC1155s is to be transferred", async () => {
-      describe("[Buy now] I want to buy a bundle of ERC1155s", async () => {
+    describe("A bundle of ERC1155s is to be transferred", () => {
+      describe("[Buy now] I want to buy a bundle of ERC1155s", () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -998,7 +999,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept an offer for my bundle of ERC1155s", async () => {
+      describe("[Accept offer] I want to accept an offer for my bundle of ERC1155s", () => {
         beforeEach(async () => {
           const { testErc20, testErc1155 } = fixture;
 

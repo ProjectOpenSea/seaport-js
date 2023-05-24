@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
     "outDir": "lib",
-    "target": "es5",
+    "target": "es6",
     "lib": ["dom", "esnext"],
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
     "noImplicitReturns": true,
     "noErrorTruncation": true,
     "noImplicitThis": false,
@@ -15,13 +14,11 @@
     "sourceMap": true,
     "strict": true,
     "declaration": true,
-    "esModuleInterop": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "rootDir": "./src",
-    "downlevelIteration": true
+    "rootDir": "./src"
   },
   "include": ["./src"]
 }

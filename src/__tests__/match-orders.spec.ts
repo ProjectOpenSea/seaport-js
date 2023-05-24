@@ -34,8 +34,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
     multicallProvider = new providers.MulticallProvider(ethers.provider);
   });
 
-  describe("A single ERC721 is to be transferred", async () => {
-    describe("[Buy now] I want to buy a single ERC721 private listing", async () => {
+  describe("A single ERC721 is to be transferred", () => {
+    describe("[Buy now] I want to buy a single ERC721 private listing", () => {
       beforeEach(async () => {
         const { testErc721 } = fixture;
 
@@ -128,7 +128,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               ...privateListingCreateOrderInput.consideration.slice(1),
             ],
           };
-          testErc20.mint(
+          await testErc20.mint(
             privateListingRecipient.address,
             BigNumber.from(
               (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
@@ -193,8 +193,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
     });
   });
 
-  describe("A single ERC1155 is to be transferred", async () => {
-    describe("[Buy now] I want to buy a single ERC1155 private listing", async () => {
+  describe("A single ERC1155 is to be transferred", () => {
+    describe("[Buy now] I want to buy a single ERC1155 private listing", () => {
       beforeEach(async () => {
         const { testErc1155 } = fixture;
 
@@ -289,7 +289,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               ...privateListingCreateOrderInput.consideration.slice(1),
             ],
           };
-          testErc20.mint(
+          await testErc20.mint(
             privateListingRecipient.address,
             BigNumber.from(
               (privateListingCreateOrderInput.consideration[0] as CurrencyItem)

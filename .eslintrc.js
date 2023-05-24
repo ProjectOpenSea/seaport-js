@@ -15,6 +15,7 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: 12,
+    project: ["tsconfig.json", "tsconfig.build.json"],
   },
   rules: {
     "no-unused-expressions": "off",
@@ -22,6 +23,7 @@ module.exports = {
       "error",
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
     ],
+    "@typescript-eslint/require-await": "error",
     "object-shorthand": ["error", "always"],
   },
 };

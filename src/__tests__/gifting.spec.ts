@@ -22,8 +22,8 @@ describeWithFixture(
       [offerer, zone, fulfiller, recipient] = await ethers.getSigners();
     });
 
-    describe("A single ERC721 is to be transferred", async () => {
-      describe("[Buy now] I want to buy a single ERC721 for someone else", async () => {
+    describe("A single ERC721 is to be transferred", () => {
+      describe("[Buy now] I want to buy a single ERC721 for someone else", () => {
         beforeEach(async () => {
           const { testErc721 } = fixture;
 
@@ -80,7 +80,7 @@ describeWithFixture(
         });
 
         describe("with ERC20", () => {
-          beforeEach(async () => {
+          beforeEach(() => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
@@ -151,8 +151,8 @@ describeWithFixture(
       });
     });
 
-    describe("A single ERC1155 is to be transferred", async () => {
-      describe("[Buy now] I want to buy a single ERC1155 for someone else", async () => {
+    describe("A single ERC1155 is to be transferred", () => {
+      describe("[Buy now] I want to buy a single ERC1155 for someone else", () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -214,7 +214,7 @@ describeWithFixture(
         });
 
         describe("with ERC20", () => {
-          beforeEach(async () => {
+          beforeEach(() => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
