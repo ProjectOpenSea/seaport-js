@@ -1,14 +1,15 @@
 import * as dotenv from "dotenv";
 
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-waffle";
 import "solidity-coverage";
 
 dotenv.config();
 
 // Go to https://hardhat.org/config to learn more
-const config: HardhatUserConfig & { typechain: any } = {
+const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
@@ -47,7 +48,7 @@ const config: HardhatUserConfig & { typechain: any } = {
     },
   },
   typechain: {
-    outDir: "src/typechain",
+    outDir: "src/typechain-types",
     target: "ethers-v5",
   },
   paths: {

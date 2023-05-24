@@ -3,8 +3,7 @@ import { BigNumber, Contract, Signer } from "ethers";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
-import type { ERC20 } from "../typechain/ERC20";
-import type { ERC721 } from "../typechain/ERC721";
+import type { TestERC20, TestERC721 } from "../typechain-types";
 import type { ApprovalAction, Item } from "../types";
 import type { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { isErc1155Item, isErc721Item } from "./item";
@@ -22,7 +21,7 @@ export const approvedItemAmount = async (
       item.token,
       ERC721ABI,
       multicallProvider
-    ) as ERC721;
+    ) as TestERC721;
     return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
       // Setting to the max int to consolidate types and simplify
       isApprovedForAll ? MAX_INT : BigNumber.from(0)
@@ -32,7 +31,7 @@ export const approvedItemAmount = async (
       item.token,
       ERC20ABI,
       multicallProvider
-    ) as ERC20;
+    ) as TestERC20;
 
     return contract.allowance(owner, operator);
   }
@@ -67,7 +66,11 @@ export function getApprovalActions(
           const isErc1155 = isErc1155Item(itemType);
           if (isErc721Item(itemType) || isErc1155) {
             // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-            const contract = new Contract(token, ERC721ABI, signer) as ERC721;
+            const contract = new Contract(
+              token,
+              ERC721ABI,
+              signer
+            ) as TestERC721;
 
             return {
               type: "approval",
@@ -85,7 +88,7 @@ export function getApprovalActions(
               ),
             };
           } else {
-            const contract = new Contract(token, ERC20ABI, signer) as ERC20;
+            const contract = new Contract(token, ERC20ABI, signer) as TestERC20;
 
             return {
               type: "approval",

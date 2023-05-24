@@ -6,7 +6,7 @@ import type {
   TestERC1155,
   Seaport as SeaportContract,
   DomainRegistry,
-} from "../../typechain";
+} from "../../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import sinonChai from "sinon-chai";

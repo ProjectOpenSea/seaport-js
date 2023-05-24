@@ -11,7 +11,7 @@ import type {
   Seaport,
   FulfillmentComponentStruct,
   OrderStruct,
-} from "../typechain/Seaport";
+} from "../typechain-types/seaport_v1_4/contracts/Seaport";
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
   AdvancedOrder,
@@ -732,8 +732,8 @@ export async function fulfillAvailableOrders({
               ),
             })
           : [],
-        offerFulfillments,
-        considerationFulfillments,
+        [offerFulfillments],
+        [considerationFulfillments],
         conduitKey,
         recipientAddress,
         advancedOrdersWithTips.length,
@@ -798,9 +798,9 @@ export function generateFulfillOrdersFulfillments(
         })}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
         offerAggregatedFulfillments[aggregateKey] = [
-          ...(offerAggregatedFulfillments[aggregateKey] ?? []),
+          ...((offerAggregatedFulfillments[aggregateKey] ?? []) as any),
           { orderIndex, itemIndex },
-        ];
+        ] as any;
       });
     }
   );
@@ -822,9 +822,10 @@ export function generateFulfillOrdersFulfillments(
           })}${isErc721Item(item.itemType) ? itemIndex : ""}`;
 
           considerationAggregatedFulfillments[aggregateKey] = [
-            ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
+            ...((considerationAggregatedFulfillments[aggregateKey] ??
+              []) as any),
             { orderIndex, itemIndex },
-          ];
+          ] as any;
         }
       );
     }
