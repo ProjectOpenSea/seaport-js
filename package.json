@@ -20,6 +20,9 @@
     "doc": "docs",
     "lib": "lib"
   },
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "build": "hardhat compile && tsc -p tsconfig.build.json",
     "check-types": "tsc --noEmit -p src/__tests__/tsconfig.json",
@@ -34,25 +37,6 @@
     "test": "hardhat test"
   },
   "types": "lib/index.d.ts",
-  "resolutions": {
-    "minimist": ">=1.2.6",
-    "json-schema": ">=0.4.0",
-    "underscore": ">=1.12.1",
-    "undici": ">=5.8.2",
-    "simple-get": ">=2.8.2",
-    "tar": ">=4.4.18",
-    "normalize-url": ">=4.5.1",
-    "async": ">=2.6.4",
-    "node-fetch": ">=2.6.7",
-    "lodash": ">=4.17.21",
-    "got": ">=11.8.5",
-    "cross-fetch": ">=2.2.6",
-    "ws": ">=5.2.3",
-    "path-parse": ">=1.0.7",
-    "elliptic": ">=6.5.4",
-    "yargs-parser": ">=5.0.1",
-    "minimatch": ">=3.0.5"
-  },
   "dependencies": {
     "@0xsequence/multicall": "^0.39.0",
     "ethers": "^5.6.7",
@@ -74,7 +58,7 @@
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "concurrently": "^7.1.0",
-    "domain-registry": "ProjectOpenSea/domain-registry.git#70a5cb3dc919a13660dd83518fb2ab070009cce6",
+    "domain-registry": "ProjectOpenSea/domain-registry",
     "dotenv": "^10.0.0",
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
@@ -101,8 +85,24 @@
     "typechain": "^7.0.1",
     "typescript": "^4.6.2"
   },
-  "engines": {
-    "node": ">=14.0.0"
+  "resolutions": {
+    "minimist": ">=1.2.6",
+    "json-schema": ">=0.4.0",
+    "underscore": ">=1.12.1",
+    "undici": ">=5.8.2",
+    "simple-get": ">=2.8.2",
+    "tar": ">=4.4.18",
+    "normalize-url": ">=4.5.1",
+    "async": ">=2.6.4",
+    "node-fetch": ">=2.6.7",
+    "lodash": ">=4.17.21",
+    "got": ">=11.8.5",
+    "cross-fetch": ">=2.2.6",
+    "ws": ">=5.2.3",
+    "path-parse": ">=1.0.7",
+    "elliptic": ">=6.5.4",
+    "yargs-parser": ">=5.0.1",
+    "minimatch": ">=3.0.5"
   },
   "lint-staged": {
     "package.json": [
