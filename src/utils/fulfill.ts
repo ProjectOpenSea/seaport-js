@@ -732,8 +732,8 @@ export async function fulfillAvailableOrders({
               ),
             })
           : [],
-        [offerFulfillments],
-        [considerationFulfillments],
+        offerFulfillments as any,
+        considerationFulfillments as any,
         conduitKey,
         recipientAddress,
         advancedOrdersWithTips.length,
