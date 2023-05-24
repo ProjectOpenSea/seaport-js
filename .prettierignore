@@ -2,6 +2,5 @@ node_modules
 artifacts
 cache
 coverage*
-gasReporterOutput.json
 lib
-typechain
+typechain-types

@@ -1,8 +1,8 @@
-import type { DomainRegistry as TypeChainDomainRegistryContract } from "./typechain/DomainRegistry";
+import type { DomainRegistry as TypeChainDomainRegistryContract } from "./typechain-types";
 import type {
   OrderStruct,
   Seaport as TypeChainSeaportContract,
-} from "./typechain/Seaport";
+} from "./typechain-types/seaport_v1_4/contracts/Seaport";
 import {
   BigNumber,
   BigNumberish,
@@ -15,8 +15,7 @@ import {
   PopulatedTransaction,
 } from "ethers";
 import { ItemType, OrderType } from "./constants";
-import type { ERC721 } from "./typechain/ERC721";
-import type { ERC20 } from "./typechain/ERC20";
+import type { TestERC20, TestERC721 } from "./typechain-types";
 
 export type SeaportConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
@@ -210,8 +209,10 @@ export type ApprovalAction = {
   itemType: ItemType;
   operator: string;
   transactionMethods:
-    | TransactionMethods<ContractMethodReturnType<ERC721, "setApprovalForAll">>
-    | TransactionMethods<ContractMethodReturnType<ERC20, "approve">>;
+    | TransactionMethods<
+        ContractMethodReturnType<TestERC721, "setApprovalForAll">
+      >
+    | TransactionMethods<ContractMethodReturnType<TestERC20, "approve">>;
 };
 
 export type ExchangeAction<T = unknown> = {

@@ -4,9 +4,7 @@ import { ERC1155ABI } from "../abi/ERC1155";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType } from "../constants";
-import type { ERC20 } from "../typechain/ERC20";
-import type { ERC1155 } from "../typechain/ERC1155";
-import type { ERC721 } from "../typechain/ERC721";
+import type { TestERC20, TestERC1155, TestERC721 } from "../typechain-types";
 import type { InputCriteria, Item } from "../types";
 import { isErc1155Item, isErc20Item, isErc721Item } from "./item";
 
@@ -21,7 +19,7 @@ export const balanceOf = async (
       item.token,
       ERC721ABI,
       multicallProvider
-    ) as ERC721;
+    ) as TestERC721;
 
     if (item.itemType === ItemType.ERC721_WITH_CRITERIA) {
       return criteria
@@ -45,7 +43,7 @@ export const balanceOf = async (
       item.token,
       ERC1155ABI,
       multicallProvider
-    ) as ERC1155;
+    ) as TestERC1155;
 
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
       if (!criteria) {
@@ -67,7 +65,7 @@ export const balanceOf = async (
       item.token,
       ERC20ABI,
       multicallProvider
-    ) as ERC20;
+    ) as TestERC20;
     return contract.balanceOf(owner);
   }
 

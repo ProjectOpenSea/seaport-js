@@ -7,7 +7,7 @@ import type {
   Seaport as SeaportContract,
   DomainRegistry,
   TestERC20USDC,
-} from "../../typechain";
+} from "../../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import sinonChai from "sinon-chai";

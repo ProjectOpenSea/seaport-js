@@ -6,9 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
-
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -16,12 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: 16.11.0
+          node-version: 16.x
           cache: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -38,12 +33,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: 16.11.0
+          node-version: 16.x
           cache: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -60,12 +53,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: 16.11.0
+          node-version: 16.x
           cache: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
       - name: Install dependencies
         run: npm ci --ignore-scripts

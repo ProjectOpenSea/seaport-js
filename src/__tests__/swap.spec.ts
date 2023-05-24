@@ -5,7 +5,7 @@ import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
-import { TestERC1155, TestERC721 } from "../typechain";
+import { TestERC1155, TestERC721 } from "../typechain-types";
 import { ApprovalAction, CreateOrderAction, CreateOrderInput } from "../types";
 import * as fulfill from "../utils/fulfill";
 import {
