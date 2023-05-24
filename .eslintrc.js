@@ -8,9 +8,8 @@ module.exports = {
   ignorePatterns: ["lib"],
   plugins: ["@typescript-eslint", "import"],
   extends: [
-    "standard",
-    "plugin:prettier/recommended",
     "eslint:recommended",
+    "plugin:prettier/recommended",
     "plugin:import/typescript",
   ],
   parser: "@typescript-eslint/parser",
