@@ -23,5 +23,5 @@
     "rootDir": "./src",
     "downlevelIteration": true
   },
-  "include": ["./src/**/*", "./src/typechain"]
+  "include": ["./src"]
 }

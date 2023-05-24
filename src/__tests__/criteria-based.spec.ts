@@ -522,7 +522,7 @@ describeWithFixture(
             // Nft with ID 2 was not in the initial set of valid identifiers
             await expect(
               revertedFulfill.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -612,7 +612,7 @@ describeWithFixture(
             // Nft with ID 2 was not in the initial set of valid identifiers
             await expect(
               revertedFulfill.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -729,7 +729,7 @@ describeWithFixture(
 
             await expect(
               revertedFulfill.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -882,7 +882,7 @@ describeWithFixture(
 
             await expect(
               revertedFulfillAction.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -1230,7 +1230,7 @@ describeWithFixture(
             // Nft with ID 2 was not in the initial set of valid identifiers
             await expect(
               revertedFulfill.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -1333,7 +1333,7 @@ describeWithFixture(
 
             await expect(
               revertedFulfill.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -1446,7 +1446,7 @@ describeWithFixture(
 
             await expect(
               revertedFulfill.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -1586,7 +1586,7 @@ describeWithFixture(
 
             await expect(
               revertedFulfillAction.transactionMethods.transact()
-            ).to.be.revertedWith("InvalidProof()");
+            ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -1785,7 +1785,7 @@ describeWithFixture(
           // Nft with ID 2 was not in the initial set of valid identifiers in the offer
           await expect(
             revertedFulfill.transactionMethods.transact()
-          ).to.be.revertedWith("InvalidProof()");
+          ).to.be.revertedWith("InvalidProof");
 
           const { actions } = await seaport.fulfillOrder({
             order,
