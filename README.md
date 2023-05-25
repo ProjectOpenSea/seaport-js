@@ -158,7 +158,7 @@ const transaction = executeAllFulfillActions();
 
 ## Contributing
 
-See [the contributing guide](CONTRIBUTING.md) for detailed instructions on how to get started with this project.
+See [the contributing guide](./.github/CONTRIBUTING.md) for detailed instructions on how to get started with this project.
 
 ## License
 
