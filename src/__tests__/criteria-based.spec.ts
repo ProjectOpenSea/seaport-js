@@ -4,7 +4,6 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem, OrderWithCounter } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -15,6 +14,8 @@ import {
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 
+const sinon = require("sinon");
+
 describeWithFixture(
   "As a user I want to buy now or accept an offer for orders with criteria based items",
   (fixture) => {
@@ -23,8 +24,8 @@ describeWithFixture(
     let fulfiller: SignerWithAddress;
     let multicallProvider: providers.MulticallProvider;
 
-    let fulfillStandardOrderSpy: sinon.SinonSpy;
-    let fulfillAvailableOrdersSpy: sinon.SinonSpy;
+    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
+    let fulfillAvailableOrdersSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let standardCreateOrderInput: CreateOrderInput;
 
     const nftId = "1";
@@ -45,7 +46,7 @@ describeWithFixture(
       fulfillAvailableOrdersSpy.restore();
     });
 
-    describe("A criteria based ERC721 is to be transferred", async () => {
+    describe("A criteria based ERC721 is to be transferred", () => {
       describe("Collection based trades", () => {
         describe("[Buy now] I want to buy a collection based listing", () => {
           beforeEach(async () => {
@@ -922,7 +923,7 @@ describeWithFixture(
       });
     });
 
-    describe("A criteria based ERC1155 is to be transferred", async () => {
+    describe("A criteria based ERC1155 is to be transferred", () => {
       describe("Collection based trades", () => {
         describe("[Buy now] I want to buy a collection based listing", () => {
           beforeEach(async () => {
@@ -1618,7 +1619,7 @@ describeWithFixture(
       });
     });
 
-    describe("A criteria based ERC721 to criteria based ERC1155 swap", async () => {
+    describe("A criteria based ERC721 to criteria based ERC1155 swap", () => {
       describe("Collection based swaps", () => {
         beforeEach(async () => {
           const { testErc721, testErc1155 } = fixture;

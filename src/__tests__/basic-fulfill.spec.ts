@@ -4,7 +4,6 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
 import { CreateOrderInput, CurrencyItem } from "../types";
 import * as fulfill from "../utils/fulfill";
@@ -14,6 +13,8 @@ import {
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 
+const sinon = require("sinon");
+
 describeWithFixture(
   "As a user I want to buy now or accept an offer",
   (fixture) => {
@@ -22,7 +23,7 @@ describeWithFixture(
     let fulfiller: SignerWithAddress;
     let standardCreateOrderInput: CreateOrderInput;
     let multicallProvider: providers.MulticallProvider;
-    let fulfillBasicOrderSpy: sinon.SinonSpy;
+    let fulfillBasicOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     const nftId = "1";
     const erc1155Amount = "3";
     const OPENSEA_DOMAIN = "opensea.io";
@@ -39,8 +40,8 @@ describeWithFixture(
       fulfillBasicOrderSpy.restore();
     });
 
-    describe("A single ERC721 is to be transferred", async () => {
-      describe("[Buy now] I want to buy a single ERC721", async () => {
+    describe("A single ERC721 is to be transferred", () => {
+      describe("[Buy now] I want to buy a single ERC721", () => {
         beforeEach(async () => {
           const { testErc721 } = fixture;
 
@@ -157,7 +158,7 @@ describeWithFixture(
         });
 
         describe("with ERC20", () => {
-          beforeEach(async () => {
+          beforeEach(() => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
@@ -317,7 +318,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept an offer for my single ERC721", async () => {
+      describe("[Accept offer] I want to accept an offer for my single ERC721", () => {
         beforeEach(async () => {
           const { testErc721, testErc20 } = fixture;
 
@@ -410,8 +411,8 @@ describeWithFixture(
       });
     });
 
-    describe("A single ERC1155 is to be transferred", async () => {
-      describe("[Buy now] I want to buy a single ERC1155", async () => {
+    describe("A single ERC1155 is to be transferred", () => {
+      describe("[Buy now] I want to buy a single ERC1155", () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -538,7 +539,7 @@ describeWithFixture(
         });
 
         describe("with ERC20", () => {
-          beforeEach(async () => {
+          beforeEach(() => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
@@ -696,7 +697,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept an offer for my single ERC1155", async () => {
+      describe("[Accept offer] I want to accept an offer for my single ERC1155", () => {
         beforeEach(async () => {
           const { testErc1155, seaportContract, testErc20 } = fixture;
 

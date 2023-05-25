@@ -393,7 +393,7 @@ export class Seaport {
         operator,
       });
 
-      const approvals = await getApprovalActions(
+      const approvals = getApprovalActions(
         insufficientApprovals,
         exactApproval,
         signer

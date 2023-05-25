@@ -4,7 +4,6 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import sinon from "sinon";
 import { ItemType, MAX_INT, OrderType } from "../constants";
 import { TestERC1155 } from "../typechain-types";
 import { CreateOrderInput, CurrencyItem } from "../types";
@@ -15,6 +14,8 @@ import {
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 
+const sinon = require("sinon");
+
 describeWithFixture(
   "As a user I want to buy now or accept an offer partially",
   (fixture) => {
@@ -23,7 +24,7 @@ describeWithFixture(
     let fulfiller: SignerWithAddress;
     let multicallProvider: providers.MulticallProvider;
 
-    let fulfillStandardOrderSpy: sinon.SinonSpy;
+    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let standardCreateOrderInput: CreateOrderInput;
     let secondTestErc1155: TestERC1155;
 
@@ -47,8 +48,8 @@ describeWithFixture(
       fulfillStandardOrderSpy.restore();
     });
 
-    describe("An ERC1155 is partially transferred", async () => {
-      describe("[Buy now] I want to partially buy an ERC1155", async () => {
+    describe("An ERC1155 is partially transferred", () => {
+      describe("[Buy now] I want to partially buy an ERC1155", () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -453,7 +454,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept a partial offer for my ERC1155", async () => {
+      describe("[Accept offer] I want to accept a partial offer for my ERC1155", () => {
         beforeEach(async () => {
           const { testErc20, testErc1155 } = fixture;
 
@@ -598,8 +599,8 @@ describeWithFixture(
       });
     });
 
-    describe("Multiple ERC1155s are partially transferred", async () => {
-      describe("[Buy now] I want to partially buy two separate ERC1155s", async () => {
+    describe("Multiple ERC1155s are partially transferred", () => {
+      describe("[Buy now] I want to partially buy two separate ERC1155s", () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -831,7 +832,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Accept offer] I want to accept a partial offer for my ERC1155", async () => {
+      describe("[Accept offer] I want to accept a partial offer for my ERC1155", () => {
         beforeEach(async () => {
           const { testErc20, testErc1155 } = fixture;
 

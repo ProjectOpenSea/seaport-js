@@ -3,7 +3,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import sinon from "sinon";
 import { ItemType, MAX_INT } from "../constants";
 import { TestERC1155, TestERC721 } from "../typechain-types";
 import { ApprovalAction, CreateOrderAction, CreateOrderInput } from "../types";
@@ -14,6 +13,8 @@ import {
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 
+const sinon = require("sinon");
+
 describeWithFixture(
   "As a user I want to swap any numbers of items",
   (fixture) => {
@@ -22,7 +23,7 @@ describeWithFixture(
     let fulfiller: SignerWithAddress;
     let multicallProvider: providers.MulticallProvider;
 
-    let fulfillStandardOrderSpy: sinon.SinonSpy;
+    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let secondTestErc721: TestERC721;
     let secondTestErc1155: TestERC1155;
     let standardCreateOrderInput: CreateOrderInput;
@@ -50,7 +51,7 @@ describeWithFixture(
       fulfillStandardOrderSpy.restore();
     });
 
-    describe("Swapping ERC721s for ERC721s", async () => {
+    describe("Swapping ERC721s for ERC721s", () => {
       beforeEach(async () => {
         const { testErc721 } = fixture;
 
@@ -181,7 +182,7 @@ describeWithFixture(
         expect(fulfillStandardOrderSpy).calledOnce;
       });
     });
-    describe("Swapping ERC1155s for ERC1155s", async () => {
+    describe("Swapping ERC1155s for ERC1155s", () => {
       beforeEach(async () => {
         const { testErc1155 } = fixture;
 
@@ -318,7 +319,7 @@ describeWithFixture(
         expect(fulfillStandardOrderSpy).calledOnce;
       });
     });
-    describe("Swapping ERC721 + WETH for ERC721 + WETH", async () => {
+    describe("Swapping ERC721 + WETH for ERC721 + WETH", () => {
       beforeEach(async () => {
         const { testErc721, testErc20 } = fixture;
 

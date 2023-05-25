@@ -3,7 +3,8 @@
   "exclude": [
     "./src/__tests__/**/*",
     "./src/artifacts/**/*",
-    "./src/typechain/**/*",
-    "./hardhat.config.ts"
+    "./src/typechain-types/**/*",
+    "./hardhat.config.ts",
+    ".eslintrc.js"
   ]
 }

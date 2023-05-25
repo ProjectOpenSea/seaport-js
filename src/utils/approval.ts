@@ -47,63 +47,57 @@ export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
   exactApproval: boolean,
   signer: Signer
-): Promise<ApprovalAction[]> {
-  return Promise.all(
-    insufficientApprovals
-      .filter(
-        (approval, index) =>
-          index === insufficientApprovals.length - 1 ||
-          insufficientApprovals[index + 1].token !== approval.token
-      )
-      .map(
-        async ({
-          token,
-          operator,
-          itemType,
-          identifierOrCriteria,
-          requiredApprovedAmount,
-        }) => {
-          const isErc1155 = isErc1155Item(itemType);
-          if (isErc721Item(itemType) || isErc1155) {
-            // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-            const contract = new Contract(
-              token,
-              ERC721ABI,
-              signer
-            ) as TestERC721;
+): ApprovalAction[] {
+  return insufficientApprovals
+    .filter(
+      (approval, index) =>
+        index === insufficientApprovals.length - 1 ||
+        insufficientApprovals[index + 1].token !== approval.token
+    )
+    .map(
+      ({
+        token,
+        operator,
+        itemType,
+        identifierOrCriteria,
+        requiredApprovedAmount,
+      }) => {
+        const isErc1155 = isErc1155Item(itemType);
+        if (isErc721Item(itemType) || isErc1155) {
+          // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
+          const contract = new Contract(token, ERC721ABI, signer) as TestERC721;
 
-            return {
-              type: "approval",
-              token,
-              identifierOrCriteria,
-              itemType,
-              operator,
-              transactionMethods: getTransactionMethods(
-                contract.connect(signer),
-                exactApproval && !isErc1155 ? "approve" : "setApprovalForAll",
-                [
-                  operator,
-                  exactApproval && !isErc1155 ? identifierOrCriteria : true,
-                ]
-              ),
-            };
-          } else {
-            const contract = new Contract(token, ERC20ABI, signer) as TestERC20;
+          return {
+            type: "approval",
+            token,
+            identifierOrCriteria,
+            itemType,
+            operator,
+            transactionMethods: getTransactionMethods(
+              contract.connect(signer),
+              exactApproval && !isErc1155 ? "approve" : "setApprovalForAll",
+              [
+                operator,
+                exactApproval && !isErc1155 ? identifierOrCriteria : true,
+              ]
+            ),
+          };
+        } else {
+          const contract = new Contract(token, ERC20ABI, signer) as TestERC20;
 
-            return {
-              type: "approval",
-              token,
-              identifierOrCriteria,
-              itemType,
-              transactionMethods: getTransactionMethods(
-                contract.connect(signer),
-                "approve",
-                [operator, exactApproval ? requiredApprovedAmount : MAX_INT]
-              ),
-              operator,
-            };
-          }
+          return {
+            type: "approval",
+            token,
+            identifierOrCriteria,
+            itemType,
+            transactionMethods: getTransactionMethods(
+              contract.connect(signer),
+              "approve",
+              [operator, exactApproval ? requiredApprovedAmount : MAX_INT]
+            ),
+            operator,
+          };
         }
-      )
-  );
+      }
+    );
 }
