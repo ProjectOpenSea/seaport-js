@@ -20,5 +20,5 @@
     "isolatedModules": true,
     "rootDir": "./src"
   },
-  "include": ["./src"]
+  "include": ["./src", "./hardhat.config.ts", ".eslintrc.js"]
 }
