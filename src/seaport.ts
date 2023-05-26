@@ -65,7 +65,6 @@ import {
   deductFees,
   feeToConsiderationItem,
   generateRandomSalt,
-  generateRandomSaltWithDomain,
   mapInputItemToOfferItem,
   totalItemsAmount,
 } from "./utils/order";
@@ -355,9 +354,9 @@ export class Seaport {
         : []),
     ];
 
-    const saltFollowingConditional =
-      salt ||
-      (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
+    const saltFollowingConditional = salt
+      ? BigNumber.from(salt).toHexString()
+      : generateRandomSalt(domain);
 
     const orderComponents: OrderComponents = {
       offerer,

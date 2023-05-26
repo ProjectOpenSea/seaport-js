@@ -86,7 +86,7 @@ export type OrderParameters = {
   startTime: BigNumberish;
   endTime: BigNumberish;
   zoneHash: string;
-  salt: BigNumberish;
+  salt: string;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
   totalOriginalConsiderationItems: BigNumberish;
