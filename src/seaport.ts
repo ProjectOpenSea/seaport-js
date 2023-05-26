@@ -354,9 +354,10 @@ export class Seaport {
         : []),
     ];
 
-    const saltFollowingConditional = salt
-      ? BigNumber.from(salt).toHexString()
-      : generateRandomSalt(domain);
+    const saltFollowingConditional =
+      salt !== undefined
+        ? `0x${BigNumber.from(salt).toHexString().slice(2).padStart(64, "0")}`
+        : generateRandomSalt(domain);
 
     const orderComponents: OrderComponents = {
       offerer,
@@ -783,7 +784,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
-    domain = "",
+    domain,
     exactApproval = false,
   }: {
     order: OrderWithCounter;
@@ -941,7 +942,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
-    domain = "",
+    domain,
     exactApproval = false,
   }: {
     fulfillOrderDetails: {
@@ -1068,7 +1069,7 @@ export class Seaport {
     fulfillments,
     overrides,
     accountAddress,
-    domain = "",
+    domain,
   }: {
     orders: (OrderWithCounter | Order)[];
     fulfillments: MatchOrdersFulfillment[];

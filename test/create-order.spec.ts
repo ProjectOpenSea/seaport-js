@@ -5,7 +5,6 @@ import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
 import { ApprovalAction, CreateOrderAction } from "../src/types";
 import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
-import { BigNumber } from "ethers";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
@@ -775,9 +774,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(BigNumber.from(order.parameters.salt).toHexString().slice(0, 10)).eq(
-      openseaMagicValue
-    );
+    expect(order.parameters.salt.slice(0, 10)).eq(openseaMagicValue);
   });
 
   it("should create an order with a salt with the first four bytes being empty if no domain is given", async () => {
@@ -818,9 +815,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(BigNumber.from(order.parameters.salt).toHexString().slice(0, 10)).eq(
-      "0x00000000"
-    );
+    expect(order.parameters.salt.slice(0, 10)).eq("0x00000000");
   });
 
   it("should create an order with the passed in salt", async () => {
@@ -831,7 +826,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     await testErc721.mint(offerer.address, nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
-    const salt = "0xabc";
+    const salt = "0xabcd";
 
     const { executeAllActions } = await seaport.createOrder({
       startTime,
@@ -863,6 +858,6 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(order.parameters.salt).eq("0xabc");
+    expect(order.parameters.salt).eq(`0x${"0".repeat(60)}abcd`);
   });
 });

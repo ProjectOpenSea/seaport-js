@@ -282,7 +282,7 @@ export const generateRandomSalt = (domain?: string) => {
       ])
     ).toString("hex")}`;
   }
-  return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(24, "0")}`;
+  return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`;
 };
 
 export const shouldUseMatchForFulfill = () => true;
