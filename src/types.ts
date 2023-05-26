@@ -86,7 +86,7 @@ export type OrderParameters = {
   startTime: BigNumberish;
   endTime: BigNumberish;
   zoneHash: string;
-  salt: string;
+  salt: BigNumberish;
   offer: OfferItem[];
   consideration: ConsiderationItem[];
   totalOriginalConsiderationItems: BigNumberish;
@@ -159,17 +159,16 @@ export type Fee = {
 export type CreateOrderInput = {
   conduitKey?: string;
   zone?: string;
-  startTime?: string;
-  endTime?: string;
+  startTime?: BigNumberish;
+  endTime?: BigNumberish;
   offer: readonly CreateInputItem[];
   consideration: readonly ConsiderationInputItem[];
   counter?: BigNumberish;
   fees?: readonly Fee[];
   allowPartialFills?: boolean;
   restrictedByZone?: boolean;
-  useProxy?: boolean;
   domain?: string;
-  salt?: string;
+  salt?: BigNumberish;
 };
 
 export type InputCriteria = {
