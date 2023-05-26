@@ -4,10 +4,10 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT } from "../constants";
-import { CreateOrderInput, CurrencyItem, OrderWithCounter } from "../types";
-import * as fulfill from "../utils/fulfill";
-import { MerkleTree } from "../utils/merkletree";
+import { ItemType, MAX_INT } from "../src/constants";
+import { CreateOrderInput, CurrencyItem, OrderWithCounter } from "../src/types";
+import * as fulfill from "../src/utils/fulfill";
+import { MerkleTree } from "../src/utils/merkletree";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,

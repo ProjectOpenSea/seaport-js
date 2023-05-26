@@ -1,7 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "rootDir": "../../"
-  },
-  "files": ["../../hardhat.config.ts"]
-}

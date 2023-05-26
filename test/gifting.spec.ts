@@ -3,8 +3,8 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT } from "../constants";
-import { CreateOrderInput, CurrencyItem } from "../types";
+import { ItemType, MAX_INT } from "../src/constants";
+import { CreateOrderInput, CurrencyItem } from "../src/types";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(

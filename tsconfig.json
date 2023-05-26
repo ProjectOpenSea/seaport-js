@@ -17,8 +17,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "rootDir": "./src"
+    "isolatedModules": true
   },
-  "include": ["./src", "./hardhat.config.ts", ".eslintrc.js"]
+  "include": ["./src", "./test", "./hardhat.config.ts", ".eslintrc.js"]
 }

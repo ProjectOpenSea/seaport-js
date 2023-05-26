@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
-import { ConsiderationItem, OfferItem } from "../types";
-import { generateRandomSalt } from "../utils/order";
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
+import { ConsiderationItem, OfferItem } from "../src/types";
+import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to sign an order", (fixture) => {

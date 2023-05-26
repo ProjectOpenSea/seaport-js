@@ -3,9 +3,9 @@ import {
   MatchOrdersFulfillment,
   Order,
   OrderWithCounter,
-} from "../../../types";
-import { isCurrencyItem } from "../../../utils/item";
-import { generateRandomSalt } from "../../../utils/order";
+} from "../../../src/types";
+import { isCurrencyItem } from "../../../src/utils/item";
+import { generateRandomSalt } from "../../../src/utils/order";
 
 export const constructPrivateListingCounterOrder = (
   order: OrderWithCounter,
