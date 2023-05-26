@@ -22,15 +22,15 @@
     "lib": "lib"
   },
   "scripts": {
-    "postinstall": "husky install",
-    "prepare": "npm run build",
     "build": "hardhat compile && tsc -p tsconfig.build.json && npm run bundle",
     "bundle": "browserify lib/index.js -o lib/bundle.js",
     "check-types": "tsc --noEmit ",
     "check-types:incremental": "npm run check-types --incremental",
     "coverage": "c8 npm run test",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
+    "postinstall": "husky install",
     "lint": "concurrently \"npm run check-types\" \"npm run eslint:check\" \"npm run prettier:check\" \"npm run prettier:check:package.json\"",
+    "prepare": "npm run build",
     "prettier:check": "prettier --check .",
     "prettier:check:package.json": "prettier-package-json --list-different",
     "prettier:fix": "prettier --write . && prettier-package-json --write package.json",
