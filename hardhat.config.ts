@@ -43,7 +43,7 @@ const config: HardhatUserConfig = {
     target: "ethers-v5",
   },
   paths: {
-    tests: "src/__tests__",
+    tests: "test",
     artifacts: "src/artifacts",
     sources: "src/contracts",
   },

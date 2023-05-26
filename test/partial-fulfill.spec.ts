@@ -4,10 +4,10 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT, OrderType } from "../constants";
-import { TestERC1155 } from "../typechain-types";
-import { CreateOrderInput, CurrencyItem } from "../types";
-import * as fulfill from "../utils/fulfill";
+import { ItemType, MAX_INT, OrderType } from "../src/constants";
+import { TestERC1155 } from "../src/typechain-types";
+import { CreateOrderInput, CurrencyItem } from "../src/types";
+import * as fulfill from "../src/utils/fulfill";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,

@@ -4,8 +4,8 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 
-import { ItemType, MAX_INT } from "../constants";
-import { CreateOrderInput, CurrencyItem } from "../types";
+import { ItemType, MAX_INT } from "../src/constants";
+import { CreateOrderInput, CurrencyItem } from "../src/types";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -15,7 +15,7 @@ import {
   getPrivateListingFulfillments,
 } from "./utils/examples/privateListings";
 import { describeWithFixture } from "./utils/setup";
-import { getTransactionMethods } from "../utils/usecase";
+import { getTransactionMethods } from "../src/utils/usecase";
 import { expect } from "chai";
 
 describeWithFixture("As a user I want to match an order", (fixture) => {

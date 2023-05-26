@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
-import { ApprovalAction, CreateOrderAction } from "../types";
-import { generateRandomSalt } from "../utils/order";
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
+import { ApprovalAction, CreateOrderAction } from "../src/types";
+import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {

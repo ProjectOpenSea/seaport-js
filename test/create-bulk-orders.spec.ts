@@ -1,12 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
 import {
   ApprovalAction,
   BasicErc721Item,
   CreateBulkOrdersAction,
 } from "../types";
-import { generateRandomSalt } from "../utils/order";
+import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture(

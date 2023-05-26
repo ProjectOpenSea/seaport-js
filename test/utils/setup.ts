@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Seaport } from "../../seaport";
+import { Seaport } from "../../src/seaport";
 import type {
   TestERC721,
   TestERC20,
@@ -7,7 +7,7 @@ import type {
   Seaport as SeaportContract,
   DomainRegistry,
   TestERC20USDC,
-} from "../../typechain-types";
+} from "../../src/typechain-types";
 
 const chai = require("chai");
 const chaiAsPromised = require("chai-as-promised");
