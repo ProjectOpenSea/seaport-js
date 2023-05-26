@@ -5,6 +5,7 @@ import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
 import { ApprovalAction, CreateOrderAction } from "../src/types";
 import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
+import { BigNumber } from "ethers";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
@@ -774,7 +775,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(order.parameters.salt.slice(0, 10)).eq(openseaMagicValue);
+    expect(BigNumber.from(order.parameters.salt).toHexString().slice(0, 10)).eq(
+      openseaMagicValue
+    );
   });
 
   it("should create an order with a salt with the first four bytes being empty if no domain is given", async () => {
@@ -815,7 +818,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(order.parameters.salt.slice(0, 10)).eq("0x00000000");
+    expect(BigNumber.from(order.parameters.salt).toHexString().slice(0, 10)).eq(
+      "0x00000000"
+    );
   });
 
   it("should create an order with the passed in salt", async () => {

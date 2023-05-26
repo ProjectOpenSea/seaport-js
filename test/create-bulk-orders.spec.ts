@@ -5,7 +5,7 @@ import {
   ApprovalAction,
   BasicErc721Item,
   CreateBulkOrdersAction,
-} from "../types";
+} from "../src/types";
 import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
 
