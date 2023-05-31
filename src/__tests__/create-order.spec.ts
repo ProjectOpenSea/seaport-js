@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
-import { ApprovalAction, CreateOrderAction } from "../types";
+import { ApprovalAction, CreateOrderAction, CreateOrderInput } from "../types";
 import { generateRandomSalt } from "../utils/order";
 import { describeWithFixture } from "./utils/setup";
 
@@ -403,7 +403,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 
   describe("check validations", () => {
-    it("throws if currencies are different", async () => {
+    it("throws if currencies are different when applying fees", async () => {
       const { seaport, testErc721, testErc20 } = fixture;
 
       const [offerer, zone] = await ethers.getSigners();
@@ -414,32 +414,39 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       const salt = generateRandomSalt();
       await testErc20.mint(offerer.address, 1);
 
-      await expect(
-        seaport.createOrder({
-          startTime,
-          endTime,
-          salt,
-          offer: [
-            {
-              itemType: ItemType.ERC721,
-              token: testErc721.address,
-              identifier: nftId,
-            },
-          ],
-          consideration: [
-            {
-              amount: ethers.utils.parseEther("10").toString(),
-              recipient: offerer.address,
-            },
-            {
-              token: testErc20.address,
-              amount: ethers.utils.parseEther("1").toString(),
-              recipient: zone.address,
-            },
-          ],
-        })
-      ).to.be.rejectedWith(
-        "All currency tokens in the order must be the same token"
+      const input: CreateOrderInput = {
+        startTime,
+        endTime,
+        salt,
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: testErc721.address,
+            identifier: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: ethers.utils.parseEther("10").toString(),
+            recipient: offerer.address,
+          },
+          {
+            token: testErc20.address,
+            amount: ethers.utils.parseEther("1").toString(),
+            recipient: zone.address,
+          },
+        ],
+        fees: [{ recipient: zone.address, basisPoints: 250 }],
+      };
+
+      await expect(seaport.createOrder(input)).to.be.rejectedWith(
+        "All currency tokens in the order must be the same token when applying fees"
+      );
+
+      delete input.fees;
+
+      await expect(seaport.createOrder(input)).to.be.not.rejectedWith(
+        "All currency tokens in the order must be the same token when applying fees"
       );
     });
 

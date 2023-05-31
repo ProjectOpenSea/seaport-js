@@ -24,12 +24,14 @@ describeWithFixture(
     let standardCreateOrderInput: CreateOrderInput;
     let multicallProvider: providers.MulticallProvider;
     let fulfillBasicOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
+    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     const nftId = "1";
     const erc1155Amount = "3";
     const OPENSEA_DOMAIN = "opensea.io";
 
     beforeEach(async () => {
       fulfillBasicOrderSpy = sinon.spy(fulfill, "fulfillBasicOrder");
+      fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
 
       [offerer, zone, fulfiller] = await ethers.getSigners();
 
@@ -38,6 +40,7 @@ describeWithFixture(
 
     afterEach(() => {
       fulfillBasicOrderSpy.restore();
+      fulfillStandardOrderSpy.restore();
     });
 
     describe("A single ERC721 is to be transferred", () => {
@@ -792,6 +795,375 @@ describeWithFixture(
             fulfillReceipt: receipt,
           });
           expect(fulfillBasicOrderSpy).calledOnce;
+        });
+      });
+    });
+
+    describe("ERC20 is to be transferred", () => {
+      describe("[Buy now] I want to buy ERC20", () => {
+        beforeEach(async () => {
+          const { testErc20 } = fixture;
+
+          await testErc20.mint(offerer.address, "10000");
+
+          standardCreateOrderInput = {
+            startTime: "0",
+            offer: [
+              {
+                token: testErc20.address,
+                amount: "10000",
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: offerer.address,
+              },
+            ],
+          };
+        });
+
+        describe("with ETH", () => {
+          it("ERC20 <=> ETH", async () => {
+            const { seaport, testErc20 } = fixture;
+
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput
+            );
+
+            const order = await executeAllActions();
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                fulfiller.address,
+                multicallProvider
+              );
+
+            const { actions } = await seaport.fulfillOrder({
+              order,
+              accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
+            });
+
+            expect(actions.length).to.eq(1);
+
+            const fulfillAction = actions[0];
+
+            expect(fulfillAction.type).eq("exchange");
+
+            const transaction =
+              await fulfillAction.transactionMethods.transact();
+            const receipt = await transaction.wait();
+
+            await verifyBalancesAfterFulfill({
+              ownerToTokenToIdentifierBalances,
+              order,
+              fulfillerAddress: fulfiller.address,
+              multicallProvider,
+              fulfillReceipt: receipt,
+            });
+            expect(fulfillStandardOrderSpy).calledOnce;
+          });
+
+          it("ERC20 <=> ETH (already validated order)", async () => {
+            const { seaport } = fixture;
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput
+            );
+
+            const order = await executeAllActions();
+
+            // Remove signature
+            order.signature = "0x";
+
+            const { actions } = await seaport.fulfillOrder({
+              order,
+              accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
+            });
+
+            const action = actions[0];
+
+            // Should revert because signature is empty
+            await expect(
+              action.transactionMethods.transact()
+            ).to.be.revertedWith("InvalidSignature");
+
+            await seaport.validate([order], offerer.address).transact();
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                fulfiller.address,
+                multicallProvider
+              );
+
+            const transaction = await action.transactionMethods.transact();
+
+            const receipt = await transaction.wait();
+
+            await verifyBalancesAfterFulfill({
+              ownerToTokenToIdentifierBalances,
+              order,
+              fulfillerAddress: fulfiller.address,
+              multicallProvider,
+              fulfillReceipt: receipt,
+            });
+            expect(fulfillStandardOrderSpy).calledOnce;
+          });
+        });
+
+        describe("with ERC20", () => {
+          beforeEach(() => {
+            const { testErc20USDC } = fixture;
+
+            // Use ERC20 instead of eth
+            standardCreateOrderInput = {
+              ...standardCreateOrderInput,
+              consideration: standardCreateOrderInput.consideration.map(
+                (item) => ({ ...item, token: testErc20USDC.address })
+              ),
+            };
+            testErc20USDC.mint(
+              fulfiller.address,
+              BigNumber.from(
+                (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                  .amount
+              )
+            );
+            standardCreateOrderInput;
+          });
+
+          it("ERC20 <=> ERC20", async () => {
+            const { seaport, testErc20USDC } = fixture;
+
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput
+            );
+
+            const order = await executeAllActions();
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                fulfiller.address,
+                multicallProvider
+              );
+
+            const { actions } = await seaport.fulfillOrder({
+              order,
+              accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
+            });
+
+            const approvalAction = actions[0];
+
+            expect(approvalAction).to.deep.equal({
+              type: "approval",
+              token: testErc20USDC.address,
+              identifierOrCriteria: "0",
+              itemType: ItemType.ERC20,
+              transactionMethods: approvalAction.transactionMethods,
+              operator: seaport.contract.address,
+            });
+
+            await approvalAction.transactionMethods.transact();
+
+            expect(
+              await testErc20USDC.allowance(
+                fulfiller.address,
+                seaport.contract.address
+              )
+            ).to.equal(MAX_INT);
+
+            const fulfillAction = actions[1];
+
+            expect(fulfillAction).to.be.deep.equal({
+              type: "exchange",
+              transactionMethods: fulfillAction.transactionMethods,
+            });
+
+            const transaction =
+              await fulfillAction.transactionMethods.transact();
+
+            const receipt = await transaction.wait();
+
+            await verifyBalancesAfterFulfill({
+              ownerToTokenToIdentifierBalances,
+              order,
+              fulfillerAddress: fulfiller.address,
+              multicallProvider,
+              fulfillReceipt: receipt,
+            });
+            expect(fulfillStandardOrderSpy).calledOnce;
+          });
+
+          it("ERC20 <=> ERC20 (already validated order)", async () => {
+            const { seaport, testErc20USDC } = fixture;
+
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput
+            );
+
+            const order = await executeAllActions();
+
+            // Remove signature
+            order.signature = "0x";
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                fulfiller.address,
+                multicallProvider
+              );
+
+            const revertedUseCase = await seaport.fulfillOrder({
+              order,
+              accountAddress: fulfiller.address,
+              domain: OPENSEA_DOMAIN,
+            });
+
+            const actions = revertedUseCase.actions;
+
+            const approvalAction = actions[0];
+
+            expect(approvalAction).to.deep.equal({
+              type: "approval",
+              token: testErc20USDC.address,
+              identifierOrCriteria: "0",
+              itemType: ItemType.ERC20,
+              transactionMethods: approvalAction.transactionMethods,
+              operator: seaport.contract.address,
+            });
+
+            await approvalAction.transactionMethods.transact();
+
+            expect(
+              await testErc20USDC.allowance(
+                fulfiller.address,
+                seaport.contract.address
+              )
+            ).to.equal(MAX_INT);
+
+            const fulfillAction = actions[1];
+
+            expect(fulfillAction).to.be.deep.equal({
+              type: "exchange",
+              transactionMethods: fulfillAction.transactionMethods,
+            });
+
+            await expect(
+              fulfillAction.transactionMethods.transact()
+            ).to.be.revertedWith("InvalidSignature");
+
+            await seaport.validate([order], offerer.address).transact();
+
+            const transaction =
+              await fulfillAction.transactionMethods.transact();
+
+            const receipt = await transaction.wait();
+
+            await verifyBalancesAfterFulfill({
+              ownerToTokenToIdentifierBalances,
+              order,
+              fulfillerAddress: fulfiller.address,
+              multicallProvider,
+              fulfillReceipt: receipt,
+            });
+            expect(fulfillStandardOrderSpy).calledOnce;
+          });
+        });
+      });
+
+      describe("[Accept offer] I want to accept an offer for my ERC20", () => {
+        beforeEach(async () => {
+          const { testErc20USDC, testErc20 } = fixture;
+
+          await testErc20USDC.mint(
+            fulfiller.address,
+            parseEther("50").toString()
+          );
+          await testErc20.mint(offerer.address, parseEther("10").toString());
+
+          standardCreateOrderInput = {
+            offer: [
+              {
+                amount: parseEther("10").toString(),
+                token: testErc20.address,
+              },
+            ],
+            consideration: [
+              {
+                token: testErc20USDC.address,
+                amount: parseEther("50").toString(),
+              },
+            ],
+          };
+        });
+
+        it("ERC20 <=> ERC20", async () => {
+          const { seaport, testErc20USDC } = fixture;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+            offerer.address
+          );
+
+          const order = await executeAllActions();
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              fulfiller.address,
+              multicallProvider
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            accountAddress: fulfiller.address,
+            domain: OPENSEA_DOMAIN,
+          });
+
+          const approvalAction = actions[0];
+
+          expect(approvalAction).to.deep.equal({
+            type: "approval",
+            token: testErc20USDC.address,
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            transactionMethods: approvalAction.transactionMethods,
+            operator: seaport.contract.address,
+          });
+
+          await approvalAction.transactionMethods.transact();
+
+          expect(
+            await testErc20USDC.allowance(
+              fulfiller.address,
+              seaport.contract.address
+            )
+          ).to.equal(MAX_INT);
+
+          const fulfillAction = actions[1];
+
+          expect(fulfillAction).to.be.deep.equal({
+            type: "exchange",
+            transactionMethods: fulfillAction.transactionMethods,
+          });
+
+          const transaction = await fulfillAction.transactionMethods.transact();
+
+          const receipt = await transaction.wait();
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            fulfillerAddress: fulfiller.address,
+            multicallProvider,
+            fulfillReceipt: receipt,
+          });
+          expect(fulfillStandardOrderSpy).calledOnce;
         });
       });
     });
