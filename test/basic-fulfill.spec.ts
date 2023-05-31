@@ -84,6 +84,12 @@ describeWithFixture(
                 multicallProvider
               );
 
+            await expect(
+              seaport.fulfillOrder({
+                order: { ...order, signature: "" },
+              })
+            ).to.be.rejectedWith("Order is missing signature");
+
             const { actions } = await seaport.fulfillOrder({
               order,
               accountAddress: fulfiller.address,

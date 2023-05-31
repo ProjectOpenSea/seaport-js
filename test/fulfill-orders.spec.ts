@@ -239,6 +239,14 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
+            await expect(
+              seaport.fulfillOrders({
+                fulfillOrderDetails: [
+                  { order: { ...firstOrder, signature: "" } },
+                ],
+              })
+            ).to.be.rejectedWith("All orders must include signatures");
+
             const { actions } = await seaport.fulfillOrders({
               fulfillOrderDetails: [
                 { order: firstOrder },
