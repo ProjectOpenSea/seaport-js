@@ -831,7 +831,7 @@ describeWithFixture(
 
         describe("with ETH", () => {
           it("ERC20 <=> ETH", async () => {
-            const { seaport, testErc20 } = fixture;
+            const { seaport } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput
