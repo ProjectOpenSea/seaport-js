@@ -4,11 +4,11 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT, OrderType } from "../constants";
-import { CreateOrderInput, CurrencyItem } from "../types";
-import * as fulfill from "../utils/fulfill";
-import { generateRandomSalt } from "../utils/order";
-import { getTagFromDomain } from "../utils/usecase";
+import { ItemType, MAX_INT, OrderType } from "../src/constants";
+import { CreateOrderInput, CurrencyItem } from "../src/types";
+import * as fulfill from "../src/utils/fulfill";
+import { generateRandomSalt } from "../src/utils/order";
+import { getTagFromDomain } from "../src/utils/usecase";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,

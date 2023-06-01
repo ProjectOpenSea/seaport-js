@@ -2,8 +2,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType } from "../constants";
-import { CreateOrderInput } from "../types";
+import { ItemType } from "../src/constants";
+import { CreateOrderInput } from "../src/types";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to cancel an order", (fixture) => {

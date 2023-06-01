@@ -14,20 +14,23 @@
   },
   "main": "lib/index.js",
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "directories": {
     "doc": "docs",
     "lib": "lib"
   },
   "scripts": {
-    "build": "hardhat compile && tsc -p tsconfig.build.json",
-    "check-types": "tsc --noEmit -p src/__tests__/tsconfig.json",
+    "build": "hardhat compile && tsc -p tsconfig.build.json && npm run bundle",
+    "bundle": "browserify lib/index.js -o lib/bundle.js",
+    "check-types": "tsc --noEmit ",
     "check-types:incremental": "npm run check-types --incremental",
-    "coverage": "c8 yarn test",
+    "coverage": "c8 npm run test",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
+    "postinstall": "husky install",
     "lint": "concurrently \"npm run check-types\" \"npm run eslint:check\" \"npm run prettier:check\" \"npm run prettier:check:package.json\"",
-    "prepare": "husky install && npm run build",
+    "prepare": "npm run build",
     "prettier:check": "prettier --check .",
     "prettier:check:package.json": "prettier-package-json --list-different",
     "prettier:fix": "prettier --write . && prettier-package-json --write package.json",
@@ -51,6 +54,7 @@
     "@types/node": "^16",
     "@typescript-eslint/eslint-plugin": "^5.59.7",
     "@typescript-eslint/parser": "^5.59.7",
+    "browserify": "^17.0.0",
     "c8": "^7.13.0",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",

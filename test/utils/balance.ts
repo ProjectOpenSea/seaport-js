@@ -1,16 +1,19 @@
 import { BigNumber, BigNumberish, ContractReceipt, providers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
-import { Item, Order, OrderStatus } from "../../types";
-import { balanceOf } from "../../utils/balance";
+import { Item, Order, OrderStatus } from "../../src/types";
+import { balanceOf } from "../../src/utils/balance";
 
-import { getPresentItemAmount, TimeBasedItemParams } from "../../utils/item";
+import {
+  getPresentItemAmount,
+  TimeBasedItemParams,
+} from "../../src/utils/item";
 import { providers as multicallProviders } from "@0xsequence/multicall";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
-} from "../../utils/order";
+} from "../../src/utils/order";
 
 export const setBalance = async (
   address: string,

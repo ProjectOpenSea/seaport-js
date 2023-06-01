@@ -3,11 +3,11 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT } from "../constants";
-import { TestERC1155, TestERC721 } from "../typechain-types";
-import { CreateOrderInput, CurrencyItem } from "../types";
-import * as fulfill from "../utils/fulfill";
-import { getTagFromDomain } from "../utils/usecase";
+import { ItemType, MAX_INT } from "../src/constants";
+import { TestERC1155, TestERC721 } from "../src/typechain-types";
+import { CreateOrderInput, CurrencyItem } from "../src/types";
+import * as fulfill from "../src/utils/fulfill";
+import { getTagFromDomain } from "../src/utils/usecase";
 import { describeWithFixture } from "./utils/setup";
 
 const sinon = require("sinon");
@@ -238,6 +238,14 @@ describeWithFixture(
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
+
+            await expect(
+              seaport.fulfillOrders({
+                fulfillOrderDetails: [
+                  { order: { ...firstOrder, signature: "" } },
+                ],
+              })
+            ).to.be.rejectedWith("All orders must include signatures");
 
             const { actions } = await seaport.fulfillOrders({
               fulfillOrderDetails: [

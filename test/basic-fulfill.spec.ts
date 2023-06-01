@@ -4,9 +4,9 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT } from "../constants";
-import { CreateOrderInput, CurrencyItem } from "../types";
-import * as fulfill from "../utils/fulfill";
+import { ItemType, MAX_INT } from "../src/constants";
+import { CreateOrderInput, CurrencyItem } from "../src/types";
+import * as fulfill from "../src/utils/fulfill";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
@@ -86,6 +86,12 @@ describeWithFixture(
                 fulfiller.address,
                 multicallProvider
               );
+
+            await expect(
+              seaport.fulfillOrder({
+                order: { ...order, signature: "" },
+              })
+            ).to.be.rejectedWith("Order is missing signature");
 
             const { actions } = await seaport.fulfillOrder({
               order,

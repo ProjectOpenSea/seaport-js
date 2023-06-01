@@ -3,10 +3,14 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT } from "../constants";
-import { TestERC1155, TestERC721 } from "../typechain-types";
-import { ApprovalAction, CreateOrderAction, CreateOrderInput } from "../types";
-import * as fulfill from "../utils/fulfill";
+import { ItemType, MAX_INT } from "../src/constants";
+import { TestERC1155, TestERC721 } from "../src/typechain-types";
+import {
+  ApprovalAction,
+  CreateOrderAction,
+  CreateOrderInput,
+} from "../src/types";
+import * as fulfill from "../src/utils/fulfill";
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,

@@ -1,9 +1,13 @@
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../constants";
-import { ApprovalAction, CreateOrderAction, CreateOrderInput } from "../types";
-import { generateRandomSalt } from "../utils/order";
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
+import {
+  ApprovalAction,
+  CreateOrderAction,
+  CreateOrderInput,
+} from "../src/types";
+import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
@@ -833,7 +837,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     await testErc721.mint(offerer.address, nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
-    const salt = "0xabc";
+    const salt = "0xabcd";
 
     const { executeAllActions } = await seaport.createOrder({
       startTime,
@@ -865,6 +869,6 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const localOrderHash = seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
-    expect(order.parameters.salt).eq("0xabc");
+    expect(order.parameters.salt).eq(`0x${"0".repeat(60)}abcd`);
   });
 });

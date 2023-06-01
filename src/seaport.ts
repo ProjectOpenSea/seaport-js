@@ -65,7 +65,6 @@ import {
   deductFees,
   feeToConsiderationItem,
   generateRandomSalt,
-  generateRandomSaltWithDomain,
   mapInputItemToOfferItem,
   totalItemsAmount,
 } from "./utils/order";
@@ -357,8 +356,9 @@ export class Seaport {
     ];
 
     const saltFollowingConditional =
-      salt ||
-      (domain ? generateRandomSaltWithDomain(domain) : generateRandomSalt());
+      salt !== undefined
+        ? `0x${BigNumber.from(salt).toHexString().slice(2).padStart(64, "0")}`
+        : generateRandomSalt(domain);
 
     const orderComponents: OrderComponents = {
       offerer,
@@ -740,7 +740,10 @@ export class Seaport {
             .slice(2)
             .padStart(64, "0"),
           orderComponents.zoneHash.slice(2),
-          orderComponents.salt.slice(2).padStart(64, "0"),
+          BigNumber.from(orderComponents.salt)
+            .toHexString()
+            .slice(2)
+            .padStart(64, "0"),
           orderComponents.conduitKey.slice(2).padStart(64, "0"),
           ethers.BigNumber.from(orderComponents.counter)
             .toHexString()
@@ -782,7 +785,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
-    domain = "",
+    domain,
     exactApproval = false,
   }: {
     order: OrderWithCounter;
@@ -806,6 +809,10 @@ export class Seaport {
       >
     >
   > {
+    if (!order.signature) {
+      throw new Error("Order is missing signature");
+    }
+
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
@@ -940,7 +947,7 @@ export class Seaport {
     accountAddress,
     conduitKey = this.defaultConduitKey,
     recipientAddress = ethers.constants.AddressZero,
-    domain = "",
+    domain,
     exactApproval = false,
   }: {
     fulfillOrderDetails: {
@@ -957,6 +964,12 @@ export class Seaport {
     domain?: string;
     exactApproval?: boolean;
   }) {
+    if (
+      fulfillOrderDetails.some((orderDetails) => !orderDetails.order.signature)
+    ) {
+      throw new Error("All orders must include signatures");
+    }
+
     const fulfiller = this._getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
@@ -1067,7 +1080,7 @@ export class Seaport {
     fulfillments,
     overrides,
     accountAddress,
-    domain = "",
+    domain,
   }: {
     orders: (OrderWithCounter | Order)[];
     fulfillments: MatchOrdersFulfillment[];
