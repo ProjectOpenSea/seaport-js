@@ -808,6 +808,10 @@ export class Seaport {
       >
     >
   > {
+    if (!order.signature) {
+      throw new Error("Order is missing signature");
+    }
+
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
@@ -959,6 +963,12 @@ export class Seaport {
     domain?: string;
     exactApproval?: boolean;
   }) {
+    if (
+      fulfillOrderDetails.some((orderDetails) => !orderDetails.order.signature)
+    ) {
+      throw new Error("All orders must include signatures");
+    }
+
     const fulfiller = this._getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
