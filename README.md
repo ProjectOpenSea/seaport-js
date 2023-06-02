@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./img/banner.png" />
+</p>
+
 [![Version][version-badge]][version-link]
 [![npm][npm-badge]][npm-link]
 [![Test CI][ci-badge]][ci-link]
