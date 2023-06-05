@@ -47,7 +47,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@rari-capital/solmate": "^6.4.0",
     "@typechain/ethers-v5": "^11.0.0",
-    "@typechain/hardhat": "^7.0.0",
+    "@typechain/hardhat": "^8.0.0",
     "@types/chai": "^4.3.5",
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.1",
