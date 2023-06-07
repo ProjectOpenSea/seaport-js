@@ -1,6 +1,6 @@
 {
   "name": "@opensea/seaport-js",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
@@ -28,7 +28,7 @@
     "check-types:incremental": "npm run check-types --incremental",
     "coverage": "c8 npm run test",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
-    "postinstall": "husky install || true",
+    "postinstall": "husky install || exit 0",
     "lint": "concurrently \"npm run check-types\" \"npm run eslint:check\" \"npm run prettier:check\" \"npm run prettier:check:package.json\"",
     "prepare": "npm run build",
     "prettier:check": "prettier --check .",
