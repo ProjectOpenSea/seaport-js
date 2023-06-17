@@ -69,6 +69,7 @@ import {
   totalItemsAmount,
 } from "./utils/order";
 import { executeAllActions, getTransactionMethods } from "./utils/usecase";
+import * as domain from "domain";
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
@@ -505,14 +506,12 @@ export class Seaport {
 
     const domainData = await this._getDomainData();
 
-    const signature = await signer._signTypedData(
+    // Using compact breaks OZ signature verification
+    return await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents
     );
-
-    // Use EIP-2098 compact signatures to save gas.
-    return ethers.utils.splitSignature(signature).compact;
   }
 
   /**

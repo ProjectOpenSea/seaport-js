@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.7;
 
+import "hardhat/console.sol";
+
 interface IERC20Approve {
     function approve(address spender, uint256 amount) external returns (bool);
 }
@@ -43,20 +45,11 @@ contract TestERC1271Wallet {
         bytes32 s;
         uint8 v;
 
-        // Check the signature length
-        if (signature.length != 65) {
-            return (address(0));
-        }
-
-        // Divide the signature in r, s and v variables
-        // ecrecover takes the signature parameters, and the only way to get them
-        // currently is to use assembly.
         assembly {
             r := mload(add(signature, 0x20))
             s := mload(add(signature, 0x40))
             v := byte(0, mload(add(signature, 0x60)))
         }
-
         // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
         if (v < 27) {
             v += 27;
