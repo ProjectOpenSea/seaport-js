@@ -26,6 +26,7 @@ type Fixture = {
   testErc20USDC: TestERC20USDC;
   testErc1155: TestERC1155;
   testERC1271Wallet: TestERC1271Wallet;
+  seaportWithSigner: Seaport;
 };
 
 export const describeWithFixture = (
@@ -65,6 +66,14 @@ export const describeWithFixture = (
         },
         seaportVersion: "1.5",
       });
+      const [signer] = await ethers.getSigners();
+      const seaportWithSigner = new Seaport(signer, {
+        overrides: {
+          contractAddress: seaportContract.address,
+          domainRegistryAddress: domainRegistry.address,
+        },
+        seaportVersion: "1.5",
+      });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");
       const testErc721 = await TestERC721.deploy();
@@ -92,6 +101,7 @@ export const describeWithFixture = (
       // to pass a reference to an object that you we mutate.
       fixture.seaportContract = seaportContract;
       fixture.seaport = seaport;
+      fixture.seaportWithSigner = seaportWithSigner;
       fixture.domainRegistry = domainRegistry;
       fixture.testErc721 = testErc721;
       fixture.testErc1155 = testErc1155;

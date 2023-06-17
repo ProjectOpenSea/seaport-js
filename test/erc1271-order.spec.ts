@@ -10,7 +10,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
     const {
       seaportContract,
-      seaport,
+      seaportWithSigner,
       testErc721,
       testERC1271Wallet,
       testErc20,
@@ -32,7 +32,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     );
 
     const accountAddress = testERC1271Wallet.address;
-    const { actions } = await seaport.createOrder(
+    const order = await seaportWithSigner.createOrder(
       {
         startTime,
         endTime,
@@ -56,9 +56,12 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       accountAddress
     );
 
+    const actions = order.actions;
     expect(actions).to.have.lengthOf(1);
 
     const createOrderAction = actions[0] as CreateOrderAction;
     expect(createOrderAction.type).to.equal("create");
+
+    await order.executeAllActions();
   });
 });
