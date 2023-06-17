@@ -15,9 +15,6 @@ contract TestERC1271Wallet {
         orderSigner = msg.sender;
     }
 
-    receive() external payable {
-    }
-
     function approveToken(
         address token,
         address spender,
