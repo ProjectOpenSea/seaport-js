@@ -505,13 +505,13 @@ export class Seaport {
 
     const domainData = await this._getDomainData();
 
-    // Using compact breaks OZ signature verification
     const signature = await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents
     );
 
+    // Use EIP-2098 compact signatures to save gas.
     return ethers.utils.splitSignature(signature).compact;
   }
 
