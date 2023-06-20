@@ -40,11 +40,29 @@ contract TestERC1271Wallet {
         bytes32 s;
         uint8 v;
 
-        assembly {
-            r := mload(add(signature, 0x20))
-            s := mload(add(signature, 0x40))
-            v := byte(0, mload(add(signature, 0x60)))
+        if (signature.length == 65) {
+            // ecrecover takes the signature parameters, and the only way to get them
+            // currently is to use assembly.
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                r := mload(add(signature, 0x20))
+                s := mload(add(signature, 0x40))
+                v := byte(0, mload(add(signature, 0x60)))
+            }
+        } else if (signature.length == 64) {
+            // ecrecover takes the signature parameters, and the only way to get them
+            // currently is to use assembly.
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                let vs := mload(add(signature, 0x40))
+                r := mload(add(signature, 0x20))
+                s := and(vs, 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+                v := add(shr(255, vs), 27)
+            }
+        } else {
+            revert("ECDSA: invalid signature length");
         }
+
         // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
         if (v < 27) {
             v += 27;
