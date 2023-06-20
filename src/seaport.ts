@@ -69,7 +69,6 @@ import {
   totalItemsAmount,
 } from "./utils/order";
 import { executeAllActions, getTransactionMethods } from "./utils/usecase";
-import * as domain from "domain";
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility

@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.7;
 
-import "hardhat/console.sol";
-
 interface IERC20Approve {
     function approve(address spender, uint256 amount) external returns (bool);
 }
