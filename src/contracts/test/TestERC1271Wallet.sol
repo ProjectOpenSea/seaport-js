@@ -6,7 +6,6 @@ interface IERC20Approve {
 }
 
 contract TestERC1271Wallet {
-
     address public orderSigner;
 
     constructor() {
@@ -56,7 +55,10 @@ contract TestERC1271Wallet {
             assembly {
                 let vs := mload(add(signature, 0x40))
                 r := mload(add(signature, 0x20))
-                s := and(vs, 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+                s := and(
+                    vs,
+                    0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+                )
                 v := add(shr(255, vs), 27)
             }
         } else {
