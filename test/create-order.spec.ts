@@ -682,7 +682,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       "eth_signTypedData_v4",
       [offerer.address, messageToSign]
     );
-    expect(rawSignTypedMessage).eq(order.signature);
+    expect(ethers.utils.splitSignature(rawSignTypedMessage).compact).eq(
+      order.signature
+    );
 
     const isValid = await seaportContract
       .connect(randomSigner)
