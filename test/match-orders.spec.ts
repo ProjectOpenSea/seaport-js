@@ -72,14 +72,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
           );
 
           const order = await executeAllActions();
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address
+            privateListingRecipient.address,
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
@@ -87,7 +87,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const transaction = await seaport
@@ -132,8 +132,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             privateListingRecipient.address,
             BigNumber.from(
               (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
-                .amount
-            )
+                .amount,
+            ),
           );
         });
 
@@ -141,14 +141,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport, testErc20 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
           );
 
           const order = await executeAllActions();
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address
+            privateListingRecipient.address,
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
@@ -156,19 +156,19 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider
+              multicallProvider,
             );
 
           await getTransactionMethods(
             testErc20.connect(privateListingRecipient),
             "approve",
-            [seaport.contract.address, MAX_INT]
+            [seaport.contract.address, MAX_INT],
           ).transact();
           expect(
             await testErc20.allowance(
               privateListingRecipient.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.equal(MAX_INT);
 
           const transaction = await seaport
@@ -233,14 +233,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
           );
 
           const order = await executeAllActions();
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address
+            privateListingRecipient.address,
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
@@ -248,7 +248,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const transaction = await seaport
@@ -293,8 +293,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             privateListingRecipient.address,
             BigNumber.from(
               (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
-                .amount
-            )
+                .amount,
+            ),
           );
         });
 
@@ -302,14 +302,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           const { seaport, testErc20 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            privateListingCreateOrderInput
+            privateListingCreateOrderInput,
           );
 
           const order = await executeAllActions();
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address
+            privateListingRecipient.address,
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
@@ -317,19 +317,19 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider
+              multicallProvider,
             );
 
           await getTransactionMethods(
             testErc20.connect(privateListingRecipient),
             "approve",
-            [seaport.contract.address, MAX_INT]
+            [seaport.contract.address, MAX_INT],
           ).transact();
           expect(
             await testErc20.allowance(
               privateListingRecipient.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.equal(MAX_INT);
 
           const transaction = await seaport

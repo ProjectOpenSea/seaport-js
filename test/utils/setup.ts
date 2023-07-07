@@ -31,30 +31,30 @@ type Fixture = {
 
 export const describeWithFixture = (
   name: string,
-  suiteCb: (fixture: Fixture) => unknown
+  suiteCb: (fixture: Fixture) => unknown,
 ) => {
   describe(name, () => {
     const fixture: Partial<Fixture> = {};
 
     beforeEach(async () => {
       const SeaportFactory = await ethers.getContractFactory(
-        "seaport_v1_5/contracts/Seaport.sol:Seaport"
+        "seaport_v1_5/contracts/Seaport.sol:Seaport",
       );
 
       const ConduitControllerFactory = await ethers.getContractFactory(
-        "ConduitController"
+        "ConduitController",
       );
 
       const conduitController = await ConduitControllerFactory.deploy();
 
       const seaportContract = (await SeaportFactory.deploy(
-        conduitController.address
+        conduitController.address,
       )) as SeaportContract;
 
       await seaportContract.deployed();
 
       const DomainRegistryFactory = await ethers.getContractFactory(
-        "DomainRegistry"
+        "DomainRegistry",
       );
       const domainRegistry = await DomainRegistryFactory.deploy();
       await domainRegistry.deployed();
@@ -92,7 +92,7 @@ export const describeWithFixture = (
       await testErc20USDC.deployed();
 
       const TestERC1271Wallet = await ethers.getContractFactory(
-        "TestERC1271Wallet"
+        "TestERC1271Wallet",
       );
       const testERC1271Wallet = await TestERC1271Wallet.deploy();
       await testERC1271Wallet.deployed();

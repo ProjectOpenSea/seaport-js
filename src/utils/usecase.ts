@@ -11,9 +11,9 @@ import {
 } from "../types";
 
 export const executeAllActions = async <
-  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction
+  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,
 >(
-  actions: OrderUseCase<T>["actions"]
+  actions: OrderUseCase<T>["actions"],
 ) => {
   for (let i = 0; i < actions.length - 1; i++) {
     const action = actions[i];
@@ -36,9 +36,9 @@ export const executeAllActions = async <
 };
 
 const instanceOfOverrides = <
-  T extends Overrides | PayableOverrides | CallOverrides
+  T extends Overrides | PayableOverrides | CallOverrides,
 >(
-  obj: Object | undefined
+  obj: Object | undefined,
 ): obj is T => {
   const validKeys = [
     "gasLimit",
@@ -63,12 +63,12 @@ const instanceOfOverrides = <
 
 export const getTransactionMethods = <
   T extends Contract,
-  U extends keyof T["functions"]
+  U extends keyof T["functions"],
 >(
   contract: T,
   method: U,
   args: Parameters<T["functions"][U]>,
-  domain?: string
+  domain?: string,
 ): TransactionMethods<ContractMethodReturnType<T, U>> => {
   const lastArg = args[args.length - 1];
 
@@ -98,14 +98,14 @@ export const getTransactionMethods = <
       const mergedOverrides = { ...initialOverrides, ...overrides };
 
       return contract.callStatic[method as string](
-        ...[...args, mergedOverrides]
+        ...[...args, mergedOverrides],
       );
     },
     estimateGas: (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides };
 
       return contract.estimateGas[method as string](
-        ...[...args, mergedOverrides]
+        ...[...args, mergedOverrides],
       );
     },
     transact: async (overrides?: Overrides) => {

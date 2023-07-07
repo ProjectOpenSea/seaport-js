@@ -54,7 +54,7 @@ describeWithFixture(
             const { seaport, testErc721 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -87,15 +87,15 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             testErc20.mint(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
           });
 
@@ -103,7 +103,7 @@ describeWithFixture(
             const { seaport, testErc20, testErc721 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -130,8 +130,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -184,7 +184,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address
+              offerer.address,
             );
 
             const order = await executeAllActions();
@@ -206,7 +206,7 @@ describeWithFixture(
 
             const balance = await testErc1155.balanceOf(
               recipient.address,
-              nftId
+              nftId,
             );
 
             expect(balance).to.equal(erc1155Amount);
@@ -221,15 +221,15 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             testErc20.mint(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
           });
 
@@ -237,7 +237,7 @@ describeWithFixture(
             const { seaport, testErc20, testErc1155 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -264,8 +264,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -279,7 +279,7 @@ describeWithFixture(
 
             const balance = await testErc1155.balanceOf(
               recipient.address,
-              nftId
+              nftId,
             );
 
             expect(balance).to.equal(erc1155Amount);
@@ -287,5 +287,5 @@ describeWithFixture(
         });
       });
     });
-  }
+  },
 );

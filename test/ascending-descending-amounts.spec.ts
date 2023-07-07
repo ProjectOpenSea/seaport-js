@@ -88,7 +88,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport } = fixture;
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -99,7 +99,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const nextBlockTimestamp = BigNumber.from(startTime)
@@ -171,12 +171,12 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           fulfiller.address,
           BigNumber.from(
             (standardCreateOrderInput.consideration[0] as CurrencyItem)
-              .endAmount
-          )
+              .endAmount,
+          ),
         );
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -198,7 +198,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -223,7 +223,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(fulfiller.address, seaport.contract.address)
+          await testErc20.allowance(
+            fulfiller.address,
+            seaport.contract.address,
+          ),
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];
@@ -302,7 +305,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport } = fixture;
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -313,7 +316,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const nextBlockTimestamp = BigNumber.from(startTime)
@@ -384,12 +387,12 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await testErc20.mint(
           fulfiller.address,
           BigNumber.from(
-            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount
-          )
+            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
+          ),
         );
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -411,7 +414,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -436,7 +439,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(fulfiller.address, seaport.contract.address)
+          await testErc20.allowance(
+            fulfiller.address,
+            seaport.contract.address,
+          ),
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];
@@ -519,7 +525,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport, testErc1155 } = fixture;
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -530,7 +536,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const nextBlockTimestamp = BigNumber.from(startTime)
@@ -612,12 +618,12 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           fulfiller.address,
           BigNumber.from(
             (standardCreateOrderInput.consideration[0] as CurrencyItem)
-              .endAmount
-          )
+              .endAmount,
+          ),
         );
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -639,7 +645,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -664,7 +670,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(fulfiller.address, seaport.contract.address)
+          await testErc20.allowance(
+            fulfiller.address,
+            seaport.contract.address,
+          ),
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];
@@ -755,7 +764,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport, testErc1155 } = fixture;
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -766,7 +775,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const nextBlockTimestamp = BigNumber.from(startTime)
@@ -847,12 +856,12 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await testErc20.mint(
           fulfiller.address,
           BigNumber.from(
-            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount
-          )
+            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
+          ),
         );
 
         const { executeAllActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         const order = await executeAllActions();
@@ -874,7 +883,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -899,7 +908,10 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(fulfiller.address, seaport.contract.address)
+          await testErc20.allowance(
+            fulfiller.address,
+            seaport.contract.address,
+          ),
         ).to.equal(MAX_INT);
 
         const fulfillAction = actions[1];

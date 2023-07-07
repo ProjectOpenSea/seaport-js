@@ -75,7 +75,7 @@ describeWithFixture(
             const { seaport } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -84,13 +84,13 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             await expect(
               seaport.fulfillOrder({
                 order: { ...order, signature: "" },
-              })
+              }),
             ).to.be.rejectedWith("Order is missing signature");
 
             const { actions } = await seaport.fulfillOrder({
@@ -121,7 +121,7 @@ describeWithFixture(
           it("ERC721 <=> ETH (already validated order)", async () => {
             const { seaport } = fixture;
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -139,7 +139,7 @@ describeWithFixture(
 
             // Should revert because signature is empty
             await expect(
-              action.transactionMethods.transact()
+              action.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
@@ -148,7 +148,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const transaction = await action.transactionMethods.transact();
@@ -174,15 +174,15 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             testErc20.mint(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
           });
 
@@ -190,7 +190,7 @@ describeWithFixture(
             const { seaport, testErc20 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -199,7 +199,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -224,8 +224,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -254,7 +254,7 @@ describeWithFixture(
             const { seaport, testErc20 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -266,7 +266,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const revertedUseCase = await seaport.fulfillOrder({
@@ -293,8 +293,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -305,7 +305,7 @@ describeWithFixture(
             });
 
             await expect(
-              fulfillAction.transactionMethods.transact()
+              fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
@@ -359,7 +359,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address
+            offerer.address,
           );
 
           const order = await executeAllActions();
@@ -368,7 +368,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -393,8 +393,8 @@ describeWithFixture(
           expect(
             await testErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const fulfillAction = actions[1];
@@ -453,7 +453,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address
+              offerer.address,
             );
 
             const order = await executeAllActions();
@@ -462,7 +462,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -496,7 +496,7 @@ describeWithFixture(
           it("ERC1155 <=> ETH (already validated order)", async () => {
             const { seaport } = fixture;
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -514,7 +514,7 @@ describeWithFixture(
 
             // Should revert because signature is empty
             await expect(
-              fulfillAction.transactionMethods.transact()
+              fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
@@ -523,7 +523,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             expect(fulfillAction).to.be.deep.equal({
@@ -555,15 +555,15 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             testErc20.mint(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
           });
 
@@ -571,7 +571,7 @@ describeWithFixture(
             const { seaport, testErc20 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -580,7 +580,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -605,8 +605,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -635,7 +635,7 @@ describeWithFixture(
             const { seaport, testErc20 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -647,7 +647,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -672,14 +672,14 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
 
             await expect(
-              fulfillAction.transactionMethods.transact()
+              fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
@@ -744,7 +744,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address
+            offerer.address,
           );
 
           const order = await executeAllActions();
@@ -753,7 +753,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -778,8 +778,8 @@ describeWithFixture(
           expect(
             await testErc1155.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const fulfillAction = actions[1];
@@ -834,7 +834,7 @@ describeWithFixture(
             const { seaport } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -843,7 +843,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -875,7 +875,7 @@ describeWithFixture(
           it("ERC20 <=> ETH (already validated order)", async () => {
             const { seaport } = fixture;
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -893,7 +893,7 @@ describeWithFixture(
 
             // Should revert because signature is empty
             await expect(
-              action.transactionMethods.transact()
+              action.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
@@ -902,7 +902,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const transaction = await action.transactionMethods.transact();
@@ -928,15 +928,15 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20USDC.address })
+                (item) => ({ ...item, token: testErc20USDC.address }),
               ),
             };
             testErc20USDC.mint(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
             standardCreateOrderInput;
           });
@@ -945,7 +945,7 @@ describeWithFixture(
             const { seaport, testErc20USDC } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -954,7 +954,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -979,8 +979,8 @@ describeWithFixture(
             expect(
               await testErc20USDC.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -1009,7 +1009,7 @@ describeWithFixture(
             const { seaport, testErc20USDC } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -1021,7 +1021,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const revertedUseCase = await seaport.fulfillOrder({
@@ -1048,8 +1048,8 @@ describeWithFixture(
             expect(
               await testErc20USDC.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -1060,7 +1060,7 @@ describeWithFixture(
             });
 
             await expect(
-              fulfillAction.transactionMethods.transact()
+              fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
             await seaport.validate([order], offerer.address).transact();
@@ -1088,7 +1088,7 @@ describeWithFixture(
 
           await testErc20USDC.mint(
             fulfiller.address,
-            parseEther("50").toString()
+            parseEther("50").toString(),
           );
           await testErc20.mint(offerer.address, parseEther("10").toString());
 
@@ -1113,7 +1113,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address
+            offerer.address,
           );
 
           const order = await executeAllActions();
@@ -1122,7 +1122,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -1147,8 +1147,8 @@ describeWithFixture(
           expect(
             await testErc20USDC.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.equal(MAX_INT);
 
           const fulfillAction = actions[1];
@@ -1173,5 +1173,5 @@ describeWithFixture(
         });
       });
     });
-  }
+  },
 );

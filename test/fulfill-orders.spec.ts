@@ -122,20 +122,20 @@ describeWithFixture(
             const { seaport, testErc721 } = fixture;
 
             const firstOrderUseCase = await seaport.createOrder(
-              firstStandardCreateOrderInput
+              firstStandardCreateOrderInput,
             );
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
             const secondOrderUseCase = await seaport.createOrder(
-              secondStandardCreateOrderInput
+              secondStandardCreateOrderInput,
             );
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address
+              secondOfferer.address,
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -158,8 +158,8 @@ describeWithFixture(
 
             expect(
               (await action.transactionMethods.buildTransaction()).data?.slice(
-                -8
-              )
+                -8,
+              ),
             ).to.eq(OPENSEA_TAG);
 
             const transaction = await action.transactionMethods.transact();
@@ -187,19 +187,19 @@ describeWithFixture(
             firstStandardCreateOrderInput = {
               ...firstStandardCreateOrderInput,
               consideration: firstStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             secondStandardCreateOrderInput = {
               ...secondStandardCreateOrderInput,
               consideration: secondStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             thirdStandardCreateOrderInput = {
               ...thirdStandardCreateOrderInput,
               consideration: thirdStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
 
@@ -211,8 +211,8 @@ describeWithFixture(
               await testErc20.mint(
                 fulfiller.address,
                 BigNumber.from(
-                  (createOrderInput.consideration[0] as CurrencyItem).amount
-                )
+                  (createOrderInput.consideration[0] as CurrencyItem).amount,
+                ),
               );
             });
           });
@@ -221,20 +221,20 @@ describeWithFixture(
             const { seaport, testErc20, testErc721 } = fixture;
 
             const firstOrderUseCase = await seaport.createOrder(
-              firstStandardCreateOrderInput
+              firstStandardCreateOrderInput,
             );
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
             const secondOrderUseCase = await seaport.createOrder(
-              secondStandardCreateOrderInput
+              secondStandardCreateOrderInput,
             );
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address
+              secondOfferer.address,
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -244,7 +244,7 @@ describeWithFixture(
                 fulfillOrderDetails: [
                   { order: { ...firstOrder, signature: "" } },
                 ],
-              })
+              }),
             ).to.be.rejectedWith("All orders must include signatures");
 
             const { actions } = await seaport.fulfillOrders({
@@ -275,8 +275,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -284,7 +284,7 @@ describeWithFixture(
             expect(
               (
                 await fulfillAction.transactionMethods.buildTransaction()
-              ).data?.slice(-8)
+              ).data?.slice(-8),
             ).to.eq(OPENSEA_TAG);
 
             const transaction =
@@ -317,7 +317,7 @@ describeWithFixture(
           await testErc20.mint(offerer.address, parseEther("20").toString());
           await testErc20.mint(
             secondOfferer.address,
-            parseEther("10").toString()
+            parseEther("10").toString(),
           );
 
           firstStandardCreateOrderInput = {
@@ -382,20 +382,20 @@ describeWithFixture(
           const { seaport, testErc721, testErc20 } = fixture;
 
           const firstOrderUseCase = await seaport.createOrder(
-            firstStandardCreateOrderInput
+            firstStandardCreateOrderInput,
           );
 
           const firstOrder = await firstOrderUseCase.executeAllActions();
 
           const secondOrderUseCase = await seaport.createOrder(
-            secondStandardCreateOrderInput
+            secondStandardCreateOrderInput,
           );
 
           const secondOrder = await secondOrderUseCase.executeAllActions();
 
           const thirdOrderUseCase = await seaport.createOrder(
             thirdStandardCreateOrderInput,
-            secondOfferer.address
+            secondOfferer.address,
           );
 
           const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -426,8 +426,8 @@ describeWithFixture(
           expect(
             await testErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const secondApprovalAction = actions[1];
@@ -446,8 +446,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).eq(MAX_INT);
 
           const thirdApprovalAction = actions[2];
@@ -466,8 +466,8 @@ describeWithFixture(
           expect(
             await secondTestErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const fulfillAction = actions[3];
@@ -480,7 +480,7 @@ describeWithFixture(
           expect(
             (
               await fulfillAction.transactionMethods.buildTransaction()
-            ).data?.slice(-8)
+            ).data?.slice(-8),
           ).to.eq(OPENSEA_TAG);
 
           const transaction = await fulfillAction.transactionMethods.transact();
@@ -515,7 +515,7 @@ describeWithFixture(
           await secondTestErc1155.mint(
             secondOfferer.address,
             nftId,
-            erc1155Amount
+            erc1155Amount,
           );
 
           firstStandardCreateOrderInput = {
@@ -581,20 +581,20 @@ describeWithFixture(
             const { seaport, testErc1155 } = fixture;
 
             const firstOrderUseCase = await seaport.createOrder(
-              firstStandardCreateOrderInput
+              firstStandardCreateOrderInput,
             );
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
             const secondOrderUseCase = await seaport.createOrder(
-              secondStandardCreateOrderInput
+              secondStandardCreateOrderInput,
             );
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address
+              secondOfferer.address,
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -617,8 +617,8 @@ describeWithFixture(
 
             expect(
               (await action.transactionMethods.buildTransaction()).data?.slice(
-                -8
-              )
+                -8,
+              ),
             ).to.eq(OPENSEA_TAG);
 
             const transaction = await action.transactionMethods.transact();
@@ -645,19 +645,19 @@ describeWithFixture(
             firstStandardCreateOrderInput = {
               ...firstStandardCreateOrderInput,
               consideration: firstStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             secondStandardCreateOrderInput = {
               ...secondStandardCreateOrderInput,
               consideration: secondStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
             thirdStandardCreateOrderInput = {
               ...thirdStandardCreateOrderInput,
               consideration: thirdStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
 
@@ -669,8 +669,8 @@ describeWithFixture(
               await testErc20.mint(
                 fulfiller.address,
                 BigNumber.from(
-                  (createOrderInput.consideration[0] as CurrencyItem).amount
-                )
+                  (createOrderInput.consideration[0] as CurrencyItem).amount,
+                ),
               );
             });
           });
@@ -679,20 +679,20 @@ describeWithFixture(
             const { seaport, testErc20, testErc1155 } = fixture;
 
             const firstOrderUseCase = await seaport.createOrder(
-              firstStandardCreateOrderInput
+              firstStandardCreateOrderInput,
             );
 
             const firstOrder = await firstOrderUseCase.executeAllActions();
 
             const secondOrderUseCase = await seaport.createOrder(
-              secondStandardCreateOrderInput
+              secondStandardCreateOrderInput,
             );
 
             const secondOrder = await secondOrderUseCase.executeAllActions();
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address
+              secondOfferer.address,
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -725,8 +725,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -734,7 +734,7 @@ describeWithFixture(
             expect(
               (
                 await fulfillAction.transactionMethods.buildTransaction()
-              ).data?.slice(-8)
+              ).data?.slice(-8),
             ).to.eq(OPENSEA_TAG);
 
             const transaction =
@@ -766,7 +766,7 @@ describeWithFixture(
           await testErc20.mint(offerer.address, parseEther("20").toString());
           await testErc20.mint(
             secondOfferer.address,
-            parseEther("10").toString()
+            parseEther("10").toString(),
           );
 
           firstStandardCreateOrderInput = {
@@ -834,20 +834,20 @@ describeWithFixture(
           const { seaport, testErc1155, testErc20 } = fixture;
 
           const firstOrderUseCase = await seaport.createOrder(
-            firstStandardCreateOrderInput
+            firstStandardCreateOrderInput,
           );
 
           const firstOrder = await firstOrderUseCase.executeAllActions();
 
           const secondOrderUseCase = await seaport.createOrder(
-            secondStandardCreateOrderInput
+            secondStandardCreateOrderInput,
           );
 
           const secondOrder = await secondOrderUseCase.executeAllActions();
 
           const thirdOrderUseCase = await seaport.createOrder(
             thirdStandardCreateOrderInput,
-            secondOfferer.address
+            secondOfferer.address,
           );
 
           const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -879,8 +879,8 @@ describeWithFixture(
           expect(
             await testErc1155.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const secondApprovalAction = actions[1];
@@ -899,8 +899,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).eq(MAX_INT);
 
           const thirdApprovalAction = actions[2];
@@ -919,8 +919,8 @@ describeWithFixture(
           expect(
             await secondTestErc1155.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const fulfillAction = actions[3];
@@ -965,5 +965,5 @@ describeWithFixture(
       it("Can fulfill swap orders", () => {});
       it("Can partially fulfill orders", () => {});
     });
-  }
+  },
 );

@@ -59,8 +59,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        seaportContract.address
-      )
+        seaportContract.address,
+      ),
     ).to.be.true;
 
     const createOrderAction = actions[1] as CreateOrderAction;
@@ -175,7 +175,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     // NFT should now be approved
     expect(
-      await testErc20.allowance(offerer.address, seaportContract.address)
+      await testErc20.allowance(offerer.address, seaportContract.address),
     ).to.equal(MAX_INT);
 
     const createOrderAction = actions[1] as CreateOrderAction;
@@ -283,14 +283,14 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        seaportContract.address
-      )
+        seaportContract.address,
+      ),
     ).to.be.false;
     expect(
       await testErc1155.isApprovedForAll(
         offerer.address,
-        seaportContract.address
-      )
+        seaportContract.address,
+      ),
     ).to.be.false;
 
     const approvalAction = actions[0] as ApprovalAction;
@@ -310,8 +310,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        seaportContract.address
-      )
+        seaportContract.address,
+      ),
     ).to.be.true;
 
     const erc1155ApprovalAction = actions[1] as ApprovalAction;
@@ -331,8 +331,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc1155.isApprovedForAll(
         offerer.address,
-        seaportContract.address
-      )
+        seaportContract.address,
+      ),
     ).to.be.true;
 
     const createOrderAction = actions[2] as CreateOrderAction;
@@ -444,13 +444,13 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       };
 
       await expect(seaport.createOrder(input)).to.be.rejectedWith(
-        "All currency tokens in the order must be the same token when applying fees"
+        "All currency tokens in the order must be the same token when applying fees",
       );
 
       delete input.fees;
 
       await expect(seaport.createOrder(input)).to.be.not.rejectedWith(
-        "All currency tokens in the order must be the same token when applying fees"
+        "All currency tokens in the order must be the same token when applying fees",
       );
     });
 
@@ -485,7 +485,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       } as const;
 
       await expect(seaport.createOrder(createOrderInput)).to.be.rejectedWith(
-        "The offerer does not have the amount needed to create or fulfill."
+        "The offerer does not have the amount needed to create or fulfill.",
       );
 
       await testErc721
@@ -517,9 +517,9 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
               recipient: offerer.address,
             },
           ],
-        })
+        }),
       ).to.be.rejectedWith(
-        "The offerer does not have the amount needed to create or fulfill."
+        "The offerer does not have the amount needed to create or fulfill.",
       );
     });
 
@@ -669,8 +669,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(
       await testErc721.isApprovedForAll(
         offerer.address,
-        seaportContract.address
-      )
+        seaportContract.address,
+      ),
     ).to.be.true;
 
     const createOrderAction = actions[1] as CreateOrderAction;
@@ -680,10 +680,10 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(createOrderAction.type).to.equal("create");
     const rawSignTypedMessage = await ethers.provider.send(
       "eth_signTypedData_v4",
-      [offerer.address, messageToSign]
+      [offerer.address, messageToSign],
     );
     expect(ethers.utils.splitSignature(rawSignTypedMessage).compact).eq(
-      order.signature
+      order.signature,
     );
 
     const isValid = await seaportContract
@@ -736,7 +736,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const order = await executeAllActions();
 
     const contractOrderHash = await seaportContract.getOrderHash(
-      order.parameters
+      order.parameters,
     );
 
     const localOrderHash = seaport.getOrderHash(order.parameters);
@@ -779,7 +779,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const order = await executeAllActions();
 
     const contractOrderHash = await seaportContract.getOrderHash(
-      order.parameters
+      order.parameters,
     );
 
     const localOrderHash = seaport.getOrderHash(order.parameters);
@@ -820,7 +820,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const order = await executeAllActions();
 
     const contractOrderHash = await seaportContract.getOrderHash(
-      order.parameters
+      order.parameters,
     );
 
     const localOrderHash = seaport.getOrderHash(order.parameters);
@@ -863,7 +863,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const order = await executeAllActions();
 
     const contractOrderHash = await seaportContract.getOrderHash(
-      order.parameters
+      order.parameters,
     );
 
     const localOrderHash = seaport.getOrderHash(order.parameters);
@@ -890,7 +890,7 @@ describeWithFixture(
       } = fixture;
       const [orderSigner, zone, nftOwner] = await ethers.getSigners();
       expect(await testERC1271Wallet.orderSigner()).to.equal(
-        orderSigner.address
+        orderSigner.address,
       );
       const nftId = "1";
       await testErc721.mint(nftOwner.address, nftId);
@@ -903,7 +903,7 @@ describeWithFixture(
       await testERC1271Wallet.approveToken(
         testErc20.address,
         seaportContract.address,
-        parseEther("10")
+        parseEther("10"),
       );
 
       const accountAddress = testERC1271Wallet.address;
@@ -928,7 +928,7 @@ describeWithFixture(
           // 2.5% fee
           fees: [{ recipient: zone.address, basisPoints: 250 }],
         },
-        accountAddress
+        accountAddress,
       );
 
       const offerActions = orderUsaCase.actions;
@@ -964,11 +964,11 @@ describeWithFixture(
       expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
 
       expect(await testErc721.ownerOf(nftId)).to.equal(
-        testERC1271Wallet.address
+        testERC1271Wallet.address,
       );
       expect(await testErc20.balanceOf(nftOwner.address)).to.equal(
-        ethers.utils.parseEther("9.75")
+        ethers.utils.parseEther("9.75"),
       );
     });
-  }
+  },
 );

@@ -105,7 +105,7 @@ export class Seaport {
       balanceAndApprovalChecksOnOrderCreation = true,
       conduitKeyToConduit,
       seaportVersion = "1.5",
-    }: SeaportConfig = {}
+    }: SeaportConfig = {},
   ) {
     const provider =
       providerOrSigner instanceof providers.Provider
@@ -117,14 +117,14 @@ export class Seaport {
 
     if (!provider) {
       throw new Error(
-        "Either a provider or custom signer with provider must be provided"
+        "Either a provider or custom signer with provider must be provided",
       );
     }
 
     this.provider = provider;
 
     this.multicallProvider = new multicallProviders.MulticallProvider(
-      this.provider
+      this.provider,
     );
 
     this.contract = new Contract(
@@ -133,13 +133,13 @@ export class Seaport {
           ? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS
           : CROSS_CHAIN_SEAPORT_V1_4_ADDRESS),
       SeaportABIv14,
-      this.multicallProvider
+      this.multicallProvider,
     ) as SeaportContract;
 
     this.domainRegistry = new Contract(
       overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS,
       DomainRegistryABI,
-      this.multicallProvider
+      this.multicallProvider,
     ) as DomainRegistryContract;
 
     this.config = {
@@ -186,7 +186,7 @@ export class Seaport {
   public async createOrder(
     input: CreateOrderInput,
     accountAddress?: string,
-    exactApproval?: boolean
+    exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = accountAddress ?? (await signer.getAddress());
@@ -195,7 +195,7 @@ export class Seaport {
       signer,
       offerer,
       Boolean(exactApproval),
-      input
+      input,
     );
 
     const createOrderAction = {
@@ -235,7 +235,7 @@ export class Seaport {
   public async createBulkOrders(
     createOrderInput: CreateOrderInput[],
     accountAddress?: string,
-    exactApproval?: boolean
+    exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
@@ -250,7 +250,7 @@ export class Seaport {
         signer,
         offerer,
         Boolean(exactApproval),
-        input
+        input,
       );
 
       allOrderComponents.push(orderComponents);
@@ -306,7 +306,7 @@ export class Seaport {
       fees,
       domain,
       salt,
-    }: CreateOrderInput
+    }: CreateOrderInput,
   ) {
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
@@ -324,12 +324,12 @@ export class Seaport {
       })
     ) {
       throw new Error(
-        "All currency tokens in the order must be the same token when applying fees"
+        "All currency tokens in the order must be the same token when applying fees",
       );
     }
 
     const currencies = [...offerItems, ...considerationItems].filter(
-      isCurrencyItem
+      isCurrencyItem,
     );
 
     const totalCurrencyAmount = totalItemsAmount(currencies);
@@ -350,7 +350,7 @@ export class Seaport {
               token: currencies[0].token,
               baseAmount: totalCurrencyAmount.startAmount,
               baseEndAmount: totalCurrencyAmount.endAmount,
-            })
+            }),
           ) ?? []
         : []),
     ];
@@ -397,7 +397,7 @@ export class Seaport {
       const approvals = getApprovalActions(
         insufficientApprovals,
         exactApproval,
-        signer
+        signer,
       );
       approvalActions.push(...approvals);
     }
@@ -468,8 +468,8 @@ export class Seaport {
       _TypedDataEncoder.getPayload(
         domainData,
         EIP_712_ORDER_TYPE,
-        orderComponents
-      )
+        orderComponents,
+      ),
     );
   }
 
@@ -487,7 +487,7 @@ export class Seaport {
     const chunks = tree.getDataToSign();
 
     return JSON.stringify(
-      _TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks })
+      _TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks }),
     );
   }
 
@@ -499,7 +499,7 @@ export class Seaport {
    */
   public async signOrder(
     orderComponents: OrderComponents,
-    accountAddress?: string
+    accountAddress?: string,
   ): Promise<string> {
     const signer = this._getSigner(accountAddress);
 
@@ -508,7 +508,7 @@ export class Seaport {
     const signature = await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
-      orderComponents
+      orderComponents,
     );
 
     // Use EIP-2098 compact signatures to save gas.
@@ -523,7 +523,7 @@ export class Seaport {
    */
   public async signBulkOrder(
     orderComponents: OrderComponents[],
-    accountAddress?: string
+    accountAddress?: string,
   ): Promise<OrderWithCounter[]> {
     const signer = this._getSigner(accountAddress);
 
@@ -536,7 +536,7 @@ export class Seaport {
     let signature = await signer._signTypedData(
       domainData,
       bulkOrderType,
-      value
+      value,
     );
 
     // Use EIP-2098 compact signatures to save gas.
@@ -561,7 +561,7 @@ export class Seaport {
   public cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string,
-    domain?: string
+    domain?: string,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
@@ -569,7 +569,7 @@ export class Seaport {
       this.contract.connect(signer),
       "cancel",
       [orders],
-      domain
+      domain,
     );
   }
 
@@ -581,7 +581,7 @@ export class Seaport {
    */
   public bulkCancelOrders(
     offerer?: string,
-    domain?: string
+    domain?: string,
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
@@ -591,7 +591,7 @@ export class Seaport {
       this.contract.connect(signer),
       "incrementCounter",
       [],
-      domain
+      domain,
     );
   }
 
@@ -606,7 +606,7 @@ export class Seaport {
   public validate(
     orders: Order[],
     accountAddress?: string,
-    domain?: string
+    domain?: string,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
@@ -614,7 +614,7 @@ export class Seaport {
       this.contract.connect(signer),
       "validate",
       [orders],
-      domain
+      domain,
     );
   }
 
@@ -650,13 +650,13 @@ export class Seaport {
     const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
 
     const offerItemTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(offerItemTypeString)
+      ethers.utils.toUtf8Bytes(offerItemTypeString),
     );
     const considerationItemTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(considerationItemTypeString)
+      ethers.utils.toUtf8Bytes(considerationItemTypeString),
     );
     const orderTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(orderTypeString)
+      ethers.utils.toUtf8Bytes(orderTypeString),
     );
 
     const offerHash = ethers.utils.keccak256(
@@ -682,11 +682,11 @@ export class Seaport {
                       .toHexString()
                       .slice(2)
                       .padStart(64, "0"),
-                  ].join("")
+                  ].join(""),
               )
               .slice(2);
           })
-          .join("")
+          .join(""),
     );
 
     const considerationHash = ethers.utils.keccak256(
@@ -701,7 +701,7 @@ export class Seaport {
                     considerationItem.itemType.toString().padStart(64, "0"),
                     considerationItem.token.slice(2).padStart(64, "0"),
                     ethers.BigNumber.from(
-                      considerationItem.identifierOrCriteria
+                      considerationItem.identifierOrCriteria,
                     )
                       .toHexString()
                       .slice(2)
@@ -715,11 +715,11 @@ export class Seaport {
                       .slice(2)
                       .padStart(64, "0"),
                     considerationItem.recipient.slice(2).padStart(64, "0"),
-                  ].join("")
+                  ].join(""),
               )
               .slice(2);
           })
-          .join("")
+          .join(""),
     );
 
     const derivedOrderHash = ethers.utils.keccak256(
@@ -749,7 +749,7 @@ export class Seaport {
             .toHexString()
             .slice(2)
             .padStart(64, "0"),
-        ].join("")
+        ].join(""),
     );
 
     return derivedOrderHash;
@@ -857,7 +857,7 @@ export class Seaport {
 
     const sanitizedOrder = validateAndSanitizeFromOrderStatus(
       order,
-      orderStatus
+      orderStatus,
     );
 
     const timeBasedItemParams = {
@@ -897,7 +897,7 @@ export class Seaport {
           tips: tipConsiderationItems,
           domain,
         },
-        exactApproval
+        exactApproval,
       );
     }
 
@@ -925,7 +925,7 @@ export class Seaport {
         recipientAddress,
         domain,
       },
-      exactApproval
+      exactApproval,
     );
   }
 
@@ -976,23 +976,23 @@ export class Seaport {
 
     const allOffererOperators = fulfillOrderDetails.map(
       ({ order }) =>
-        this.config.conduitKeyToConduit[order.parameters.conduitKey]
+        this.config.conduitKeyToConduit[order.parameters.conduitKey],
     );
 
     const fulfillerOperator = this.config.conduitKeyToConduit[conduitKey];
 
     const allOfferItems = fulfillOrderDetails.flatMap(
-      ({ order }) => order.parameters.offer
+      ({ order }) => order.parameters.offer,
     );
 
     const allConsiderationItems = fulfillOrderDetails.flatMap(
-      ({ order }) => order.parameters.consideration
+      ({ order }) => order.parameters.consideration,
     );
     const allOfferCriteria = fulfillOrderDetails.flatMap(
-      ({ offerCriteria = [] }) => offerCriteria
+      ({ offerCriteria = [] }) => offerCriteria,
     );
     const allConsiderationCriteria = fulfillOrderDetails.flatMap(
-      ({ considerationCriteria = [] }) => considerationCriteria
+      ({ considerationCriteria = [] }) => considerationCriteria,
     );
 
     const [
@@ -1009,8 +1009,8 @@ export class Seaport {
             criterias: offerCriteria,
             operator: allOffererOperators[i],
             multicallProvider: this.multicallProvider,
-          })
-        )
+          }),
+        ),
       ),
       // Get fulfiller balances and approvals of all items in the set, as offer items
       // may be received by the fulfiller for standard fulfills
@@ -1024,8 +1024,8 @@ export class Seaport {
       this.multicallProvider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
-          this.getOrderStatus(this.getOrderHash(order.parameters))
-        )
+          this.getOrderStatus(this.getOrderHash(order.parameters)),
+        ),
       ),
     ]);
 
@@ -1044,7 +1044,7 @@ export class Seaport {
         extraData: orderDetails.extraData ?? "0x",
         offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
         offererOperator: allOffererOperators[index],
-      })
+      }),
     );
 
     return fulfillAvailableOrders({
@@ -1096,13 +1096,13 @@ export class Seaport {
       this.contract.connect(signer),
       "matchOrders",
       [orders, fulfillments, overrides],
-      domain
+      domain,
     );
   }
 
   public setDomain(
     domain: string,
-    accountAddress?: string
+    accountAddress?: string,
   ): TransactionMethods<
     ContractMethodReturnType<DomainRegistryContract, "setDomain">
   > {
@@ -1111,7 +1111,7 @@ export class Seaport {
     return getTransactionMethods(
       this.domainRegistry.connect(signer),
       "setDomain",
-      [domain]
+      [domain],
     );
   }
 
@@ -1125,7 +1125,7 @@ export class Seaport {
 
   public async getDomains(
     tag: string,
-    shouldThrow?: boolean
+    shouldThrow?: boolean,
   ): Promise<string[]> {
     try {
       if (shouldThrow) {
@@ -1140,8 +1140,8 @@ export class Seaport {
 
       const domainArray = Promise.all(
         [...Array(totalDomains).keys()].map((i) =>
-          this.domainRegistry.getDomain(tag, i)
-        )
+          this.domainRegistry.getDomain(tag, i),
+        ),
       );
 
       return domainArray;

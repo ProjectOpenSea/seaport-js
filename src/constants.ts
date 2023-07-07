@@ -106,7 +106,7 @@ export enum BasicOrderRouteType {
 }
 
 export const MAX_INT = BigNumber.from(
-  "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 );
 export const ONE_HUNDRED_PERCENT_BP = 10000;
 export const NO_CONDUIT =

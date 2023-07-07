@@ -41,7 +41,7 @@ export type InsufficientApprovals = {
 const findBalanceAndApproval = (
   balancesAndApprovals: BalancesAndApprovals,
   token: string,
-  identifierOrCriteria: string
+  identifierOrCriteria: string,
 ) => {
   const balanceAndApproval = balancesAndApprovals.find(
     ({
@@ -50,12 +50,12 @@ const findBalanceAndApproval = (
     }) =>
       token.toLowerCase() === checkedToken.toLowerCase() &&
       checkedIdentifierOrCriteria.toLowerCase() ===
-        identifierOrCriteria.toLowerCase()
+        identifierOrCriteria.toLowerCase(),
   );
 
   if (!balanceAndApproval) {
     throw new Error(
-      "Balances and approvals didn't contain all tokens and identifiers"
+      "Balances and approvals didn't contain all tokens and identifiers",
     );
   }
 
@@ -86,14 +86,14 @@ export const getBalancesAndApprovals = async ({
           owner,
           item,
           operator,
-          multicallProvider
+          multicallProvider,
         );
       } else if (isErc20Item(item.itemType)) {
         approvedAmountPromise = approvedItemAmount(
           owner,
           item,
           operator,
-          multicallProvider
+          multicallProvider,
         );
       }
       // If native token, we don't need to check for approvals
@@ -109,12 +109,12 @@ export const getBalancesAndApprovals = async ({
           owner,
           item,
           multicallProvider,
-          itemToCriteria.get(item)
+          itemToCriteria.get(item),
         ),
         approvedAmount: await approvedAmountPromise,
         itemType: item.itemType,
       };
-    })
+    }),
   );
 };
 
@@ -137,27 +137,27 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
       ([token, identifierToAmount]) =>
         Object.entries(identifierToAmount).map(
           ([identifierOrCriteria, amountNeeded]) =>
-            [token, identifierOrCriteria, amountNeeded] as const
-        )
+            [token, identifierOrCriteria, amountNeeded] as const,
+        ),
     ),
   ].flat();
 
   const filterBalancesOrApprovals = (
-    filterKey: "balance" | "approvedAmount"
+    filterKey: "balance" | "approvedAmount",
   ): InsufficientBalances =>
     tokenAndIdentifierAndAmountNeeded
       .filter(([token, identifierOrCriteria, amountNeeded]) =>
         findBalanceAndApproval(
           balancesAndApprovals,
           token,
-          identifierOrCriteria
-        )[filterKey].lt(amountNeeded)
+          identifierOrCriteria,
+        )[filterKey].lt(amountNeeded),
       )
       .map(([token, identifierOrCriteria, amount]) => {
         const balanceAndApproval = findBalanceAndApproval(
           balancesAndApprovals,
           token,
-          identifierOrCriteria
+          identifierOrCriteria,
         );
 
         return {
@@ -170,7 +170,7 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
       });
 
   const mapToApproval = (
-    insufficientBalance: InsufficientBalances[number]
+    insufficientBalance: InsufficientBalances[number],
   ): InsufficientApprovals[number] => ({
     token: insufficientBalance.token,
     identifierOrCriteria: insufficientBalance.identifierOrCriteria,
@@ -230,7 +230,7 @@ export const validateOfferBalancesAndApprovals = ({
 
   if (throwOnInsufficientBalances && insufficientBalances.length > 0) {
     throw new Error(
-      "The offerer does not have the amount needed to create or fulfill."
+      "The offerer does not have the amount needed to create or fulfill.",
     );
   }
 
@@ -284,7 +284,7 @@ export const validateBasicFulfillBalancesAndApprovals = ({
   });
 
   const considerationWithoutOfferItemType = consideration.filter(
-    (item) => item.itemType !== offer[0].itemType
+    (item) => item.itemType !== offer[0].itemType,
   );
 
   const { insufficientBalances, insufficientApprovals } =
@@ -303,7 +303,7 @@ export const validateBasicFulfillBalancesAndApprovals = ({
 
   if (insufficientBalances.length > 0) {
     throw new Error(
-      "The fulfiller does not have the balances needed to fulfill."
+      "The fulfiller does not have the balances needed to fulfill.",
     );
   }
 
@@ -379,7 +379,7 @@ export const validateStandardFulfillBalancesAndApprovals = ({
 
   if (insufficientBalances.length > 0) {
     throw new Error(
-      "The fulfiller does not have the balances needed to fulfill."
+      "The fulfiller does not have the balances needed to fulfill.",
     );
   }
 
@@ -405,7 +405,7 @@ const addToExistingBalances = ({
 
   // Deep clone existing balances
   const balancesAndApprovalsAfterReceivingItems = balancesAndApprovals.map(
-    (item) => ({ ...item })
+    (item) => ({ ...item }),
   );
 
   // Add each summed item amount to the existing balances as we may want tocheck balances after receiving all items
@@ -416,7 +416,7 @@ const addToExistingBalances = ({
           const balanceAndApproval = findBalanceAndApproval(
             balancesAndApprovalsAfterReceivingItems,
             token,
-            identifierOrCriteria
+            identifierOrCriteria,
           );
 
           const balanceAndApprovalIndex =
@@ -428,8 +428,8 @@ const addToExistingBalances = ({
             balancesAndApprovalsAfterReceivingItems[
               balanceAndApprovalIndex
             ].balance.add(amount);
-        }
-      )
+        },
+      ),
   );
 
   return balancesAndApprovalsAfterReceivingItems;

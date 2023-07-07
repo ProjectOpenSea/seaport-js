@@ -42,7 +42,7 @@ export const feeToConsiderationItem = ({
 
 export const deductFees = <T extends Item>(
   items: T[],
-  fees?: readonly Fee[]
+  fees?: readonly Fee[],
 ): T[] => {
   if (!fees) {
     return items;
@@ -50,7 +50,7 @@ export const deductFees = <T extends Item>(
 
   const totalBasisPoints = fees.reduce(
     (accBasisPoints, fee) => accBasisPoints + fee.basisPoints,
-    0
+    0,
   );
 
   return items.map((item) => ({
@@ -134,7 +134,7 @@ export const areAllCurrenciesSame = ({
   return currencies.every(
     ({ itemType, token }) =>
       itemType === currencies[0].itemType &&
-      token.toLowerCase() === currencies[0].token.toLowerCase()
+      token.toLowerCase() === currencies[0].token.toLowerCase(),
   );
 };
 
@@ -152,7 +152,7 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
     .reduce<typeof initialValues>(
       (
         { startAmount: totalStartAmount, endAmount: totalEndAmount },
-        { startAmount, endAmount }
+        { startAmount, endAmount },
       ) => ({
         startAmount: totalStartAmount.add(startAmount),
         endAmount: totalEndAmount.add(endAmount),
@@ -160,7 +160,7 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
       {
         startAmount: BigNumber.from(0),
         endAmount: BigNumber.from(0),
-      }
+      },
     );
 };
 
@@ -171,7 +171,7 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
  */
 export const mapOrderAmountsFromFilledStatus = (
   order: Order,
-  { totalFilled, totalSize }: { totalFilled: BigNumber; totalSize: BigNumber }
+  { totalFilled, totalSize }: { totalFilled: BigNumber; totalSize: BigNumber },
 ): Order => {
   if (totalFilled.eq(0) || totalSize.eq(0)) {
     return order;
@@ -190,7 +190,7 @@ export const mapOrderAmountsFromFilledStatus = (
         ...item,
         startAmount: multiplyBasisPoints(
           item.startAmount,
-          basisPoints
+          basisPoints,
         ).toString(),
         endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
       })),
@@ -198,7 +198,7 @@ export const mapOrderAmountsFromFilledStatus = (
         ...item,
         startAmount: multiplyBasisPoints(
           item.startAmount,
-          basisPoints
+          basisPoints,
         ).toString(),
         endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
       })),
@@ -210,7 +210,7 @@ export const mapOrderAmountsFromFilledStatus = (
 const multiplyDivision = (
   amount: BigNumberish,
   numerator: BigNumberish,
-  denominator: BigNumberish
+  denominator: BigNumberish,
 ) => BigNumber.from(amount).mul(BigNumber.from(numerator)).div(denominator);
 
 /**
@@ -224,7 +224,7 @@ export const mapOrderAmountsFromUnitsToFill = (
   {
     unitsToFill,
     totalSize,
-  }: { unitsToFill: BigNumberish; totalSize: BigNumber }
+  }: { unitsToFill: BigNumberish; totalSize: BigNumber },
 ): Order => {
   const unitsToFillBn = BigNumber.from(unitsToFill);
 
@@ -246,12 +246,12 @@ export const mapOrderAmountsFromUnitsToFill = (
         startAmount: multiplyDivision(
           item.startAmount,
           unitsToFillBn,
-          totalSize
+          totalSize,
         ).toString(),
         endAmount: multiplyDivision(
           item.endAmount,
           unitsToFillBn,
-          totalSize
+          totalSize,
         ).toString(),
       })),
       consideration: order.parameters.consideration.map((item) => ({
@@ -259,12 +259,12 @@ export const mapOrderAmountsFromUnitsToFill = (
         startAmount: multiplyDivision(
           item.startAmount,
           unitsToFillBn,
-          totalSize
+          totalSize,
         ).toString(),
         endAmount: multiplyDivision(
           item.endAmount,
           unitsToFillBn,
-          totalSize
+          totalSize,
         ).toString(),
       })),
     },
@@ -279,7 +279,7 @@ export const generateRandomSalt = (domain?: string) => {
         keccak256(toUtf8Bytes(domain)).slice(0, 10),
         Uint8Array.from(Array(20).fill(0)),
         randomBytes(8),
-      ])
+      ]),
     ).toString("hex")}`;
   }
   return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`;

@@ -20,9 +20,9 @@ export const generateCriteriaResolvers = ({
             item,
             index,
             side: Side.OFFER,
-          } as const)
+          }) as const,
       )
-      .filter(({ item }) => isCriteriaItem(item.itemType))
+      .filter(({ item }) => isCriteriaItem(item.itemType)),
   );
 
   const considerationCriteriaItems = orders.flatMap((order, orderIndex) =>
@@ -34,16 +34,16 @@ export const generateCriteriaResolvers = ({
             item,
             index,
             side: Side.CONSIDERATION,
-          } as const)
+          }) as const,
       )
-      .filter(({ item }) => isCriteriaItem(item.itemType))
+      .filter(({ item }) => isCriteriaItem(item.itemType)),
   );
 
   const mapCriteriaItemsToResolver = (
     criteriaItems:
       | typeof offerCriteriaItems
       | typeof considerationCriteriaItems,
-    criterias: InputCriteria[][]
+    criterias: InputCriteria[][],
   ) =>
     criteriaItems.map(({ orderIndex, item, index, side }) => {
       const merkleRoot = item.identifierOrCriteria || "0";
@@ -61,7 +61,7 @@ export const generateCriteriaResolvers = ({
     ...mapCriteriaItemsToResolver(offerCriteriaItems, offerCriterias),
     ...mapCriteriaItemsToResolver(
       considerationCriteriaItems,
-      considerationCriterias
+      considerationCriterias,
     ),
   ];
 
@@ -70,7 +70,7 @@ export const generateCriteriaResolvers = ({
 
 export const getItemToCriteriaMap = (
   items: Item[],
-  criterias: InputCriteria[]
+  criterias: InputCriteria[],
 ) => {
   const criteriasCopy = [...criterias];
 

@@ -18,7 +18,7 @@ import {
 export const setBalance = async (
   address: string,
   provider: providers.JsonRpcProvider,
-  amountEth = parseEther("10000").toHexString().replace("0x0", "0x")
+  amountEth = parseEther("10000").toHexString().replace("0x0", "0x"),
 ) => {
   await provider.send("hardhat_setBalance", [
     address,
@@ -29,7 +29,7 @@ export const setBalance = async (
 export const getBalancesForFulfillOrder = async (
   order: Order,
   fulfillerAddress: string,
-  multicallProvider: multicallProviders.MulticallProvider
+  multicallProvider: multicallProviders.MulticallProvider,
 ) => {
   const { offer, consideration, offerer } = order.parameters;
 
@@ -38,7 +38,7 @@ export const getBalancesForFulfillOrder = async (
       offerer,
       fulfillerAddress,
       ...consideration.map((item) => item.recipient),
-    ])
+    ]),
   );
 
   const ownerToTokenToIdentifierBalances: Record<
@@ -76,8 +76,8 @@ export const getBalancesForFulfillOrder = async (
             balance: await balanceOf(address, item, multicallProvider),
           };
         }),
-      ])
-    )
+      ]),
+    ),
   );
 
   return ownerToTokenToIdentifierBalances;
@@ -196,7 +196,7 @@ export const verifyBalancesAfterFulfill = async ({
       balance: ownerToTokenToIdentifierBalances[fulfillerAddress][
         ethers.constants.AddressZero
       ][0].balance.sub(
-        fulfillReceipt.gasUsed.mul(fulfillReceipt.effectiveGasPrice)
+        fulfillReceipt.gasUsed.mul(fulfillReceipt.effectiveGasPrice),
       ),
     };
   }
@@ -213,15 +213,15 @@ export const verifyBalancesAfterFulfill = async ({
                     const actualBalance = await balanceOf(
                       owner,
                       item,
-                      multicallProvider
+                      multicallProvider,
                     );
 
                     expect(balance).equal(actualBalance);
-                  }
+                  },
                 ),
-              ])
+              ]),
           ),
-        ])
+        ]),
     ),
   ]);
 };

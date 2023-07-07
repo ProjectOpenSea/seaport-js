@@ -9,7 +9,7 @@ export const makeArray = <T>(len: number, getValue: (i: number) => T) =>
 
 export const chunk = <T>(array: T[], size: number) => {
   return makeArray(Math.ceil(array.length / size), (i) =>
-    array.slice(i * size, (i + 1) * size)
+    array.slice(i * size, (i + 1) * size),
   );
 };
 
