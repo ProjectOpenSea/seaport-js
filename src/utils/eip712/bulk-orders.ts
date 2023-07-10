@@ -24,7 +24,7 @@ export function getBulkOrderTreeHeight(length: number): number {
 export function getBulkOrderTree(
   orderComponents: OrderComponents[],
   startIndex = 0,
-  height = getBulkOrderTreeHeight(orderComponents.length + startIndex)
+  height = getBulkOrderTreeHeight(orderComponents.length + startIndex),
 ) {
   const types = getBulkOrderTypes(height);
   const defaultNode = DefaultGetter.from(types, "OrderComponents");
@@ -41,7 +41,7 @@ export function getBulkOrderTree(
     "BulkOrder",
     "OrderComponents",
     elements,
-    height
+    height,
   );
   return tree;
 }

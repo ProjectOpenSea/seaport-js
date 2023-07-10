@@ -13,24 +13,24 @@ export const approvedItemAmount = async (
   owner: string,
   item: Item,
   operator: string,
-  multicallProvider: multicallProviders.MulticallProvider
+  multicallProvider: multicallProviders.MulticallProvider,
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
     const contract = new Contract(
       item.token,
       ERC721ABI,
-      multicallProvider
+      multicallProvider,
     ) as TestERC721;
     return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
       // Setting to the max int to consolidate types and simplify
-      isApprovedForAll ? MAX_INT : BigNumber.from(0)
+      isApprovedForAll ? MAX_INT : BigNumber.from(0),
     );
   } else if (item.itemType === ItemType.ERC20) {
     const contract = new Contract(
       item.token,
       ERC20ABI,
-      multicallProvider
+      multicallProvider,
     ) as TestERC20;
 
     return contract.allowance(owner, operator);
@@ -46,13 +46,13 @@ export const approvedItemAmount = async (
 export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
   exactApproval: boolean,
-  signer: Signer
+  signer: Signer,
 ): ApprovalAction[] {
   return insufficientApprovals
     .filter(
       (approval, index) =>
         index === insufficientApprovals.length - 1 ||
-        insufficientApprovals[index + 1].token !== approval.token
+        insufficientApprovals[index + 1].token !== approval.token,
     )
     .map(
       ({
@@ -79,7 +79,7 @@ export function getApprovalActions(
               [
                 operator,
                 exactApproval && !isErc1155 ? identifierOrCriteria : true,
-              ]
+              ],
             ),
           };
         } else {
@@ -93,11 +93,11 @@ export function getApprovalActions(
             transactionMethods: getTransactionMethods(
               contract.connect(signer),
               "approve",
-              [operator, exactApproval ? requiredApprovedAmount : MAX_INT]
+              [operator, exactApproval ? requiredApprovedAmount : MAX_INT],
             ),
             operator,
           };
         }
-      }
+      },
     );
 }

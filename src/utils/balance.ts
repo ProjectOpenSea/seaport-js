@@ -12,13 +12,13 @@ export const balanceOf = async (
   owner: string,
   item: Item,
   multicallProvider: multicallProviders.MulticallProvider,
-  criteria?: InputCriteria
+  criteria?: InputCriteria,
 ): Promise<BigNumber> => {
   if (isErc721Item(item.itemType)) {
     const contract = new Contract(
       item.token,
       ERC721ABI,
-      multicallProvider
+      multicallProvider,
     ) as TestERC721;
 
     if (item.itemType === ItemType.ERC721_WITH_CRITERIA) {
@@ -27,8 +27,8 @@ export const balanceOf = async (
             .ownerOf(criteria.identifier)
             .then((ownerOf) =>
               BigNumber.from(
-                Number(ownerOf.toLowerCase() === owner.toLowerCase())
-              )
+                Number(ownerOf.toLowerCase() === owner.toLowerCase()),
+              ),
             )
         : contract.balanceOf(owner);
     }
@@ -36,13 +36,13 @@ export const balanceOf = async (
     return contract
       .ownerOf(item.identifierOrCriteria)
       .then((ownerOf) =>
-        BigNumber.from(Number(ownerOf.toLowerCase() === owner.toLowerCase()))
+        BigNumber.from(Number(ownerOf.toLowerCase() === owner.toLowerCase())),
       );
   } else if (isErc1155Item(item.itemType)) {
     const contract = new Contract(
       item.token,
       ERC1155ABI,
-      multicallProvider
+      multicallProvider,
     ) as TestERC1155;
 
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
@@ -64,7 +64,7 @@ export const balanceOf = async (
     const contract = new Contract(
       item.token,
       ERC20ABI,
-      multicallProvider
+      multicallProvider,
     ) as TestERC20;
     return contract.balanceOf(owner);
   }

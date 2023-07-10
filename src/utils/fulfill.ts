@@ -68,7 +68,7 @@ import { executeAllActions, getTransactionMethods } from "./usecase";
  */
 export const shouldUseBasicFulfill = (
   { offer, consideration, offerer }: OrderParameters,
-  totalFilled: OrderStatus["totalFilled"]
+  totalFilled: OrderStatus["totalFilled"],
 ) => {
   // 1. The order must not be partially filled
   if (!totalFilled.eq(0)) {
@@ -83,11 +83,11 @@ export const shouldUseBasicFulfill = (
   const allItems = [...offer, ...consideration];
 
   const nfts = allItems.filter(({ itemType }) =>
-    [ItemType.ERC721, ItemType.ERC1155].includes(itemType)
+    [ItemType.ERC721, ItemType.ERC1155].includes(itemType),
   );
 
   const nftsWithCriteria = allItems.filter(({ itemType }) =>
-    isCriteriaItem(itemType)
+    isCriteriaItem(itemType),
   );
 
   const offersNativeCurrency = isNativeCurrencyItem(offer[0]);
@@ -109,7 +109,7 @@ export const shouldUseBasicFulfill = (
 
   // 6. All individual items need to have the same startAmount and endAmount
   const differentStartAndEndAmount = allItems.some(
-    ({ startAmount, endAmount }) => startAmount !== endAmount
+    ({ startAmount, endAmount }) => startAmount !== endAmount,
   );
 
   if (differentStartAndEndAmount) {
@@ -147,7 +147,7 @@ export const shouldUseBasicFulfill = (
     .every(({ token }) => token === ethers.constants.AddressZero);
 
   const currencyIdentifiersAreZero = currencies.every(
-    ({ identifierOrCriteria }) => BigNumber.from(identifierOrCriteria).eq(0)
+    ({ identifierOrCriteria }) => BigNumber.from(identifierOrCriteria).eq(0),
   );
 
   const erc721sAreSingleAmount = nfts
@@ -204,7 +204,7 @@ export function fulfillBasicOrder(
     conduitKey: string;
     domain?: string;
   },
-  exactApproval: boolean
+  exactApproval: boolean,
 ): OrderUseCase<
   ExchangeAction<ContractMethodReturnType<SeaportContract, "fulfillBasicOrder">>
 > {
@@ -221,7 +221,7 @@ export function fulfillBasicOrder(
 
   if (basicOrderRouteType === undefined) {
     throw new Error(
-      "Order parameters did not result in a valid basic fulfillment"
+      "Order parameters did not result in a valid basic fulfillment",
     );
   }
 
@@ -229,11 +229,11 @@ export function fulfillBasicOrder(
     ({ startAmount, recipient }) => ({
       amount: startAmount,
       recipient,
-    })
+    }),
   );
 
   const considerationWithoutOfferItemType = considerationIncludingTips.filter(
-    (item) => item.itemType !== offer[0].itemType
+    (item) => item.itemType !== offer[0].itemType,
   );
 
   const totalNativeAmount = getSummedTokenAndIdentifierAmounts({
@@ -286,7 +286,7 @@ export function fulfillBasicOrder(
   const approvalActions = getApprovalActions(
     insufficientApprovals,
     exactApproval,
-    signer
+    signer,
   );
 
   const exchangeAction = {
@@ -295,7 +295,7 @@ export function fulfillBasicOrder(
       seaportContract.connect(signer),
       "fulfillBasicOrder",
       [basicOrderParameters, payableOverrides],
-      domain
+      domain,
     ),
   } as const;
 
@@ -348,7 +348,7 @@ export function fulfillStandardOrder(
     signer: Signer;
     domain?: string;
   },
-  exactApproval: boolean
+  exactApproval: boolean,
 ): OrderUseCase<
   ExchangeAction<
     ContractMethodReturnType<
@@ -377,11 +377,11 @@ export function fulfillStandardOrder(
   const considerationIncludingTips = [...consideration, ...tips];
 
   const offerCriteriaItems = offer.filter(({ itemType }) =>
-    isCriteriaItem(itemType)
+    isCriteriaItem(itemType),
   );
 
   const considerationCriteriaItems = considerationIncludingTips.filter(
-    ({ itemType }) => isCriteriaItem(itemType)
+    ({ itemType }) => isCriteriaItem(itemType),
   );
 
   const hasCriteriaItems =
@@ -392,7 +392,7 @@ export function fulfillStandardOrder(
     considerationCriteriaItems.length !== considerationCriteria.length
   ) {
     throw new Error(
-      "You must supply the appropriate criterias for criteria based items"
+      "You must supply the appropriate criterias for criteria based items",
     );
   }
 
@@ -422,7 +422,7 @@ export function fulfillStandardOrder(
   const approvalActions = getApprovalActions(
     insufficientApprovals,
     exactApproval,
-    signer
+    signer,
   );
 
   const isGift = recipientAddress !== ethers.constants.AddressZero;
@@ -440,7 +440,7 @@ export function fulfillStandardOrder(
 
   const { numerator, denominator } = getAdvancedOrderNumeratorDenominator(
     order,
-    unitsToFill
+    unitsToFill,
   );
 
   const exchangeAction = {
@@ -467,13 +467,13 @@ export function fulfillStandardOrder(
             recipientAddress,
             payableOverrides,
           ],
-          domain
+          domain,
         )
       : getTransactionMethods(
           seaportContract.connect(signer),
           "fulfillOrder",
           [orderAccountingForTips, conduitKey, payableOverrides],
-          domain
+          domain,
         ),
   } as const;
 
@@ -488,7 +488,7 @@ export function fulfillStandardOrder(
 
 export function validateAndSanitizeFromOrderStatus(
   order: Order,
-  orderStatus: OrderStatus
+  orderStatus: OrderStatus,
 ): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
@@ -553,7 +553,7 @@ export function fulfillAvailableOrders({
     ...orderMetadata,
     order: validateAndSanitizeFromOrderStatus(
       orderMetadata.order,
-      orderMetadata.orderStatus
+      orderMetadata.orderStatus,
     ),
   }));
 
@@ -572,7 +572,7 @@ export function fulfillAvailableOrders({
             totalFilled: orderMetadata.orderStatus.totalFilled,
             totalSize: orderMetadata.orderStatus.totalSize,
           }),
-    })
+    }),
   );
 
   let totalNativeAmount = BigNumber.from(0);
@@ -588,12 +588,12 @@ export function fulfillAvailableOrders({
   const hasCriteriaItems = criteriaOffersAndConsiderations.length > 0;
 
   const addApprovalIfNeeded = (
-    orderInsufficientApprovals: InsufficientApprovals
+    orderInsufficientApprovals: InsufficientApprovals,
   ) => {
     orderInsufficientApprovals.forEach((insufficientApproval) => {
       if (
         !totalInsufficientApprovals.find(
-          (approval) => approval.token === insufficientApproval.token
+          (approval) => approval.token === insufficientApproval.token,
         )
       ) {
         totalInsufficientApprovals.push(insufficientApproval);
@@ -628,7 +628,7 @@ export function fulfillAvailableOrders({
           items: considerationIncludingTips,
           criterias: considerationCriteria,
           timeBasedItemParams,
-        })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0)
+        })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0),
       );
 
       const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
@@ -642,15 +642,15 @@ export function fulfillAvailableOrders({
           timeBasedItemParams,
           offererOperator,
           fulfillerOperator,
-        }
+        },
       );
 
       const offerCriteriaItems = order.parameters.offer.filter(({ itemType }) =>
-        isCriteriaItem(itemType)
+        isCriteriaItem(itemType),
       );
 
       const considerationCriteriaItems = considerationIncludingTips.filter(
-        ({ itemType }) => isCriteriaItem(itemType)
+        ({ itemType }) => isCriteriaItem(itemType),
       );
 
       if (
@@ -658,12 +658,12 @@ export function fulfillAvailableOrders({
         considerationCriteriaItems.length !== considerationCriteria.length
       ) {
         throw new Error(
-          "You must supply the appropriate criterias for criteria based items"
+          "You must supply the appropriate criterias for criteria based items",
         );
       }
 
       addApprovalIfNeeded(insufficientApprovals);
-    }
+    },
   );
 
   const payableOverrides = { value: totalNativeAmount };
@@ -671,14 +671,14 @@ export function fulfillAvailableOrders({
   const approvalActions = getApprovalActions(
     totalInsufficientApprovals,
     exactApproval,
-    signer
+    signer,
   );
 
   const advancedOrdersWithTips: AdvancedOrder[] = sanitizedOrdersMetadata.map(
     ({ order, unitsToFill = 0, tips, extraData }) => {
       const { numerator, denominator } = getAdvancedOrderNumeratorDenominator(
         order,
-        unitsToFill
+        unitsToFill,
       );
 
       const considerationIncludingTips = [
@@ -697,7 +697,7 @@ export function fulfillAvailableOrders({
         denominator,
         extraData,
       };
-    }
+    },
   );
 
   const { offerFulfillments, considerationFulfillments } =
@@ -714,10 +714,10 @@ export function fulfillAvailableOrders({
           ? generateCriteriaResolvers({
               orders: ordersMetadata.map(({ order }) => order),
               offerCriterias: ordersMetadata.map(
-                ({ offerCriteria }) => offerCriteria
+                ({ offerCriteria }) => offerCriteria,
               ),
               considerationCriterias: ordersMetadata.map(
-                ({ considerationCriteria }) => considerationCriteria
+                ({ considerationCriteria }) => considerationCriteria,
               ),
             })
           : [],
@@ -728,7 +728,7 @@ export function fulfillAvailableOrders({
         advancedOrdersWithTips.length,
         payableOverrides,
       ],
-      domain
+      domain,
     ),
   } as const;
 
@@ -742,7 +742,7 @@ export function fulfillAvailableOrders({
 }
 
 export function generateFulfillOrdersFulfillments(
-  ordersMetadata: FulfillOrdersMetadata
+  ordersMetadata: FulfillOrdersMetadata,
 ): {
   offerFulfillments: FulfillmentComponentStruct[];
   considerationFulfillments: FulfillmentComponentStruct[];
@@ -773,7 +773,7 @@ export function generateFulfillOrdersFulfillments(
     ({ order, offererOperator, offerCriteria }, orderIndex) => {
       const itemToCriteria = getItemToCriteriaMap(
         order.parameters.offer,
-        offerCriteria
+        offerCriteria,
       );
 
       return order.parameters.offer.forEach((item, itemIndex) => {
@@ -791,14 +791,14 @@ export function generateFulfillOrdersFulfillments(
           { orderIndex, itemIndex },
         ] as any;
       });
-    }
+    },
   );
 
   ordersMetadata.forEach(
     ({ order, considerationCriteria, tips }, orderIndex) => {
       const itemToCriteria = getItemToCriteriaMap(
         order.parameters.consideration,
-        considerationCriteria
+        considerationCriteria,
       );
       return [...order.parameters.consideration, ...tips].forEach(
         (item, itemIndex) => {
@@ -815,22 +815,22 @@ export function generateFulfillOrdersFulfillments(
               []) as any),
             { orderIndex, itemIndex },
           ] as any;
-        }
+        },
       );
-    }
+    },
   );
 
   return {
     offerFulfillments: Object.values(offerAggregatedFulfillments),
     considerationFulfillments: Object.values(
-      considerationAggregatedFulfillments
+      considerationAggregatedFulfillments,
     ),
   };
 }
 
 export const getAdvancedOrderNumeratorDenominator = (
   order: Order,
-  unitsToFill?: BigNumberish
+  unitsToFill?: BigNumberish,
 ) => {
   // Used for advanced order cases
   const maxUnits = getMaximumSizeForOrder(order);

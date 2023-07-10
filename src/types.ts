@@ -56,7 +56,7 @@ export type Signer = ethers.Signer & {
   _signTypedData(
     domain: TypedDataDomain,
     types: Record<string, Array<TypedDataField>>,
-    value: Record<string, any>
+    value: Record<string, any>,
   ): Promise<string>;
 };
 
@@ -190,7 +190,7 @@ export type OrderWithCounter = {
 
 export type ContractMethodReturnType<
   T extends Contract,
-  U extends keyof T["callStatic"]
+  U extends keyof T["callStatic"],
   // eslint-disable-next-line no-undef
 > = Awaited<ReturnType<T["callStatic"][U]>>;
 
@@ -235,21 +235,21 @@ export type TransactionAction = ApprovalAction | ExchangeAction;
 
 export type CreateOrderActions = readonly [
   ...ApprovalAction[],
-  CreateOrderAction
+  CreateOrderAction,
 ];
 
 export type CreateBulkOrdersActions = readonly [
   ...ApprovalAction[],
-  CreateBulkOrdersAction
+  CreateBulkOrdersAction,
 ];
 
 export type OrderExchangeActions<T> = readonly [
   ...ApprovalAction[],
-  ExchangeAction<T>
+  ExchangeAction<T>,
 ];
 
 export type OrderUseCase<
-  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction
+  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,
 > = {
   actions: T extends CreateOrderAction
     ? CreateOrderActions
@@ -290,20 +290,20 @@ export type MatchOrdersFulfillment = {
 export type SeaportContract = TypeChainSeaportContract & {
   encodeFunctionData(
     functionFragment: "matchOrders",
-    values: [OrderStruct[], MatchOrdersFulfillment[]]
+    values: [OrderStruct[], MatchOrdersFulfillment[]],
   ): string;
 
   matchOrders(
     orders: OrderStruct[],
     fulfillments: MatchOrdersFulfillment[],
-    overrides?: PayableOverrides & { from?: string | Promise<string> }
+    overrides?: PayableOverrides & { from?: string | Promise<string> },
   ): Promise<ContractTransaction>;
 
   functions: TypeChainSeaportContract["functions"] & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> },
     ): Promise<ContractTransaction>;
   };
 
@@ -311,7 +311,7 @@ export type SeaportContract = TypeChainSeaportContract & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> },
     ): Promise<ContractTransaction>;
   };
 
@@ -319,7 +319,7 @@ export type SeaportContract = TypeChainSeaportContract & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> },
     ): Promise<BigNumber>;
   };
 
@@ -327,7 +327,7 @@ export type SeaportContract = TypeChainSeaportContract & {
     matchOrders(
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> },
     ): Promise<PopulatedTransaction>;
   };
 };

@@ -19,7 +19,7 @@ describeWithFixture(
       "many_msg_babbage(bytes1)",
     ];
     const exampleTag = keccak256(
-      toUtf8Bytes(expectedExampleDomainArray[0])
+      toUtf8Bytes(expectedExampleDomainArray[0]),
     ).slice(0, 10);
 
     beforeEach(async () => {
@@ -52,19 +52,19 @@ describeWithFixture(
       expect(await seaport.getDomain(OPENSEA_TAG, 0)).to.eq(OPENSEA_DOMAIN);
 
       expect(await seaport.getDomain(exampleTag, 0)).to.eq(
-        expectedExampleDomainArray[0]
+        expectedExampleDomainArray[0],
       );
 
       expect(await seaport.getDomain(exampleTag, 1)).to.eq(
-        expectedExampleDomainArray[1]
+        expectedExampleDomainArray[1],
       );
 
       expect(await seaport.getDomain(exampleTag, 2)).to.eq(
-        expectedExampleDomainArray[2]
+        expectedExampleDomainArray[2],
       );
 
       expect(await seaport.getDomain(exampleTag, 3)).to.eq(
-        expectedExampleDomainArray[3]
+        expectedExampleDomainArray[3],
       );
     });
 
@@ -72,7 +72,7 @@ describeWithFixture(
       const { seaport } = fixture;
 
       expect(await seaport.getDomains(exampleTag)).to.deep.eq(
-        expectedExampleDomainArray
+        expectedExampleDomainArray,
       );
     });
 
@@ -86,8 +86,8 @@ describeWithFixture(
       const { seaport } = fixture;
 
       expect(await seaport.getDomains(exampleTag, true)).to.deep.eq(
-        expectedExampleDomainArray
+        expectedExampleDomainArray,
       );
     });
-  }
+  },
 );

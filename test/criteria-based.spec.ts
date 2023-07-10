@@ -77,7 +77,7 @@ describeWithFixture(
             const { seaport, testErc721 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -86,7 +86,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -130,7 +130,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
 
@@ -138,25 +138,25 @@ describeWithFixture(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
 
             const orderStatus = await seaport.getOrderStatus(
-              seaport.getOrderHash(order.parameters)
+              seaport.getOrderHash(order.parameters),
             );
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -183,8 +183,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -251,7 +251,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address
+              offerer.address,
             );
 
             const order = await executeAllActions();
@@ -260,7 +260,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -286,8 +286,8 @@ describeWithFixture(
             expect(
               await testErc721.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.be.true;
 
             // We also need to approve ERC-20 as we send that out as fees..
@@ -307,8 +307,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.eq(MAX_INT);
 
             const fulfillAction = actions[2];
@@ -349,7 +349,7 @@ describeWithFixture(
             for (let i = 0; i < 2; i++) {
               const { executeAllActions } = await seaport.createOrder(
                 standardCreateOrderInput,
-                offerer.address
+                offerer.address,
               );
 
               const order = await executeAllActions();
@@ -389,8 +389,8 @@ describeWithFixture(
             expect(
               await testErc721.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.be.true;
 
             // We also need to approve ERC-20 as we send that out as fees..
@@ -410,8 +410,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.eq(MAX_INT);
 
             const fulfillAction = actions[2];
@@ -435,11 +435,11 @@ describeWithFixture(
               ]);
             expect(finalFulfillerErc20Balance).to.eq(
               initialFulfillerErc20Balance.add(
-                parseEther("20").sub(parseEther("0.5")) // 0.5 in fees
-              )
+                parseEther("20").sub(parseEther("0.5")), // 0.5 in fees
+              ),
             );
             expect(finalZoneErc20Balance).to.eq(
-              initialZoneErc20Balance.add(parseEther("0.5"))
+              initialZoneErc20Balance.add(parseEther("0.5")),
             );
 
             const [ownerOfNftId1, ownerOfNftId2] = await Promise.all([
@@ -488,7 +488,7 @@ describeWithFixture(
             const { seaport, testErc721 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -497,7 +497,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -522,7 +522,7 @@ describeWithFixture(
 
             // Nft with ID 2 was not in the initial set of valid identifiers
             await expect(
-              revertedFulfill.transactionMethods.transact()
+              revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -578,7 +578,7 @@ describeWithFixture(
             ];
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -587,7 +587,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -612,7 +612,7 @@ describeWithFixture(
 
             // Nft with ID 2 was not in the initial set of valid identifiers
             await expect(
-              revertedFulfill.transactionMethods.transact()
+              revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -662,7 +662,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
 
@@ -670,12 +670,12 @@ describeWithFixture(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -684,7 +684,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -717,8 +717,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const revertedFulfill = revertedActions[1];
@@ -729,7 +729,7 @@ describeWithFixture(
             });
 
             await expect(
-              revertedFulfill.transactionMethods.transact()
+              revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -810,7 +810,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address
+              offerer.address,
             );
 
             const order = await executeAllActions();
@@ -819,7 +819,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider
+                multicallProvider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -849,8 +849,8 @@ describeWithFixture(
             expect(
               await testErc721.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.be.true;
 
             // We also need to approve ERC-20 as we send that out as fees..
@@ -870,8 +870,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.eq(MAX_INT);
 
             const revertedFulfillAction = revertedActions[2];
@@ -882,7 +882,7 @@ describeWithFixture(
             });
 
             await expect(
-              revertedFulfillAction.transactionMethods.transact()
+              revertedFulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -955,7 +955,7 @@ describeWithFixture(
             const { seaport, testErc1155 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -979,7 +979,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               fulfiller.address,
-              nftId
+              nftId,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -994,7 +994,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
 
@@ -1002,12 +1002,12 @@ describeWithFixture(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -1036,8 +1036,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const fulfillAction = actions[1];
@@ -1051,7 +1051,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               fulfiller.address,
-              nftId
+              nftId,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1095,7 +1095,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address
+              offerer.address,
             );
 
             const order = await executeAllActions();
@@ -1123,8 +1123,8 @@ describeWithFixture(
             expect(
               await testErc1155.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.be.true;
 
             // We also need to approve ERC-20 as we send that out as fees..
@@ -1144,8 +1144,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.eq(MAX_INT);
 
             const fulfillAction = actions[2];
@@ -1159,7 +1159,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               offerer.address,
-              nftId
+              nftId,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1203,7 +1203,7 @@ describeWithFixture(
             const { seaport, testErc1155 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -1230,7 +1230,7 @@ describeWithFixture(
 
             // Nft with ID 2 was not in the initial set of valid identifiers
             await expect(
-              revertedFulfill.transactionMethods.transact()
+              revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -1258,7 +1258,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               fulfiller.address,
-              nftId3
+              nftId3,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1273,7 +1273,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
             };
 
@@ -1281,12 +1281,12 @@ describeWithFixture(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -1321,8 +1321,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const revertedFulfill = revertedActions[1];
@@ -1333,7 +1333,7 @@ describeWithFixture(
             });
 
             await expect(
-              revertedFulfill.transactionMethods.transact()
+              revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -1362,7 +1362,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               fulfiller.address,
-              nftId3
+              nftId3,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1377,7 +1377,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address })
+                (item) => ({ ...item, token: testErc20.address }),
               ),
               offer: [
                 {
@@ -1394,12 +1394,12 @@ describeWithFixture(
               fulfiller.address,
               BigNumber.from(
                 (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount
-              )
+                  .amount,
+              ),
             );
 
             const { executeAllActions } = await seaport.createOrder(
-              standardCreateOrderInput
+              standardCreateOrderInput,
             );
 
             const order = await executeAllActions();
@@ -1434,8 +1434,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.equal(MAX_INT);
 
             const revertedFulfill = revertedActions[1];
@@ -1446,7 +1446,7 @@ describeWithFixture(
             });
 
             await expect(
-              revertedFulfill.transactionMethods.transact()
+              revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -1475,7 +1475,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               fulfiller.address,
-              nftId3
+              nftId3,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1521,7 +1521,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address
+              offerer.address,
             );
 
             const order = await executeAllActions();
@@ -1553,8 +1553,8 @@ describeWithFixture(
             expect(
               await testErc1155.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.be.true;
 
             // We also need to approve ERC-20 as we send that out as fees..
@@ -1574,8 +1574,8 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address
-              )
+                seaport.contract.address,
+              ),
             ).to.eq(MAX_INT);
 
             const revertedFulfillAction = revertedActions[2];
@@ -1586,7 +1586,7 @@ describeWithFixture(
             });
 
             await expect(
-              revertedFulfillAction.transactionMethods.transact()
+              revertedFulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidProof");
 
             const { actions } = await seaport.fulfillOrder({
@@ -1608,7 +1608,7 @@ describeWithFixture(
 
             const balanceOfErc1155 = await testErc1155.balanceOf(
               offerer.address,
-              nftId3
+              nftId3,
             );
 
             expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1652,7 +1652,7 @@ describeWithFixture(
           const { seaport, testErc721, testErc1155 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -1690,7 +1690,7 @@ describeWithFixture(
 
           const balanceOfErc1155 = await testErc1155.balanceOf(
             offerer.address,
-            nftId2
+            nftId2,
           );
 
           expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1739,7 +1739,7 @@ describeWithFixture(
           const { seaport, testErc721, testErc1155 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -1785,7 +1785,7 @@ describeWithFixture(
 
           // Nft with ID 2 was not in the initial set of valid identifiers in the offer
           await expect(
-            revertedFulfill.transactionMethods.transact()
+            revertedFulfill.transactionMethods.transact(),
           ).to.be.revertedWith("InvalidProof");
 
           const { actions } = await seaport.fulfillOrder({
@@ -1818,7 +1818,7 @@ describeWithFixture(
 
           const balanceOfErc1155 = await testErc1155.balanceOf(
             fulfiller.address,
-            nftId
+            nftId,
           );
 
           expect(balanceOfErc1155).to.eq(erc1155Amount);
@@ -1831,5 +1831,5 @@ describeWithFixture(
         });
       });
     });
-  }
+  },
 );

@@ -98,7 +98,7 @@ describeWithFixture(
           const { seaport, testErc721 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -107,7 +107,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -128,7 +128,7 @@ describeWithFixture(
           const transaction = await action.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -161,19 +161,20 @@ describeWithFixture(
           standardCreateOrderInput = {
             ...standardCreateOrderInput,
             consideration: standardCreateOrderInput.consideration.map(
-              (item) => ({ ...item, token: testErc20.address })
+              (item) => ({ ...item, token: testErc20.address }),
             ),
           };
 
           await testErc20.mint(
             fulfiller.address,
             BigNumber.from(
-              (standardCreateOrderInput.consideration[0] as CurrencyItem).amount
-            )
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
+            ),
           );
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -182,7 +183,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -207,8 +208,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.equal(MAX_INT);
 
           const fulfillAction = actions[1];
@@ -221,7 +222,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -296,7 +297,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address
+            offerer.address,
           );
 
           const order = await executeAllActions();
@@ -305,7 +306,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -330,8 +331,8 @@ describeWithFixture(
           expect(
             await testErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const secondApprovalAction = actions[1];
@@ -350,8 +351,8 @@ describeWithFixture(
           expect(
             await secondTestErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           // We also need to approve ERC-20 as we send that out as fees..
@@ -371,8 +372,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.eq(MAX_INT);
 
           const fulfillAction = actions[3];
@@ -385,7 +386,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -456,7 +457,7 @@ describeWithFixture(
           const { seaport, testErc721, testErc1155 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -465,7 +466,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -483,7 +484,7 @@ describeWithFixture(
           const transaction = await action.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -507,8 +508,8 @@ describeWithFixture(
             owners.every(
               (ownerOrBalance) =>
                 ownerOrBalance === fulfiller.address ||
-                BigNumber.from(erc1155Amount).eq(ownerOrBalance)
-            )
+                BigNumber.from(erc1155Amount).eq(ownerOrBalance),
+            ),
           ).to.be.true;
 
           expect(fulfillStandardOrderSpy).calledOnce;
@@ -521,19 +522,20 @@ describeWithFixture(
           standardCreateOrderInput = {
             ...standardCreateOrderInput,
             consideration: standardCreateOrderInput.consideration.map(
-              (item) => ({ ...item, token: testErc20.address })
+              (item) => ({ ...item, token: testErc20.address }),
             ),
           };
 
           await testErc20.mint(
             fulfiller.address,
             BigNumber.from(
-              (standardCreateOrderInput.consideration[0] as CurrencyItem).amount
-            )
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
+            ),
           );
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -542,7 +544,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -567,8 +569,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.equal(MAX_INT);
 
           const fulfillAction = actions[1];
@@ -581,7 +583,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -605,8 +607,8 @@ describeWithFixture(
             owners.every(
               (ownerOrBalance) =>
                 ownerOrBalance === fulfiller.address ||
-                BigNumber.from(erc1155Amount).eq(ownerOrBalance)
-            )
+                BigNumber.from(erc1155Amount).eq(ownerOrBalance),
+            ),
           ).to.be.true;
 
           expect(fulfillStandardOrderSpy).calledOnce;
@@ -662,7 +664,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address
+            offerer.address,
           );
 
           const order = await executeAllActions();
@@ -671,7 +673,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -696,8 +698,8 @@ describeWithFixture(
           expect(
             await testErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const secondApprovalAction = actions[1];
@@ -716,8 +718,8 @@ describeWithFixture(
           expect(
             await secondTestErc721.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const thirdApprovalAction = actions[2];
@@ -736,8 +738,8 @@ describeWithFixture(
           expect(
             await testErc1155.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           // We also need to approve ERC-20 as we send that out as fees..
@@ -757,8 +759,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.eq(MAX_INT);
 
           const fulfillAction = actions[4];
@@ -771,7 +773,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -795,8 +797,8 @@ describeWithFixture(
             owners.every(
               (ownerOrBalance) =>
                 ownerOrBalance === offerer.address ||
-                BigNumber.from(erc1155Amount).eq(ownerOrBalance)
-            )
+                BigNumber.from(erc1155Amount).eq(ownerOrBalance),
+            ),
           ).to.be.true;
 
           expect(fulfillStandardOrderSpy).calledOnce;
@@ -850,7 +852,7 @@ describeWithFixture(
           const { seaport, testErc1155 } = fixture;
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -859,7 +861,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -877,7 +879,7 @@ describeWithFixture(
           const transaction = await action.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -898,7 +900,9 @@ describeWithFixture(
           ]);
 
           expect(
-            owners.every((balance) => BigNumber.from(erc1155Amount).eq(balance))
+            owners.every((balance) =>
+              BigNumber.from(erc1155Amount).eq(balance),
+            ),
           ).to.be.true;
 
           expect(fulfillStandardOrderSpy).calledOnce;
@@ -911,19 +915,20 @@ describeWithFixture(
           standardCreateOrderInput = {
             ...standardCreateOrderInput,
             consideration: standardCreateOrderInput.consideration.map(
-              (item) => ({ ...item, token: testErc20.address })
+              (item) => ({ ...item, token: testErc20.address }),
             ),
           };
 
           await testErc20.mint(
             fulfiller.address,
             BigNumber.from(
-              (standardCreateOrderInput.consideration[0] as CurrencyItem).amount
-            )
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
+            ),
           );
 
           const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput
+            standardCreateOrderInput,
           );
 
           const order = await executeAllActions();
@@ -932,7 +937,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -957,8 +962,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.equal(MAX_INT);
 
           const fulfillAction = actions[1];
@@ -971,7 +976,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -992,7 +997,9 @@ describeWithFixture(
           ]);
 
           expect(
-            owners.every((balance) => BigNumber.from(erc1155Amount).eq(balance))
+            owners.every((balance) =>
+              BigNumber.from(erc1155Amount).eq(balance),
+            ),
           ).to.be.true;
 
           expect(fulfillStandardOrderSpy).calledOnce;
@@ -1050,7 +1057,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address
+            offerer.address,
           );
 
           const order = await executeAllActions();
@@ -1059,7 +1066,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider
+              multicallProvider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -1084,8 +1091,8 @@ describeWithFixture(
           expect(
             await testErc1155.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           const secondApprovalAction = actions[1];
@@ -1104,8 +1111,8 @@ describeWithFixture(
           expect(
             await secondTestErc1155.isApprovedForAll(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.be.true;
 
           // We also need to approve ERC-20 as we send that out as fees..
@@ -1125,8 +1132,8 @@ describeWithFixture(
           expect(
             await testErc20.allowance(
               fulfiller.address,
-              seaport.contract.address
-            )
+              seaport.contract.address,
+            ),
           ).to.eq(MAX_INT);
 
           const fulfillAction = actions[3];
@@ -1139,7 +1146,7 @@ describeWithFixture(
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.eq(
-            getTagFromDomain(ENS_VISION_DOMAIN)
+            getTagFromDomain(ENS_VISION_DOMAIN),
           );
 
           const receipt = await transaction.wait();
@@ -1160,12 +1167,14 @@ describeWithFixture(
           ]);
 
           expect(
-            owners.every((balance) => BigNumber.from(erc1155Amount).eq(balance))
+            owners.every((balance) =>
+              BigNumber.from(erc1155Amount).eq(balance),
+            ),
           ).to.be.true;
 
           expect(fulfillStandardOrderSpy).calledOnce;
         });
       });
     });
-  }
+  },
 );

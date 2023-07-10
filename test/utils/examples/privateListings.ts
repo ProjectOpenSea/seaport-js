@@ -9,18 +9,18 @@ import { generateRandomSalt } from "../../../src/utils/order";
 
 export const constructPrivateListingCounterOrder = (
   order: OrderWithCounter,
-  privateSaleRecipient: string
+  privateSaleRecipient: string,
 ): Order => {
   // Counter order offers up all the items in the private listing consideration
   // besides the items that are going to the private listing recipient
   const paymentItems = order.parameters.consideration.filter(
     (item) =>
-      item.recipient.toLowerCase() !== privateSaleRecipient.toLowerCase()
+      item.recipient.toLowerCase() !== privateSaleRecipient.toLowerCase(),
   );
 
   if (!paymentItems.every((item) => isCurrencyItem(item))) {
     throw new Error(
-      "The consideration for the private listing did not contain only currency items"
+      "The consideration for the private listing did not contain only currency items",
     );
   }
   if (
@@ -37,7 +37,7 @@ export const constructPrivateListingCounterOrder = (
     {
       aggregatedStartAmount: BigNumber.from(0),
       aggregatedEndAmount: BigNumber.from(0),
-    }
+    },
   );
 
   const counterOrder: Order = {
@@ -66,7 +66,7 @@ export const constructPrivateListingCounterOrder = (
 };
 
 export const getPrivateListingFulfillments = (
-  privateListingOrder: OrderWithCounter
+  privateListingOrder: OrderWithCounter,
 ): MatchOrdersFulfillment[] => {
   const nftRelatedFulfillments: MatchOrdersFulfillment[] = [];
 
@@ -79,11 +79,11 @@ export const getPrivateListingFulfillments = (
           considerationItem.itemType === offerItem.itemType &&
           considerationItem.token === offerItem.token &&
           considerationItem.identifierOrCriteria ===
-            offerItem.identifierOrCriteria
+            offerItem.identifierOrCriteria,
       );
     if (considerationIndex === -1) {
       throw new Error(
-        "Could not find matching offer item in the consideration for private listing"
+        "Could not find matching offer item in the consideration for private listing",
       );
     }
     nftRelatedFulfillments.push({
@@ -127,7 +127,7 @@ export const getPrivateListingFulfillments = (
           },
         ],
       });
-    }
+    },
   );
 
   return [...nftRelatedFulfillments, ...currencyRelatedFulfillments];

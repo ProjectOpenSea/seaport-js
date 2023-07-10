@@ -94,7 +94,7 @@ describeWithFixture(
         const { seaport, testErc721 } = fixture;
 
         const { actions: createActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         expect(createActions.length).to.eq(2);
@@ -120,7 +120,7 @@ describeWithFixture(
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -146,8 +146,8 @@ describeWithFixture(
         expect(
           await secondTestErc721.isApprovedForAll(
             fulfiller.address,
-            seaport.contract.address
-          )
+            seaport.contract.address,
+          ),
         ).to.be.true;
 
         const fulfillAction = actions[1];
@@ -178,8 +178,8 @@ describeWithFixture(
 
         expect(
           [fulfillerOwned, fulfillerOwned2].every(
-            (owner) => owner === fulfiller.address
-          )
+            (owner) => owner === fulfiller.address,
+          ),
         ).to.be.true;
         expect(offererOwned).to.eq(offerer.address);
 
@@ -228,7 +228,7 @@ describeWithFixture(
         const { seaport, testErc1155 } = fixture;
 
         const { actions: createActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         expect(createActions.length).to.eq(2);
@@ -254,7 +254,7 @@ describeWithFixture(
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -280,8 +280,8 @@ describeWithFixture(
         expect(
           await secondTestErc1155.isApprovedForAll(
             fulfiller.address,
-            seaport.contract.address
-          )
+            seaport.contract.address,
+          ),
         ).to.be.true;
 
         const fulfillAction = actions[1];
@@ -315,8 +315,8 @@ describeWithFixture(
 
         expect(
           [fulfillerOwnedAmount, fulfillerOwnedAmount2].every((balance) =>
-            balance.eq(erc1155Amount)
-          )
+            balance.eq(erc1155Amount),
+          ),
         ).to.be.true;
         expect(offererOwnedAmount).to.eq(erc1155Amount);
 
@@ -367,7 +367,7 @@ describeWithFixture(
         const { seaport, testErc20, testErc721 } = fixture;
 
         const { actions: createActions } = await seaport.createOrder(
-          standardCreateOrderInput
+          standardCreateOrderInput,
         );
 
         expect(createActions.length).to.eq(3);
@@ -406,7 +406,7 @@ describeWithFixture(
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider
+            multicallProvider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -432,8 +432,8 @@ describeWithFixture(
         expect(
           await testErc721.isApprovedForAll(
             fulfiller.address,
-            seaport.contract.address
-          )
+            seaport.contract.address,
+          ),
         ).to.be.true;
 
         const secondApprovalAction = actions[1];
@@ -450,7 +450,10 @@ describeWithFixture(
         await secondApprovalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(fulfiller.address, seaport.contract.address)
+          await testErc20.allowance(
+            fulfiller.address,
+            seaport.contract.address,
+          ),
         ).to.eq(MAX_INT);
 
         const fulfillAction = actions[2];
@@ -499,5 +502,5 @@ describeWithFixture(
         expect(fulfillStandardOrderSpy).calledOnce;
       });
     });
-  }
+  },
 );

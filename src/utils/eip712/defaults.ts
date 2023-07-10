@@ -52,7 +52,7 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
       this.defaultValues[name] = defaultValue;
       if (!isNullish(defaultValue)) {
         logger.throwError(
-          `Got non-empty value for type ${name} in default generator: ${defaultValue}`
+          `Got non-empty value for type ${name} in default generator: ${defaultValue}`,
         );
       }
     }
@@ -60,17 +60,17 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
 
   /* eslint-disable no-dupe-class-members */
   static from<Types extends EIP712TypeDefinitions>(
-    types: Types
+    types: Types,
   ): DefaultMap<Types>;
 
   static from<Types extends EIP712TypeDefinitions>(
     types: Types,
-    type: keyof Types
+    type: keyof Types,
   ): any;
 
   static from<Types extends EIP712TypeDefinitions>(
     types: Types,
-    type?: keyof Types
+    type?: keyof Types,
   ): DefaultMap<Types> {
     const { defaultValues } = new DefaultGetter(types);
     if (type) return defaultValues[type];
@@ -104,7 +104,7 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
           ...obj,
           [name]: this.getDefaultValue(type),
         }),
-        {}
+        {},
       );
     }
 

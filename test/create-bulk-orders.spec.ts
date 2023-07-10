@@ -78,8 +78,8 @@ describeWithFixture(
       expect(
         await testErc721.isApprovedForAll(
           offerer.address,
-          seaportContract.address
-        )
+          seaportContract.address,
+        ),
       ).to.be.true;
 
       const createOrderAction = actions[1] as CreateBulkOrdersAction;
@@ -149,5 +149,5 @@ describeWithFixture(
         expect(isValid).to.be.true;
       }
     });
-  }
+  },
 );

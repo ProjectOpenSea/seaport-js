@@ -21,7 +21,7 @@ export const isErc1155Item = (itemType: Item["itemType"]) =>
 
 export const isCriteriaItem = (itemType: Item["itemType"]) =>
   [ItemType.ERC721_WITH_CRITERIA, ItemType.ERC1155_WITH_CRITERIA].includes(
-    itemType
+    itemType,
   );
 
 export type TimeBasedItemParams = {
@@ -57,7 +57,7 @@ export const getPresentItemAmount = ({
   const adjustedBlockTimestamp = BigNumber.from(
     isAscending
       ? currentBlockTimestamp + ascendingAmountTimestampBuffer
-      : currentBlockTimestamp
+      : currentBlockTimestamp,
   );
 
   if (adjustedBlockTimestamp.lt(startTime)) {
@@ -112,7 +112,7 @@ export const getSummedTokenAndIdentifierAmounts = ({
             startAmount: item.startAmount,
             endAmount: item.endAmount,
             timeBasedItemParams,
-          })
+          }),
         ),
       },
     };

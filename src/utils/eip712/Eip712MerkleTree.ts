@@ -34,7 +34,7 @@ const getTree = (leaves: string[], defaultLeafHash: string) =>
 const encodeProof = (
   key: number,
   proof: string[],
-  signature = `0x${"ff".repeat(64)}`
+  signature = `0x${"ff".repeat(64)}`,
 ) => {
   return hexConcat([
     signature,
@@ -116,7 +116,7 @@ export class Eip712MerkleTree<BaseType extends Record<string, any> = any> {
     public rootType: string,
     public leafType: string,
     public elements: BaseType[],
-    public depth: number
+    public depth: number,
   ) {
     const encoder = TypedDataEncoder.from(types);
     this.encoder = encoder;

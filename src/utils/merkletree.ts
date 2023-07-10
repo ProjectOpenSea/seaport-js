@@ -6,8 +6,8 @@ const hashIdentifier = (identifier: string) =>
   keccak256(
     Buffer.from(
       BigNumber.from(identifier).toHexString().slice(2).padStart(64, "0"),
-      "hex"
-    )
+      "hex",
+    ),
   );
 
 /**

@@ -46,7 +46,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     const { seaport } = fixture;
 
     const { executeAllActions } = await seaport.createOrder(
-      standardCreateOrderInput
+      standardCreateOrderInput,
     );
     const executeAllActionsOnChainOrder = (
       await seaport.createOrder(standardCreateOrderInput)
@@ -78,8 +78,8 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
 
     expect(
       (await seaport.getCounter(offerer.address)).gt(
-        offChainOrder.parameters.counter
-      )
+        offChainOrder.parameters.counter,
+      ),
     ).to.be.true;
   });
 
@@ -87,7 +87,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     const { seaport } = fixture;
 
     const { executeAllActions } = await seaport.createOrder(
-      standardCreateOrderInput
+      standardCreateOrderInput,
     );
     const order = await executeAllActions();
 
@@ -98,13 +98,13 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     const orderHash = seaport.getOrderHash(order.parameters);
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isValidated",
-      true
+      true,
     );
 
     await seaport.cancelOrders([order.parameters], offerer.address).transact();
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isCancelled",
-      true
+      true,
     );
   });
 });
