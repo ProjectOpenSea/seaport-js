@@ -871,6 +871,54 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(contractOrderHash).eq(localOrderHash);
     expect(order.parameters.salt).eq(`0x${"0".repeat(60)}abcd`);
   });
+
+  it("should create an order with the passed in zone and zoneHash", async () => {
+    const { seaportContract, seaport, testErc721 } = fixture;
+
+    const [offerer, recipient] = await ethers.getSigners();
+    const nftId = "1";
+    await testErc721.mint(offerer.address, nftId);
+    const startTime = "0";
+    const endTime = MAX_INT.toString();
+    const zone = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+    const zoneHash = ethers.utils.keccak256("0xf00b");
+    const salt = "0xabcd";
+
+    const { executeAllActions } = await seaport.createOrder({
+      startTime,
+      endTime,
+      salt,
+      zone,
+      zoneHash,
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: testErc721.address,
+          identifier: nftId,
+        },
+      ],
+      consideration: [
+        {
+          amount: ethers.utils.parseEther("10").toString(),
+          recipient: offerer.address,
+        },
+      ],
+      // 2.5% fee
+      fees: [{ recipient: recipient.address, basisPoints: 250 }],
+    });
+
+    const order = await executeAllActions();
+
+    const contractOrderHash = await seaportContract.getOrderHash(
+      order.parameters,
+    );
+
+    const localOrderHash = seaport.getOrderHash(order.parameters);
+
+    expect(contractOrderHash).eq(localOrderHash);
+    expect(order.parameters.zone).eq(zone);
+    expect(order.parameters.zoneHash).eq(zoneHash);
+  });
 });
 
 const OPENSEA_DOMAIN = "opensea.io";
