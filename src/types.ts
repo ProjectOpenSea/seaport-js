@@ -159,6 +159,7 @@ export type Fee = {
 export type CreateOrderInput = {
   conduitKey?: string;
   zone?: string;
+  zoneHash?: string;
   startTime?: BigNumberish;
   endTime?: BigNumberish;
   offer: readonly CreateInputItem[];
