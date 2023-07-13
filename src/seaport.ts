@@ -296,6 +296,7 @@ export class Seaport {
     {
       conduitKey = this.defaultConduitKey,
       zone = ethers.constants.AddressZero,
+      zoneHash = ethers.constants.HashZero,
       startTime = Math.floor(Date.now() / 1000).toString(),
       endTime = MAX_INT.toString(),
       offer,
@@ -363,7 +364,7 @@ export class Seaport {
     const orderComponents: OrderComponents = {
       offerer,
       zone,
-      zoneHash: ethers.constants.HashZero,
+      zoneHash,
       startTime,
       endTime,
       orderType,
