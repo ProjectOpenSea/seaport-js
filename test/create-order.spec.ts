@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
+import { Seaport } from "../src/seaport";
 import {
   ApprovalAction,
   CreateOrderAction,
@@ -740,8 +741,10 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     );
 
     const localOrderHash = seaport.getOrderHash(order.parameters);
+    const localOrderHashStatic = Seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
+    expect(contractOrderHash).eq(localOrderHashStatic);
   });
 
   it("should create an order with a salt including a hash of the supplied domain", async () => {
@@ -782,7 +785,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       order.parameters,
     );
 
-    const localOrderHash = seaport.getOrderHash(order.parameters);
+    const localOrderHash = Seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
     expect(order.parameters.salt.slice(0, 10)).eq(openseaMagicValue);
@@ -823,7 +826,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       order.parameters,
     );
 
-    const localOrderHash = seaport.getOrderHash(order.parameters);
+    const localOrderHash = Seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
     expect(order.parameters.salt.slice(0, 10)).eq("0x00000000");
@@ -866,7 +869,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       order.parameters,
     );
 
-    const localOrderHash = seaport.getOrderHash(order.parameters);
+    const localOrderHash = Seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
     expect(order.parameters.salt).eq(`0x${"0".repeat(60)}abcd`);
@@ -913,7 +916,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       order.parameters,
     );
 
-    const localOrderHash = seaport.getOrderHash(order.parameters);
+    const localOrderHash = Seaport.getOrderHash(order.parameters);
 
     expect(contractOrderHash).eq(localOrderHash);
     expect(order.parameters.zone).eq(zone);

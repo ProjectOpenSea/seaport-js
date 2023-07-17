@@ -640,8 +640,20 @@ export class Seaport {
   /**
    * Calculates the order hash of order components so we can forgo executing a request to the contract
    * This saves us RPC calls and latency.
+   * @deprecated Please use the static `Seaport.getOrderHash()` method.
    */
-  public getOrderHash = (orderComponents: OrderComponents): string => {
+  public getOrderHash(orderComponents: OrderComponents): string {
+    console.warn(
+      "seaport.getOrderHash() is deprecated in favor of the static Seaport.getOrderHash()",
+    );
+    return Seaport.getOrderHash(orderComponents);
+  }
+
+  /**
+   * Calculates the order hash of order components so we can forgo executing a request to the contract
+   * This saves us RPC calls and latency.
+   */
+  public static getOrderHash(orderComponents: OrderComponents): string {
     const offerItemTypeString =
       "OfferItem(uint8 itemType,address token,uint256 identifierOrCriteria,uint256 startAmount,uint256 endAmount)";
     const considerationItemTypeString =
@@ -754,7 +766,7 @@ export class Seaport {
     );
 
     return derivedOrderHash;
-  };
+  }
 
   /**
    * Fulfills an order through either the basic method or the standard method
@@ -849,7 +861,7 @@ export class Seaport {
         operator: fulfillerOperator,
       }),
       this.multicallProvider.getBlock("latest"),
-      this.getOrderStatus(this.getOrderHash(orderParameters)),
+      this.getOrderStatus(Seaport.getOrderHash(orderParameters)),
     ]);
 
     const currentBlockTimestamp = currentBlock.timestamp;
@@ -1025,7 +1037,7 @@ export class Seaport {
       this.multicallProvider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
-          this.getOrderStatus(this.getOrderHash(order.parameters)),
+          this.getOrderStatus(Seaport.getOrderHash(order.parameters)),
         ),
       ),
     ]);

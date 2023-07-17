@@ -5,6 +5,7 @@ import { BigNumber } from "ethers";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, OrderType } from "../src/constants";
+import { Seaport } from "../src/seaport";
 import { TestERC1155 } from "../src/typechain-types";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
 import * as fulfill from "../src/utils/fulfill";
@@ -90,7 +91,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -249,7 +250,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -377,7 +378,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -501,7 +502,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -650,7 +651,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -746,7 +747,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =
@@ -888,7 +889,7 @@ describeWithFixture(
           expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
 
           const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
+            Seaport.getOrderHash(order.parameters),
           );
 
           const ownerToTokenToIdentifierBalances =

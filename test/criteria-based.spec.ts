@@ -5,6 +5,7 @@ import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
+import { Seaport } from "../src/seaport";
 import { CreateOrderInput, CurrencyItem, OrderWithCounter } from "../src/types";
 import * as fulfill from "../src/utils/fulfill";
 import { MerkleTree } from "../src/utils/merkletree";
@@ -149,7 +150,7 @@ describeWithFixture(
             const order = await executeAllActions();
 
             const orderStatus = await seaport.getOrderStatus(
-              seaport.getOrderHash(order.parameters),
+              Seaport.getOrderHash(order.parameters),
             );
 
             const ownerToTokenToIdentifierBalances =

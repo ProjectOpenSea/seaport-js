@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType } from "../src/constants";
+import { Seaport } from "../src/seaport";
 import { CreateOrderInput } from "../src/types";
 import { describeWithFixture } from "./utils/setup";
 
@@ -95,7 +96,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     order.signature = "0x";
 
     await seaport.validate([order], offerer.address).transact();
-    const orderHash = seaport.getOrderHash(order.parameters);
+    const orderHash = Seaport.getOrderHash(order.parameters);
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isValidated",
       true,
