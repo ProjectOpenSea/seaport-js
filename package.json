@@ -38,7 +38,7 @@
   },
   "types": "lib/index.d.ts",
   "dependencies": {
-    "@0xsequence/multicall": "^0.43.29",
+    "@0xsequence/multicall": "^1.0.0",
     "ethers": "^5.7.2",
     "merkletreejs": "^0.3.10"
   },
