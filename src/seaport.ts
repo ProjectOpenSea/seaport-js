@@ -506,14 +506,18 @@ export class Seaport {
 
     const domainData = await this._getDomainData();
 
-    const signature = await signer._signTypedData(
+    let signature = await signer._signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents,
     );
 
     // Use EIP-2098 compact signatures to save gas.
-    return ethers.utils.splitSignature(signature).compact;
+    if (signature.length === 132) {
+      signature = ethers.utils.splitSignature(signature).compact;
+    }
+
+    return signature;
   }
 
   /**
@@ -541,7 +545,9 @@ export class Seaport {
     );
 
     // Use EIP-2098 compact signatures to save gas.
-    signature = ethers.utils.splitSignature(signature).compact;
+    if (signature.length === 132) {
+      signature = ethers.utils.splitSignature(signature).compact;
+    }
 
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
       parameters,
