@@ -94,7 +94,7 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
         itemType: item.itemType,
         token: item.token,
         // prevent undefined for fungible items
-        identifierOrCriteria: item.identifier || "0",
+        identifierOrCriteria: item.identifier ?? "0",
         // @ts-ignore
         startAmount: item.amount,
         // @ts-ignore
