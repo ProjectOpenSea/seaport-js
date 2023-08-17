@@ -69,7 +69,6 @@ export const deductFees = <T extends Item>(
 };
 
 export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
-  // Item is an NFT
   if ("itemType" in item) {
     // Convert this to a criteria based item
     if ("identifiers" in item || "criteria" in item) {
@@ -94,7 +93,8 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
       return {
         itemType: item.itemType,
         token: item.token,
-        identifierOrCriteria: item.identifier,
+        // prevent undefined for fungible items
+        identifierOrCriteria: item.identifier ?? "0",
         // @ts-ignore
         startAmount: item.amount,
         // @ts-ignore
