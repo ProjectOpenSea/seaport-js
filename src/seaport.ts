@@ -206,16 +206,19 @@ export class Seaport {
       restrictedByZone,
       fees,
       salt = generateRandomSalt(),
+      offerer,
     }: CreateOrderInput,
     accountAddress?: string
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
-    const offerer = await signer.getAddress();
+    const signerAddress = await signer.getAddress();
+    const defaultOfferer = await signer.getAddress();
+    const actualOfferer = offerer || defaultOfferer;
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
       ...consideration.map((consideration) => ({
         ...mapInputItemToOfferItem(consideration),
-        recipient: consideration.recipient ?? offerer,
+        recipient: consideration.recipient ?? actualOfferer,
       })),
     ];
 
@@ -239,9 +242,9 @@ export class Seaport {
     const operator = this.config.conduitKeyToConduit[conduitKey];
 
     const [resolvedCounter, balancesAndApprovals] = await Promise.all([
-      counter ?? this.getCounter(offerer),
+      counter ?? this.getCounter(actualOfferer),
       getBalancesAndApprovals({
-        owner: offerer,
+        owner: actualOfferer,
         items: offerItems,
         criterias: [],
         multicallProvider: this.multicallProvider,
@@ -269,7 +272,7 @@ export class Seaport {
     ];
 
     const orderParameters: OrderParameters = {
-      offerer,
+      offerer: actualOfferer,
       zone,
       // TODO: Placeholder
       zoneHash: formatBytes32String(resolvedCounter.toString()),
@@ -309,7 +312,7 @@ export class Seaport {
         const signature = await this.signOrder(
           orderParameters,
           resolvedCounter,
-          offerer
+          signerAddress
         );
 
         return {
@@ -373,15 +376,15 @@ export class Seaport {
    * Submits a request to your provider to sign the order. Signed orders are used for off-chain order books.
    * @param orderParameters standard order parameter struct
    * @param counter counter of the offerer
-   * @param accountAddress optional account address from which to sign the order with.
+   * @param signerAddress optional account address from which to sign the order with.
    * @returns the order signature
    */
   public async signOrder(
     orderParameters: OrderParameters,
     counter: number,
-    accountAddress?: string
+    signerAddress?: string // account should be EOA account
   ): Promise<string> {
-    const signer = this._getSigner(accountAddress);
+    const signer = this._getSigner(signerAddress);
 
     const domainData = await this._getDomainData();
 
