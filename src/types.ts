@@ -170,6 +170,7 @@ export type CreateOrderInput = {
   useProxy?: boolean;
   domain?: string;
   salt?: string;
+  offerer?: string;
 };
 
 export type InputCriteria = {

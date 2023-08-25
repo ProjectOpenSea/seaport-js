@@ -1,6 +1,6 @@
 {
-  "name": "@paraspace/seaport-js",
-  "version": "1.0.11",
+  "name": "paraspace-seaport-js",
+  "version": "0.0.2",
   "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
