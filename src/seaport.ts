@@ -227,7 +227,7 @@ export class Seaport {
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const signerAddress = await signer.getAddress();
-    const defaultOfferer = await signer.getAddress();
+    const defaultOfferer = signerAddress;
     const actualOfferer = offerer || defaultOfferer;
     const offerItems = offer.map(mapInputItemToOfferItem);
     const considerationItems = [
