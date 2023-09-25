@@ -62,7 +62,7 @@
     "domain-registry": "ProjectOpenSea/domain-registry",
     "dotenv": "^16.0.3",
     "eslint": "^8.41.0",
-    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^5.0.0-alpha.2",
     "eslint-plugin-promise": "^6.1.1",
