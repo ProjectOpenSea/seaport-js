@@ -41,9 +41,8 @@ export const describeWithFixture = (
         "seaport_v1_5/contracts/Seaport.sol:Seaport",
       );
 
-      const ConduitControllerFactory = await ethers.getContractFactory(
-        "ConduitController",
-      );
+      const ConduitControllerFactory =
+        await ethers.getContractFactory("ConduitController");
 
       const conduitController = await ConduitControllerFactory.deploy();
 
@@ -53,9 +52,8 @@ export const describeWithFixture = (
 
       await seaportContract.deployed();
 
-      const DomainRegistryFactory = await ethers.getContractFactory(
-        "DomainRegistry",
-      );
+      const DomainRegistryFactory =
+        await ethers.getContractFactory("DomainRegistry");
       const domainRegistry = await DomainRegistryFactory.deploy();
       await domainRegistry.deployed();
 
@@ -91,9 +89,8 @@ export const describeWithFixture = (
       const testErc20USDC = await TestERC20USDC.deploy();
       await testErc20USDC.deployed();
 
-      const TestERC1271Wallet = await ethers.getContractFactory(
-        "TestERC1271Wallet",
-      );
+      const TestERC1271Wallet =
+        await ethers.getContractFactory("TestERC1271Wallet");
       const testERC1271Wallet = await TestERC1271Wallet.deploy();
       await testERC1271Wallet.deployed();
 
