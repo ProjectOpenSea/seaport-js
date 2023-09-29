@@ -794,6 +794,7 @@ export class Seaport {
     recipientAddress = ethers.constants.AddressZero,
     domain,
     exactApproval = false,
+    overrides,
   }: {
     order: OrderWithCounter;
     unitsToFill?: BigNumberish;
@@ -806,6 +807,7 @@ export class Seaport {
     recipientAddress?: string;
     domain?: string;
     exactApproval?: boolean;
+    overrides?: PayableOverrides;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -903,6 +905,7 @@ export class Seaport {
           signer: fulfiller,
           tips: tipConsiderationItems,
           domain,
+          overrides,
         },
         exactApproval,
       );
@@ -931,6 +934,7 @@ export class Seaport {
         fulfillerOperator,
         recipientAddress,
         domain,
+        overrides,
       },
       exactApproval,
     );
