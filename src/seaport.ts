@@ -780,6 +780,7 @@ export class Seaport {
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
    * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
+   * * @param input.overrides any overrides the client wants, will ignore value
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
