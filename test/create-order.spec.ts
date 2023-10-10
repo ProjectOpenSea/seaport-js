@@ -9,6 +9,7 @@ import {
 } from "../src/types";
 import { generateRandomSalt } from "../src/utils/order";
 import { describeWithFixture } from "./utils/setup";
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 
 describeWithFixture("As a user I want to create an order", (fixture) => {
   it("should create the order after setting needed approvals", async () => {
@@ -921,8 +922,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 });
 
-const OPENSEA_DOMAIN = "opensea.io";
-const OPENSEA_TAG = "360c6ebe";
+
 
 describeWithFixture(
   "As a user I want to create and fulfill an order using contract wallet",
@@ -1005,11 +1005,11 @@ describeWithFixture(
 
       const exchangeTransaction =
         await exchange.transactionMethods.buildTransaction();
-      expect(exchangeTransaction.data?.slice(-8)).to.eq(OPENSEA_TAG);
+      expect(exchangeTransaction.data?.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG)
 
       const transaction = await exchange.transactionMethods.transact();
 
-      expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+      expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
       expect(await testErc721.ownerOf(nftId)).to.equal(
         testERC1271Wallet.address,

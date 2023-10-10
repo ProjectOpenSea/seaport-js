@@ -9,6 +9,7 @@ import { CreateOrderInput, CurrencyItem } from "../src/types";
 import * as fulfill from "../src/utils/fulfill";
 import { getTagFromDomain } from "../src/utils/usecase";
 import { describeWithFixture } from "./utils/setup";
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 
 const sinon = require("sinon");
 
@@ -30,9 +31,6 @@ describeWithFixture(
     const nftId2 = "2";
     const erc1155Amount = "3";
     const erc1155Amount2 = "7";
-
-    const OPENSEA_DOMAIN = "opensea.io";
-    const OPENSEA_TAG = "360c6ebe";
 
     beforeEach(async () => {
       fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
@@ -160,11 +158,11 @@ describeWithFixture(
               (await action.transactionMethods.buildTransaction()).data?.slice(
                 -8,
               ),
-            ).to.eq(OPENSEA_TAG);
+            ).to.eq(OPENSEA_DOMAIN_TAG);
 
             const transaction = await action.transactionMethods.transact();
 
-            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const owners = await Promise.all([
               testErc721.ownerOf(nftId),
@@ -285,12 +283,12 @@ describeWithFixture(
               (
                 await fulfillAction.transactionMethods.buildTransaction()
               ).data?.slice(-8),
-            ).to.eq(OPENSEA_TAG);
+            ).to.eq(OPENSEA_DOMAIN_TAG);
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
 
-            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const owners = await Promise.all([
               testErc721.ownerOf(nftId),
@@ -481,11 +479,11 @@ describeWithFixture(
             (
               await fulfillAction.transactionMethods.buildTransaction()
             ).data?.slice(-8),
-          ).to.eq(OPENSEA_TAG);
+          ).to.eq(OPENSEA_DOMAIN_TAG);
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const owners = await Promise.all([
             testErc721.ownerOf(nftId),
@@ -619,11 +617,11 @@ describeWithFixture(
               (await action.transactionMethods.buildTransaction()).data?.slice(
                 -8,
               ),
-            ).to.eq(OPENSEA_TAG);
+            ).to.eq(OPENSEA_DOMAIN_TAG);
 
             const transaction = await action.transactionMethods.transact();
 
-            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const balances = await Promise.all([
               testErc1155.balanceOf(fulfiller.address, nftId),
@@ -735,12 +733,12 @@ describeWithFixture(
               (
                 await fulfillAction.transactionMethods.buildTransaction()
               ).data?.slice(-8),
-            ).to.eq(OPENSEA_TAG);
+            ).to.eq(OPENSEA_DOMAIN_TAG);
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
 
-            expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const balances = await Promise.all([
               testErc1155.balanceOf(fulfiller.address, nftId),
@@ -936,12 +934,12 @@ describeWithFixture(
             await fulfillAction.transactionMethods.buildTransaction()
           ).data?.slice(-8);
           expect(dataForBuildTransaction).to.not.eq(emptyDomainTag);
-          expect(dataForBuildTransaction).to.not.eq(OPENSEA_TAG);
+          expect(dataForBuildTransaction).to.not.eq(OPENSEA_DOMAIN_TAG);
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
           expect(transaction.data.slice(-8)).to.not.eq(emptyDomainTag);
-          expect(transaction.data.slice(-8)).to.not.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.not.eq(OPENSEA_DOMAIN_TAG);
 
           const balances = await Promise.all([
             testErc1155.balanceOf(offerer.address, nftId),

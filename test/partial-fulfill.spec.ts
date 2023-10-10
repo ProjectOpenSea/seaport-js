@@ -13,6 +13,7 @@ import {
   verifyBalancesAfterFulfill,
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 
 const sinon = require("sinon");
 
@@ -29,9 +30,6 @@ describeWithFixture(
     let secondTestErc1155: TestERC1155;
 
     const nftId = "1";
-
-    const OPENSEA_DOMAIN = "opensea.io";
-    const OPENSEA_TAG = "360c6ebe";
 
     beforeEach(async () => {
       [offerer, zone, fulfiller] = await ethers.getSigners();
@@ -120,7 +118,7 @@ describeWithFixture(
 
           const receipt = await transaction.wait();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const offererErc1155Balance = await testErc1155.balanceOf(
             offerer.address,
@@ -297,7 +295,7 @@ describeWithFixture(
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const receipt = await transaction.wait();
 
@@ -425,7 +423,7 @@ describeWithFixture(
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const receipt = await transaction.wait();
 
@@ -568,7 +566,7 @@ describeWithFixture(
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const receipt = await transaction.wait();
 
@@ -678,7 +676,7 @@ describeWithFixture(
 
           const transaction = await action.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const receipt = await transaction.wait();
 
@@ -794,7 +792,7 @@ describeWithFixture(
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const receipt = await transaction.wait();
 
@@ -975,7 +973,7 @@ describeWithFixture(
 
           const transaction = await fulfillAction.transactionMethods.transact();
 
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_TAG);
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const receipt = await transaction.wait();
 

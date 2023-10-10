@@ -12,6 +12,7 @@ import {
   verifyBalancesAfterFulfill,
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
+import { OPENSEA_DOMAIN } from "./utils/constants";
 
 const sinon = require("sinon");
 
@@ -27,7 +28,7 @@ describeWithFixture(
     let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     const nftId = "1";
     const erc1155Amount = "3";
-    const OPENSEA_DOMAIN = "opensea.io";
+
     const overrideGasLimit = 10_000_000;
 
     beforeEach(async () => {

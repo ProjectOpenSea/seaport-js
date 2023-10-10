@@ -3,14 +3,12 @@ import { expect } from "chai";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { describeWithFixture } from "./utils/setup";
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 
 describeWithFixture(
   "As a user I want to register or look up a domain",
   (fixture) => {
     let user: SignerWithAddress;
-
-    const OPENSEA_DOMAIN = "opensea.io";
-    const OPENSEA_TAG = keccak256(toUtf8Bytes(OPENSEA_DOMAIN)).slice(0, 10);
 
     const expectedExampleDomainArray = [
       "join_tg_invmru_haha_fd06787(address,bool)",
@@ -49,7 +47,7 @@ describeWithFixture(
 
       await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
 
-      expect(await seaport.getDomain(OPENSEA_TAG, 0)).to.eq(OPENSEA_DOMAIN);
+      expect(await seaport.getDomain(OPENSEA_DOMAIN_TAG, 0)).to.eq(OPENSEA_DOMAIN);
 
       expect(await seaport.getDomain(exampleTag, 0)).to.eq(
         expectedExampleDomainArray[0],
