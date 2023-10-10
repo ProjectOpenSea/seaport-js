@@ -3,6 +3,7 @@ import {
   BigNumberish,
   ContractTransaction,
   ethers,
+  PayableOverrides,
   Signer,
 } from "ethers";
 import type {
@@ -191,6 +192,7 @@ export function fulfillBasicOrder(
     tips = [],
     conduitKey = NO_CONDUIT,
     domain,
+    overrides,
   }: {
     order: Order;
     seaportContract: Seaport;
@@ -203,6 +205,7 @@ export function fulfillBasicOrder(
     tips?: ConsiderationItem[];
     conduitKey: string;
     domain?: string;
+    overrides?: PayableOverrides;
   },
   exactApproval: boolean,
 ): OrderUseCase<
@@ -281,7 +284,7 @@ export function fulfillBasicOrder(
     zoneHash: order.parameters.zoneHash,
   };
 
-  const payableOverrides = { value: totalNativeAmount };
+  const payableOverrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,
@@ -328,6 +331,7 @@ export function fulfillStandardOrder(
     recipientAddress,
     signer,
     domain,
+    overrides,
   }: {
     order: Order;
     unitsToFill?: BigNumberish;
@@ -347,6 +351,7 @@ export function fulfillStandardOrder(
     timeBasedItemParams: TimeBasedItemParams;
     signer: Signer;
     domain?: string;
+    overrides?: PayableOverrides;
   },
   exactApproval: boolean,
 ): OrderUseCase<
@@ -417,7 +422,7 @@ export function fulfillStandardOrder(
     fulfillerOperator,
   });
 
-  const payableOverrides = { value: totalNativeAmount };
+  const payableOverrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,

@@ -28,6 +28,7 @@ describeWithFixture(
     const nftId = "1";
     const erc1155Amount = "3";
     const OPENSEA_DOMAIN = "opensea.io";
+    const overrideGasLimit = 10_000_000;
 
     beforeEach(async () => {
       fulfillBasicOrderSpy = sinon.spy(fulfill, "fulfillBasicOrder");
@@ -206,6 +207,7 @@ describeWithFixture(
               order,
               accountAddress: fulfiller.address,
               domain: OPENSEA_DOMAIN,
+              overrides: { gasLimit: overrideGasLimit },
             });
 
             const approvalAction = actions[0];
@@ -248,6 +250,7 @@ describeWithFixture(
               fulfillReceipt: receipt,
             });
             expect(fulfillBasicOrderSpy).calledOnce;
+            expect(transaction.gasLimit).equal(overrideGasLimit);
           });
 
           it("ERC721 <=> ERC20 (already validated order)", async () => {
