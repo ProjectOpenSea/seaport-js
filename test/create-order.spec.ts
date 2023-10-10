@@ -1006,7 +1006,6 @@ describeWithFixture(
       expect(exchangeTransaction.data?.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
       const transaction = await exchange.transactionMethods.transact();
-
       expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
       expect(await testErc721.ownerOf(nftId)).to.equal(

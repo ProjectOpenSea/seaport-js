@@ -151,9 +151,7 @@ describeWithFixture(
             expect(actions.length).to.eq(1);
 
             const action = actions[0];
-
             expect(action.type).eq("exchange");
-
             expect(
               (await action.transactionMethods.buildTransaction()).data?.slice(
                 -8,
@@ -161,7 +159,6 @@ describeWithFixture(
             ).to.eq(OPENSEA_DOMAIN_TAG);
 
             const transaction = await action.transactionMethods.transact();
-
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const owners = await Promise.all([
@@ -287,7 +284,6 @@ describeWithFixture(
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
-
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const owners = await Promise.all([
@@ -482,7 +478,6 @@ describeWithFixture(
           ).to.eq(OPENSEA_DOMAIN_TAG);
 
           const transaction = await fulfillAction.transactionMethods.transact();
-
           expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
           const owners = await Promise.all([
@@ -620,7 +615,6 @@ describeWithFixture(
             ).to.eq(OPENSEA_DOMAIN_TAG);
 
             const transaction = await action.transactionMethods.transact();
-
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const balances = await Promise.all([
@@ -737,7 +731,6 @@ describeWithFixture(
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
-
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const balances = await Promise.all([
