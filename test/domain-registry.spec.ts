@@ -3,7 +3,11 @@ import { expect } from "chai";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { describeWithFixture } from "./utils/setup";
-import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
+import {
+  OPENSEA_DOMAIN,
+  OPENSEA_DOMAIN_TAG,
+  OVERRIDE_GAS_LIMIT,
+} from "./utils/constants";
 
 describeWithFixture(
   "As a user I want to register or look up a domain",
@@ -25,9 +29,11 @@ describeWithFixture(
 
       [user] = await ethers.getSigners();
 
-      await seaport
-        .setDomain(expectedExampleDomainArray[0], user.address)
+      const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
+      const setDomainTxWithOverrides = await seaport
+        .setDomain(expectedExampleDomainArray[0], user.address, overrides)
         .transact();
+      expect(setDomainTxWithOverrides.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
 
       await seaport
         .setDomain(expectedExampleDomainArray[1], user.address)
@@ -47,7 +53,9 @@ describeWithFixture(
 
       await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
 
-      expect(await seaport.getDomain(OPENSEA_DOMAIN_TAG, 0)).to.eq(OPENSEA_DOMAIN);
+      expect(await seaport.getDomain(OPENSEA_DOMAIN_TAG, 0)).to.eq(
+        OPENSEA_DOMAIN,
+      );
 
       expect(await seaport.getDomain(exampleTag, 0)).to.eq(
         expectedExampleDomainArray[0],

@@ -5,6 +5,7 @@ import { ethers } from "hardhat";
 import { ItemType } from "../src/constants";
 import { CreateOrderInput } from "../src/types";
 import { describeWithFixture } from "./utils/setup";
+import { OVERRIDE_GAS_LIMIT } from "./utils/constants";
 
 describeWithFixture("As a user I want to cancel an order", (fixture) => {
   let offerer: SignerWithAddress;
@@ -58,8 +59,17 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     // Remove signature
     onChainOrder.signature = "0x";
 
-    await seaport.validate([onChainOrder], offerer.address).transact();
-    await seaport.bulkCancelOrders(offerer.address).transact();
+    const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
+
+    const validateTx = await seaport
+      .validate([onChainOrder], offerer.address, undefined, overrides)
+      .transact();
+    expect(validateTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
+
+    const bulkCancelOrdersTx = await seaport
+      .bulkCancelOrders(offerer.address, undefined, overrides)
+      .transact();
+    expect(bulkCancelOrdersTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
 
     const { executeAllActions: executeAllFulfillActionsOffChainOrder } =
       await seaport.fulfillOrder({
@@ -101,10 +111,14 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
       true,
     );
 
-    await seaport.cancelOrders([order.parameters], offerer.address).transact();
+    const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
+    const cancelOrdersTx = await seaport
+      .cancelOrders([order.parameters], offerer.address, overrides)
+      .transact();
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isCancelled",
       true,
     );
+    expect(cancelOrdersTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
   });
 });

@@ -563,19 +563,21 @@ export class Seaport {
    * @param orders list of order components
    * @param accountAddress optional account address from which to cancel the orders from.
    * @param domain optional domain to be hashed and appended to calldata
+   * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
   public cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string,
     domain?: string,
+    overrides?: PayableOverrides,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
     return getTransactionMethods(
       this.contract.connect(signer),
       "cancel",
-      [orders],
+      [orders, overrides],
       domain,
     );
   }
@@ -584,11 +586,13 @@ export class Seaport {
    * Bulk cancels all existing orders for a given account
    * @param offerer the account to bulk cancel orders on
    * @param domain optional domain to be hashed and appended to calldata
+   * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
   public bulkCancelOrders(
     offerer?: string,
     domain?: string,
+    overrides?: PayableOverrides,
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
@@ -597,7 +601,7 @@ export class Seaport {
     return getTransactionMethods(
       this.contract.connect(signer),
       "incrementCounter",
-      [],
+      [overrides],
       domain,
     );
   }
@@ -608,19 +612,21 @@ export class Seaport {
    * @param orders list of order structs
    * @param accountAddress optional account address to approve orders.
    * @param domain optional domain to be hashed and appended to calldata
+   * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
   public validate(
     orders: Order[],
     accountAddress?: string,
     domain?: string,
+    overrides?: PayableOverrides,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
     return getTransactionMethods(
       this.contract.connect(signer),
       "validate",
-      [orders],
+      [orders, overrides],
       domain,
     );
   }
@@ -780,7 +786,7 @@ export class Seaport {
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
    * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
-   * @param input.overrides any overrides the client wants, will ignore value
+   * @param input.overrides any transaction overrides the client wants, ignored if not set
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrder({
@@ -1082,7 +1088,7 @@ export class Seaport {
    * @param input
    * @param input.orders the list of orders to match
    * @param input.fulfillments the list of fulfillments to match offer and considerations
-   * @param input.overrides any overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param input.overrides any transaction overrides the client wants, will need to pass in value for matching orders with ETH.
    * @param input.accountAddress Optional address for which to match the order with
    * @param input.domain optional domain to be hashed and appended to calldata
    * @returns set of transaction methods for matching orders
@@ -1112,9 +1118,17 @@ export class Seaport {
     );
   }
 
+  /**
+   * Set a domain on the canonical domain registry.
+   * @param domain The domain to set
+   * @param accountAddress Address to send the transaction from
+   * @param overrides Any transaction overrides the client wants, ignored if not set
+   * @returns The domain tag (4 byte keccak hash of the domain)
+   */
   public setDomain(
     domain: string,
     accountAddress?: string,
+    overrides?: PayableOverrides,
   ): TransactionMethods<
     ContractMethodReturnType<DomainRegistryContract, "setDomain">
   > {
@@ -1123,27 +1137,36 @@ export class Seaport {
     return getTransactionMethods(
       this.domainRegistry.connect(signer),
       "setDomain",
-      [domain],
+      [domain, overrides],
     );
   }
 
+  /**
+   * Get the number of domains registered under a domain tag.
+   * @param tag The domain tag.
+   * @returns The number of domains registered under the tag.
+   */
   public async getNumberOfDomains(tag: string): Promise<BigNumber> {
     return this.domainRegistry.getNumberOfDomains(tag);
   }
 
+  /**
+   * Gets the domain at a given index under a domain tag.
+   * @param tag The domain tag.
+   * @param index The index.
+   * @returns The domain at the index for the given tag.
+   */
   public getDomain(tag: string, index: number): Promise<string> {
     return this.domainRegistry.getDomain(tag, index);
   }
 
-  public async getDomains(
-    tag: string,
-    shouldThrow?: boolean,
-  ): Promise<string[]> {
+  /**
+   * Gets the domains registered under a tag.
+   * @param tag The domain tag.
+   * @returns The domains registered under the tag.
+   */
+  public async getDomains(tag: string): Promise<string[]> {
     try {
-      if (shouldThrow) {
-        throw Error;
-      }
-
       return this.domainRegistry.getDomains(tag);
     } catch (error) {
       const totalDomains = (

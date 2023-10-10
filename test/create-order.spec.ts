@@ -922,8 +922,6 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
   });
 });
 
-
-
 describeWithFixture(
   "As a user I want to create and fulfill an order using contract wallet",
   (fixture) => {
@@ -1005,7 +1003,7 @@ describeWithFixture(
 
       const exchangeTransaction =
         await exchange.transactionMethods.buildTransaction();
-      expect(exchangeTransaction.data?.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG)
+      expect(exchangeTransaction.data?.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
       const transaction = await exchange.transactionMethods.transact();
 
