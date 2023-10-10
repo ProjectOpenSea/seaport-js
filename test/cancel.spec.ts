@@ -113,7 +113,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
 
     const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
     const cancelOrdersTx = await seaport
-      .cancelOrders([order.parameters], offerer.address, overrides)
+      .cancelOrders([order.parameters], offerer.address, undefined, overrides)
       .transact();
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isCancelled",

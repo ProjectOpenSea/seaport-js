@@ -53,7 +53,7 @@ describeWithFixture(
 
       await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
 
-      expect(await seaport.getDomain(OPENSEA_DOMAIN_TAG, 0)).to.eq(
+      expect(await seaport.getDomain(`0x${OPENSEA_DOMAIN_TAG}`, 0)).to.eq(
         OPENSEA_DOMAIN,
       );
 
@@ -88,10 +88,17 @@ describeWithFixture(
       expect(await seaport.getNumberOfDomains(exampleTag)).to.eq(4);
     });
 
-    it("Should return an array of domains even if getDomains should throw", async () => {
+    it("Should return an array of domains even if getDomains throws", async () => {
       const { seaport } = fixture;
 
-      expect(await seaport.getDomains(exampleTag, true)).to.deep.eq(
+      (seaport.domainRegistry as any) = {
+        ...seaport.domainRegistry,
+        getDomains: () => {
+          throw new Error();
+        },
+      };
+
+      expect(await seaport.getDomains(exampleTag)).to.deep.eq(
         expectedExampleDomainArray,
       );
     });
