@@ -140,6 +140,88 @@ describeWithFixture(
           expect(fulfillStandardOrderSpy.calledOnce);
         });
 
+        it("ERC1155 <=> ETH adjust tips correctly", async () => {
+          // Note: For simplicity in this test, tips are returned to the fulfiller.
+          const tips = [
+            {
+              amount: parseEther("1").toString(),
+              recipient: await fulfiller.getAddress(),
+            },
+          ];
+          const { seaport, testErc1155 } = fixture;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 2,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+            tips,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const { value } = await action.transactionMethods.buildTransaction();
+
+          // This test verifies that the tips are adjusted correctly in the transaction.
+          // The expected total is 2 ETH for tokens and 0.2 ETH for tips, totaling 2.2 ETH.
+          if (value)
+            expect(value.toString()).to.eq(parseEther("2.2").toString());
+
+          const transaction = await action.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(BigInt(8));
+          expect(fulfillerErc1155Balance).eq(BigInt(2));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 2,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+        });
+
         it("ERC1155 <=> ETH doesn't fail due to rounding error", async () => {
           const { seaport, testErc1155 } = fixture;
 

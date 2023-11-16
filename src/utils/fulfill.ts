@@ -44,6 +44,7 @@ import {
   areAllCurrenciesSame,
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
+  adjustTipsForPartialFills,
   totalItemsAmount,
 } from "./order";
 import {
@@ -377,11 +378,17 @@ export function fulfillStandardOrder(
         totalSize,
       });
 
+  let adjustedTips: ConsiderationItem[] = [];
+
+  if (tips.length > 0) {
+    adjustedTips = adjustTipsForPartialFills(tips, unitsToFill, totalSize);
+  }
+
   const {
     parameters: { offer, consideration },
   } = orderWithAdjustedFills;
 
-  const considerationIncludingTips = [...consideration, ...tips];
+  const considerationIncludingTips = [...consideration, ...adjustedTips];
 
   const offerCriteriaItems = offer.filter(({ itemType }) =>
     isCriteriaItem(itemType),
