@@ -76,9 +76,10 @@ export const getPresentItemAmount = ({
   // For offer items, we round down
   // For consideration items, we round up
   return (
-    startAmountBn * remaining +
-    endAmountBn * elapsed +
-    (isConsiderationItem ? duration - 1 : 0n) / duration
+    (startAmountBn * remaining +
+      endAmountBn * elapsed +
+      (isConsiderationItem ? BigInt(duration - 1n) : 0n)) /
+    duration
   );
 };
 

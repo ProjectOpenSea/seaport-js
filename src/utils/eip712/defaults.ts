@@ -1,5 +1,5 @@
 import { Logger } from "@ethersproject/logger";
-import { ethers } from "ethers";
+import { ethers, zeroPadValue } from "ethers";
 
 import type { TypedDataField } from "@ethersproject/abstract-signer";
 
@@ -29,7 +29,7 @@ const isNullish = (value: any): boolean => {
 function getDefaultForBaseType(type: string): any {
   // bytesXX
   const [, width] = type.match(/^bytes(\d+)$/) ?? [];
-  if (width) return hexZeroPad("0x", parseInt(width));
+  if (width) return zeroPadValue("0x", parseInt(width));
 
   if (type.match(/^(u?)int(\d*)$/)) type = "integer";
 

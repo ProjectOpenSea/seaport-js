@@ -47,52 +47,50 @@ export const describeWithFixture = (
       const conduitController = await ConduitControllerFactory.deploy();
 
       const seaportContract = (await SeaportFactory.deploy(
-        conduitController.address,
+        await conduitController.getAddress(),
       )) as SeaportContract;
-
-      await seaportContract.deployed();
 
       const DomainRegistryFactory =
         await ethers.getContractFactory("DomainRegistry");
       const domainRegistry = await DomainRegistryFactory.deploy();
-      await domainRegistry.deployed();
+      await domainRegistry.waitForDeployment();
 
-      const seaport = new Seaport(ethers.provider, {
+      const seaport = new Seaport(ethers.provider as any, {
         overrides: {
-          contractAddress: seaportContract.address,
-          domainRegistryAddress: domainRegistry.address,
+          contractAddress: await seaportContract.getAddress(),
+          domainRegistryAddress: await domainRegistry.getAddress(),
         },
         seaportVersion: "1.5",
       });
       const [signer] = await ethers.getSigners();
-      const seaportWithSigner = new Seaport(signer, {
+      const seaportWithSigner = new Seaport(signer as any, {
         overrides: {
-          contractAddress: seaportContract.address,
-          domainRegistryAddress: domainRegistry.address,
+          contractAddress: await seaportContract.getAddress(),
+          domainRegistryAddress: await domainRegistry.getAddress(),
         },
         seaportVersion: "1.5",
       });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");
       const testErc721 = await TestERC721.deploy();
-      await testErc721.deployed();
+      await testErc721.waitForDeployment();
 
       const TestERC1155 = await ethers.getContractFactory("TestERC1155");
       const testErc1155 = await TestERC1155.deploy();
-      await testErc1155.deployed();
+      await testErc1155.waitForDeployment();
 
       const TestERC20 = await ethers.getContractFactory("TestERC20");
       const testErc20 = await TestERC20.deploy();
-      await testErc20.deployed();
+      await testErc20.waitForDeployment();
 
       const TestERC20USDC = await ethers.getContractFactory("TestERC20USDC");
       const testErc20USDC = await TestERC20USDC.deploy();
-      await testErc20USDC.deployed();
+      await testErc20USDC.waitForDeployment();
 
       const TestERC1271Wallet =
         await ethers.getContractFactory("TestERC1271Wallet");
       const testERC1271Wallet = await TestERC1271Wallet.deploy();
-      await testERC1271Wallet.deployed();
+      await testERC1271Wallet.waitForDeployment();
 
       // In order for cb to get the correct fixture values we have
       // to pass a reference to an object that you we mutate.

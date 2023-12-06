@@ -50,9 +50,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Mint ERC721 to offerer
         await testErc721.mint(offerer.address, nftId);
 
-        startTime = await (
-          await ethers.provider.getBlock("latest")
-        ).timestamp.toString();
+        startTime = (await ethers.provider.getBlock(
+          "latest",
+        ))!.timestamp.toString();
 
         // Ends one week from the start date
         endTime = (BigInt(startTime) + BigInt(SECONDS_IN_WEEK)).toString();
@@ -64,7 +64,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC721,
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifier: nftId,
             },
           ],
@@ -127,9 +127,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -154,15 +154,18 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map((item) => ({
-            ...item,
-            token: testErc20.address,
-          })),
+          consideration: standardCreateOrderInput.consideration.map(
+            async (item) => ({
+              ...item,
+              token: await testErc20.getAddress(),
+            }),
+          ),
         };
 
         await testErc20.mint(
           fulfiller.address,
-          (standardCreateOrderInput.consideration[0] as CurrencyItem).endAmount,
+          (standardCreateOrderInput.consideration[0] as CurrencyItem)
+            .endAmount as string,
         );
 
         const { executeAllActions } = await seaport.createOrder(
@@ -200,11 +203,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(approvalAction).to.deep.equal({
           type: "approval",
-          token: testErc20.address,
+          token: await testErc20.getAddress(),
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: seaport.contract.address,
+          operator: await seaport.contract.getAddress(),
         });
 
         await approvalAction.transactionMethods.transact();
@@ -212,7 +215,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(
           await testErc20.allowance(
             fulfiller.address,
-            seaport.contract.address,
+            await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
 
@@ -229,9 +232,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -258,9 +261,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Mint 10 ERC1155s to offerer
         await testErc721.mint(offerer.address, nftId);
 
-        startTime = await (
-          await ethers.provider.getBlock("latest")
-        ).timestamp.toString();
+        startTime = (await ethers.provider.getBlock(
+          "latest",
+        ))!.timestamp.toString();
 
         // Ends one week from the start date
         endTime = (Number(startTime) + SECONDS_IN_WEEK).toString();
@@ -272,7 +275,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC721,
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifier: nftId,
             },
           ],
@@ -335,9 +338,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -362,10 +365,12 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map((item) => ({
-            ...item,
-            token: testErc20.address,
-          })),
+          consideration: standardCreateOrderInput.consideration.map(
+            async (item) => ({
+              ...item,
+              token: await testErc20.getAddress(),
+            }),
+          ),
         };
 
         await testErc20.mint(
@@ -408,11 +413,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(approvalAction).to.deep.equal({
           type: "approval",
-          token: testErc20.address,
+          token: await testErc20.getAddress(),
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: seaport.contract.address,
+          operator: await seaport.contract.getAddress(),
         });
 
         await approvalAction.transactionMethods.transact();
@@ -420,7 +425,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(
           await testErc20.allowance(
             fulfiller.address,
-            seaport.contract.address,
+            await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
 
@@ -437,9 +442,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -468,9 +473,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Mint 5 ERC1155s to offerer
         await testErc1155.mint(offerer.address, nftId, erc1155Amount);
 
-        startTime = await (
-          await ethers.provider.getBlock("latest")
-        ).timestamp.toString();
+        startTime = (await ethers.provider.getBlock(
+          "latest",
+        ))!.timestamp.toString();
 
         // Ends one week from the start date
         endTime = (Number(startTime) + SECONDS_IN_WEEK).toString();
@@ -482,7 +487,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC1155,
-              token: testErc1155.address,
+              token: await testErc1155.getAddress(),
               amount: "1",
               endAmount: "5",
               identifier: nftId,
@@ -547,9 +552,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -586,7 +591,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ...standardCreateOrderInput,
           consideration: standardCreateOrderInput.consideration.map((item) => ({
             ...item,
-            token: testErc20.address,
+            token: await testErc20.getAddress(),
           })),
         };
 
@@ -630,11 +635,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(approvalAction).to.deep.equal({
           type: "approval",
-          token: testErc20.address,
+          token: await testErc20.getAddress(),
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: seaport.contract.address,
+          operator: await seaport.contract.getAddress(),
         });
 
         await approvalAction.transactionMethods.transact();
@@ -642,7 +647,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(
           await testErc20.allowance(
             fulfiller.address,
-            seaport.contract.address,
+            await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
 
@@ -659,9 +664,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -698,9 +703,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Mint 5 ERC1155s to offerer
         await testErc1155.mint(offerer.address, nftId, erc1155Amount);
 
-        startTime = await (
-          await ethers.provider.getBlock("latest")
-        ).timestamp.toString();
+        startTime = (await ethers.provider.getBlock(
+          "latest",
+        ))!.timestamp.toString();
 
         // Ends one week from the start date
         endTime = (Number(startTime) + SECONDS_IN_WEEK).toString();
@@ -712,7 +717,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC1155,
-              token: testErc1155.address,
+              token: await testErc1155.getAddress(),
               amount: "5",
               endAmount: "1",
               identifier: nftId,
@@ -777,9 +782,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
@@ -816,7 +821,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ...standardCreateOrderInput,
           consideration: standardCreateOrderInput.consideration.map((item) => ({
             ...item,
-            token: testErc20.address,
+            token: await testErc20.getAddress(),
           })),
         };
 
@@ -860,11 +865,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(approvalAction).to.deep.equal({
           type: "approval",
-          token: testErc20.address,
+          token: await testErc20.getAddress(),
           identifierOrCriteria: "0",
           itemType: ItemType.ERC20,
           transactionMethods: approvalAction.transactionMethods,
-          operator: seaport.contract.address,
+          operator: await seaport.contract.getAddress(),
         });
 
         await approvalAction.transactionMethods.transact();
@@ -872,7 +877,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(
           await testErc20.allowance(
             fulfiller.address,
-            seaport.contract.address,
+            await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
 
@@ -889,9 +894,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const receipt = await transaction.wait();
 
-        const currentBlockTimestamp = await (
-          await ethers.provider.getBlock(receipt.blockNumber)
-        ).timestamp;
+        const currentBlockTimestamp = (await ethers.provider.getBlock(
+          receipt!.blockNumber,
+        ))!.timestamp;
 
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,

@@ -22,7 +22,6 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
-  ContractMethodReturnType,
 } from "../types";
 import { getApprovalActions } from "./approval";
 import {
@@ -48,7 +47,11 @@ import {
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
 } from "./order";
-import { executeAllActions, getTransactionMethods } from "./usecase";
+import {
+  ContractMethodReturnType,
+  executeAllActions,
+  getTransactionMethods,
+} from "./usecase";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -71,7 +74,7 @@ export const shouldUseBasicFulfill = (
   totalFilled: OrderStatus["totalFilled"],
 ) => {
   // 1. The order must not be partially filled
-  if (!totalFilled === 0n) {
+  if (totalFilled !== 0n) {
     return false;
   }
 
@@ -133,7 +136,7 @@ export const shouldUseBasicFulfill = (
   if (
     consideration.length > 1 &&
     restConsideration.every((item) => item.itemType === offer[0].itemType) &&
-    totalItemsAmount(restConsideration).endAmount.gt(offer[0].endAmount)
+    totalItemsAmount(restConsideration).endAmount > BigInt(offer[0].endAmount)
   ) {
     return false;
   }
@@ -283,7 +286,7 @@ export function fulfillBasicOrder(
     zoneHash: order.parameters.zoneHash,
   };
 
-  const overrides = { ...overrides, value: totalNativeAmount };
+  overrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,
@@ -421,7 +424,7 @@ export function fulfillStandardOrder(
     fulfillerOperator,
   });
 
-  const overrides = { ...overrides, value: totalNativeAmount };
+  overrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,

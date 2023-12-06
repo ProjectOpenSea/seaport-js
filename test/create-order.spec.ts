@@ -29,7 +29,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -47,7 +47,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     expect(approvalAction).to.be.deep.equal({
       type: "approval",
-      token: testErc721.address,
+      token: await testErc721.getAddress(),
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
@@ -96,7 +96,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC721,
             startAmount: "1",
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
           },
         ],
         offerer: offerer.address,
@@ -114,7 +114,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const isValid = await seaportContract
       .connect(randomSigner)
-      .callStatic.validate([
+      .validate.staticCall([
         {
           parameters: {
             ...order.parameters,
@@ -145,14 +145,14 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       salt,
       offer: [
         {
-          token: testErc20.address,
+          token: await testErc20.getAddress(),
           amount: parseEther("10").toString(),
         },
       ],
       consideration: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
           recipient: offerer.address,
         },
@@ -165,7 +165,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     expect(approvalAction).to.be.deep.equal({
       type: "approval",
-      token: testErc20.address,
+      token: await testErc20.getAddress(),
       identifierOrCriteria: "0",
       itemType: ItemType.ERC20,
       transactionMethods: approvalAction.transactionMethods,
@@ -191,7 +191,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC721,
             startAmount: "1",
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             recipient: offerer.address,
           },
           {
@@ -200,7 +200,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             itemType: ItemType.ERC20,
             recipient: zone.address,
             startAmount: ethers.parseEther(".25").toString(),
-            token: testErc20.address,
+            token: await testErc20.getAddress(),
           },
         ],
         endTime,
@@ -211,7 +211,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             identifierOrCriteria: "0",
             itemType: ItemType.ERC20,
             startAmount: ethers.parseEther("10").toString(),
-            token: testErc20.address,
+            token: await testErc20.getAddress(),
           },
         ],
         offerer: offerer.address,
@@ -229,7 +229,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const isValid = await seaportContract
       .connect(randomSigner)
-      .callStatic.validate([
+      .validate.staticCall([
         {
           parameters: {
             ...order.parameters,
@@ -261,12 +261,12 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
         {
           itemType: ItemType.ERC1155,
-          token: testErc1155.address,
+          token: await testErc1155.getAddress(),
           identifier: nftId,
           amount: "1",
         },
@@ -298,7 +298,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     expect(approvalAction).to.be.deep.equal({
       type: "approval",
-      token: testErc721.address,
+      token: await testErc721.getAddress(),
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
@@ -319,7 +319,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     expect(erc1155ApprovalAction).to.be.deep.equal({
       type: "approval",
-      token: testErc1155.address,
+      token: await testErc1155.getAddress(),
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC1155,
       transactionMethods: erc1155ApprovalAction.transactionMethods,
@@ -368,14 +368,14 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC721,
             startAmount: "1",
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
           },
           {
             endAmount: "1",
             identifierOrCriteria: nftId,
             itemType: ItemType.ERC1155,
             startAmount: "1",
-            token: testErc1155.address,
+            token: await testErc1155.getAddress(),
           },
         ],
         offerer: offerer.address,
@@ -393,7 +393,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const isValid = await seaportContract
       .connect(randomSigner)
-      .callStatic.validate([
+      .validate.staticCall([
         {
           parameters: {
             ...order.parameters,
@@ -426,7 +426,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         offer: [
           {
             itemType: ItemType.ERC721,
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             identifier: nftId,
           },
         ],
@@ -436,7 +436,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             recipient: offerer.address,
           },
           {
-            token: testErc20.address,
+            token: await testErc20.getAddress(),
             amount: ethers.parseEther("1").toString(),
             recipient: zone.address,
           },
@@ -472,7 +472,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         offer: [
           {
             itemType: ItemType.ERC721,
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             identifier: nftId,
           },
         ],
@@ -503,17 +503,17 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC721,
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifier: nftId,
             },
             {
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               amount: "1",
             },
           ],
           consideration: [
             {
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               amount: ethers.parseEther("10").toString(),
               recipient: offerer.address,
             },
@@ -543,7 +543,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         offer: [
           {
             itemType: ItemType.ERC721,
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             identifier: nftId,
           },
         ],
@@ -589,7 +589,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
               identifierOrCriteria: nftId,
               itemType: ItemType.ERC721,
               startAmount: "1",
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
             },
           ],
           offerer: offerer.address,
@@ -607,7 +607,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
       const isValid = await seaportContract
         .connect(randomSigner)
-        .callStatic.validate([
+        .validate.staticCall([
           {
             parameters: {
               ...order.parameters,
@@ -639,7 +639,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -657,7 +657,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     expect(approvalAction).to.be.deep.equal({
       type: "approval",
-      token: testErc721.address,
+      token: await testErc721.getAddress(),
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
@@ -689,7 +689,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const isValid = await seaportContract
       .connect(randomSigner)
-      .callStatic.validate([
+      .validate.staticCall([
         {
           parameters: {
             ...order.parameters,
@@ -720,7 +720,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -763,7 +763,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -804,7 +804,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -847,7 +847,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -894,7 +894,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],
@@ -947,7 +947,7 @@ describeWithFixture(
       await testErc20.mint(testERC1271Wallet.address, parseEther("10"));
       // Give allowance to the seaport contract
       await testERC1271Wallet.approveToken(
-        testErc20.address,
+        await testErc20.getAddress(),
         seaportContract.address,
         parseEther("10"),
       );
@@ -961,13 +961,13 @@ describeWithFixture(
           offer: [
             {
               amount: ethers.parseEther("10").toString(),
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
             },
           ],
           consideration: [
             {
               itemType: ItemType.ERC721,
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifier: nftId,
             },
           ],

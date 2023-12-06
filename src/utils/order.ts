@@ -20,7 +20,7 @@ import { getMaximumSizeForOrder, isCurrencyItem } from "./item";
 import { MerkleTree } from "./merkletree";
 
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: BigNumberish) =>
-  (BigInt(amount) * BigInt(basisPoints)) / BigInt(ONE_HUNDRED_PERCENT_BP);
+  (BigInt(amount) * BigInt(basisPoints)) / ONE_HUNDRED_PERCENT_BP;
 
 export const feeToConsiderationItem = ({
   fee,
@@ -159,8 +159,8 @@ export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
         { startAmount: totalStartAmount, endAmount: totalEndAmount },
         { startAmount, endAmount },
       ) => ({
-        startAmount: totalStartAmount + startAmount,
-        endAmount: totalEndAmount + endAmount,
+        startAmount: totalStartAmount + BigInt(startAmount),
+        endAmount: totalEndAmount + BigInt(endAmount),
       }),
       {
         startAmount: 0n,

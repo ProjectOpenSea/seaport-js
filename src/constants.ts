@@ -108,7 +108,7 @@ export enum BasicOrderRouteType {
 export const MAX_INT = BigInt(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 );
-export const ONE_HUNDRED_PERCENT_BP = 10_000;
+export const ONE_HUNDRED_PERCENT_BP = 10_000n;
 export const NO_CONDUIT = ethers.ZeroHash;
 
 // Supply here any known conduit keys as well as their conduits

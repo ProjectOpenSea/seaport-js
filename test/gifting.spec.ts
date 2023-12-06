@@ -33,7 +33,7 @@ describeWithFixture(
             offer: [
               {
                 itemType: ItemType.ERC721,
-                token: testErc721.address,
+                token: await testErc721.getAddress(),
                 identifier: nftId,
               },
             ],
@@ -86,7 +86,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
             };
             testErc20.mint(
@@ -115,11 +115,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -127,7 +127,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 
@@ -159,7 +159,7 @@ describeWithFixture(
             offer: [
               {
                 itemType: ItemType.ERC1155,
-                token: testErc1155.address,
+                token: await testErc1155.getAddress(),
                 identifier: nftId,
                 amount: erc1155Amount,
               },
@@ -218,7 +218,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
             };
             testErc20.mint(
@@ -247,11 +247,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -259,7 +259,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 

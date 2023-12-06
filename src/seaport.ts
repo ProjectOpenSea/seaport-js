@@ -1,14 +1,11 @@
 import {
   BigNumberish,
-  Contract,
   ethers,
   Overrides,
   TypedDataEncoder,
   JsonRpcProvider,
   Provider,
 } from "ethers";
-import { DomainRegistryABI } from "./abi/DomainRegistry";
-import { SeaportABIv14 } from "./abi/Seaport_v1_4";
 import {
   SEAPORT_CONTRACT_NAME,
   SEAPORT_CONTRACT_VERSION_V1_4,
@@ -27,7 +24,6 @@ import type {
   SeaportConfig,
   CreateOrderAction,
   CreateOrderInput,
-  DomainRegistryContract,
   ExchangeAction,
   InputCriteria,
   Order,
@@ -36,10 +32,7 @@ import type {
   OrderUseCase,
   OrderWithCounter,
   TipInputItem,
-  TransactionMethods,
-  ContractMethodReturnType,
   MatchOrdersFulfillment,
-  SeaportContract,
   Signer,
   ApprovalAction,
   CreateBulkOrdersAction,
@@ -67,13 +60,21 @@ import {
   mapInputItemToOfferItem,
   totalItemsAmount,
 } from "./utils/order";
-import { executeAllActions, getTransactionMethods } from "./utils/usecase";
+import {
+  ContractMethodReturnType,
+  TransactionMethods,
+  executeAllActions,
+  getTransactionMethods,
+} from "./utils/usecase";
+import { DomainRegistry } from "./typechain-types/src/contracts/DomainRegistry.sol";
+import { DomainRegistry__factory, Seaport__factory } from "./typechain-types";
+import { Seaport as SeaportInterface } from "./typechain-types/seaport_v1_5/contracts/Seaport";
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
-  public contract: SeaportContract;
+  public contract: SeaportInterface;
 
-  public domainRegistry: DomainRegistryContract;
+  public domainRegistry: DomainRegistry;
 
   private provider: Provider;
 
@@ -83,7 +84,7 @@ export class Seaport {
 
   private defaultConduitKey: string;
 
-  readonly OPENSEA_CONDUIT_KEY: string = OPENSEA_CONDUIT_KEY;
+  readonly OPENSEA_CONDUIT_KEY = OPENSEA_CONDUIT_KEY;
 
   /**
    * @param providerOrSigner - The provider or signer to use for web3-related calls
@@ -117,27 +118,28 @@ export class Seaport {
 
     this.provider = provider;
 
-    this.contract = new Contract(
-      overrides?.contractAddress ??
-        (seaportVersion === "1.5"
-          ? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS
-          : CROSS_CHAIN_SEAPORT_V1_4_ADDRESS),
-      SeaportABIv14,
+    const seaportContractAddress =
+      overrides?.contractAddress ?? seaportVersion === "1.5"
+        ? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS
+        : CROSS_CHAIN_SEAPORT_V1_4_ADDRESS;
+    this.contract = Seaport__factory.connect(
+      seaportContractAddress,
       this.provider,
-    ) as SeaportContract;
+    );
 
-    this.domainRegistry = new Contract(
-      overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS,
-      DomainRegistryABI,
+    const domainRegistryContractAddress =
+      overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS;
+    this.domainRegistry = DomainRegistry__factory.connect(
+      domainRegistryContractAddress,
       this.provider,
-    ) as DomainRegistryContract;
+    );
 
     this.config = {
       ascendingAmountFulfillmentBuffer,
       balanceAndApprovalChecksOnOrderCreation,
       conduitKeyToConduit: {
         ...KNOWN_CONDUIT_KEYS_TO_CONDUIT,
-        [NO_CONDUIT]: this.contract.address,
+        [NO_CONDUIT]: this.contract.getAddress(),
         ...conduitKeyToConduit,
       },
       seaportVersion,
@@ -178,7 +180,7 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateOrderAction>> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
     const offerer = accountAddress ?? (await signer.getAddress());
 
     const { orderComponents, approvalActions } = await this._formatOrder(
@@ -227,7 +229,7 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
     const offererCounter = await this.getCounter(offerer);
 
@@ -396,16 +398,16 @@ export class Seaport {
     return { orderComponents, approvalActions };
   }
 
-  private _getSigner(accountAddress?: string): Signer {
+  private async _getSigner(accountAddress?: string): Promise<Signer> {
     if (this.signer) {
       return this.signer;
     }
 
-    if (!(this.provider instanceof providers.JsonRpcProvider)) {
+    if (!(this.provider instanceof JsonRpcProvider)) {
       throw new Error("Either signer or a JsonRpcProvider must be provided");
     }
 
-    return this.provider.getSigner(accountAddress);
+    return (await this.provider.getSigner(accountAddress)) as unknown as Signer;
   }
 
   /**
@@ -443,7 +445,7 @@ export class Seaport {
           ? SEAPORT_CONTRACT_VERSION_V1_5
           : SEAPORT_CONTRACT_VERSION_V1_4,
       chainId,
-      verifyingContract: this.contract.address,
+      verifyingContract: await this.contract.getAddress(),
     };
   }
 
@@ -492,7 +494,7 @@ export class Seaport {
     orderComponents: OrderComponents,
     accountAddress?: string,
   ): Promise<string> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
 
@@ -520,7 +522,7 @@ export class Seaport {
     orderComponents: OrderComponents[],
     accountAddress?: string,
   ): Promise<OrderWithCounter[]> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
     const tree = getBulkOrderTree(orderComponents);
@@ -556,13 +558,13 @@ export class Seaport {
    * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
-  public cancelOrders(
+  public async cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string,
     domain?: string,
     overrides?: Overrides,
-  ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
-    const signer = this._getSigner(accountAddress);
+  ): Promise<SeaportInterface["cancel"]> {
+    const signer = await this._getSigner(accountAddress);
 
     return getTransactionMethods(
       this.contract.connect(signer),
@@ -579,14 +581,14 @@ export class Seaport {
    * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
-  public bulkCancelOrders(
+  public async bulkCancelOrders(
     offerer?: string,
     domain?: string,
     overrides?: Overrides,
-  ): TransactionMethods<
-    ContractMethodReturnType<SeaportContract, "incrementCounter">
+  ): Promise<
+    TransactionMethods<ReturnType<SeaportInterface["incrementCounter"]>>
   > {
-    const signer = this._getSigner(offerer);
+    const signer = await this._getSigner(offerer);
 
     return getTransactionMethods(
       this.contract.connect(signer),
@@ -598,20 +600,20 @@ export class Seaport {
 
   /**
    * Approves a list of orders on-chain. This allows accounts to fulfill the order without requiring
-   * a signature. Can also check if an order is valid using `callStatic`
+   * a signature. Can also check if an order is valid using `staticCall`
    * @param orders list of order structs
    * @param accountAddress optional account address to approve orders.
    * @param domain optional domain to be hashed and appended to calldata
    * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
-  public validate(
+  public async validate(
     orders: Order[],
     accountAddress?: string,
     domain?: string,
     overrides?: Overrides,
-  ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
-    const signer = this._getSigner(accountAddress);
+  ): Promise<TransactionMethods<ReturnType<SeaportInterface["validate"]>>> {
+    const signer = await this._getSigner(accountAddress);
 
     return getTransactionMethods(
       this.contract.connect(signer),
@@ -703,7 +705,6 @@ export class Seaport {
                     considerationItem.token.slice(2).padStart(64, "0"),
                     ethers
                       .toBeHex(considerationItem.identifierOrCriteria)
-                      .toHexString()
                       .slice(2)
                       .padStart(64, "0"),
                     ethers
@@ -794,7 +795,7 @@ export class Seaport {
     OrderUseCase<
       ExchangeAction<
         ContractMethodReturnType<
-          SeaportContract,
+          SeaportInterface,
           "fulfillBasicOrder" | "fulfillOrder" | "fulfillAdvancedOrder"
         >
       >
@@ -807,7 +808,7 @@ export class Seaport {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
-    const fulfiller = this._getSigner(accountAddress);
+    const fulfiller = await this._getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
 
@@ -842,7 +843,7 @@ export class Seaport {
       this.getOrderStatus(this.getOrderHash(orderParameters)),
     ]);
 
-    const currentBlockTimestamp = currentBlock.timestamp;
+    const currentBlockTimestamp = currentBlock!.timestamp;
 
     const { totalFilled, totalSize } = orderStatus;
 
@@ -962,7 +963,7 @@ export class Seaport {
       throw new Error("All orders must include signatures");
     }
 
-    const fulfiller = this._getSigner(accountAddress);
+    const fulfiller = await this._getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
 
@@ -1043,7 +1044,7 @@ export class Seaport {
       ordersMetadata,
       seaportContract: this.contract,
       fulfillerBalancesAndApprovals,
-      currentBlockTimestamp: currentBlock.timestamp,
+      currentBlockTimestamp: currentBlock!.timestamp,
       ascendingAmountTimestampBuffer:
         this.config.ascendingAmountFulfillmentBuffer,
       fulfillerOperator,
@@ -1067,7 +1068,7 @@ export class Seaport {
    * @param input.domain optional domain to be hashed and appended to calldata
    * @returns set of transaction methods for matching orders
    */
-  public matchOrders({
+  public async matchOrders({
     orders,
     fulfillments,
     overrides,
@@ -1079,10 +1080,8 @@ export class Seaport {
     overrides?: Overrides;
     accountAddress?: string;
     domain?: string;
-  }): TransactionMethods<
-    ContractMethodReturnType<SeaportContract, "matchOrders">
-  > {
-    const signer = this._getSigner(accountAddress);
+  }): ReturnType<SeaportInterface["matchOrders"]> {
+    const signer = await this._getSigner(accountAddress);
 
     return getTransactionMethods(
       this.contract.connect(signer),
@@ -1099,14 +1098,12 @@ export class Seaport {
    * @param overrides Any transaction overrides the client wants, ignored if not set
    * @returns The domain tag (4 byte keccak hash of the domain)
    */
-  public setDomain(
+  public async setDomain(
     domain: string,
     accountAddress?: string,
     overrides?: Overrides,
-  ): TransactionMethods<
-    ContractMethodReturnType<DomainRegistryContract, "setDomain">
-  > {
-    const signer = this._getSigner(accountAddress);
+  ): ReturnType<DomainRegistry["setDomain"]> {
+    const signer = await this._getSigner(accountAddress);
 
     return getTransactionMethods(
       this.domainRegistry.connect(signer),
@@ -1145,9 +1142,7 @@ export class Seaport {
     } catch (error) {
       // If there are too many domains set under the tag, it will revert when trying to return in memory.
       // This fallback will manually query each index to get the full list of domains.
-      const totalDomains = (
-        await this.domainRegistry.getNumberOfDomains(tag)
-      ).toNumber();
+      const totalDomains = await this.domainRegistry.getNumberOfDomains(tag);
 
       const domainArray = Promise.all(
         [...Array(totalDomains).keys()].map((i) =>

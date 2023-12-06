@@ -28,7 +28,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
       offer: [
         {
           itemType: ItemType.ERC721,
-          token: testErc721.address,
+          token: await testErc721.getAddress(),
           identifier: nftId,
         },
       ],

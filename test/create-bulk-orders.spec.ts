@@ -36,7 +36,7 @@ describeWithFixture(
         offer: [
           {
             itemType: ItemType.ERC721,
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             identifier: nftId1,
           } as BasicErc721Item,
         ],
@@ -65,11 +65,11 @@ describeWithFixture(
 
       expect(approvalAction).to.be.deep.equal({
         type: "approval",
-        token: testErc721.address,
+        token: await testErc721.getAddress(),
         identifierOrCriteria: nftId1,
         itemType: ItemType.ERC721,
         transactionMethods: approvalAction.transactionMethods,
-        operator: seaportContract.address,
+        operator: await seaportContract.getAddress(),
       });
 
       await approvalAction.transactionMethods.transact();
@@ -78,7 +78,7 @@ describeWithFixture(
       expect(
         await testErc721.isApprovedForAll(
           offerer.address,
-          seaportContract.address,
+          await seaportContract.getAddress(),
         ),
       ).to.be.true;
 
@@ -117,7 +117,7 @@ describeWithFixture(
                 identifierOrCriteria: nftIds[index],
                 itemType: ItemType.ERC721,
                 startAmount: "1",
-                token: testErc721.address,
+                token: await testErc721.getAddress(),
               },
             ],
             offerer: offerer.address,
@@ -135,7 +135,7 @@ describeWithFixture(
 
         const isValid = await seaportContract
           .connect(randomSigner)
-          .callStatic.validate([
+          .validate.staticCall([
             {
               parameters: {
                 ...order.parameters,

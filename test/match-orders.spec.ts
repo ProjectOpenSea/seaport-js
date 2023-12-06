@@ -41,7 +41,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC721,
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifier: nftId,
             },
           ],
@@ -52,7 +52,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             },
             {
               itemType: ItemType.ERC721,
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifier: nftId,
               recipient: privateListingRecipient.address,
             },
@@ -94,7 +94,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               accountAddress: privateListingRecipient.address,
             })
-            .transact();
+            .send();
 
           const receipt = await transaction.wait();
 
@@ -118,7 +118,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             consideration: [
               {
                 ...privateListingCreateOrderInput.consideration[0],
-                token: testErc20.address,
+                token: await testErc20.getAddress(),
               },
               ...privateListingCreateOrderInput.consideration.slice(1),
             ],
@@ -155,12 +155,12 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           await getTransactionMethods(
             testErc20.connect(privateListingRecipient),
             "approve",
-            [seaport.contract.address, MAX_INT],
+            [await seaport.contract.getAddress(), MAX_INT],
           ).transact();
           expect(
             await testErc20.allowance(
               privateListingRecipient.address,
-              seaport.contract.address,
+              await seaport.contract.getAddress(),
             ),
           ).to.equal(MAX_INT);
 
@@ -198,7 +198,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           offer: [
             {
               itemType: ItemType.ERC1155,
-              token: testErc1155.address,
+              token: await testErc1155.getAddress(),
               identifier: nftId,
               amount: erc1155ListingQuantity,
             },
@@ -210,7 +210,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             },
             {
               itemType: ItemType.ERC1155,
-              token: testErc1155.address,
+              token: await testErc1155.getAddress(),
               identifier: nftId,
               recipient: privateListingRecipient.address,
               amount: erc1155ListingQuantity,
@@ -277,7 +277,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             consideration: [
               {
                 ...privateListingCreateOrderInput.consideration[0],
-                token: testErc20.address,
+                token: await testErc20.getAddress(),
               },
               ...privateListingCreateOrderInput.consideration.slice(1),
             ],
@@ -314,12 +314,12 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           await getTransactionMethods(
             testErc20.connect(privateListingRecipient),
             "approve",
-            [seaport.contract.address, MAX_INT],
+            [await seaport.contract.getAddress(), MAX_INT],
           ).transact();
           expect(
             await testErc20.allowance(
               privateListingRecipient.address,
-              seaport.contract.address,
+              await seaport.contract.getAddress(),
             ),
           ).to.equal(MAX_INT);
 

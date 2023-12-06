@@ -78,17 +78,17 @@ export const getBalancesAndApprovals = async ({
 
   return Promise.all(
     items.map(async (item) => {
-      let approvedAmountPromise = Promise.resolve(0n);
+      let approvedAmount;
 
       if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
-        approvedAmountPromise = approvedItemAmount(
+        approvedAmount = await approvedItemAmount(
           owner,
           item,
           operator,
           provider,
         );
       } else if (isErc20Item(item.itemType)) {
-        approvedAmountPromise = approvedItemAmount(
+        approvedAmount = await approvedItemAmount(
           owner,
           item,
           operator,
@@ -97,7 +97,7 @@ export const getBalancesAndApprovals = async ({
       }
       // If native token, we don't need to check for approvals
       else {
-        approvedAmountPromise = Promise.resolve(MAX_INT);
+        approvedAmount = MAX_INT;
       }
 
       return {
@@ -110,7 +110,7 @@ export const getBalancesAndApprovals = async ({
           provider,
           itemToCriteria.get(item),
         ),
-        approvedAmount: await approvedAmountPromise,
+        approvedAmount,
         itemType: item.itemType,
       };
     }),
@@ -145,12 +145,13 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
     filterKey: "balance" | "approvedAmount",
   ): InsufficientBalances =>
     tokenAndIdentifierAndAmountNeeded
-      .filter(([token, identifierOrCriteria, amountNeeded]) =>
-        findBalanceAndApproval(
-          balancesAndApprovals,
-          token,
-          identifierOrCriteria,
-        )[filterKey].lt(amountNeeded),
+      .filter(
+        ([token, identifierOrCriteria, amountNeeded]) =>
+          findBalanceAndApproval(
+            balancesAndApprovals,
+            token,
+            identifierOrCriteria,
+          )[filterKey] < amountNeeded,
       )
       .map(([token, identifierOrCriteria, amount]) => {
         const balanceAndApproval = findBalanceAndApproval(
@@ -407,7 +408,7 @@ const addToExistingBalances = ({
     (item) => ({ ...item }),
   );
 
-  // Add each summed item amount to the existing balances as we may want tocheck balances after receiving all items
+  // Add each summed item amount to the existing balances as we may want to check balances after receiving all items
   Object.entries(summedItemAmounts).forEach(
     ([token, identifierOrCriteriaToAmount]) =>
       Object.entries(identifierOrCriteriaToAmount).forEach(

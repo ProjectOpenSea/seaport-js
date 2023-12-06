@@ -18,7 +18,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     const offer: OfferItem[] = [
       {
         itemType: ItemType.ERC721,
-        token: testErc721.address,
+        token: await testErc721.getAddress(),
         identifierOrCriteria: nftId,
         startAmount: "1",
         endAmount: "1",
@@ -74,7 +74,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     // Use a random address to verify that the signature is valid
     const isValid = await seaportContract
       .connect(randomSigner)
-      .callStatic.validate([order]);
+      .validate.staticCall([order]);
 
     expect(isValid).to.be.true;
   });

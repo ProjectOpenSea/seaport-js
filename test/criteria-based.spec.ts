@@ -54,7 +54,7 @@ describeWithFixture(
               offer: [
                 {
                   itemType: ItemType.ERC721,
-                  token: testErc721.address,
+                  token: await testErc721.getAddress(),
                   identifiers: [],
                 },
               ],
@@ -126,7 +126,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
             };
 
@@ -165,11 +165,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -177,7 +177,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 
@@ -224,13 +224,13 @@ describeWithFixture(
               offer: [
                 {
                   amount: parseEther("10").toString(),
-                  token: testErc20.address,
+                  token: await testErc20.getAddress(),
                 },
               ],
               consideration: [
                 {
                   itemType: ItemType.ERC721,
-                  token: testErc721.address,
+                  token: await testErc721.getAddress(),
                   identifiers: [],
                   recipient: offerer.address,
                 },
@@ -268,11 +268,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifierOrCriteria: nftId,
               itemType: ItemType.ERC721_WITH_CRITERIA,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -280,7 +280,7 @@ describeWithFixture(
             expect(
               await testErc721.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.be.true;
 
@@ -289,11 +289,11 @@ describeWithFixture(
 
             expect(secondApprovalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: secondApprovalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await secondApprovalAction.transactionMethods.transact();
@@ -301,7 +301,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.eq(MAX_INT);
 
@@ -371,11 +371,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifierOrCriteria: nftId,
               itemType: ItemType.ERC721_WITH_CRITERIA,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -383,7 +383,7 @@ describeWithFixture(
             expect(
               await testErc721.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.be.true;
 
@@ -392,11 +392,11 @@ describeWithFixture(
 
             expect(secondApprovalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: secondApprovalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await secondApprovalAction.transactionMethods.transact();
@@ -404,7 +404,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.eq(MAX_INT);
 
@@ -462,7 +462,7 @@ describeWithFixture(
               offer: [
                 {
                   itemType: ItemType.ERC721,
-                  token: testErc721.address,
+                  token: await testErc721.getAddress(),
                   // The offerer is willing to sell either token ID 1 or 3, but not 2
                   identifiers: [nftId, nftId3],
                 },
@@ -565,7 +565,7 @@ describeWithFixture(
             standardCreateOrderInput.offer = [
               {
                 itemType: ItemType.ERC721,
-                token: testErc721.address,
+                token: await testErc721.getAddress(),
                 // The offerer is willing to sell either token ID 1 or 3, but not 2
                 criteria: new MerkleTree([nftId, nftId3]).getRoot(),
               },
@@ -656,7 +656,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
             };
 
@@ -697,11 +697,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -709,7 +709,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 
@@ -781,13 +781,13 @@ describeWithFixture(
               offer: [
                 {
                   amount: parseEther("10").toString(),
-                  token: testErc20.address,
+                  token: await testErc20.getAddress(),
                 },
               ],
               consideration: [
                 {
                   itemType: ItemType.ERC721,
-                  token: testErc721.address,
+                  token: await testErc721.getAddress(),
                   identifiers: [nftId, nftId3],
                   recipient: offerer.address,
                 },
@@ -829,11 +829,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc721.address,
+              token: await testErc721.getAddress(),
               identifierOrCriteria: nftId2,
               itemType: ItemType.ERC721_WITH_CRITERIA,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -841,7 +841,7 @@ describeWithFixture(
             expect(
               await testErc721.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.be.true;
 
@@ -850,11 +850,11 @@ describeWithFixture(
 
             expect(secondApprovalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: secondApprovalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await secondApprovalAction.transactionMethods.transact();
@@ -862,7 +862,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.eq(MAX_INT);
 
@@ -927,7 +927,7 @@ describeWithFixture(
               offer: [
                 {
                   itemType: ItemType.ERC1155,
-                  token: testErc1155.address,
+                  token: await testErc1155.getAddress(),
                   amount: erc1155Amount,
                   identifiers: [],
                 },
@@ -986,7 +986,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
             };
 
@@ -1014,11 +1014,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -1026,7 +1026,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 
@@ -1063,14 +1063,14 @@ describeWithFixture(
               offer: [
                 {
                   amount: parseEther("10").toString(),
-                  token: testErc20.address,
+                  token: await testErc20.getAddress(),
                 },
               ],
               consideration: [
                 {
                   itemType: ItemType.ERC1155,
                   amount: erc1155Amount,
-                  token: testErc1155.address,
+                  token: await testErc1155.getAddress(),
                   identifiers: [],
                   recipient: offerer.address,
                 },
@@ -1101,11 +1101,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc1155.address,
+              token: await testErc1155.getAddress(),
               identifierOrCriteria: nftId,
               itemType: ItemType.ERC1155_WITH_CRITERIA,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -1113,7 +1113,7 @@ describeWithFixture(
             expect(
               await testErc1155.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.be.true;
 
@@ -1122,11 +1122,11 @@ describeWithFixture(
 
             expect(secondApprovalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: secondApprovalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await secondApprovalAction.transactionMethods.transact();
@@ -1134,7 +1134,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.eq(MAX_INT);
 
@@ -1172,7 +1172,7 @@ describeWithFixture(
               offer: [
                 {
                   itemType: ItemType.ERC1155,
-                  token: testErc1155.address,
+                  token: await testErc1155.getAddress(),
                   // The offerer is willing to sell either token ID 1 or 3, but not 2
                   identifiers: [nftId, nftId3],
                   amount: erc1155Amount,
@@ -1263,7 +1263,7 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
             };
 
@@ -1297,11 +1297,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -1309,7 +1309,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 
@@ -1365,12 +1365,12 @@ describeWithFixture(
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20.address }),
+                (item) => ({ ...item, token: await testErc20.getAddress() }),
               ),
               offer: [
                 {
                   itemType: ItemType.ERC1155,
-                  token: testErc1155.address,
+                  token: await testErc1155.getAddress(),
                   // The offerer is willing to sell either token ID 1 or 3, but not 2
                   criteria: new MerkleTree([nftId, nftId3]).getRoot(),
                   amount: erc1155Amount,
@@ -1408,11 +1408,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -1420,7 +1420,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
 
@@ -1485,13 +1485,13 @@ describeWithFixture(
               offer: [
                 {
                   amount: parseEther("10").toString(),
-                  token: testErc20.address,
+                  token: await testErc20.getAddress(),
                 },
               ],
               consideration: [
                 {
                   itemType: ItemType.ERC1155,
-                  token: testErc1155.address,
+                  token: await testErc1155.getAddress(),
                   identifiers: [nftId, nftId3],
                   recipient: offerer.address,
                   amount: erc1155Amount,
@@ -1527,11 +1527,11 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc1155.address,
+              token: await testErc1155.getAddress(),
               identifierOrCriteria: nftId2,
               itemType: ItemType.ERC1155_WITH_CRITERIA,
               transactionMethods: approvalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await approvalAction.transactionMethods.transact();
@@ -1539,7 +1539,7 @@ describeWithFixture(
             expect(
               await testErc1155.isApprovedForAll(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.be.true;
 
@@ -1548,11 +1548,11 @@ describeWithFixture(
 
             expect(secondApprovalAction).to.deep.equal({
               type: "approval",
-              token: testErc20.address,
+              token: await testErc20.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: secondApprovalAction.transactionMethods,
-              operator: seaport.contract.address,
+              operator: await seaport.contract.getAddress(),
             });
 
             await secondApprovalAction.transactionMethods.transact();
@@ -1560,7 +1560,7 @@ describeWithFixture(
             expect(
               await testErc20.allowance(
                 fulfiller.address,
-                seaport.contract.address,
+                await seaport.contract.getAddress(),
               ),
             ).to.eq(MAX_INT);
 
@@ -1617,14 +1617,14 @@ describeWithFixture(
             offer: [
               {
                 itemType: ItemType.ERC721,
-                token: testErc721.address,
+                token: await testErc721.getAddress(),
                 identifiers: [],
               },
             ],
             consideration: [
               {
                 itemType: ItemType.ERC1155,
-                token: testErc1155.address,
+                token: await testErc1155.getAddress(),
                 amount: erc1155Amount,
                 identifiers: [],
               },
@@ -1656,11 +1656,11 @@ describeWithFixture(
 
           expect(approvalAction).to.deep.equal({
             type: "approval",
-            token: testErc1155.address,
+            token: await testErc1155.getAddress(),
             identifierOrCriteria: nftId2,
             itemType: ItemType.ERC1155_WITH_CRITERIA,
             transactionMethods: approvalAction.transactionMethods,
-            operator: seaport.contract.address,
+            operator: await seaport.contract.getAddress(),
           });
 
           await approvalAction.transactionMethods.transact();
@@ -1704,7 +1704,7 @@ describeWithFixture(
             offer: [
               {
                 itemType: ItemType.ERC1155,
-                token: testErc1155.address,
+                token: await testErc1155.getAddress(),
                 identifiers: [nftId, nftId3],
                 amount: erc1155Amount,
               },
@@ -1712,7 +1712,7 @@ describeWithFixture(
             consideration: [
               {
                 itemType: ItemType.ERC721,
-                token: testErc721.address,
+                token: await testErc721.getAddress(),
                 identifiers: [nftId2, nftId3],
               },
             ],
@@ -1753,11 +1753,11 @@ describeWithFixture(
 
           expect(approvalAction).to.deep.equal({
             type: "approval",
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             identifierOrCriteria: nftId2,
             itemType: ItemType.ERC721_WITH_CRITERIA,
             transactionMethods: approvalAction.transactionMethods,
-            operator: seaport.contract.address,
+            operator: await seaport.contract.getAddress(),
           });
 
           await approvalAction.transactionMethods.transact();
