@@ -1,5 +1,4 @@
-import { ethers } from "ethers";
-import { keccak256 } from "ethers/lib/utils";
+import { ethers, keccak256 } from "ethers";
 import MerkleTreeJS from "merkletreejs";
 
 const hashIdentifier = (identifier: string) =>

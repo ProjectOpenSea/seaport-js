@@ -1,5 +1,4 @@
-import { CallOverrides, Contract, Overrides, PayableOverrides } from "ethers";
-import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
+import { Contract, Overrides, keccak256, toUtf8Bytes } from "ethers";
 
 import {
   CreateBulkOrdersAction,
@@ -35,9 +34,7 @@ export const executeAllActions = async <
   }
 };
 
-const instanceOfOverrides = <
-  T extends Overrides | PayableOverrides | CallOverrides,
->(
+const instanceOfOverrides = <T extends Overrides>(
   obj: Object | undefined,
 ): obj is T => {
   const validKeys = [
@@ -52,7 +49,7 @@ const instanceOfOverrides = <
     "ccipReadEnabled",
     "value",
     "blockTag",
-    "CallOverrides",
+    "overrides",
   ];
 
   return (

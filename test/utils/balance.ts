@@ -1,5 +1,5 @@
-import { BigNumberish, ContractReceipt, ethers, providers } from "ethers";
-import { parseEther } from "ethers/lib/utils";
+import { BigNumberish, ContractReceipt, ethers, toBeHex } from "ethers";
+import { parseEther } from "ethers";
 import { Item, Order, OrderStatus } from "../../src/types";
 import { balanceOf } from "../../src/utils/balance";
 
@@ -8,7 +8,6 @@ import {
   TimeBasedItemParams,
 } from "../../src/utils/item";
 import { expect } from "chai";
-import { ethers } from "hardhat";
 import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
@@ -16,12 +15,12 @@ import {
 
 export const setBalance = async (
   address: string,
-  provider: providers.JsonRpcProvider,
-  amountEth = parseEther("10000").toHexString().replace("0x0", "0x"),
+  provider: ethers.JsonRpcProvider,
+  amountEth = toBeHex(parseEther("10000")).replace("0x0", "0x"),
 ) => {
   await provider.send("hardhat_setBalance", [
     address,
-    parseEther(amountEth).toHexString().replace("0x0", "0x"),
+    toBeHex(parseEther(amountEth)).replace("0x0", "0x"),
   ]);
 };
 
@@ -72,7 +71,7 @@ export const getBalancesForFulfillOrder = async (
             item.identifierOrCriteria
           ] = {
             item,
-            balance: await balanceOf(address, item, ethers.provider),
+            balance: await balanceOf(address, item, provider),
           };
         }),
       ]),
@@ -166,7 +165,7 @@ export const verifyBalancesAfterFulfill = async ({
       balance:
         ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
           item.identifierOrCriteria
-        ].balance.sub(exchangedAmount),
+        ].balance - exchangedAmount,
     };
 
     ownerToTokenToIdentifierBalances[item.recipient][item.token][
@@ -207,7 +206,7 @@ export const verifyBalancesAfterFulfill = async ({
                     const actualBalance = await balanceOf(
                       owner,
                       item,
-                      ethers.provider,
+                      provider,
                     );
 
                     expect(balance).equal(actualBalance);

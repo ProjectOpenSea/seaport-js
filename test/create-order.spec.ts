@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { parseEther } from "ethers/lib/utils";
+import { parseEther } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants";
 import {
@@ -35,7 +35,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -73,19 +73,19 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         consideration: [
           {
             // Fees were deducted
-            endAmount: ethers.utils.parseEther("9.75").toString(),
+            endAmount: ethers.parseEther("9.75").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
             recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("9.75").toString(),
+            startAmount: ethers.parseEther("9.75").toString(),
             token: ethers.ZeroAddress,
           },
           {
-            endAmount: ethers.utils.parseEther(".25").toString(),
+            endAmount: ethers.parseEther(".25").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
             recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
+            startAmount: ethers.parseEther(".25").toString(),
             token: ethers.ZeroAddress,
           },
         ],
@@ -195,11 +195,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             recipient: offerer.address,
           },
           {
-            endAmount: ethers.utils.parseEther(".25").toString(),
+            endAmount: ethers.parseEther(".25").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.ERC20,
             recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
+            startAmount: ethers.parseEther(".25").toString(),
             token: testErc20.address,
           },
         ],
@@ -207,10 +207,10 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         offer: [
           {
             // Fees were deducted
-            endAmount: ethers.utils.parseEther("10").toString(),
+            endAmount: ethers.parseEther("10").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.ERC20,
-            startAmount: ethers.utils.parseEther("10").toString(),
+            startAmount: ethers.parseEther("10").toString(),
             token: testErc20.address,
           },
         ],
@@ -273,7 +273,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -345,19 +345,19 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         consideration: [
           {
             // Fees were deducted
-            endAmount: ethers.utils.parseEther("9.75").toString(),
+            endAmount: ethers.parseEther("9.75").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
             recipient: offerer.address,
-            startAmount: ethers.utils.parseEther("9.75").toString(),
+            startAmount: ethers.parseEther("9.75").toString(),
             token: ethers.ZeroAddress,
           },
           {
-            endAmount: ethers.utils.parseEther(".25").toString(),
+            endAmount: ethers.parseEther(".25").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
             recipient: zone.address,
-            startAmount: ethers.utils.parseEther(".25").toString(),
+            startAmount: ethers.parseEther(".25").toString(),
             token: ethers.ZeroAddress,
           },
         ],
@@ -432,12 +432,12 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         ],
         consideration: [
           {
-            amount: ethers.utils.parseEther("10").toString(),
+            amount: ethers.parseEther("10").toString(),
             recipient: offerer.address,
           },
           {
             token: testErc20.address,
-            amount: ethers.utils.parseEther("1").toString(),
+            amount: ethers.parseEther("1").toString(),
             recipient: zone.address,
           },
         ],
@@ -478,7 +478,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         ],
         consideration: [
           {
-            amount: ethers.utils.parseEther("10").toString(),
+            amount: ethers.parseEther("10").toString(),
             recipient: offerer.address,
           },
         ],
@@ -514,7 +514,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           consideration: [
             {
               token: testErc20.address,
-              amount: ethers.utils.parseEther("10").toString(),
+              amount: ethers.parseEther("10").toString(),
               recipient: offerer.address,
             },
           ],
@@ -549,7 +549,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         ],
         consideration: [
           {
-            amount: ethers.utils.parseEther("10").toString(),
+            amount: ethers.parseEther("10").toString(),
             recipient: offerer.address,
           },
         ],
@@ -566,19 +566,19 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         parameters: {
           consideration: [
             {
-              endAmount: ethers.utils.parseEther("9.75").toString(),
+              endAmount: ethers.parseEther("9.75").toString(),
               identifierOrCriteria: "0",
               itemType: ItemType.NATIVE,
               recipient: offerer.address,
-              startAmount: ethers.utils.parseEther("9.75").toString(),
+              startAmount: ethers.parseEther("9.75").toString(),
               token: ethers.ZeroAddress,
             },
             {
-              endAmount: ethers.utils.parseEther(".25").toString(),
+              endAmount: ethers.parseEther(".25").toString(),
               identifierOrCriteria: "0",
               itemType: ItemType.NATIVE,
               recipient: zone.address,
-              startAmount: ethers.utils.parseEther(".25").toString(),
+              startAmount: ethers.parseEther(".25").toString(),
               token: ethers.ZeroAddress,
             },
           ],
@@ -645,7 +645,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -726,7 +726,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -769,7 +769,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -810,7 +810,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -853,7 +853,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -882,7 +882,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const zone = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-    const zoneHash = ethers.utils.keccak256("0xf00b");
+    const zoneHash = ethers.keccak256("0xf00b");
     const salt = "0xabcd";
 
     const { executeAllActions } = await seaport.createOrder({
@@ -900,7 +900,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       ],
       consideration: [
         {
-          amount: ethers.utils.parseEther("10").toString(),
+          amount: ethers.parseEther("10").toString(),
           recipient: offerer.address,
         },
       ],
@@ -960,7 +960,7 @@ describeWithFixture(
           salt,
           offer: [
             {
-              amount: ethers.utils.parseEther("10").toString(),
+              amount: ethers.parseEther("10").toString(),
               token: testErc20.address,
             },
           ],
@@ -1012,7 +1012,7 @@ describeWithFixture(
         testERC1271Wallet.address,
       );
       expect(await testErc20.balanceOf(nftOwner.address)).to.equal(
-        ethers.utils.parseEther("9.75"),
+        ethers.parseEther("9.75"),
       );
     });
   },

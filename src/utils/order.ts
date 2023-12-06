@@ -1,5 +1,11 @@
-import { BigNumberish, ethers } from "ethers";
-import { concat, keccak256, randomBytes, toUtf8Bytes } from "ethers/lib/utils";
+import {
+  BigNumberish,
+  ethers,
+  concat,
+  keccak256,
+  randomBytes,
+  toUtf8Bytes,
+} from "ethers";
 import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants";
 import type {
   ConsiderationItem,

@@ -42,7 +42,7 @@ describeWithFixture(
         ],
         consideration: [
           {
-            amount: ethers.utils.parseEther("10").toString(),
+            amount: ethers.parseEther("10").toString(),
             recipient: offerer.address,
           },
         ],
@@ -94,19 +94,19 @@ describeWithFixture(
             consideration: [
               {
                 // Fees were deducted
-                endAmount: ethers.utils.parseEther("9.75").toString(),
+                endAmount: ethers.parseEther("9.75").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
                 recipient: offerer.address,
-                startAmount: ethers.utils.parseEther("9.75").toString(),
+                startAmount: ethers.parseEther("9.75").toString(),
                 token: ethers.ZeroAddress,
               },
               {
-                endAmount: ethers.utils.parseEther(".25").toString(),
+                endAmount: ethers.parseEther(".25").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
                 recipient: zone.address,
-                startAmount: ethers.utils.parseEther(".25").toString(),
+                startAmount: ethers.parseEther(".25").toString(),
                 token: ethers.ZeroAddress,
               },
             ],

@@ -2,7 +2,7 @@ import {
   BigNumberish,
   ContractTransaction,
   ethers,
-  PayableOverrides,
+  Overrides,
   Signer,
 } from "ethers";
 import type {
@@ -204,7 +204,7 @@ export function fulfillBasicOrder(
     tips?: ConsiderationItem[];
     conduitKey: string;
     domain?: string;
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
   },
   exactApproval: boolean,
 ): OrderUseCase<
@@ -283,7 +283,7 @@ export function fulfillBasicOrder(
     zoneHash: order.parameters.zoneHash,
   };
 
-  const payableOverrides = { ...overrides, value: totalNativeAmount };
+  const overrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,
@@ -296,7 +296,7 @@ export function fulfillBasicOrder(
     transactionMethods: getTransactionMethods(
       seaportContract.connect(signer),
       "fulfillBasicOrder",
-      [basicOrderParameters, payableOverrides],
+      [basicOrderParameters, overrides],
       domain,
     ),
   } as const;
@@ -350,7 +350,7 @@ export function fulfillStandardOrder(
     timeBasedItemParams: TimeBasedItemParams;
     signer: Signer;
     domain?: string;
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
   },
   exactApproval: boolean,
 ): OrderUseCase<
@@ -421,7 +421,7 @@ export function fulfillStandardOrder(
     fulfillerOperator,
   });
 
-  const payableOverrides = { ...overrides, value: totalNativeAmount };
+  const overrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,
@@ -469,14 +469,14 @@ export function fulfillStandardOrder(
               : [],
             conduitKey,
             recipientAddress,
-            payableOverrides,
+            overrides,
           ],
           domain,
         )
       : getTransactionMethods(
           seaportContract.connect(signer),
           "fulfillOrder",
-          [orderAccountingForTips, conduitKey, payableOverrides],
+          [orderAccountingForTips, conduitKey, overrides],
           domain,
         ),
   } as const;
@@ -670,7 +670,7 @@ export function fulfillAvailableOrders({
     },
   );
 
-  const payableOverrides = { value: totalNativeAmount };
+  const overrides = { value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     totalInsufficientApprovals,
@@ -730,7 +730,7 @@ export function fulfillAvailableOrders({
         conduitKey,
         recipientAddress,
         advancedOrdersWithTips.length,
-        payableOverrides,
+        overrides,
       ],
       domain,
     ),

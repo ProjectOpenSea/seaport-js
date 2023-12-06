@@ -2,10 +2,11 @@ import {
   BigNumberish,
   Contract,
   ethers,
-  PayableOverrides,
-  providers,
+  Overrides,
+  TypedDataEncoder,
+  JsonRpcProvider,
+  Provider,
 } from "ethers";
-import { _TypedDataEncoder } from "ethers/lib/utils";
 import { DomainRegistryABI } from "./abi/DomainRegistry";
 import { SeaportABIv14 } from "./abi/Seaport_v1_4";
 import {
@@ -74,7 +75,7 @@ export class Seaport {
 
   public domainRegistry: DomainRegistryContract;
 
-  private provider: providers.Provider;
+  private provider: Provider;
 
   private signer?: Signer;
 
@@ -89,7 +90,7 @@ export class Seaport {
    * @param considerationConfig - A config to provide flexibility in the usage of Seaport
    */
   public constructor(
-    providerOrSigner: providers.JsonRpcProvider | Signer,
+    providerOrSigner: JsonRpcProvider | Signer,
     {
       overrides,
       // Five minute buffer
@@ -100,12 +101,13 @@ export class Seaport {
     }: SeaportConfig = {},
   ) {
     const provider =
-      providerOrSigner instanceof providers.Provider
-        ? providerOrSigner
-        : providerOrSigner.provider;
-    this.signer = (providerOrSigner as Signer)._isSigner
-      ? (providerOrSigner as Signer)
-      : undefined;
+      "provider" in providerOrSigner
+        ? providerOrSigner.provider
+        : providerOrSigner;
+    this.signer =
+      "getAddress" in providerOrSigner
+        ? (providerOrSigner as Signer)
+        : undefined;
 
     if (!provider) {
       throw new Error(
@@ -169,14 +171,12 @@ export class Seaport {
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
    * @param exactApproval optional boolean to indicate whether the approval should be exact or not
-   * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns a use case containing the list of actions needed to be performed in order to create the order
    */
   public async createOrder(
     input: CreateOrderInput,
     accountAddress?: string,
     exactApproval?: boolean,
-    overrides?: PayableOverrides,
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = accountAddress ?? (await signer.getAddress());
@@ -456,7 +456,7 @@ export class Seaport {
     const domainData = await this._getDomainData();
 
     return JSON.stringify(
-      _TypedDataEncoder.getPayload(
+      TypedDataEncoder.getPayload(
         domainData,
         EIP_712_ORDER_TYPE,
         orderComponents,
@@ -478,7 +478,7 @@ export class Seaport {
     const chunks = tree.getDataToSign();
 
     return JSON.stringify(
-      _TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks }),
+      TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks }),
     );
   }
 
@@ -504,7 +504,7 @@ export class Seaport {
 
     // Use EIP-2098 compact signatures to save gas.
     if (signature.length === 132) {
-      signature = ethers.Signature.from(signature).compact;
+      signature = ethers.Signature.from(signature).compactSerialized;
     }
 
     return signature;
@@ -536,7 +536,7 @@ export class Seaport {
 
     // Use EIP-2098 compact signatures to save gas.
     if (signature.length === 132) {
-      signature = ethers.utils.splitSignature(signature).compact;
+      signature = ethers.Signature.from(signature).compactSerialized;
     }
 
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
@@ -560,7 +560,7 @@ export class Seaport {
     orders: OrderComponents[],
     accountAddress?: string,
     domain?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     const signer = this._getSigner(accountAddress);
 
@@ -582,7 +582,7 @@ export class Seaport {
   public bulkCancelOrders(
     offerer?: string,
     domain?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
@@ -609,7 +609,7 @@ export class Seaport {
     orders: Order[],
     accountAddress?: string,
     domain?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     const signer = this._getSigner(accountAddress);
 
@@ -635,7 +635,7 @@ export class Seaport {
    * @param offerer the offerer to get the counter of
    * @returns counter as a number
    */
-  public getCounter(offerer: string): Promise<BigInt> {
+  public getCounter(offerer: string): Promise<bigint> {
     return this.contract.getCounter(offerer);
   }
 
@@ -652,21 +652,19 @@ export class Seaport {
       "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)";
     const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
 
-    const offerItemTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(offerItemTypeString),
+    const offerItemTypeHash = ethers.keccak256(
+      ethers.toUtf8Bytes(offerItemTypeString),
     );
-    const considerationItemTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(considerationItemTypeString),
+    const considerationItemTypeHash = ethers.keccak256(
+      ethers.toUtf8Bytes(considerationItemTypeString),
     );
-    const orderTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(orderTypeString),
-    );
+    const orderTypeHash = ethers.keccak256(ethers.toUtf8Bytes(orderTypeString));
 
-    const offerHash = ethers.utils.keccak256(
+    const offerHash = ethers.keccak256(
       "0x" +
         orderComponents.offer
           .map((offerItem) => {
-            return ethers.utils
+            return ethers
               .keccak256(
                 "0x" +
                   [
@@ -692,11 +690,11 @@ export class Seaport {
           .join(""),
     );
 
-    const considerationHash = ethers.utils.keccak256(
+    const considerationHash = ethers.keccak256(
       "0x" +
         orderComponents.consideration
           .map((considerationItem) => {
-            return ethers.utils
+            return ethers
               .keccak256(
                 "0x" +
                   [
@@ -724,7 +722,7 @@ export class Seaport {
           .join(""),
     );
 
-    const derivedOrderHash = ethers.utils.keccak256(
+    const derivedOrderHash = ethers.keccak256(
       "0x" +
         [
           orderTypeHash.slice(2),
@@ -791,7 +789,7 @@ export class Seaport {
     recipientAddress?: string;
     domain?: string;
     exactApproval?: boolean;
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -1078,7 +1076,7 @@ export class Seaport {
   }: {
     orders: (OrderWithCounter | Order)[];
     fulfillments: MatchOrdersFulfillment[];
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
     accountAddress?: string;
     domain?: string;
   }): TransactionMethods<
@@ -1104,7 +1102,7 @@ export class Seaport {
   public setDomain(
     domain: string,
     accountAddress?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<
     ContractMethodReturnType<DomainRegistryContract, "setDomain">
   > {
@@ -1122,7 +1120,7 @@ export class Seaport {
    * @param tag The domain tag.
    * @returns The number of domains registered under the tag.
    */
-  public async getNumberOfDomains(tag: string): Promise<BigInt> {
+  public async getNumberOfDomains(tag: string): Promise<bigint> {
     return this.domainRegistry.getNumberOfDomains(tag);
   }
 

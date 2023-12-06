@@ -1,10 +1,10 @@
-import { _TypedDataEncoder as TypedDataEncoder } from "@ethersproject/hash";
 import {
-  defaultAbiCoder,
-  hexConcat,
+  TypedDataEncoder,
+  AbiCoder,
   keccak256,
   toUtf8Bytes,
-} from "ethers/lib/utils";
+  concat,
+} from "ethers";
 import { MerkleTree } from "merkletreejs";
 
 import { DefaultGetter } from "./defaults";
@@ -36,10 +36,10 @@ const encodeProof = (
   proof: string[],
   signature = `0x${"ff".repeat(64)}`,
 ) => {
-  return hexConcat([
+  return concat([
     signature,
     `0x${key.toString(16).padStart(6, "0")}`,
-    defaultAbiCoder.encode([`uint256[${proof.length}]`], [proof]),
+    AbiCoder.defaultAbiCoder().encode([`uint256[${proof.length}]`], [proof]),
   ]);
 };
 
@@ -101,8 +101,10 @@ export class Eip712MerkleTree<BaseType extends Record<string, any> = any> {
     });
     const leaves = this.getCompleteLeaves().map(hexToBuffer);
     const rootHash = bufferToHex(getRoot(leaves, false));
-    const typeHash = keccak256(toUtf8Bytes(this.encoder._types.BulkOrder));
-    const bulkOrderHash = keccak256(hexConcat([typeHash, rootHash]));
+    const typeHash = keccak256(
+      toUtf8Bytes(this.encoder.types.BulkOrder[0].type),
+    );
+    const bulkOrderHash = keccak256(concat([typeHash, rootHash]));
 
     if (bulkOrderHash !== structHash) {
       throw new Error("expected derived bulk order hash to match");

@@ -104,7 +104,7 @@ const { executeAllActions } = await seaport.createOrder(
     ],
     consideration: [
       {
-        amount: ethers.utils.parseEther("10").toString(),
+        amount: ethers.parseEther("10").toString(),
         recipient: offerer,
       },
     ],

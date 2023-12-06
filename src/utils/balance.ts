@@ -12,7 +12,7 @@ export const balanceOf = async (
   item: Item,
   provider: ethers.Provider,
   criteria?: InputCriteria,
-): Promise<BigInt> => {
+): Promise<bigint> => {
   if (isErc721Item(item.itemType)) {
     const contract = new Contract(
       item.token,
