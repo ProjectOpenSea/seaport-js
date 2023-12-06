@@ -1,6 +1,5 @@
-import { HardhatEthersSigner } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { keccak256, toUtf8Bytes } from "ethers";
+import { Signer, keccak256, toUtf8Bytes } from "ethers";
 import { ethers } from "hardhat";
 import { describeWithFixture } from "./utils/setup";
 import {
@@ -12,7 +11,7 @@ import {
 describeWithFixture(
   "As a user I want to register or look up a domain",
   (fixture) => {
-    let user: HardhatEthersSigner;
+    let user: Signer;
 
     const expectedExampleDomainArray = [
       "join_tg_invmru_haha_fd06787(address,bool)",

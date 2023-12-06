@@ -154,7 +154,7 @@ const order = await executeAllActions();
 const { executeAllActions: executeAllFulfillActions } =
   await seaport.fulfillOrder({
     order,
-    accountAddress: fulfiller.address,
+    accountAddress: fulfiller,
   });
 
 const transaction = executeAllFulfillActions();

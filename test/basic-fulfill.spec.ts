@@ -1,6 +1,5 @@
-import { HardhatEthersSigner } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { parseEther } from "ethers";
+import { Signer, parseEther } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
@@ -11,18 +10,19 @@ import {
 } from "./utils/balance";
 import { describeWithFixture } from "./utils/setup";
 import { OPENSEA_DOMAIN, OVERRIDE_GAS_LIMIT } from "./utils/constants";
+import { SinonSpy } from "sinon";
 
 const sinon = require("sinon");
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer",
   (fixture) => {
-    let offerer: HardhatEthersSigner;
-    let zone: HardhatEthersSigner;
-    let fulfiller: HardhatEthersSigner;
+    let offerer: Signer;
+    let zone: Signer;
+    let fulfiller: Signer;
     let standardCreateOrderInput: CreateOrderInput;
-    let fulfillBasicOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
-    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
+    let fulfillBasicOrderSpy: SinonSpy
+    let fulfillStandardOrderSpy: SinonSpy
     const nftId = "1";
     const erc1155Amount = "3";
 

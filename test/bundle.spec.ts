@@ -1,6 +1,5 @@
-import { HardhatEthersSigner } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { parseEther } from "ethers";
+import { Signer, parseEther } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
 import { TestERC1155, TestERC721 } from "../src/typechain-types";
@@ -12,17 +11,18 @@ import {
 } from "./utils/balance";
 import { getTagFromDomain } from "../src/utils/usecase";
 import { describeWithFixture } from "./utils/setup";
+import { SinonSpy } from "sinon";
 
 const sinon = require("sinon");
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer for a bundle of items",
   (fixture) => {
-    let offerer: HardhatEthersSigner;
-    let zone: HardhatEthersSigner;
-    let fulfiller: HardhatEthersSigner;
+    let offerer: Signer;
+    let zone: Signer;
+    let fulfiller: Signer;
 
-    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
+    let fulfillStandardOrderSpy: SinonSpy;
     let secondTestErc721: TestERC721;
     let secondTestErc1155: TestERC1155;
     let standardCreateOrderInput: CreateOrderInput;

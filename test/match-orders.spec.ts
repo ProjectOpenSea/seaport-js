@@ -1,5 +1,4 @@
-import { HardhatEthersSigner } from "@nomiclabs/hardhat-ethers/signers";
-import { parseEther } from "ethers";
+import { Signer, parseEther } from "ethers";
 import { ethers } from "hardhat";
 
 import { ItemType, MAX_INT } from "../src/constants";
@@ -17,9 +16,9 @@ import { getTransactionMethods } from "../src/utils/usecase";
 import { expect } from "chai";
 
 describeWithFixture("As a user I want to match an order", (fixture) => {
-  let offerer: HardhatEthersSigner;
-  let zone: HardhatEthersSigner;
-  let privateListingRecipient: HardhatEthersSigner;
+  let offerer: Signer;
+  let zone: Signer;
+  let privateListingRecipient: Signer;
   let privateListingCreateOrderInput: CreateOrderInput;
   const nftId = "1";
   const erc1155Amount = "3";

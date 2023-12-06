@@ -37,6 +37,7 @@
   },
   "types": "lib/index.d.ts",
   "dependencies": {
+    "@types/sinon": "^17.0.2",
     "ethers": "^6.9.0",
     "merkletreejs": "^0.3.11"
   },

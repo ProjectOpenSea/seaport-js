@@ -1,4 +1,4 @@
-import { BigNumberish, ContractReceipt, ethers, toBeHex } from "ethers";
+import { BigNumberish, ContractTransactionReceipt, ethers, toBeHex } from "ethers";
 import { parseEther } from "ethers";
 import { Item, Order, OrderStatus } from "../../src/types";
 import { balanceOf } from "../../src/utils/balance";
@@ -98,7 +98,7 @@ export const verifyBalancesAfterFulfill = async ({
   order: Order;
   orderStatus?: OrderStatus;
   unitsToFill?: BigNumberish;
-  fulfillReceipt: ContractReceipt;
+  fulfillReceipt: ContractTransactionReceipt;
   fulfillerAddress: string;
   provider: ethers.Provider;
   timeBasedItemParams?: TimeBasedItemParams;
@@ -190,7 +190,7 @@ export const verifyBalancesAfterFulfill = async ({
           ownerToTokenToIdentifierBalances[fulfillerAddress][
             ethers.ZeroAddress
           ][0].balance -
-          fulfillReceipt.gasUsed * fulfillReceipt.effectiveGasPrice,
+          fulfillReceipt.gasUsed * fulfillReceipt.gasPrice,
       };
   }
 

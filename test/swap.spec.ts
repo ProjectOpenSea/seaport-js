@@ -1,6 +1,5 @@
-import { HardhatEthersSigner } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { parseEther } from "ethers";
+import { Signer, parseEther } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
 import { TestERC1155, TestERC721 } from "../src/typechain-types";
@@ -21,11 +20,11 @@ const sinon = require("sinon");
 describeWithFixture(
   "As a user I want to swap any numbers of items",
   (fixture) => {
-    let offerer: HardhatEthersSigner;
-    let zone: HardhatEthersSigner;
-    let fulfiller: HardhatEthersSigner;
+    let offerer: Signer;
+    let zone: Signer;
+    let fulfiller: Signer;
 
-    let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
+    let fulfillStandardOrderSpy: sinon.SinonSpy;
     let secondTestErc721: TestERC721;
     let secondTestErc1155: TestERC1155;
     let standardCreateOrderInput: CreateOrderInput;
@@ -57,7 +56,7 @@ describeWithFixture(
         const { testErc721 } = fixture;
 
         // Mint 2 NFTs to offerer
-        await testErc721.mint(offerer.address, nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId);
         await testErc721.mint(offerer.address, nftId2);
         // Mint 1 NFT to fulfiller
         await secondTestErc721.mint(fulfiller.address, nftId);
