@@ -113,7 +113,7 @@ export const getTransactionMethods = <
 
       const data = await buildTransaction(mergedOverrides);
 
-      return contract.signer.sendTransaction(data);
+      return contract.signer.broadcastTransaction(data);
     },
     buildTransaction,
   };

@@ -1,6 +1,4 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
 import {
-  BigNumber,
   BigNumberish,
   Contract,
   ethers,
@@ -80,12 +78,6 @@ export class Seaport {
 
   private signer?: Signer;
 
-  // Use the multicall provider for reads for batching and performance optimisations
-  // NOTE: Do NOT await between sequential requests if you're intending to batch
-  // instead, use Promise.all() and map to fetch data in parallel
-  // https://www.npmjs.com/package/@0xsequence/multicall
-  private multicallProvider: multicallProviders.MulticallProvider;
-
   private config: Required<Omit<SeaportConfig, "overrides">>;
 
   private defaultConduitKey: string;
@@ -123,23 +115,19 @@ export class Seaport {
 
     this.provider = provider;
 
-    this.multicallProvider = new multicallProviders.MulticallProvider(
-      this.provider,
-    );
-
     this.contract = new Contract(
       overrides?.contractAddress ??
         (seaportVersion === "1.5"
           ? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS
           : CROSS_CHAIN_SEAPORT_V1_4_ADDRESS),
       SeaportABIv14,
-      this.multicallProvider,
+      this.provider,
     ) as SeaportContract;
 
     this.domainRegistry = new Contract(
       overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS,
       DomainRegistryABI,
-      this.multicallProvider,
+      this.provider,
     ) as DomainRegistryContract;
 
     this.config = {
@@ -181,12 +169,14 @@ export class Seaport {
    * @param input.offerer The order's creator address. Defaults to the first address on the provider.
    * @param accountAddress Optional address for which to create the order with
    * @param exactApproval optional boolean to indicate whether the approval should be exact or not
+   * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns a use case containing the list of actions needed to be performed in order to create the order
    */
   public async createOrder(
     input: CreateOrderInput,
     accountAddress?: string,
     exactApproval?: boolean,
+    overrides?: PayableOverrides,
   ): Promise<OrderUseCase<CreateOrderAction>> {
     const signer = this._getSigner(accountAddress);
     const offerer = accountAddress ?? (await signer.getAddress());
@@ -295,8 +285,8 @@ export class Seaport {
     exactApproval: boolean,
     {
       conduitKey = this.defaultConduitKey,
-      zone = ethers.constants.AddressZero,
-      zoneHash = ethers.constants.HashZero,
+      zone = ethers.ZeroAddress,
+      zoneHash = ethers.ZeroHash,
       startTime = Math.floor(Date.now() / 1000).toString(),
       endTime = MAX_INT.toString(),
       offer,
@@ -358,7 +348,7 @@ export class Seaport {
 
     const saltFollowingConditional =
       salt !== undefined
-        ? `0x${BigNumber.from(salt).toHexString().slice(2).padStart(64, "0")}`
+        ? `0x${ethers.toBeHex(salt).slice(2).padStart(64, "0")}`
         : generateRandomSalt(domain);
 
     const orderComponents: OrderComponents = {
@@ -383,7 +373,7 @@ export class Seaport {
         owner: offerer,
         items: offerItems,
         criterias: [],
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
         operator,
       });
 
@@ -514,7 +504,7 @@ export class Seaport {
 
     // Use EIP-2098 compact signatures to save gas.
     if (signature.length === 132) {
-      signature = ethers.utils.splitSignature(signature).compact;
+      signature = ethers.Signature.from(signature).compact;
     }
 
     return signature;
@@ -645,7 +635,7 @@ export class Seaport {
    * @param offerer the offerer to get the counter of
    * @returns counter as a number
    */
-  public getCounter(offerer: string): Promise<BigNumber> {
+  public getCounter(offerer: string): Promise<BigInt> {
     return this.contract.getCounter(offerer);
   }
 
@@ -683,16 +673,16 @@ export class Seaport {
                     offerItemTypeHash.slice(2),
                     offerItem.itemType.toString().padStart(64, "0"),
                     offerItem.token.slice(2).padStart(64, "0"),
-                    ethers.BigNumber.from(offerItem.identifierOrCriteria)
-                      .toHexString()
+                    ethers
+                      .toBeHex(offerItem.identifierOrCriteria)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(offerItem.startAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(offerItem.startAmount)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(offerItem.endAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(offerItem.endAmount)
                       .slice(2)
                       .padStart(64, "0"),
                   ].join(""),
@@ -713,18 +703,17 @@ export class Seaport {
                     considerationItemTypeHash.slice(2),
                     considerationItem.itemType.toString().padStart(64, "0"),
                     considerationItem.token.slice(2).padStart(64, "0"),
-                    ethers.BigNumber.from(
-                      considerationItem.identifierOrCriteria,
-                    )
+                    ethers
+                      .toBeHex(considerationItem.identifierOrCriteria)
                       .toHexString()
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(considerationItem.startAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(considerationItem.startAmount)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(considerationItem.endAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(considerationItem.endAmount)
                       .slice(2)
                       .padStart(64, "0"),
                     considerationItem.recipient.slice(2).padStart(64, "0"),
@@ -744,24 +733,12 @@ export class Seaport {
           offerHash.slice(2),
           considerationHash.slice(2),
           orderComponents.orderType.toString().padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.startTime)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.endTime)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
+          ethers.toBeHex(orderComponents.startTime).slice(2).padStart(64, "0"),
+          ethers.toBeHex(orderComponents.endTime).slice(2).padStart(64, "0"),
           orderComponents.zoneHash.slice(2),
-          BigNumber.from(orderComponents.salt)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
+          ethers.toBeHex(orderComponents.salt).slice(2).padStart(64, "0"),
           orderComponents.conduitKey.slice(2).padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.counter)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
+          ethers.toBeHex(orderComponents.counter).slice(2).padStart(64, "0"),
         ].join(""),
     );
 
@@ -798,7 +775,7 @@ export class Seaport {
     extraData = "0x",
     accountAddress,
     conduitKey = this.defaultConduitKey,
-    recipientAddress = ethers.constants.AddressZero,
+    recipientAddress = ethers.ZeroAddress,
     domain,
     exactApproval = false,
     overrides,
@@ -851,7 +828,7 @@ export class Seaport {
         owner: offerer,
         items: offer,
         criterias: offerCriteria,
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
         operator: offererOperator,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
@@ -860,10 +837,10 @@ export class Seaport {
         owner: fulfillerAddress,
         items: [...offer, ...consideration],
         criterias: [...offerCriteria, ...considerationCriteria],
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
         operator: fulfillerOperator,
       }),
-      this.multicallProvider.getBlock("latest"),
+      this.provider.getBlock("latest"),
       this.getOrderStatus(this.getOrderHash(orderParameters)),
     ]);
 
@@ -889,7 +866,7 @@ export class Seaport {
       recipient: tip.recipient,
     }));
 
-    const isRecipientSelf = recipientAddress === ethers.constants.AddressZero;
+    const isRecipientSelf = recipientAddress === ethers.ZeroAddress;
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.
@@ -924,9 +901,8 @@ export class Seaport {
         order: sanitizedOrder,
         unitsToFill,
         totalFilled,
-        totalSize: totalSize.eq(0)
-          ? getMaximumSizeForOrder(sanitizedOrder)
-          : totalSize,
+        totalSize:
+          totalSize === 0n ? getMaximumSizeForOrder(sanitizedOrder) : totalSize,
         offerCriteria,
         considerationCriteria,
         tips: tipConsiderationItems,
@@ -964,7 +940,7 @@ export class Seaport {
     fulfillOrderDetails,
     accountAddress,
     conduitKey = this.defaultConduitKey,
-    recipientAddress = ethers.constants.AddressZero,
+    recipientAddress = ethers.ZeroAddress,
     domain,
     exactApproval = false,
   }: {
@@ -1026,7 +1002,7 @@ export class Seaport {
             items: order.parameters.offer,
             criterias: offerCriteria,
             operator: allOffererOperators[i],
-            multicallProvider: this.multicallProvider,
+            provider: this.provider,
           }),
         ),
       ),
@@ -1037,9 +1013,9 @@ export class Seaport {
         items: [...allOfferItems, ...allConsiderationItems],
         criterias: [...allOfferCriteria, ...allConsiderationCriteria],
         operator: fulfillerOperator,
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
       }),
-      this.multicallProvider.getBlock("latest"),
+      this.provider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
           this.getOrderStatus(this.getOrderHash(order.parameters)),
@@ -1146,7 +1122,7 @@ export class Seaport {
    * @param tag The domain tag.
    * @returns The number of domains registered under the tag.
    */
-  public async getNumberOfDomains(tag: string): Promise<BigNumber> {
+  public async getNumberOfDomains(tag: string): Promise<BigInt> {
     return this.domainRegistry.getNumberOfDomains(tag);
   }
 

@@ -1,5 +1,4 @@
 import {
-  BigNumber,
   BigNumberish,
   ContractTransaction,
   ethers,
@@ -72,7 +71,7 @@ export const shouldUseBasicFulfill = (
   totalFilled: OrderStatus["totalFilled"],
 ) => {
   // 1. The order must not be partially filled
-  if (!totalFilled.eq(0)) {
+  if (!totalFilled === 0n) {
     return false;
   }
 
@@ -145,10 +144,10 @@ export const shouldUseBasicFulfill = (
   //  currencies needs to be zero, and the amounts on the 721 item need to be 1
   const nativeCurrencyIsZeroAddress = currencies
     .filter(({ itemType }) => itemType === ItemType.NATIVE)
-    .every(({ token }) => token === ethers.constants.AddressZero);
+    .every(({ token }) => token === ethers.ZeroAddress);
 
   const currencyIdentifiersAreZero = currencies.every(
-    ({ identifierOrCriteria }) => BigNumber.from(identifierOrCriteria).eq(0),
+    ({ identifierOrCriteria }) => BigInt(identifierOrCriteria) === 0n,
   );
 
   const erc721sAreSingleAmount = nfts
@@ -246,7 +245,7 @@ export function fulfillBasicOrder(
       ...timeBasedItemParams,
       isConsiderationItem: true,
     },
-  })[ethers.constants.AddressZero]?.["0"];
+  })[ethers.ZeroAddress]?.["0"];
 
   const insufficientApprovals = validateBasicFulfillBalancesAndApprovals({
     offer,
@@ -335,8 +334,8 @@ export function fulfillStandardOrder(
   }: {
     order: Order;
     unitsToFill?: BigNumberish;
-    totalFilled: BigNumber;
-    totalSize: BigNumber;
+    totalFilled: bigint;
+    totalSize: bigint;
     offerCriteria: InputCriteria[];
     considerationCriteria: InputCriteria[];
     tips?: ConsiderationItem[];
@@ -408,7 +407,7 @@ export function fulfillStandardOrder(
       ...timeBasedItemParams,
       isConsiderationItem: true,
     },
-  })[ethers.constants.AddressZero]?.["0"];
+  })[ethers.ZeroAddress]?.["0"];
 
   const insufficientApprovals = validateStandardFulfillBalancesAndApprovals({
     offer,
@@ -430,7 +429,7 @@ export function fulfillStandardOrder(
     signer,
   );
 
-  const isGift = recipientAddress !== ethers.constants.AddressZero;
+  const isGift = recipientAddress !== ethers.ZeroAddress;
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems || isGift;
 
@@ -497,7 +496,7 @@ export function validateAndSanitizeFromOrderStatus(
 ): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
-  if (totalSize.gt(0) && totalFilled.div(totalSize).eq(1)) {
+  if (totalSize > 0n && totalFilled / totalSize === 1n) {
     throw new Error("The order you are trying to fulfill is already filled");
   }
 
@@ -580,7 +579,7 @@ export function fulfillAvailableOrders({
     }),
   );
 
-  let totalNativeAmount = BigNumber.from(0);
+  let totalNativeAmount = 0n;
   const totalInsufficientApprovals: InsufficientApprovals = [];
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap((orderMetadata) => [
@@ -628,13 +627,13 @@ export function fulfillAvailableOrders({
         isConsiderationItem: true,
       };
 
-      totalNativeAmount = totalNativeAmount.add(
-        getSummedTokenAndIdentifierAmounts({
-          items: considerationIncludingTips,
-          criterias: considerationCriteria,
-          timeBasedItemParams,
-        })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0),
-      );
+      totalNativeAmount =
+        totalNativeAmount +
+          getSummedTokenAndIdentifierAmounts({
+            items: considerationIncludingTips,
+            criterias: considerationCriteria,
+            timeBasedItemParams,
+          })[ethers.ZeroAddress]?.["0"] ?? 0n;
 
       const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
         {
@@ -839,15 +838,15 @@ export const getAdvancedOrderNumeratorDenominator = (
 ) => {
   // Used for advanced order cases
   const maxUnits = getMaximumSizeForOrder(order);
-  const unitsToFillBn = BigNumber.from(unitsToFill);
 
   // Reduce the numerator/denominator as optimization
-  const unitsGcd = gcd(unitsToFillBn, maxUnits);
-
-  const numerator = unitsToFill
-    ? unitsToFillBn.div(unitsGcd)
-    : BigNumber.from(1);
-  const denominator = unitsToFill ? maxUnits.div(unitsGcd) : BigNumber.from(1);
+  let numerator = 1n;
+  let denominator = 1n;
+  if (unitsToFill) {
+    const unitsGcd = gcd(BigInt(unitsToFill), maxUnits);
+    numerator = BigInt(unitsToFill) / unitsGcd;
+    denominator = maxUnits / unitsGcd;
+  }
 
   return { numerator, denominator };
 };

@@ -1,7 +1,5 @@
-import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
@@ -22,7 +20,6 @@ describeWithFixture(
     let offerer: SignerWithAddress;
     let zone: SignerWithAddress;
     let fulfiller: SignerWithAddress;
-    let multicallProvider: providers.MulticallProvider;
 
     let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let fulfillAvailableOrdersSpy: sinon.SinonSpy; // eslint-disable-line no-undef
@@ -35,7 +32,6 @@ describeWithFixture(
 
     beforeEach(async () => {
       [offerer, zone, fulfiller] = await ethers.getSigners();
-      multicallProvider = new providers.MulticallProvider(ethers.provider);
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
       fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
@@ -86,7 +82,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -112,7 +108,7 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -136,10 +132,8 @@ describeWithFixture(
 
             await testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
 
             const { executeAllActions } = await seaport.createOrder(
@@ -156,7 +150,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -204,7 +198,7 @@ describeWithFixture(
               order,
               orderStatus,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -260,7 +254,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -327,7 +321,7 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -434,12 +428,12 @@ describeWithFixture(
                 testErc20.balanceOf(zone.address),
               ]);
             expect(finalFulfillerErc20Balance).to.eq(
-              initialFulfillerErc20Balance.add(
-                parseEther("20").sub(parseEther("0.5")), // 0.5 in fees
-              ),
+              initialFulfillerErc20Balance +
+                parseEther("20") -
+                parseEther("0.5"), // 0.5 in fees
             );
             expect(finalZoneErc20Balance).to.eq(
-              initialZoneErc20Balance.add(parseEther("0.5")),
+              initialZoneErc20Balance + parseEther("0.5"),
             );
 
             const [ownerOfNftId1, ownerOfNftId2] = await Promise.all([
@@ -497,7 +491,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -554,7 +548,7 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -587,7 +581,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -644,7 +638,7 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -668,10 +662,8 @@ describeWithFixture(
 
             await testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
 
             const { executeAllActions } = await seaport.createOrder(
@@ -684,7 +676,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -762,7 +754,7 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -819,7 +811,7 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 fulfiller.address,
-                multicallProvider,
+                ethers.provider,
               );
 
             const { actions: revertedActions } = await seaport.fulfillOrder({
@@ -909,7 +901,7 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: fulfiller.address,
-              multicallProvider,
+              provider: ethers.provider,
               fulfillReceipt: receipt,
             });
 
@@ -1000,10 +992,8 @@ describeWithFixture(
 
             await testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
 
             const { executeAllActions } = await seaport.createOrder(
@@ -1279,10 +1269,8 @@ describeWithFixture(
 
             await testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
 
             const { executeAllActions } = await seaport.createOrder(
@@ -1392,10 +1380,8 @@ describeWithFixture(
 
             await testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
 
             const { executeAllActions } = await seaport.createOrder(

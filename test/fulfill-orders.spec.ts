@@ -1,6 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
@@ -205,9 +204,7 @@ describeWithFixture(
             ].forEach(async (createOrderInput) => {
               await testErc20.mint(
                 fulfiller.address,
-                BigNumber.from(
-                  (createOrderInput.consideration[0] as CurrencyItem).amount,
-                ),
+                (createOrderInput.consideration[0] as CurrencyItem).amount,
               );
             });
           });
@@ -622,8 +619,8 @@ describeWithFixture(
               secondTestErc1155.balanceOf(fulfiller.address, nftId),
             ]);
 
-            expect(balances[0]).to.equal(BigNumber.from(10));
-            expect(balances[1]).to.equal(BigNumber.from(erc1155Amount));
+            expect(balances[0]).to.equal(10n);
+            expect(balances[1]).to.equal(BigInt(erc1155Amount));
 
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
@@ -660,9 +657,7 @@ describeWithFixture(
             ].forEach(async (createOrderInput) => {
               await testErc20.mint(
                 fulfiller.address,
-                BigNumber.from(
-                  (createOrderInput.consideration[0] as CurrencyItem).amount,
-                ),
+                (createOrderInput.consideration[0] as CurrencyItem).amount,
               );
             });
           });
@@ -738,8 +733,8 @@ describeWithFixture(
               secondTestErc1155.balanceOf(fulfiller.address, nftId),
             ]);
 
-            expect(balances[0]).to.equal(BigNumber.from(10));
-            expect(balances[1]).to.equal(BigNumber.from(erc1155Amount));
+            expect(balances[0]).to.equal(10n);
+            expect(balances[1]).to.equal(BigInt(erc1155Amount));
 
             expect(fulfillAvailableOrdersSpy).calledOnce;
           });
@@ -939,8 +934,8 @@ describeWithFixture(
             secondTestErc1155.balanceOf(secondOfferer.address, nftId),
           ]);
 
-          expect(balances[0]).to.equal(BigNumber.from(10));
-          expect(balances[1]).to.equal(BigNumber.from(erc1155Amount));
+          expect(balances[0]).to.equal(10n);
+          expect(balances[1]).to.equal(BigInt(erc1155Amount));
 
           expect(fulfillAvailableOrdersSpy).calledOnce;
         });

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "lib",
-    "target": "es6",
+    "target": "es2020",
     "lib": ["dom", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,

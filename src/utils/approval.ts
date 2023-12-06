@@ -1,5 +1,4 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, Contract, Signer } from "ethers";
+import { Contract, Signer, ethers } from "ethers";
 import { ERC20ABI } from "../abi/ERC20";
 import { ERC721ABI } from "../abi/ERC721";
 import { ItemType, MAX_INT } from "../constants";
@@ -13,25 +12,21 @@ export const approvedItemAmount = async (
   owner: string,
   item: Item,
   operator: string,
-  multicallProvider: multicallProviders.MulticallProvider,
+  provider: ethers.Provider,
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
     const contract = new Contract(
       item.token,
       ERC721ABI,
-      multicallProvider,
+      provider,
     ) as TestERC721;
     return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
       // Setting to the max int to consolidate types and simplify
-      isApprovedForAll ? MAX_INT : BigNumber.from(0),
+      isApprovedForAll ? MAX_INT : 0n,
     );
   } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(
-      item.token,
-      ERC20ABI,
-      multicallProvider,
-    ) as TestERC20;
+    const contract = new Contract(item.token, ERC20ABI, provider) as TestERC20;
 
     return contract.allowance(owner, operator);
   }

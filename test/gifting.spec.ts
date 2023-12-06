@@ -1,6 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT } from "../src/constants";
@@ -92,10 +91,8 @@ describeWithFixture(
             };
             testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
           });
 
@@ -226,10 +223,8 @@ describeWithFixture(
             };
             testErc20.mint(
               fulfiller.address,
-              BigNumber.from(
-                (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                  .amount,
-              ),
+              (standardCreateOrderInput.consideration[0] as CurrencyItem)
+                .amount,
             );
           });
 

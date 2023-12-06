@@ -28,7 +28,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     const considerationData: ConsiderationItem[] = [
       {
         itemType: ItemType.NATIVE,
-        token: ethers.constants.AddressZero,
+        token: ethers.ZeroAddress,
         startAmount: ethers.utils.parseEther("10").toString(),
         endAmount: ethers.utils.parseEther("10").toString(),
         recipient: offerer.address,
@@ -36,7 +36,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       },
       {
         itemType: ItemType.NATIVE,
-        token: ethers.constants.AddressZero,
+        token: ethers.ZeroAddress,
         startAmount: ethers.utils.parseEther("1").toString(),
         endAmount: ethers.utils.parseEther("1").toString(),
         recipient: zone.address,
@@ -48,7 +48,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
 
     const orderComponents = {
       offerer: offerer.address,
-      zone: ethers.constants.AddressZero,
+      zone: ethers.ZeroAddress,
       offer,
       consideration: considerationData,
       orderType: OrderType.FULL_OPEN,
@@ -56,7 +56,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       salt,
       startTime,
       endTime,
-      zoneHash: ethers.constants.HashZero,
+      zoneHash: ethers.ZeroHash,
       conduitKey: NO_CONDUIT,
       counter,
     };

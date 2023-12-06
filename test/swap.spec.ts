@@ -1,4 +1,3 @@
-import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
@@ -25,7 +24,6 @@ describeWithFixture(
     let offerer: SignerWithAddress;
     let zone: SignerWithAddress;
     let fulfiller: SignerWithAddress;
-    let multicallProvider: providers.MulticallProvider;
 
     let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let secondTestErc721: TestERC721;
@@ -38,7 +36,6 @@ describeWithFixture(
 
     beforeEach(async () => {
       [offerer, zone, fulfiller] = await ethers.getSigners();
-      multicallProvider = new providers.MulticallProvider(ethers.provider);
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
 
@@ -120,7 +117,7 @@ describeWithFixture(
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider,
+            ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -164,7 +161,7 @@ describeWithFixture(
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: fulfiller.address,
-          multicallProvider,
+          provider: ethers.provider,
           fulfillReceipt: receipt,
         });
 
@@ -254,7 +251,7 @@ describeWithFixture(
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider,
+            ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -298,7 +295,7 @@ describeWithFixture(
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: fulfiller.address,
-          multicallProvider,
+          provider: ethers.provider,
           fulfillReceipt: receipt,
         });
 
@@ -406,7 +403,7 @@ describeWithFixture(
           await getBalancesForFulfillOrder(
             order,
             fulfiller.address,
-            multicallProvider,
+            ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
@@ -470,7 +467,7 @@ describeWithFixture(
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: fulfiller.address,
-          multicallProvider,
+          provider: ethers.provider,
           fulfillReceipt: receipt,
         });
 

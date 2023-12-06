@@ -1,5 +1,4 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber } from "ethers";
+import { ethers } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
 import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
@@ -16,24 +15,24 @@ import {
 export type BalancesAndApprovals = {
   token: string;
   identifierOrCriteria: string;
-  balance: BigNumber;
-  approvedAmount: BigNumber;
+  balance: bigint;
+  approvedAmount: bigint;
   itemType: ItemType;
 }[];
 
 export type InsufficientBalances = {
   token: string;
   identifierOrCriteria: string;
-  requiredAmount: BigNumber;
-  amountHave: BigNumber;
+  requiredAmount: bigint;
+  amountHave: bigint;
   itemType: ItemType;
 }[];
 
 export type InsufficientApprovals = {
   token: string;
   identifierOrCriteria: string;
-  approvedAmount: BigNumber;
-  requiredApprovedAmount: BigNumber;
+  approvedAmount: bigint;
+  requiredApprovedAmount: bigint;
   operator: string;
   itemType: ItemType;
 }[];
@@ -67,33 +66,33 @@ export const getBalancesAndApprovals = async ({
   items,
   criterias,
   operator,
-  multicallProvider,
+  provider,
 }: {
   owner: string;
   items: Item[];
   criterias: InputCriteria[];
   operator: string;
-  multicallProvider: multicallProviders.MulticallProvider;
+  provider: ethers.Provider;
 }): Promise<BalancesAndApprovals> => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
 
   return Promise.all(
     items.map(async (item) => {
-      let approvedAmountPromise = Promise.resolve(BigNumber.from(0));
+      let approvedAmountPromise = Promise.resolve(0n);
 
       if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
         approvedAmountPromise = approvedItemAmount(
           owner,
           item,
           operator,
-          multicallProvider,
+          provider,
         );
       } else if (isErc20Item(item.itemType)) {
         approvedAmountPromise = approvedItemAmount(
           owner,
           item,
           operator,
-          multicallProvider,
+          provider,
         );
       }
       // If native token, we don't need to check for approvals
@@ -108,7 +107,7 @@ export const getBalancesAndApprovals = async ({
         balance: await balanceOf(
           owner,
           item,
-          multicallProvider,
+          provider,
           itemToCriteria.get(item),
         ),
         approvedAmount: await approvedAmountPromise,
@@ -425,9 +424,8 @@ const addToExistingBalances = ({
           balancesAndApprovalsAfterReceivingItems[
             balanceAndApprovalIndex
           ].balance =
-            balancesAndApprovalsAfterReceivingItems[
-              balanceAndApprovalIndex
-            ].balance.add(amount);
+            balancesAndApprovalsAfterReceivingItems[balanceAndApprovalIndex]
+              .balance + amount;
         },
       ),
   );

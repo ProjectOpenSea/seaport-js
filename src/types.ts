@@ -4,7 +4,6 @@ import type {
   Seaport as TypeChainSeaportContract,
 } from "./typechain-types/seaport_v1_4/contracts/Seaport";
 import {
-  BigNumber,
   BigNumberish,
   BytesLike,
   Contract,
@@ -101,8 +100,8 @@ export type Order = {
 };
 
 export type AdvancedOrder = Order & {
-  numerator: BigNumber;
-  denominator: BigNumber;
+  numerator: bigint;
+  denominator: bigint;
   extraData: string;
 };
 
@@ -180,8 +179,8 @@ export type InputCriteria = {
 export type OrderStatus = {
   isValidated: boolean;
   isCancelled: boolean;
-  totalFilled: BigNumber;
-  totalSize: BigNumber;
+  totalFilled: bigint;
+  totalSize: bigint;
 };
 
 export type OrderWithCounter = {
@@ -198,7 +197,7 @@ export type ContractMethodReturnType<
 export type TransactionMethods<T = unknown> = {
   buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
   callStatic: (overrides?: Overrides) => Promise<T>;
-  estimateGas: (overrides?: Overrides) => Promise<BigNumber>;
+  estimateGas: (overrides?: Overrides) => Promise<BigInt>;
   transact: (overrides?: Overrides) => Promise<ContractTransaction>;
 };
 
@@ -255,14 +254,14 @@ export type OrderUseCase<
   actions: T extends CreateOrderAction
     ? CreateOrderActions
     : T extends CreateBulkOrdersAction
-    ? CreateBulkOrdersActions
-    : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
+      ? CreateBulkOrdersActions
+      : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
   executeAllActions: () => Promise<
     T extends CreateOrderAction
       ? OrderWithCounter
       : T extends CreateBulkOrdersAction
-      ? OrderWithCounter[]
-      : ContractTransaction
+        ? OrderWithCounter[]
+        : ContractTransaction
   >;
 };
 
@@ -321,7 +320,7 @@ export type SeaportContract = TypeChainSeaportContract & {
       orders: OrderStruct[],
       fulfillments: MatchOrdersFulfillment[],
       overrides?: PayableOverrides & { from?: string | Promise<string> },
-    ): Promise<BigNumber>;
+    ): Promise<BigInt>;
   };
 
   populateTransaction: TypeChainSeaportContract["populateTransaction"] & {

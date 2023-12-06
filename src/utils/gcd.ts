@@ -1,23 +1,23 @@
-import { BigNumber, BigNumberish } from "ethers";
+import { BigNumberish } from "ethers";
 
-export const gcd = (a: BigNumberish, b: BigNumberish): BigNumber => {
-  const bnA = BigNumber.from(a);
-  const bnB = BigNumber.from(b);
+export const gcd = (a: BigNumberish, b: BigNumberish): bigint => {
+  const bnA = BigInt(a);
+  const bnB = BigInt(b);
 
-  if (bnA.eq(0)) {
+  if (bnA === 0n) {
     return bnB;
   }
 
-  return gcd(bnB.mod(a), bnA);
+  return gcd(bnB % bnA, bnA);
 };
 
 export const findGcd = (elements: BigNumberish[]) => {
-  let result = BigNumber.from(elements[0]);
+  let result = BigInt(elements[0]);
 
   for (let i = 1; i < elements.length; i++) {
     result = gcd(elements[i], result);
 
-    if (result.eq(1)) {
+    if (result === 1n) {
       return result;
     }
   }

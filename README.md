@@ -46,7 +46,7 @@ Instantiate your instance of seaport using your ethers provider:
 import { Seaport } from "@opensea/seaport-js";
 import { ethers } from "ethers";
 
-const provider = new ethers.providers.Web3Provider(window.ethereum);
+const provider = new ethers.BrowserProvider(window.ethereum);
 
 const seaport = new Seaport(provider);
 ```
@@ -57,7 +57,7 @@ const seaport = new Seaport(provider);
 import { Seaport } from "@opensea/seaport-js";
 import { ethers } from "ethers";
 
-const provider = new ethers.providers.JsonRpcProvider(
+const provider = new ethers.JsonRpcProvider(
   "https://<network>.alchemyapi.io/v2/YOUR-API-KEY",
 );
 
@@ -71,7 +71,7 @@ import { Seaport } from "@opensea/seaport-js";
 import { ethers } from "ethers";
 
 // Provider must be provided to the signer when supplying a custom signer
-const provider = new ethers.providers.JsonRpcProvider(
+const provider = new ethers.JsonRpcProvider(
   "https://<network>.alchemyapi.io/v2/YOUR-API-KEY",
 );
 

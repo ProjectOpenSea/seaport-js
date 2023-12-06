@@ -1,7 +1,5 @@
-import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, OrderType } from "../src/constants";
@@ -23,7 +21,6 @@ describeWithFixture(
     let offerer: SignerWithAddress;
     let zone: SignerWithAddress;
     let fulfiller: SignerWithAddress;
-    let multicallProvider: providers.MulticallProvider;
 
     let fulfillStandardOrderSpy: sinon.SinonSpy; // eslint-disable-line no-undef
     let standardCreateOrderInput: CreateOrderInput;
@@ -33,7 +30,6 @@ describeWithFixture(
 
     beforeEach(async () => {
       [offerer, zone, fulfiller] = await ethers.getSigners();
-      multicallProvider = new providers.MulticallProvider(ethers.provider);
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
 
@@ -95,7 +91,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -129,8 +125,8 @@ describeWithFixture(
             nftId,
           );
 
-          expect(offererErc1155Balance).eq(BigNumber.from(8));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(2));
+          expect(offererErc1155Balance).eq(8n);
+          expect(fulfillerErc1155Balance).eq(2n);
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -138,7 +134,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 
@@ -168,7 +164,9 @@ describeWithFixture(
           // calculate total price (price per unit * units for sale) and fees
           standardCreateOrderInput.consideration = [
             {
-              amount: parseEther(pricePerUnit).mul(unitsForSale).toString(),
+              amount: (
+                parseEther(pricePerUnit) * BigInt(unitsForSale)
+              ).toString(),
               recipient: offerer.address,
             },
           ];
@@ -214,8 +212,8 @@ describeWithFixture(
             nftId,
           );
 
-          expect(offererErc1155Balance).eq(BigNumber.from(8));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(2));
+          expect(offererErc1155Balance).eq(8n);
+          expect(fulfillerErc1155Balance).eq(2n);
         });
 
         it("ERC1155 <=> ERC20", async () => {
@@ -231,10 +229,7 @@ describeWithFixture(
 
           await testErc20.mint(
             fulfiller.address,
-            BigNumber.from(
-              (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                .amount,
-            ),
+            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
           );
 
           const { executeAllActions } = await seaport.createOrder(
@@ -253,7 +248,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -307,8 +302,8 @@ describeWithFixture(
             nftId,
           );
 
-          expect(offererErc1155Balance).eq(BigNumber.from(8));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(2));
+          expect(offererErc1155Balance).eq(8n);
+          expect(fulfillerErc1155Balance).eq(2n);
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -316,7 +311,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 
@@ -347,7 +342,9 @@ describeWithFixture(
           standardCreateOrderInput.consideration = [
             {
               // USDC (ERC20 w/ 6 decimals)
-              amount: parseUnits(pricePerUnit, 6).mul(unitsForSale).toString(),
+              amount: (
+                parseUnits(pricePerUnit, 6) * BigInt(unitsForSale)
+              ).toString(),
               recipient: offerer.address,
               token: testErc20USDC.address,
             },
@@ -358,10 +355,10 @@ describeWithFixture(
 
           await testErc20USDC.mint(
             fulfiller.address,
-            BigNumber.from(
+            BigInt(
               (standardCreateOrderInput.consideration[0] as CurrencyItem)
                 .amount,
-            ).mul("2"),
+            ) * 2n,
           );
 
           const { executeAllActions } = await seaport.createOrder(
@@ -380,7 +377,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -434,8 +431,8 @@ describeWithFixture(
             nftId,
           );
 
-          expect(offererErc1155Balance).eq(BigNumber.from(8));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(2));
+          expect(offererErc1155Balance).eq(8n);
+          expect(fulfillerErc1155Balance).eq(2n);
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -443,7 +440,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 
@@ -503,7 +500,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -572,7 +569,7 @@ describeWithFixture(
             orderStatus,
             unitsToFill: 2,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 
@@ -586,8 +583,8 @@ describeWithFixture(
             nftId,
           );
 
-          expect(offererErc1155Balance).eq(BigNumber.from(2));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(8));
+          expect(offererErc1155Balance).eq(2n);
+          expect(fulfillerErc1155Balance).eq(8n);
 
           // Double check nft balances
           expect(fulfillStandardOrderSpy).calledOnce;
@@ -651,7 +648,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -693,10 +690,10 @@ describeWithFixture(
           const fulfillerSecondErc1155Balance =
             await secondTestErc1155.balanceOf(fulfiller.address, nftId);
 
-          expect(offererErc1155Balance).eq(BigNumber.from(6));
-          expect(offererSecondErc1155Balance).eq(BigNumber.from(3));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(4));
-          expect(fulfillerSecondErc1155Balance).eq(BigNumber.from(2));
+          expect(offererErc1155Balance).eq(6n);
+          expect(offererSecondErc1155Balance).eq(3n);
+          expect(fulfillerErc1155Balance).eq(4n);
+          expect(fulfillerSecondErc1155Balance).eq(2n);
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -704,7 +701,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 
@@ -724,10 +721,7 @@ describeWithFixture(
 
           await testErc20.mint(
             fulfiller.address,
-            BigNumber.from(
-              (standardCreateOrderInput.consideration[0] as CurrencyItem)
-                .amount,
-            ),
+            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
           );
 
           const { executeAllActions } = await seaport.createOrder(
@@ -746,7 +740,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -808,10 +802,10 @@ describeWithFixture(
           const fulfillerSecondErc1155Balance =
             await secondTestErc1155.balanceOf(fulfiller.address, nftId);
 
-          expect(offererErc1155Balance).eq(BigNumber.from(6));
-          expect(offererSecondErc1155Balance).eq(BigNumber.from(3));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(4));
-          expect(fulfillerSecondErc1155Balance).eq(BigNumber.from(2));
+          expect(offererErc1155Balance).eq(6n);
+          expect(offererSecondErc1155Balance).eq(3n);
+          expect(fulfillerErc1155Balance).eq(4n);
+          expect(fulfillerSecondErc1155Balance).eq(2n);
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -819,7 +813,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 
@@ -887,7 +881,7 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               fulfiller.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -988,10 +982,10 @@ describeWithFixture(
           const fulfillerSecondErc1155Balance =
             await secondTestErc1155.balanceOf(fulfiller.address, nftId);
 
-          expect(offererErc1155Balance).eq(BigNumber.from(4));
-          expect(offererSecondErc1155Balance).eq(BigNumber.from(2));
-          expect(fulfillerErc1155Balance).eq(BigNumber.from(6));
-          expect(fulfillerSecondErc1155Balance).eq(BigNumber.from(3));
+          expect(offererErc1155Balance).eq(4n);
+          expect(offererSecondErc1155Balance).eq(2n);
+          expect(fulfillerErc1155Balance).eq(6n);
+          expect(fulfillerSecondErc1155Balance).eq(3n);
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -999,7 +993,7 @@ describeWithFixture(
             orderStatus,
             unitsToFill: 2,
             fulfillerAddress: fulfiller.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
 

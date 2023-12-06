@@ -1,4 +1,3 @@
-import { BigNumber } from "ethers";
 import {
   MatchOrdersFulfillment,
   Order,
@@ -31,12 +30,12 @@ export const constructPrivateListingCounterOrder = (
 
   const { aggregatedStartAmount, aggregatedEndAmount } = paymentItems.reduce(
     ({ aggregatedStartAmount, aggregatedEndAmount }, item) => ({
-      aggregatedStartAmount: aggregatedStartAmount.add(item.startAmount),
-      aggregatedEndAmount: aggregatedEndAmount.add(item.endAmount),
+      aggregatedStartAmount: aggregatedStartAmount + BigInt(item.startAmount),
+      aggregatedEndAmount: aggregatedEndAmount + BigInt(item.endAmount),
     }),
     {
-      aggregatedStartAmount: BigNumber.from(0),
-      aggregatedEndAmount: BigNumber.from(0),
+      aggregatedStartAmount: 0n,
+      aggregatedEndAmount: 0n,
     },
   );
 

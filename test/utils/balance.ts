@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish, ContractReceipt, providers } from "ethers";
+import { BigNumberish, ContractReceipt, ethers, providers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { Item, Order, OrderStatus } from "../../src/types";
 import { balanceOf } from "../../src/utils/balance";
@@ -7,7 +7,6 @@ import {
   getPresentItemAmount,
   TimeBasedItemParams,
 } from "../../src/utils/item";
-import { providers as multicallProviders } from "@0xsequence/multicall";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import {
@@ -29,7 +28,7 @@ export const setBalance = async (
 export const getBalancesForFulfillOrder = async (
   order: Order,
   fulfillerAddress: string,
-  multicallProvider: multicallProviders.MulticallProvider,
+  provider: ethers.Provider,
 ) => {
   const { offer, consideration, offerer } = order.parameters;
 
@@ -43,7 +42,7 @@ export const getBalancesForFulfillOrder = async (
 
   const ownerToTokenToIdentifierBalances: Record<
     string,
-    Record<string, Record<string, { balance: BigNumber; item: Item }>>
+    Record<string, Record<string, { balance: bigint; item: Item }>>
   > = {};
 
   relevantAddresses.forEach((address) => {
@@ -58,7 +57,7 @@ export const getBalancesForFulfillOrder = async (
         [item.token]: {
           [item.identifierOrCriteria]: {
             item,
-            balance: BigNumber.from(0),
+            balance: 0n,
           },
         },
       };
@@ -73,7 +72,7 @@ export const getBalancesForFulfillOrder = async (
             item.identifierOrCriteria
           ] = {
             item,
-            balance: await balanceOf(address, item, multicallProvider),
+            balance: await balanceOf(address, item, ethers.provider),
           };
         }),
       ]),
@@ -90,23 +89,23 @@ export const verifyBalancesAfterFulfill = async ({
   orderStatus,
   fulfillReceipt,
   fulfillerAddress,
-  multicallProvider,
+  provider,
   timeBasedItemParams,
 }: {
   ownerToTokenToIdentifierBalances: Record<
     string,
-    Record<string, Record<string, { balance: BigNumber; item: Item }>>
+    Record<string, Record<string, { balance: bigint; item: Item }>>
   >;
   order: Order;
   orderStatus?: OrderStatus;
   unitsToFill?: BigNumberish;
   fulfillReceipt: ContractReceipt;
   fulfillerAddress: string;
-  multicallProvider: multicallProviders.MulticallProvider;
+  provider: ethers.Provider;
   timeBasedItemParams?: TimeBasedItemParams;
 }) => {
-  const totalFilled = orderStatus?.totalFilled ?? BigNumber.from(0);
-  const totalSize = orderStatus?.totalSize ?? BigNumber.from(0);
+  const totalFilled = orderStatus?.totalFilled ?? 0n;
+  const totalSize = orderStatus?.totalSize ?? 0n;
 
   const orderWithAdjustedFills = unitsToFill
     ? mapOrderAmountsFromUnitsToFill(order, {
@@ -137,7 +136,7 @@ export const verifyBalancesAfterFulfill = async ({
       balance:
         ownerToTokenToIdentifierBalances[offerer][item.token][
           item.identifierOrCriteria
-        ].balance.sub(exchangedAmount),
+        ].balance - exchangedAmount,
     };
 
     ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
@@ -147,7 +146,7 @@ export const verifyBalancesAfterFulfill = async ({
       balance:
         ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
           item.identifierOrCriteria
-        ].balance.add(exchangedAmount),
+        ].balance + exchangedAmount,
     };
   });
 
@@ -177,28 +176,23 @@ export const verifyBalancesAfterFulfill = async ({
       balance:
         ownerToTokenToIdentifierBalances[item.recipient][item.token][
           item.identifierOrCriteria
-        ].balance.add(exchangedAmount),
+        ].balance + exchangedAmount,
     };
   });
 
   // Take into account gas costs
-  if (
-    ownerToTokenToIdentifierBalances[fulfillerAddress][
-      ethers.constants.AddressZero
-    ]
-  ) {
-    ownerToTokenToIdentifierBalances[fulfillerAddress][
-      ethers.constants.AddressZero
-    ][0] = {
-      ...ownerToTokenToIdentifierBalances[fulfillerAddress][
-        ethers.constants.AddressZero
-      ][0],
-      balance: ownerToTokenToIdentifierBalances[fulfillerAddress][
-        ethers.constants.AddressZero
-      ][0].balance.sub(
-        fulfillReceipt.gasUsed.mul(fulfillReceipt.effectiveGasPrice),
-      ),
-    };
+  if (ownerToTokenToIdentifierBalances[fulfillerAddress][ethers.ZeroAddress]) {
+    ownerToTokenToIdentifierBalances[fulfillerAddress][ethers.ZeroAddress][0] =
+      {
+        ...ownerToTokenToIdentifierBalances[fulfillerAddress][
+          ethers.ZeroAddress
+        ][0],
+        balance:
+          ownerToTokenToIdentifierBalances[fulfillerAddress][
+            ethers.ZeroAddress
+          ][0].balance -
+          fulfillReceipt.gasUsed * fulfillReceipt.effectiveGasPrice,
+      };
   }
 
   await Promise.all([
@@ -213,7 +207,7 @@ export const verifyBalancesAfterFulfill = async ({
                     const actualBalance = await balanceOf(
                       owner,
                       item,
-                      multicallProvider,
+                      ethers.provider,
                     );
 
                     expect(balance).equal(actualBalance);

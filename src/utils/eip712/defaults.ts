@@ -1,5 +1,5 @@
 import { Logger } from "@ethersproject/logger";
-import { hexZeroPad } from "ethers/lib/utils";
+import { ethers } from "ethers";
 
 import type { TypedDataField } from "@ethersproject/abstract-signer";
 
@@ -7,7 +7,7 @@ const logger = new Logger("defaults");
 
 const baseDefaults: Record<string, any> = {
   integer: 0,
-  address: hexZeroPad("0x", 20),
+  address: ethers.zeroPadValue("0x", 20),
   bool: false,
   bytes: "0x",
   string: "",
@@ -19,8 +19,7 @@ const isNullish = (value: any): boolean => {
   return (
     value !== undefined &&
     value !== null &&
-    ((["string", "number"].includes(typeof value) &&
-      BigInt(value) === BigInt(0)) ||
+    ((["string", "number"].includes(typeof value) && BigInt(value) === 0n) ||
       (Array.isArray(value) && value.every(isNullish)) ||
       (typeof value === "object" && Object.values(value).every(isNullish)) ||
       (typeof value === "boolean" && value === false))

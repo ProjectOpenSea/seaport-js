@@ -1,4 +1,4 @@
-import { BigNumber, constants } from "ethers";
+import { ethers } from "ethers";
 
 export const SEAPORT_CONTRACT_NAME = "Seaport";
 export const SEAPORT_CONTRACT_VERSION_V1_4 = "1.4";
@@ -105,11 +105,11 @@ export enum BasicOrderRouteType {
   ERC1155_TO_ERC20,
 }
 
-export const MAX_INT = BigNumber.from(
+export const MAX_INT = BigInt(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 );
 export const ONE_HUNDRED_PERCENT_BP = 10_000;
-export const NO_CONDUIT = constants.HashZero;
+export const NO_CONDUIT = ethers.ZeroHash;
 
 // Supply here any known conduit keys as well as their conduits
 export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {

@@ -1,6 +1,4 @@
-import { providers } from "@0xsequence/multicall";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 
@@ -23,15 +21,12 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
   let zone: SignerWithAddress;
   let privateListingRecipient: SignerWithAddress;
   let privateListingCreateOrderInput: CreateOrderInput;
-  let multicallProvider: providers.MulticallProvider;
   const nftId = "1";
   const erc1155Amount = "3";
   const erc1155ListingQuantity = "1";
 
   beforeEach(async () => {
     [offerer, zone, privateListingRecipient] = await ethers.getSigners();
-
-    multicallProvider = new providers.MulticallProvider(ethers.provider);
   });
 
   describe("A single ERC721 is to be transferred", () => {
@@ -87,7 +82,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const transaction = await seaport
@@ -107,7 +102,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: privateListingRecipient.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
         });
@@ -130,10 +125,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           };
           await testErc20.mint(
             privateListingRecipient.address,
-            BigNumber.from(
-              (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
-                .amount,
-            ),
+            (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
+              .amount,
           );
         });
 
@@ -156,7 +149,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           await getTransactionMethods(
@@ -185,7 +178,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: privateListingRecipient.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
         });
@@ -248,7 +241,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           const transaction = await seaport
@@ -268,7 +261,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: privateListingRecipient.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
         });
@@ -291,10 +284,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           };
           await testErc20.mint(
             privateListingRecipient.address,
-            BigNumber.from(
-              (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
-                .amount,
-            ),
+            (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
+              .amount,
           );
         });
 
@@ -317,7 +308,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               privateListingRecipient.address,
-              multicallProvider,
+              ethers.provider,
             );
 
           await getTransactionMethods(
@@ -346,7 +337,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: privateListingRecipient.address,
-            multicallProvider,
+            provider: ethers.provider,
             fulfillReceipt: receipt,
           });
         });
