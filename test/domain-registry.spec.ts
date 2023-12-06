@@ -30,27 +30,33 @@ describeWithFixture(
 
       const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
       const setDomainTxWithOverrides = await seaport
-        .setDomain(expectedExampleDomainArray[0], user.address, overrides)
+        .setDomain(
+          expectedExampleDomainArray[0],
+          await user.getAddress(),
+          overrides,
+        )
         .transact();
       expect(setDomainTxWithOverrides.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
 
       await seaport
-        .setDomain(expectedExampleDomainArray[1], user.address)
+        .setDomain(expectedExampleDomainArray[1], await user.getAddress())
         .transact();
 
       await seaport
-        .setDomain(expectedExampleDomainArray[2], user.address)
+        .setDomain(expectedExampleDomainArray[2], await user.getAddress())
         .transact();
 
       await seaport
-        .setDomain(expectedExampleDomainArray[3], user.address)
+        .setDomain(expectedExampleDomainArray[3], await user.getAddress())
         .transact();
     });
 
     it("Should return the proper domain for a given tag", async () => {
       const { seaport } = fixture;
 
-      await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
+      await seaport
+        .setDomain(OPENSEA_DOMAIN, await user.getAddress())
+        .transact();
 
       expect(await seaport.getDomain(`0x${OPENSEA_DOMAIN_TAG}`, 0)).to.eq(
         OPENSEA_DOMAIN,

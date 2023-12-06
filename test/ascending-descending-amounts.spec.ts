@@ -48,7 +48,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { testErc721 } = fixture;
 
         // Mint ERC721 to offerer
-        await testErc721.mint(offerer.address, nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId);
 
         startTime = (await ethers.provider.getBlock(
           "latest",
@@ -72,11 +72,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             {
               amount: parseEther("10").toString(),
               endAmount: parseEther("20").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         };
       });
 
@@ -94,7 +94,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
@@ -108,7 +108,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -134,9 +134,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -145,7 +145,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           },
         });
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
 
       it("ERC721 <=> ERC20", async () => {
@@ -163,7 +163,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         };
 
         await testErc20.mint(
-          fulfiller.address,
+          await fulfiller.getAddress(),
           (standardCreateOrderInput.consideration[0] as CurrencyItem)
             .endAmount as string,
         );
@@ -187,13 +187,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -214,7 +214,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(
           await testErc20.allowance(
-            fulfiller.address,
+            await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
@@ -239,9 +239,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -250,7 +250,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           },
         });
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
     });
 
@@ -259,7 +259,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { testErc721 } = fixture;
 
         // Mint 10 ERC1155s to offerer
-        await testErc721.mint(offerer.address, nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId);
 
         startTime = (await ethers.provider.getBlock(
           "latest",
@@ -283,11 +283,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             {
               amount: parseEther("20").toString(),
               endAmount: parseEther("10").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         };
       });
 
@@ -305,7 +305,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
@@ -319,7 +319,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -345,9 +345,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -356,7 +356,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           },
         });
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
 
       it("ERC721 <=> ERC20", async () => {
@@ -374,7 +374,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         };
 
         await testErc20.mint(
-          fulfiller.address,
+          await fulfiller.getAddress(),
           (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
         );
 
@@ -397,13 +397,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -424,7 +424,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(
           await testErc20.allowance(
-            fulfiller.address,
+            await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
@@ -449,9 +449,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -460,7 +460,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           },
         });
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
     });
   });
@@ -471,7 +471,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { testErc1155 } = fixture;
 
         // Mint 5 ERC1155s to offerer
-        await testErc1155.mint(offerer.address, nftId, erc1155Amount);
+        await testErc1155.mint(
+          await offerer.getAddress(),
+          nftId,
+          erc1155Amount,
+        );
 
         startTime = (await ethers.provider.getBlock(
           "latest",
@@ -497,11 +501,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             {
               amount: parseEther("10").toString(),
               endAmount: parseEther("20").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         };
       });
 
@@ -519,7 +523,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
@@ -533,7 +537,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -559,9 +563,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -573,14 +577,14 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Double check nft balances
         const [offererErc1155Balance, fulfillerErc1155Balance] =
           await Promise.all([
-            testErc1155.balanceOf(offerer.address, nftId),
-            testErc1155.balanceOf(fulfiller.address, nftId),
+            testErc1155.balanceOf(await offerer.getAddress(), nftId),
+            testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
           ]);
 
         expect(offererErc1155Balance).eq(2n);
         expect(fulfillerErc1155Balance).eq(3n);
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
 
       it("ERC1155 <=> ERC20", async () => {
@@ -589,15 +593,18 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map((item) => ({
-            ...item,
-            token: await testErc20.getAddress(),
-          })),
+          consideration: standardCreateOrderInput.consideration.map(
+            async (item) => ({
+              ...item,
+              token: await testErc20.getAddress(),
+            }),
+          ),
         };
 
         await testErc20.mint(
-          fulfiller.address,
-          (standardCreateOrderInput.consideration[0] as CurrencyItem).endAmount,
+          await fulfiller.getAddress(),
+          (standardCreateOrderInput.consideration[0] as CurrencyItem)
+            .endAmount as string,
         );
 
         const { executeAllActions } = await seaport.createOrder(
@@ -619,13 +626,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -646,7 +653,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(
           await testErc20.allowance(
-            fulfiller.address,
+            await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
@@ -671,9 +678,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -685,14 +692,14 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Double check nft balances
         const [offererErc1155Balance, fulfillerErc1155Balance] =
           await Promise.all([
-            testErc1155.balanceOf(offerer.address, nftId),
-            testErc1155.balanceOf(fulfiller.address, nftId),
+            testErc1155.balanceOf(await offerer.getAddress(), nftId),
+            testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
           ]);
 
         expect(offererErc1155Balance).eq(2n);
         expect(fulfillerErc1155Balance).eq(3n);
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
     });
 
@@ -701,7 +708,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { testErc1155 } = fixture;
 
         // Mint 5 ERC1155s to offerer
-        await testErc1155.mint(offerer.address, nftId, erc1155Amount);
+        await testErc1155.mint(
+          await offerer.getAddress(),
+          nftId,
+          erc1155Amount,
+        );
 
         startTime = (await ethers.provider.getBlock(
           "latest",
@@ -727,11 +738,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
             {
               amount: parseEther("20").toString(),
               endAmount: parseEther("10").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         };
       });
 
@@ -749,7 +760,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
@@ -763,7 +774,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -789,9 +800,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -803,14 +814,14 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Double check nft balances
         const [offererErc1155Balance, fulfillerErc1155Balance] =
           await Promise.all([
-            testErc1155.balanceOf(offerer.address, nftId),
-            testErc1155.balanceOf(fulfiller.address, nftId),
+            testErc1155.balanceOf(await offerer.getAddress(), nftId),
+            testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
           ]);
 
         expect(offererErc1155Balance).eq(3n);
         expect(fulfillerErc1155Balance).eq(2n);
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
 
       it("ERC1155 <=> ERC20", async () => {
@@ -819,14 +830,16 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Use ERC20 instead of eth
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map((item) => ({
-            ...item,
-            token: await testErc20.getAddress(),
-          })),
+          consideration: standardCreateOrderInput.consideration.map(
+            async (item) => ({
+              ...item,
+              token: await testErc20.getAddress(),
+            }),
+          ),
         };
 
         await testErc20.mint(
-          fulfiller.address,
+          await fulfiller.getAddress(),
           (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
         );
 
@@ -849,13 +862,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const ownerToTokenToIdentifierBalances =
           await getBalancesForFulfillOrder(
             order,
-            fulfiller.address,
+            await fulfiller.getAddress(),
             ethers.provider,
           );
 
         const { actions } = await seaport.fulfillOrder({
           order,
-          accountAddress: fulfiller.address,
+          accountAddress: await fulfiller.getAddress(),
           domain: GEM_DOMAIN,
         });
 
@@ -876,7 +889,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
 
         expect(
           await testErc20.allowance(
-            fulfiller.address,
+            await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
           ),
         ).to.equal(MAX_INT);
@@ -901,9 +914,9 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await verifyBalancesAfterFulfill({
           ownerToTokenToIdentifierBalances,
           order,
-          fulfillerAddress: fulfiller.address,
+          fulfillerAddress: await fulfiller.getAddress(),
           provider: ethers.provider,
-          fulfillReceipt: receipt,
+          fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
             endTime,
@@ -915,14 +928,14 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         // Double check nft balances
         const [offererErc1155Balance, fulfillerErc1155Balance] =
           await Promise.all([
-            testErc1155.balanceOf(offerer.address, nftId),
-            testErc1155.balanceOf(fulfiller.address, nftId),
+            testErc1155.balanceOf(await offerer.getAddress(), nftId),
+            testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
           ]);
 
         expect(offererErc1155Balance).eq(3n);
         expect(fulfillerErc1155Balance).eq(2n);
 
-        expect(fulfillStandardOrderSpy).calledOnce;
+        expect(fulfillStandardOrderSpy.calledOnce);
       });
     });
   });

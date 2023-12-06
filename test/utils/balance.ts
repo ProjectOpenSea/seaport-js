@@ -1,4 +1,4 @@
-import { BigNumberish, ContractTransactionReceipt, ethers, toBeHex } from "ethers";
+import { BigNumberish, ethers, toBeHex, TransactionReceipt } from "ethers";
 import { parseEther } from "ethers";
 import { Item, Order, OrderStatus } from "../../src/types";
 import { balanceOf } from "../../src/utils/balance";
@@ -98,7 +98,7 @@ export const verifyBalancesAfterFulfill = async ({
   order: Order;
   orderStatus?: OrderStatus;
   unitsToFill?: BigNumberish;
-  fulfillReceipt: ContractTransactionReceipt;
+  fulfillReceipt: TransactionReceipt;
   fulfillerAddress: string;
   provider: ethers.Provider;
   timeBasedItemParams?: TimeBasedItemParams;

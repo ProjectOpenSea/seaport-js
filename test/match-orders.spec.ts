@@ -33,7 +33,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
       beforeEach(async () => {
         const { testErc721 } = fixture;
 
-        await testErc721.mint(offerer.address, nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId);
 
         privateListingCreateOrderInput = {
           startTime: "0",
@@ -47,17 +47,17 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           consideration: [
             {
               amount: parseEther("10").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
             {
               itemType: ItemType.ERC721,
               token: await testErc721.getAddress(),
               identifier: nftId,
-              recipient: privateListingRecipient.address,
+              recipient: await privateListingRecipient.getAddress(),
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         };
       });
 
@@ -73,14 +73,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address,
+            await privateListingRecipient.getAddress(),
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              privateListingRecipient.address,
+              await privateListingRecipient.getAddress(),
               ethers.provider,
             );
 
@@ -91,7 +91,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               overrides: {
                 value: counterOrder.parameters.offer[0].startAmount,
               },
-              accountAddress: privateListingRecipient.address,
+              accountAddress: await privateListingRecipient.getAddress(),
             })
             .send();
 
@@ -100,9 +100,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: privateListingRecipient.address,
+            fulfillerAddress: await privateListingRecipient.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
         });
       });
@@ -123,7 +123,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ],
           };
           await testErc20.mint(
-            privateListingRecipient.address,
+            await privateListingRecipient.getAddress(),
             (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
               .amount,
           );
@@ -140,14 +140,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address,
+            await privateListingRecipient.getAddress(),
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              privateListingRecipient.address,
+              await privateListingRecipient.getAddress(),
               ethers.provider,
             );
 
@@ -158,7 +158,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           ).transact();
           expect(
             await testErc20.allowance(
-              privateListingRecipient.address,
+              await privateListingRecipient.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.equal(MAX_INT);
@@ -167,7 +167,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             .matchOrders({
               orders: [order, counterOrder],
               fulfillments,
-              accountAddress: privateListingRecipient.address,
+              accountAddress: await privateListingRecipient.getAddress(),
             })
             .transact();
 
@@ -176,9 +176,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: privateListingRecipient.address,
+            fulfillerAddress: await privateListingRecipient.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
         });
       });
@@ -190,7 +190,11 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
       beforeEach(async () => {
         const { testErc1155 } = fixture;
 
-        await testErc1155.mint(offerer.address, nftId, erc1155Amount);
+        await testErc1155.mint(
+          await offerer.getAddress(),
+          nftId,
+          erc1155Amount,
+        );
 
         privateListingCreateOrderInput = {
           startTime: "0",
@@ -205,18 +209,18 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           consideration: [
             {
               amount: parseEther("10").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
             {
               itemType: ItemType.ERC1155,
               token: await testErc1155.getAddress(),
               identifier: nftId,
-              recipient: privateListingRecipient.address,
+              recipient: await privateListingRecipient.getAddress(),
               amount: erc1155ListingQuantity,
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         };
       });
 
@@ -232,14 +236,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address,
+            await privateListingRecipient.getAddress(),
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              privateListingRecipient.address,
+              await privateListingRecipient.getAddress(),
               ethers.provider,
             );
 
@@ -250,7 +254,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               overrides: {
                 value: counterOrder.parameters.offer[0].startAmount,
               },
-              accountAddress: privateListingRecipient.address,
+              accountAddress: await privateListingRecipient.getAddress(),
             })
             .transact();
 
@@ -259,9 +263,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: privateListingRecipient.address,
+            fulfillerAddress: await privateListingRecipient.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
         });
       });
@@ -282,7 +286,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ],
           };
           await testErc20.mint(
-            privateListingRecipient.address,
+            await privateListingRecipient.getAddress(),
             (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
               .amount,
           );
@@ -299,14 +303,14 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            privateListingRecipient.address,
+            await privateListingRecipient.getAddress(),
           );
           const fulfillments = getPrivateListingFulfillments(order);
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              privateListingRecipient.address,
+              await privateListingRecipient.getAddress(),
               ethers.provider,
             );
 
@@ -317,7 +321,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           ).transact();
           expect(
             await testErc20.allowance(
-              privateListingRecipient.address,
+              await privateListingRecipient.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.equal(MAX_INT);
@@ -326,7 +330,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             .matchOrders({
               orders: [order, counterOrder],
               fulfillments,
-              accountAddress: privateListingRecipient.address,
+              accountAddress: await privateListingRecipient.getAddress(),
             })
             .transact();
 
@@ -335,9 +339,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: privateListingRecipient.address,
+            fulfillerAddress: await privateListingRecipient.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
         });
       });

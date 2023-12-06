@@ -21,8 +21,8 @@ describeWithFixture(
     let zone: Signer;
     let fulfiller: Signer;
     let standardCreateOrderInput: CreateOrderInput;
-    let fulfillBasicOrderSpy: SinonSpy
-    let fulfillStandardOrderSpy: SinonSpy
+    let fulfillBasicOrderSpy: SinonSpy;
+    let fulfillStandardOrderSpy: SinonSpy;
     const nftId = "1";
     const erc1155Amount = "3";
 
@@ -43,7 +43,7 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc721 } = fixture;
 
-          await testErc721.mint(offerer.address, nftId);
+          await testErc721.mint(await offerer.getAddress(), nftId);
 
           standardCreateOrderInput = {
             startTime: "0",
@@ -57,11 +57,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -78,7 +78,7 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
@@ -90,7 +90,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -106,11 +106,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
 
           it("ERC721 <=> ETH (already validated order)", async () => {
@@ -126,7 +126,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -137,12 +137,14 @@ describeWithFixture(
               action.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
-            await seaport.validate([order], offerer.address).transact();
+            await seaport
+              .validate([order], await offerer.getAddress())
+              .transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
@@ -153,27 +155,30 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
         });
 
         describe("with ERC20", () => {
-          beforeEach(() => {
+          beforeEach(async () => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
             testErc20.mint(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               (standardCreateOrderInput.consideration[0] as CurrencyItem)
                 .amount,
             );
@@ -191,13 +196,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
               overrides: { gasLimit: OVERRIDE_GAS_LIMIT },
             });
@@ -217,7 +222,7 @@ describeWithFixture(
 
             expect(
               await testErc20.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -237,11 +242,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
             expect(transaction.gasLimit).equal(OVERRIDE_GAS_LIMIT);
           });
 
@@ -260,13 +265,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const revertedUseCase = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -287,7 +292,7 @@ describeWithFixture(
 
             expect(
               await testErc20.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -303,7 +308,9 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
-            await seaport.validate([order], offerer.address).transact();
+            await seaport
+              .validate([order], await offerer.getAddress())
+              .transact();
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
@@ -313,11 +320,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
         });
       });
@@ -326,8 +333,11 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc721, testErc20 } = fixture;
 
-          await testErc721.mint(fulfiller.address, nftId);
-          await testErc20.mint(offerer.address, parseEther("10").toString());
+          await testErc721.mint(await fulfiller.getAddress(), nftId);
+          await testErc20.mint(
+            await offerer.getAddress(),
+            parseEther("10").toString(),
+          );
 
           standardCreateOrderInput = {
             offer: [
@@ -341,11 +351,11 @@ describeWithFixture(
                 itemType: ItemType.ERC721,
                 token: await testErc721.getAddress(),
                 identifier: nftId,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -354,7 +364,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address,
+            await offerer.getAddress(),
           );
 
           const order = await executeAllActions();
@@ -362,13 +372,13 @@ describeWithFixture(
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              fulfiller.address,
+              await fulfiller.getAddress(),
               ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
             order,
-            accountAddress: fulfiller.address,
+            accountAddress: await fulfiller.getAddress(),
             domain: OPENSEA_DOMAIN,
           });
 
@@ -387,7 +397,7 @@ describeWithFixture(
 
           expect(
             await testErc721.isApprovedForAll(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.be.true;
@@ -406,11 +416,11 @@ describeWithFixture(
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: fulfiller.address,
+            fulfillerAddress: await fulfiller.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
-          expect(fulfillBasicOrderSpy).calledOnce;
+          expect(fulfillBasicOrderSpy.calledOnce);
         });
       });
     });
@@ -420,7 +430,11 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
-          await testErc1155.mint(offerer.address, nftId, erc1155Amount);
+          await testErc1155.mint(
+            await offerer.getAddress(),
+            nftId,
+            erc1155Amount,
+          );
 
           standardCreateOrderInput = {
             offer: [
@@ -434,11 +448,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -448,7 +462,7 @@ describeWithFixture(
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
-              offerer.address,
+              await offerer.getAddress(),
             );
 
             const order = await executeAllActions();
@@ -456,13 +470,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -481,11 +495,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
 
           it("ERC1155 <=> ETH (already validated order)", async () => {
@@ -501,7 +515,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -512,12 +526,14 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
-            await seaport.validate([order], offerer.address).transact();
+            await seaport
+              .validate([order], await offerer.getAddress())
+              .transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
@@ -534,27 +550,30 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
         });
 
         describe("with ERC20", () => {
-          beforeEach(() => {
+          beforeEach(async () => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
             testErc20.mint(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               (standardCreateOrderInput.consideration[0] as CurrencyItem)
                 .amount,
             );
@@ -572,13 +591,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -597,7 +616,7 @@ describeWithFixture(
 
             expect(
               await testErc20.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -617,11 +636,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
 
           it("ERC1155 <=> ERC20 (already validated order)", async () => {
@@ -639,13 +658,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -664,7 +683,7 @@ describeWithFixture(
 
             expect(
               await testErc20.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -675,7 +694,9 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
-            await seaport.validate([order], offerer.address).transact();
+            await seaport
+              .validate([order], await offerer.getAddress())
+              .transact();
 
             expect(fulfillAction).to.be.deep.equal({
               type: "exchange",
@@ -690,11 +711,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillBasicOrderSpy).calledOnce;
+            expect(fulfillBasicOrderSpy.calledOnce);
           });
         });
       });
@@ -703,13 +724,20 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc1155, seaportContract, testErc20 } = fixture;
 
-          await testErc1155.mint(fulfiller.address, nftId, erc1155Amount);
-          await testErc20.mint(offerer.address, parseEther("10").toString());
+          await testErc1155.mint(
+            await fulfiller.getAddress(),
+            nftId,
+            erc1155Amount,
+          );
+          await testErc20.mint(
+            await offerer.getAddress(),
+            parseEther("10").toString(),
+          );
 
           // Approving offerer amount for convenience
           await testErc20
             .connect(offerer)
-            .approve(seaportContract.address, MAX_INT);
+            .approve(await seaportContract.getAddress(), MAX_INT);
 
           standardCreateOrderInput = {
             offer: [
@@ -723,12 +751,12 @@ describeWithFixture(
                 itemType: ItemType.ERC1155,
                 token: await testErc1155.getAddress(),
                 identifier: nftId,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
                 amount: erc1155Amount,
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -737,7 +765,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address,
+            await offerer.getAddress(),
           );
 
           const order = await executeAllActions();
@@ -745,13 +773,13 @@ describeWithFixture(
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              fulfiller.address,
+              await fulfiller.getAddress(),
               ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
             order,
-            accountAddress: fulfiller.address,
+            accountAddress: await fulfiller.getAddress(),
             domain: OPENSEA_DOMAIN,
           });
 
@@ -770,7 +798,7 @@ describeWithFixture(
 
           expect(
             await testErc1155.isApprovedForAll(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.be.true;
@@ -789,11 +817,11 @@ describeWithFixture(
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: fulfiller.address,
+            fulfillerAddress: await fulfiller.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
-          expect(fulfillBasicOrderSpy).calledOnce;
+          expect(fulfillBasicOrderSpy.calledOnce);
         });
       });
     });
@@ -803,7 +831,7 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc20 } = fixture;
 
-          await testErc20.mint(offerer.address, "10000");
+          await testErc20.mint(await offerer.getAddress(), "10000");
 
           standardCreateOrderInput = {
             startTime: "0",
@@ -816,7 +844,7 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
           };
@@ -835,13 +863,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -858,11 +886,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillStandardOrderSpy).calledOnce;
+            expect(fulfillStandardOrderSpy.calledOnce);
           });
 
           it("ERC20 <=> ETH (already validated order)", async () => {
@@ -878,7 +906,7 @@ describeWithFixture(
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -889,12 +917,14 @@ describeWithFixture(
               action.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
-            await seaport.validate([order], offerer.address).transact();
+            await seaport
+              .validate([order], await offerer.getAddress())
+              .transact();
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
@@ -905,27 +935,30 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillStandardOrderSpy).calledOnce;
+            expect(fulfillStandardOrderSpy.calledOnce);
           });
         });
 
         describe("with ERC20", () => {
-          beforeEach(() => {
+          beforeEach(async () => {
             const { testErc20USDC } = fixture;
 
             // Use ERC20 instead of eth
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: testErc20USDC.address }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20USDC.getAddress(),
+                }),
               ),
             };
             testErc20USDC.mint(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               (standardCreateOrderInput.consideration[0] as CurrencyItem)
                 .amount,
             );
@@ -944,13 +977,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -958,7 +991,7 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20USDC.address,
+              token: await testErc20USDC.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
@@ -969,7 +1002,7 @@ describeWithFixture(
 
             expect(
               await testErc20USDC.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -989,11 +1022,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillStandardOrderSpy).calledOnce;
+            expect(fulfillStandardOrderSpy.calledOnce);
           });
 
           it("ERC20 <=> ERC20 (already validated order)", async () => {
@@ -1011,13 +1044,13 @@ describeWithFixture(
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
                 order,
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 ethers.provider,
               );
 
             const revertedUseCase = await seaport.fulfillOrder({
               order,
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -1027,7 +1060,7 @@ describeWithFixture(
 
             expect(approvalAction).to.deep.equal({
               type: "approval",
-              token: testErc20USDC.address,
+              token: await testErc20USDC.getAddress(),
               identifierOrCriteria: "0",
               itemType: ItemType.ERC20,
               transactionMethods: approvalAction.transactionMethods,
@@ -1038,7 +1071,7 @@ describeWithFixture(
 
             expect(
               await testErc20USDC.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -1054,7 +1087,9 @@ describeWithFixture(
               fulfillAction.transactionMethods.transact(),
             ).to.be.revertedWith("InvalidSignature");
 
-            await seaport.validate([order], offerer.address).transact();
+            await seaport
+              .validate([order], await offerer.getAddress())
+              .transact();
 
             const transaction =
               await fulfillAction.transactionMethods.transact();
@@ -1064,11 +1099,11 @@ describeWithFixture(
             await verifyBalancesAfterFulfill({
               ownerToTokenToIdentifierBalances,
               order,
-              fulfillerAddress: fulfiller.address,
+              fulfillerAddress: await fulfiller.getAddress(),
               provider: ethers.provider,
-              fulfillReceipt: receipt,
+              fulfillReceipt: receipt!,
             });
-            expect(fulfillStandardOrderSpy).calledOnce;
+            expect(fulfillStandardOrderSpy.calledOnce);
           });
         });
       });
@@ -1078,10 +1113,13 @@ describeWithFixture(
           const { testErc20USDC, testErc20 } = fixture;
 
           await testErc20USDC.mint(
-            fulfiller.address,
+            await fulfiller.getAddress(),
             parseEther("50").toString(),
           );
-          await testErc20.mint(offerer.address, parseEther("10").toString());
+          await testErc20.mint(
+            await offerer.getAddress(),
+            parseEther("10").toString(),
+          );
 
           standardCreateOrderInput = {
             offer: [
@@ -1092,7 +1130,7 @@ describeWithFixture(
             ],
             consideration: [
               {
-                token: testErc20USDC.address,
+                token: await testErc20USDC.getAddress(),
                 amount: parseEther("50").toString(),
               },
             ],
@@ -1104,7 +1142,7 @@ describeWithFixture(
 
           const { executeAllActions } = await seaport.createOrder(
             standardCreateOrderInput,
-            offerer.address,
+            await offerer.getAddress(),
           );
 
           const order = await executeAllActions();
@@ -1112,13 +1150,13 @@ describeWithFixture(
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
-              fulfiller.address,
+              await fulfiller.getAddress(),
               ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
             order,
-            accountAddress: fulfiller.address,
+            accountAddress: await fulfiller.getAddress(),
             domain: OPENSEA_DOMAIN,
           });
 
@@ -1126,7 +1164,7 @@ describeWithFixture(
 
           expect(approvalAction).to.deep.equal({
             type: "approval",
-            token: testErc20USDC.address,
+            token: await testErc20USDC.getAddress(),
             identifierOrCriteria: "0",
             itemType: ItemType.ERC20,
             transactionMethods: approvalAction.transactionMethods,
@@ -1137,7 +1175,7 @@ describeWithFixture(
 
           expect(
             await testErc20USDC.allowance(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.equal(MAX_INT);
@@ -1156,11 +1194,11 @@ describeWithFixture(
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: fulfiller.address,
+            fulfillerAddress: await fulfiller.getAddress(),
             provider: ethers.provider,
-            fulfillReceipt: receipt,
+            fulfillReceipt: receipt!,
           });
-          expect(fulfillStandardOrderSpy).calledOnce;
+          expect(fulfillStandardOrderSpy.calledOnce);
         });
       });
     });

@@ -17,7 +17,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
@@ -36,11 +36,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const approvalAction = actions[0] as ApprovalAction;
@@ -51,7 +51,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
-      operator: seaportContract.address,
+      operator: await seaportContract.getAddress(),
     });
 
     await approvalAction.transactionMethods.transact();
@@ -59,8 +59,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     // NFT should now be approved
     expect(
       await testErc721.isApprovedForAll(
-        offerer.address,
-        seaportContract.address,
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
       ),
     ).to.be.true;
 
@@ -76,7 +76,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             endAmount: ethers.parseEther("9.75").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
             startAmount: ethers.parseEther("9.75").toString(),
             token: ethers.ZeroAddress,
           },
@@ -84,7 +84,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             endAmount: ethers.parseEther(".25").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
-            recipient: zone.address,
+            recipient: await zone.getAddress(),
             startAmount: ethers.parseEther(".25").toString(),
             token: ethers.ZeroAddress,
           },
@@ -99,7 +99,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             token: await testErc721.getAddress(),
           },
         ],
-        offerer: offerer.address,
+        offerer: await offerer.getAddress(),
         orderType: OrderType.FULL_OPEN,
         salt,
         startTime,
@@ -133,8 +133,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
-    await testErc20.mint(offerer.address, parseEther("10").toString());
-    await testErc721.mint(randomSigner.address, nftId);
+    await testErc20.mint(
+      await offerer.getAddress(),
+      parseEther("10").toString(),
+    );
+    await testErc721.mint(await randomSigner.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
@@ -154,11 +157,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
           itemType: ItemType.ERC721,
           token: await testErc721.getAddress(),
           identifier: nftId,
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const approvalAction = actions[0] as ApprovalAction;
@@ -169,14 +172,17 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: "0",
       itemType: ItemType.ERC20,
       transactionMethods: approvalAction.transactionMethods,
-      operator: seaportContract.address,
+      operator: await seaportContract.getAddress(),
     });
 
     await approvalAction.transactionMethods.transact();
 
     // NFT should now be approved
     expect(
-      await testErc20.allowance(offerer.address, seaportContract.address),
+      await testErc20.allowance(
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
+      ),
     ).to.equal(MAX_INT);
 
     const createOrderAction = actions[1] as CreateOrderAction;
@@ -192,13 +198,13 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             itemType: ItemType.ERC721,
             startAmount: "1",
             token: await testErc721.getAddress(),
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
           },
           {
             endAmount: ethers.parseEther(".25").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.ERC20,
-            recipient: zone.address,
+            recipient: await zone.getAddress(),
             startAmount: ethers.parseEther(".25").toString(),
             token: await testErc20.getAddress(),
           },
@@ -214,7 +220,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             token: await testErc20.getAddress(),
           },
         ],
-        offerer: offerer.address,
+        offerer: await offerer.getAddress(),
         orderType: OrderType.FULL_OPEN,
         salt,
         startTime,
@@ -248,8 +254,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
-    await testErc1155.mint(offerer.address, nftId, 1);
+    await testErc721.mint(await offerer.getAddress(), nftId);
+    await testErc1155.mint(await offerer.getAddress(), nftId, 1);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
@@ -274,23 +280,23 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     expect(
       await testErc721.isApprovedForAll(
-        offerer.address,
-        seaportContract.address,
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
       ),
     ).to.be.false;
     expect(
       await testErc1155.isApprovedForAll(
-        offerer.address,
-        seaportContract.address,
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
       ),
     ).to.be.false;
 
@@ -302,7 +308,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
-      operator: seaportContract.address,
+      operator: await seaportContract.getAddress(),
     });
 
     await approvalAction.transactionMethods.transact();
@@ -310,8 +316,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     // NFT should now be approved
     expect(
       await testErc721.isApprovedForAll(
-        offerer.address,
-        seaportContract.address,
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
       ),
     ).to.be.true;
 
@@ -323,7 +329,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC1155,
       transactionMethods: erc1155ApprovalAction.transactionMethods,
-      operator: seaportContract.address,
+      operator: await seaportContract.getAddress(),
     });
 
     await erc1155ApprovalAction.transactionMethods.transact();
@@ -331,8 +337,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     // NFT should now be approved
     expect(
       await testErc1155.isApprovedForAll(
-        offerer.address,
-        seaportContract.address,
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
       ),
     ).to.be.true;
 
@@ -348,7 +354,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             endAmount: ethers.parseEther("9.75").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
             startAmount: ethers.parseEther("9.75").toString(),
             token: ethers.ZeroAddress,
           },
@@ -356,7 +362,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             endAmount: ethers.parseEther(".25").toString(),
             identifierOrCriteria: "0",
             itemType: ItemType.NATIVE,
-            recipient: zone.address,
+            recipient: await zone.getAddress(),
             startAmount: ethers.parseEther(".25").toString(),
             token: ethers.ZeroAddress,
           },
@@ -378,7 +384,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             token: await testErc1155.getAddress(),
           },
         ],
-        offerer: offerer.address,
+        offerer: await offerer.getAddress(),
         orderType: OrderType.FULL_OPEN,
         salt,
         startTime,
@@ -413,11 +419,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
       const [offerer, zone] = await ethers.getSigners();
       const nftId = "1";
-      await testErc721.mint(offerer.address, nftId);
+      await testErc721.mint(await offerer.getAddress(), nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
       const salt = generateRandomSalt();
-      await testErc20.mint(offerer.address, 1);
+      await testErc20.mint(await offerer.getAddress(), 1);
 
       const input: CreateOrderInput = {
         startTime,
@@ -433,15 +439,15 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         consideration: [
           {
             amount: ethers.parseEther("10").toString(),
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
           },
           {
             token: await testErc20.getAddress(),
             amount: ethers.parseEther("1").toString(),
-            recipient: zone.address,
+            recipient: await zone.getAddress(),
           },
         ],
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
       };
 
       await expect(seaport.createOrder(input)).to.be.rejectedWith(
@@ -460,7 +466,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
       const [offerer, zone] = await ethers.getSigners();
       const nftId = "1";
-      await testErc721.mint(zone.address, nftId);
+      await testErc721.mint(await zone.getAddress(), nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
       const salt = generateRandomSalt();
@@ -479,10 +485,10 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         consideration: [
           {
             amount: ethers.parseEther("10").toString(),
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
           },
         ],
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
       } as const;
 
       await expect(seaport.createOrder(createOrderInput)).to.be.rejectedWith(
@@ -491,7 +497,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
       await testErc721
         .connect(zone)
-        .transferFrom(zone.address, offerer.address, nftId);
+        .transferFrom(
+          await zone.getAddress(),
+          await offerer.getAddress(),
+          nftId,
+        );
 
       // It should not throw now as the offerer has sufficient balance
       await seaport.createOrder(createOrderInput);
@@ -515,7 +525,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
             {
               token: await testErc20.getAddress(),
               amount: ethers.parseEther("10").toString(),
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
             },
           ],
         }),
@@ -534,7 +544,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       const startTime = "0";
       const endTime = MAX_INT.toString();
       const salt = generateRandomSalt();
-      await testErc721.mint(randomSigner.address, nftId);
+      await testErc721.mint(await randomSigner.getAddress(), nftId);
 
       const { actions } = await seaport.createOrder({
         startTime,
@@ -550,11 +560,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
         consideration: [
           {
             amount: ethers.parseEther("10").toString(),
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
           },
         ],
         // 2.5% fee
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
       });
 
       const createOrderAction = actions[0] as CreateOrderAction;
@@ -569,7 +579,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
               endAmount: ethers.parseEther("9.75").toString(),
               identifierOrCriteria: "0",
               itemType: ItemType.NATIVE,
-              recipient: offerer.address,
+              recipient: await offerer.getAddress(),
               startAmount: ethers.parseEther("9.75").toString(),
               token: ethers.ZeroAddress,
             },
@@ -577,7 +587,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
               endAmount: ethers.parseEther(".25").toString(),
               identifierOrCriteria: "0",
               itemType: ItemType.NATIVE,
-              recipient: zone.address,
+              recipient: await zone.getAddress(),
               startAmount: ethers.parseEther(".25").toString(),
               token: ethers.ZeroAddress,
             },
@@ -592,7 +602,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
               token: await testErc721.getAddress(),
             },
           ],
-          offerer: offerer.address,
+          offerer: await offerer.getAddress(),
           orderType: OrderType.FULL_OPEN,
           salt,
           startTime,
@@ -627,7 +637,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone, randomSigner] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
@@ -646,11 +656,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const approvalAction = actions[0] as ApprovalAction;
@@ -661,7 +671,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       identifierOrCriteria: nftId,
       itemType: ItemType.ERC721,
       transactionMethods: approvalAction.transactionMethods,
-      operator: seaportContract.address,
+      operator: await seaportContract.getAddress(),
     });
 
     await approvalAction.transactionMethods.transact();
@@ -669,8 +679,8 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     // NFT should now be approved
     expect(
       await testErc721.isApprovedForAll(
-        offerer.address,
-        seaportContract.address,
+        await offerer.getAddress(),
+        await seaportContract.getAddress(),
       ),
     ).to.be.true;
 
@@ -681,7 +691,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
     expect(createOrderAction.type).to.equal("create");
     const rawSignTypedMessage = await ethers.provider.send(
       "eth_signTypedData_v4",
-      [offerer.address, messageToSign],
+      [await offerer.getAddress(), messageToSign],
     );
     expect(ethers.Signature.from(rawSignTypedMessage).compact).eq(
       order.signature,
@@ -708,7 +718,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const salt = generateRandomSalt();
@@ -727,11 +737,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const order = await executeAllActions();
@@ -750,7 +760,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const domain = "opensea.io";
@@ -770,11 +780,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const order = await executeAllActions();
@@ -794,7 +804,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
 
@@ -811,11 +821,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const order = await executeAllActions();
@@ -835,7 +845,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, zone] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const salt = "0xabcd";
@@ -854,11 +864,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     });
 
     const order = await executeAllActions();
@@ -878,7 +888,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     const [offerer, recipient] = await ethers.getSigners();
     const nftId = "1";
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
     const startTime = "0";
     const endTime = MAX_INT.toString();
     const zone = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
@@ -901,11 +911,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       consideration: [
         {
           amount: ethers.parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: recipient.address, basisPoints: 250 }],
+      fees: [{ recipient: await recipient.getAddress(), basisPoints: 250 }],
     });
 
     const order = await executeAllActions();
@@ -936,23 +946,26 @@ describeWithFixture(
       } = fixture;
       const [orderSigner, zone, nftOwner] = await ethers.getSigners();
       expect(await testERC1271Wallet.orderSigner()).to.equal(
-        orderSigner.address,
+        await orderSigner.getAddress(),
       );
       const nftId = "1";
-      await testErc721.mint(nftOwner.address, nftId);
+      await testErc721.mint(await nftOwner.getAddress(), nftId);
       const startTime = "0";
       const endTime = MAX_INT.toString();
       const salt = generateRandomSalt();
       // Mint 10 tokens to the wallet contract
-      await testErc20.mint(testERC1271Wallet.address, parseEther("10"));
+      await testErc20.mint(
+        await testERC1271Wallet.getAddress(),
+        parseEther("10"),
+      );
       // Give allowance to the seaport contract
       await testERC1271Wallet.approveToken(
         await testErc20.getAddress(),
-        seaportContract.address,
+        await seaportContract.getAddress(),
         parseEther("10"),
       );
 
-      const accountAddress = testERC1271Wallet.address;
+      const accountAddress = await testERC1271Wallet.getAddress();
       const orderUsaCase = await seaportWithSigner.createOrder(
         {
           startTime,
@@ -972,7 +985,7 @@ describeWithFixture(
             },
           ],
           // 2.5% fee
-          fees: [{ recipient: zone.address, basisPoints: 250 }],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
         },
         accountAddress,
       );
@@ -987,7 +1000,7 @@ describeWithFixture(
 
       const fulfillUsaCase = await seaport.fulfillOrders({
         fulfillOrderDetails: [{ order }],
-        accountAddress: nftOwner.address,
+        accountAddress: await nftOwner.getAddress(),
         domain: OPENSEA_DOMAIN,
       });
 
@@ -1009,9 +1022,9 @@ describeWithFixture(
       expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
       expect(await testErc721.ownerOf(nftId)).to.equal(
-        testERC1271Wallet.address,
+        await testERC1271Wallet.getAddress(),
       );
-      expect(await testErc20.balanceOf(nftOwner.address)).to.equal(
+      expect(await testErc20.balanceOf(await nftOwner.getAddress())).to.equal(
         ethers.parseEther("9.75"),
       );
     });

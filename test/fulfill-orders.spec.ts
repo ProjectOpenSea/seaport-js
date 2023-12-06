@@ -55,9 +55,9 @@ describeWithFixture(
           const { testErc721 } = fixture;
 
           // These will be used in 3 separate orders
-          await testErc721.mint(offerer.address, nftId);
-          await testErc721.mint(offerer.address, nftId2);
-          await secondTestErc721.mint(secondOfferer.address, nftId);
+          await testErc721.mint(await offerer.getAddress(), nftId);
+          await testErc721.mint(await offerer.getAddress(), nftId2);
+          await secondTestErc721.mint(await secondOfferer.getAddress(), nftId);
 
           firstStandardCreateOrderInput = {
             offer: [
@@ -70,11 +70,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           secondStandardCreateOrderInput = {
@@ -88,11 +88,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           thirdStandardCreateOrderInput = {
@@ -106,11 +106,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: secondOfferer.address,
+                recipient: await secondOfferer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -132,7 +132,7 @@ describeWithFixture(
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address,
+              await secondOfferer.getAddress(),
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -143,7 +143,7 @@ describeWithFixture(
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -166,10 +166,13 @@ describeWithFixture(
               secondTestErc721.ownerOf(nftId),
             ]);
 
-            expect(owners.every((owner) => owner === fulfiller.address)).to.be
-              .true;
+            expect(
+              owners.every(
+                async (owner) => owner === (await fulfiller.getAddress()),
+              ),
+            ).to.be.true;
 
-            expect(fulfillAvailableOrdersSpy).calledOnce;
+            expect(fulfillAvailableOrdersSpy.calledOnce);
           });
         });
 
@@ -181,19 +184,28 @@ describeWithFixture(
             firstStandardCreateOrderInput = {
               ...firstStandardCreateOrderInput,
               consideration: firstStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
             secondStandardCreateOrderInput = {
               ...secondStandardCreateOrderInput,
               consideration: secondStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
             thirdStandardCreateOrderInput = {
               ...thirdStandardCreateOrderInput,
               consideration: thirdStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
 
@@ -203,7 +215,7 @@ describeWithFixture(
               thirdStandardCreateOrderInput,
             ].forEach(async (createOrderInput) => {
               await testErc20.mint(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 (createOrderInput.consideration[0] as CurrencyItem).amount,
               );
             });
@@ -226,7 +238,7 @@ describeWithFixture(
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address,
+              await secondOfferer.getAddress(),
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -245,7 +257,7 @@ describeWithFixture(
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -266,7 +278,7 @@ describeWithFixture(
 
             expect(
               await testErc20.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -289,10 +301,13 @@ describeWithFixture(
               secondTestErc721.ownerOf(nftId),
             ]);
 
-            expect(owners.every((owner) => owner === fulfiller.address)).to.be
-              .true;
+            expect(
+              owners.every(
+                async (owner) => owner === (await fulfiller.getAddress()),
+              ),
+            ).to.be.true;
 
-            expect(fulfillAvailableOrdersSpy).calledOnce;
+            expect(fulfillAvailableOrdersSpy.calledOnce);
           });
         });
       });
@@ -301,13 +316,16 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc721, testErc20 } = fixture;
 
-          await testErc721.mint(fulfiller.address, nftId);
-          await testErc721.mint(fulfiller.address, nftId2);
-          await secondTestErc721.mint(fulfiller.address, nftId);
+          await testErc721.mint(await fulfiller.getAddress(), nftId);
+          await testErc721.mint(await fulfiller.getAddress(), nftId2);
+          await secondTestErc721.mint(await fulfiller.getAddress(), nftId);
 
-          await testErc20.mint(offerer.address, parseEther("20").toString());
           await testErc20.mint(
-            secondOfferer.address,
+            await offerer.getAddress(),
+            parseEther("20").toString(),
+          );
+          await testErc20.mint(
+            await secondOfferer.getAddress(),
             parseEther("10").toString(),
           );
 
@@ -323,11 +341,11 @@ describeWithFixture(
                 itemType: ItemType.ERC721,
                 token: await testErc721.getAddress(),
                 identifier: nftId,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           secondStandardCreateOrderInput = {
@@ -342,11 +360,11 @@ describeWithFixture(
                 itemType: ItemType.ERC721,
                 token: await testErc721.getAddress(),
                 identifier: nftId2,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           thirdStandardCreateOrderInput = {
@@ -361,11 +379,11 @@ describeWithFixture(
                 itemType: ItemType.ERC721,
                 token: await secondTestErc721.getAddress(),
                 identifier: nftId,
-                recipient: secondOfferer.address,
+                recipient: await secondOfferer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -386,7 +404,7 @@ describeWithFixture(
 
           const thirdOrderUseCase = await seaport.createOrder(
             thirdStandardCreateOrderInput,
-            secondOfferer.address,
+            await secondOfferer.getAddress(),
           );
 
           const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -397,7 +415,7 @@ describeWithFixture(
               { order: secondOrder },
               { order: thirdOrder },
             ],
-            accountAddress: fulfiller.address,
+            accountAddress: await fulfiller.getAddress(),
             domain: OPENSEA_DOMAIN,
           });
 
@@ -416,7 +434,7 @@ describeWithFixture(
 
           expect(
             await testErc721.isApprovedForAll(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.be.true;
@@ -436,7 +454,7 @@ describeWithFixture(
 
           expect(
             await testErc20.allowance(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).eq(MAX_INT);
@@ -456,7 +474,7 @@ describeWithFixture(
 
           expect(
             await secondTestErc721.isApprovedForAll(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.be.true;
@@ -484,12 +502,12 @@ describeWithFixture(
           ]);
 
           expect(owners).deep.equal([
-            offerer.address,
-            offerer.address,
-            secondOfferer.address,
+            await offerer.getAddress(),
+            await offerer.getAddress(),
+            await secondOfferer.getAddress(),
           ]);
 
-          expect(fulfillAvailableOrdersSpy).calledOnce;
+          expect(fulfillAvailableOrdersSpy.calledOnce);
         });
       });
     });
@@ -500,10 +518,18 @@ describeWithFixture(
           const { testErc1155 } = fixture;
 
           // These will be used in 3 separate orders
-          await testErc1155.mint(offerer.address, nftId, erc1155Amount);
-          await testErc1155.mint(offerer.address, nftId, erc1155Amount2);
+          await testErc1155.mint(
+            await offerer.getAddress(),
+            nftId,
+            erc1155Amount,
+          );
+          await testErc1155.mint(
+            await offerer.getAddress(),
+            nftId,
+            erc1155Amount2,
+          );
           await secondTestErc1155.mint(
-            secondOfferer.address,
+            await secondOfferer.getAddress(),
             nftId,
             erc1155Amount,
           );
@@ -520,11 +546,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           secondStandardCreateOrderInput = {
@@ -539,11 +565,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           thirdStandardCreateOrderInput = {
@@ -558,11 +584,11 @@ describeWithFixture(
             consideration: [
               {
                 amount: parseEther("10").toString(),
-                recipient: secondOfferer.address,
+                recipient: await secondOfferer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -584,7 +610,7 @@ describeWithFixture(
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address,
+              await secondOfferer.getAddress(),
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -595,7 +621,7 @@ describeWithFixture(
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -615,14 +641,14 @@ describeWithFixture(
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const balances = await Promise.all([
-              testErc1155.balanceOf(fulfiller.address, nftId),
-              secondTestErc1155.balanceOf(fulfiller.address, nftId),
+              testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+              secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
             ]);
 
             expect(balances[0]).to.equal(10n);
             expect(balances[1]).to.equal(BigInt(erc1155Amount));
 
-            expect(fulfillAvailableOrdersSpy).calledOnce;
+            expect(fulfillAvailableOrdersSpy.calledOnce);
           });
         });
 
@@ -634,19 +660,28 @@ describeWithFixture(
             firstStandardCreateOrderInput = {
               ...firstStandardCreateOrderInput,
               consideration: firstStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
             secondStandardCreateOrderInput = {
               ...secondStandardCreateOrderInput,
               consideration: secondStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
             thirdStandardCreateOrderInput = {
               ...thirdStandardCreateOrderInput,
               consideration: thirdStandardCreateOrderInput.consideration.map(
-                (item) => ({ ...item, token: await testErc20.getAddress() }),
+                async (item) => ({
+                  ...item,
+                  token: await testErc20.getAddress(),
+                }),
               ),
             };
 
@@ -656,7 +691,7 @@ describeWithFixture(
               thirdStandardCreateOrderInput,
             ].forEach(async (createOrderInput) => {
               await testErc20.mint(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 (createOrderInput.consideration[0] as CurrencyItem).amount,
               );
             });
@@ -679,7 +714,7 @@ describeWithFixture(
 
             const thirdOrderUseCase = await seaport.createOrder(
               thirdStandardCreateOrderInput,
-              secondOfferer.address,
+              await secondOfferer.getAddress(),
             );
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -690,7 +725,7 @@ describeWithFixture(
                 { order: secondOrder },
                 { order: thirdOrder },
               ],
-              accountAddress: fulfiller.address,
+              accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
             });
 
@@ -711,7 +746,7 @@ describeWithFixture(
 
             expect(
               await testErc20.allowance(
-                fulfiller.address,
+                await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
               ),
             ).to.equal(MAX_INT);
@@ -729,14 +764,14 @@ describeWithFixture(
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
 
             const balances = await Promise.all([
-              testErc1155.balanceOf(fulfiller.address, nftId),
-              secondTestErc1155.balanceOf(fulfiller.address, nftId),
+              testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+              secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
             ]);
 
             expect(balances[0]).to.equal(10n);
             expect(balances[1]).to.equal(BigInt(erc1155Amount));
 
-            expect(fulfillAvailableOrdersSpy).calledOnce;
+            expect(fulfillAvailableOrdersSpy.calledOnce);
           });
         });
       });
@@ -745,13 +780,28 @@ describeWithFixture(
         beforeEach(async () => {
           const { testErc1155, testErc20 } = fixture;
 
-          await testErc1155.mint(fulfiller.address, nftId, erc1155Amount);
-          await testErc1155.mint(fulfiller.address, nftId, erc1155Amount2);
-          await secondTestErc1155.mint(fulfiller.address, nftId, erc1155Amount);
+          await testErc1155.mint(
+            await fulfiller.getAddress(),
+            nftId,
+            erc1155Amount,
+          );
+          await testErc1155.mint(
+            await fulfiller.getAddress(),
+            nftId,
+            erc1155Amount2,
+          );
+          await secondTestErc1155.mint(
+            await fulfiller.getAddress(),
+            nftId,
+            erc1155Amount,
+          );
 
-          await testErc20.mint(offerer.address, parseEther("20").toString());
           await testErc20.mint(
-            secondOfferer.address,
+            await offerer.getAddress(),
+            parseEther("20").toString(),
+          );
+          await testErc20.mint(
+            await secondOfferer.getAddress(),
             parseEther("10").toString(),
           );
 
@@ -768,11 +818,11 @@ describeWithFixture(
                 token: await testErc1155.getAddress(),
                 amount: erc1155Amount,
                 identifier: nftId,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           secondStandardCreateOrderInput = {
@@ -788,11 +838,11 @@ describeWithFixture(
                 token: await testErc1155.getAddress(),
                 amount: erc1155Amount2,
                 identifier: nftId,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
 
           thirdStandardCreateOrderInput = {
@@ -808,11 +858,11 @@ describeWithFixture(
                 token: await secondTestErc1155.getAddress(),
                 amount: erc1155Amount,
                 identifier: nftId,
-                recipient: secondOfferer.address,
+                recipient: await secondOfferer.getAddress(),
               },
             ],
             // 2.5% fee
-            fees: [{ recipient: zone.address, basisPoints: 250 }],
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
           };
         });
 
@@ -833,7 +883,7 @@ describeWithFixture(
 
           const thirdOrderUseCase = await seaport.createOrder(
             thirdStandardCreateOrderInput,
-            secondOfferer.address,
+            await secondOfferer.getAddress(),
           );
 
           const thirdOrder = await thirdOrderUseCase.executeAllActions();
@@ -844,7 +894,7 @@ describeWithFixture(
               { order: secondOrder },
               { order: thirdOrder },
             ],
-            accountAddress: fulfiller.address,
+            accountAddress: await fulfiller.getAddress(),
             // When domain is empty or undefined, it should not append any tag to the calldata.
             domain: undefined,
           });
@@ -864,7 +914,7 @@ describeWithFixture(
 
           expect(
             await testErc1155.isApprovedForAll(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.be.true;
@@ -884,7 +934,7 @@ describeWithFixture(
 
           expect(
             await testErc20.allowance(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).eq(MAX_INT);
@@ -904,7 +954,7 @@ describeWithFixture(
 
           expect(
             await secondTestErc1155.isApprovedForAll(
-              fulfiller.address,
+              await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
             ),
           ).to.be.true;
@@ -930,14 +980,17 @@ describeWithFixture(
           expect(transaction.data.slice(-8)).to.not.eq(OPENSEA_DOMAIN_TAG);
 
           const balances = await Promise.all([
-            testErc1155.balanceOf(offerer.address, nftId),
-            secondTestErc1155.balanceOf(secondOfferer.address, nftId),
+            testErc1155.balanceOf(await offerer.getAddress(), nftId),
+            secondTestErc1155.balanceOf(
+              await secondOfferer.getAddress(),
+              nftId,
+            ),
           ]);
 
           expect(balances[0]).to.equal(10n);
           expect(balances[1]).to.equal(BigInt(erc1155Amount));
 
-          expect(fulfillAvailableOrdersSpy).calledOnce;
+          expect(fulfillAvailableOrdersSpy.calledOnce);
         });
       });
     });

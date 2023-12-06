@@ -20,7 +20,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
   beforeEach(async () => {
     const { testErc721 } = fixture;
 
-    await testErc721.mint(offerer.address, nftId);
+    await testErc721.mint(await offerer.getAddress(), nftId);
 
     standardCreateOrderInput = {
       startTime: "0",
@@ -34,11 +34,11 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
       consideration: [
         {
           amount: parseEther("10").toString(),
-          recipient: offerer.address,
+          recipient: await offerer.getAddress(),
         },
       ],
       // 2.5% fee
-      fees: [{ recipient: zone.address, basisPoints: 250 }],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
     };
   });
 
@@ -61,34 +61,38 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
 
     const validateTx = await seaport
-      .validate([onChainOrder], offerer.address, undefined, overrides)
+      .validate(
+        [onChainOrder],
+        await offerer.getAddress(),
+        undefined,
+        overrides,
+      )
       .transact();
     expect(validateTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
 
     const bulkCancelOrdersTx = await seaport
-      .bulkCancelOrders(offerer.address, undefined, overrides)
+      .bulkCancelOrders(await offerer.getAddress(), undefined, overrides)
       .transact();
     expect(bulkCancelOrdersTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
 
     const { executeAllActions: executeAllFulfillActionsOffChainOrder } =
       await seaport.fulfillOrder({
         order: offChainOrder,
-        accountAddress: fulfiller.address,
+        accountAddress: await fulfiller.getAddress(),
       });
 
     const { executeAllActions: executeAllFulfillActionsOnChainOrder } =
       await seaport.fulfillOrder({
         order: onChainOrder,
-        accountAddress: fulfiller.address,
+        accountAddress: await fulfiller.getAddress(),
       });
 
     await expect(executeAllFulfillActionsOffChainOrder()).to.be.reverted;
     await expect(executeAllFulfillActionsOnChainOrder()).to.be.reverted;
 
     expect(
-      (await seaport.getCounter(offerer.address)).gt(
-        offChainOrder.parameters.counter,
-      ),
+      (await seaport.getCounter(await offerer.getAddress())) >
+        BigInt(offChainOrder.parameters.counter),
     ).to.be.true;
   });
 
@@ -103,7 +107,7 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
     // Remove signature
     order.signature = "0x";
 
-    await seaport.validate([order], offerer.address).transact();
+    await seaport.validate([order], await offerer.getAddress()).transact();
     const orderHash = seaport.getOrderHash(order.parameters);
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isValidated",
@@ -112,7 +116,12 @@ describeWithFixture("As a user I want to cancel an order", (fixture) => {
 
     const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
     const cancelOrdersTx = await seaport
-      .cancelOrders([order.parameters], offerer.address, undefined, overrides)
+      .cancelOrders(
+        [order.parameters],
+        await offerer.getAddress(),
+        undefined,
+        overrides,
+      )
       .transact();
     expect(await seaport.getOrderStatus(orderHash)).to.have.property(
       "isCancelled",

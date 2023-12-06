@@ -31,7 +31,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
         token: ethers.ZeroAddress,
         startAmount: ethers.parseEther("10").toString(),
         endAmount: ethers.parseEther("10").toString(),
-        recipient: offerer.address,
+        recipient: await offerer.getAddress(),
         identifierOrCriteria: "0",
       },
       {
@@ -39,15 +39,17 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
         token: ethers.ZeroAddress,
         startAmount: ethers.parseEther("1").toString(),
         endAmount: ethers.parseEther("1").toString(),
-        recipient: zone.address,
+        recipient: await zone.getAddress(),
         identifierOrCriteria: "0",
       },
     ];
 
-    const counter = await seaportContract.getCounter(offerer.address);
+    const counter = await seaportContract.getCounter(
+      await offerer.getAddress(),
+    );
 
     const orderComponents = {
-      offerer: offerer.address,
+      offerer: await offerer.getAddress(),
       zone: ethers.ZeroAddress,
       offer,
       consideration: considerationData,

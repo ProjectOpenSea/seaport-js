@@ -22,7 +22,7 @@ describeWithFixture(
       const nftId3 = "3";
       const nftIds = [nftId1, nftId2, nftId3];
       for (const nftId of nftIds) {
-        await testErc721.mint(offerer.address, nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId);
       }
 
       const startTime = "0";
@@ -43,11 +43,11 @@ describeWithFixture(
         consideration: [
           {
             amount: ethers.parseEther("10").toString(),
-            recipient: offerer.address,
+            recipient: await offerer.getAddress(),
           },
         ],
         // 2.5% fee
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
       };
 
       const orders = [
@@ -77,7 +77,7 @@ describeWithFixture(
       // NFT should now be approved
       expect(
         await testErc721.isApprovedForAll(
-          offerer.address,
+          await offerer.getAddress(),
           await seaportContract.getAddress(),
         ),
       ).to.be.true;
@@ -97,7 +97,7 @@ describeWithFixture(
                 endAmount: ethers.parseEther("9.75").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
-                recipient: offerer.address,
+                recipient: await offerer.getAddress(),
                 startAmount: ethers.parseEther("9.75").toString(),
                 token: ethers.ZeroAddress,
               },
@@ -105,7 +105,7 @@ describeWithFixture(
                 endAmount: ethers.parseEther(".25").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
-                recipient: zone.address,
+                recipient: await zone.getAddress(),
                 startAmount: ethers.parseEther(".25").toString(),
                 token: ethers.ZeroAddress,
               },
@@ -120,7 +120,7 @@ describeWithFixture(
                 token: await testErc721.getAddress(),
               },
             ],
-            offerer: offerer.address,
+            offerer: await offerer.getAddress(),
             orderType: OrderType.FULL_OPEN,
             salt,
             startTime,
