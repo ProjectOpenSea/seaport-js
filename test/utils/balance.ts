@@ -69,7 +69,7 @@ export const getBalancesForFulfillOrder = async (
             item.identifierOrCriteria
           ] = {
             item,
-            balance: await balanceOf(address, item),
+            balance: await balanceOf(address, item, ethers.provider),
           };
         }),
       ]),
@@ -199,7 +199,11 @@ export const verifyBalancesAfterFulfill = async ({
               Promise.all([
                 ...Object.values(identifierToBalance).map(
                   async ({ balance, item }) => {
-                    const actualBalance = await balanceOf(owner, item);
+                    const actualBalance = await balanceOf(
+                      owner,
+                      item,
+                      ethers.provider,
+                    );
 
                     expect(balance).equal(actualBalance);
                   },

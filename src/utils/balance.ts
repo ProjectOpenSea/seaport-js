@@ -1,5 +1,4 @@
 import { ethers } from "ethers";
-import { ethers as hardhatEthers } from "hardhat";
 import { ItemType } from "../constants";
 import {
   TestERC721__factory,
@@ -12,8 +11,8 @@ import { isErc1155Item, isErc20Item, isErc721Item } from "./item";
 export const balanceOf = async (
   owner: string,
   item: Item,
+  provider: ethers.Provider,
   criteria?: InputCriteria,
-  provider: ethers.Provider = hardhatEthers.provider,
 ): Promise<bigint> => {
   if (isErc721Item(item.itemType)) {
     const contract = TestERC721__factory.connect(item.token, provider);

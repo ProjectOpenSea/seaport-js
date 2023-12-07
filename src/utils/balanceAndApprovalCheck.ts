@@ -81,9 +81,19 @@ export const getBalancesAndApprovals = async ({
       let approvedAmount = 0n;
 
       if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
-        approvedAmount = await approvedItemAmount(owner, item, operator);
+        approvedAmount = await approvedItemAmount(
+          owner,
+          item,
+          operator,
+          provider,
+        );
       } else if (isErc20Item(item.itemType)) {
-        approvedAmount = await approvedItemAmount(owner, item, operator);
+        approvedAmount = await approvedItemAmount(
+          owner,
+          item,
+          operator,
+          provider,
+        );
       } else {
         // If native token, we don't need to check for approvals
         approvedAmount = MAX_INT;
@@ -96,8 +106,8 @@ export const getBalancesAndApprovals = async ({
         balance: await balanceOf(
           owner,
           item,
-          itemToCriteria.get(item),
           provider,
+          itemToCriteria.get(item),
         ),
         approvedAmount,
         itemType: item.itemType,

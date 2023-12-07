@@ -1,5 +1,4 @@
-import { Signer } from "ethers";
-import { ethers } from "hardhat";
+import { Signer, ethers } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
 import { TestERC721__factory, TestERC20__factory } from "../typechain-types";
 import type { ApprovalAction, Item } from "../types";
@@ -11,16 +10,17 @@ export const approvedItemAmount = async (
   owner: string,
   item: Item,
   operator: string,
+  provider: ethers.Provider,
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-    const contract = TestERC721__factory.connect(item.token, ethers.provider);
+    const contract = TestERC721__factory.connect(item.token, provider);
 
     const isApprovedForAll = await contract.isApprovedForAll(owner, operator);
     // Setting to the max int to consolidate types and simplify
     return isApprovedForAll ? MAX_INT : 0n;
   } else if (item.itemType === ItemType.ERC20) {
-    const contract = TestERC20__factory.connect(item.token, ethers.provider);
+    const contract = TestERC20__factory.connect(item.token, provider);
 
     return contract.allowance(owner, operator);
   }
