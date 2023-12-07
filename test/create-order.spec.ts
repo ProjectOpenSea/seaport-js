@@ -966,7 +966,7 @@ describeWithFixture(
       );
 
       const accountAddress = await testERC1271Wallet.getAddress();
-      const orderUsaCase = await seaportWithSigner.createOrder(
+      const orderUseCase = await seaportWithSigner.createOrder(
         {
           startTime,
           endTime,
@@ -990,13 +990,13 @@ describeWithFixture(
         accountAddress,
       );
 
-      const offerActions = orderUsaCase.actions;
+      const offerActions = orderUseCase.actions;
       expect(offerActions).to.have.lengthOf(1);
 
       const createOrderAction = offerActions[0] as CreateOrderAction;
       expect(createOrderAction.type).to.equal("create");
 
-      const order = await orderUsaCase.executeAllActions();
+      const order = await orderUseCase.executeAllActions();
 
       const fulfillUsaCase = await seaport.fulfillOrders({
         fulfillOrderDetails: [{ order }],

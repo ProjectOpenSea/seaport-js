@@ -81,7 +81,6 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-              ethers.provider,
             );
 
           const transaction = await seaport
@@ -101,7 +100,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await privateListingRecipient.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
         });
@@ -148,7 +147,6 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-              ethers.provider,
             );
 
           await getTransactionMethods(
@@ -178,7 +176,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await privateListingRecipient.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
         });
@@ -245,7 +243,6 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-              ethers.provider,
             );
 
           const transaction = await seaport
@@ -265,7 +262,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await privateListingRecipient.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
         });
@@ -312,7 +309,6 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-              ethers.provider,
             );
 
           await getTransactionMethods(
@@ -342,7 +338,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await privateListingRecipient.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
         });

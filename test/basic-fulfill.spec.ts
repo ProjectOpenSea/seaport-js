@@ -79,7 +79,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             await expect(
@@ -107,7 +106,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -148,7 +146,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const transaction = await action.transactionMethods.transact();
@@ -159,7 +156,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -201,7 +197,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -247,7 +242,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -270,7 +264,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const revertedUseCase = await seaport.fulfillOrder({
@@ -328,7 +321,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -380,7 +372,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -424,7 +415,7 @@ describeWithFixture(
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
           expect(fulfillBasicOrderSpy.calledOnce);
@@ -478,7 +469,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -503,7 +493,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -544,7 +533,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             expect(fulfillAction).to.be.deep.equal({
@@ -561,7 +549,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -603,7 +590,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -648,7 +634,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -670,7 +655,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -726,7 +710,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillBasicOrderSpy.calledOnce);
@@ -788,7 +771,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -832,7 +814,7 @@ describeWithFixture(
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
           expect(fulfillBasicOrderSpy.calledOnce);
@@ -878,7 +860,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -901,7 +882,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillStandardOrderSpy.calledOnce);
@@ -942,7 +922,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const transaction = await action.transactionMethods.transact();
@@ -953,7 +932,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillStandardOrderSpy.calledOnce);
@@ -996,7 +974,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const { actions } = await seaport.fulfillOrder({
@@ -1041,7 +1018,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillStandardOrderSpy.calledOnce);
@@ -1063,7 +1039,6 @@ describeWithFixture(
               await getBalancesForFulfillOrder(
                 order,
                 await fulfiller.getAddress(),
-                ethers.provider,
               );
 
             const revertedUseCase = await seaport.fulfillOrder({
@@ -1121,7 +1096,6 @@ describeWithFixture(
               ownerToTokenToIdentifierBalances,
               order,
               fulfillerAddress: await fulfiller.getAddress(),
-              provider: ethers.provider,
               fulfillReceipt: receipt!,
             });
             expect(fulfillStandardOrderSpy.calledOnce);
@@ -1172,7 +1146,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -1216,7 +1189,7 @@ describeWithFixture(
             ownerToTokenToIdentifierBalances,
             order,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
           expect(fulfillStandardOrderSpy.calledOnce);

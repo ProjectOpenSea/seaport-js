@@ -92,11 +92,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(order.parameters.orderType).eq(OrderType.FULL_OPEN);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const nextBlockTimestamp = (Number(startTime) + Number(endTime)) / 2;
 
@@ -135,7 +131,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -184,11 +180,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await ethers.provider.send("evm_mine", []);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -239,7 +231,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -302,11 +294,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(order.parameters.orderType).eq(OrderType.FULL_OPEN);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const nextBlockTimestamp = (Number(startTime) + Number(endTime)) / 2;
 
@@ -345,7 +333,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -393,11 +381,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await ethers.provider.send("evm_mine", []);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -448,7 +432,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -519,11 +503,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(order.parameters.orderType).eq(OrderType.FULL_OPEN);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const nextBlockTimestamp = (Number(startTime) + Number(endTime)) / 2;
 
@@ -562,7 +542,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -621,11 +601,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await ethers.provider.send("evm_mine", []);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -676,7 +652,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -755,11 +731,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         expect(order.parameters.orderType).eq(OrderType.FULL_OPEN);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const nextBlockTimestamp = (Number(startTime) + Number(endTime)) / 2;
 
@@ -798,7 +770,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,
@@ -856,11 +828,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await ethers.provider.send("evm_mine", []);
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -911,7 +879,7 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
           timeBasedItemParams: {
             startTime,

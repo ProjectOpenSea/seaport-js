@@ -1,5 +1,5 @@
-import { BigNumberish, ethers, toBeHex, TransactionReceipt } from "ethers";
-import { parseEther } from "ethers";
+import { BigNumberish, toBeHex, TransactionReceipt, parseEther } from "ethers";
+import { ethers } from "hardhat";
 import { Item, Order, OrderStatus } from "../../src/types";
 import { balanceOf } from "../../src/utils/balance";
 
@@ -15,10 +15,9 @@ import {
 
 export const setBalance = async (
   address: string,
-  provider: ethers.JsonRpcProvider,
   amountEth = toBeHex(parseEther("10000")).replace("0x0", "0x"),
 ) => {
-  await provider.send("hardhat_setBalance", [
+  await ethers.provider.send("hardhat_setBalance", [
     address,
     toBeHex(parseEther(amountEth)).replace("0x0", "0x"),
   ]);
@@ -27,7 +26,6 @@ export const setBalance = async (
 export const getBalancesForFulfillOrder = async (
   order: Order,
   fulfillerAddress: string,
-  provider: ethers.Provider,
 ) => {
   const { offer, consideration, offerer } = order.parameters;
 
@@ -71,7 +69,7 @@ export const getBalancesForFulfillOrder = async (
             item.identifierOrCriteria
           ] = {
             item,
-            balance: await balanceOf(address, item, provider),
+            balance: await balanceOf(address, item),
           };
         }),
       ]),
@@ -88,7 +86,6 @@ export const verifyBalancesAfterFulfill = async ({
   orderStatus,
   fulfillReceipt,
   fulfillerAddress,
-  provider,
   timeBasedItemParams,
 }: {
   ownerToTokenToIdentifierBalances: Record<
@@ -100,7 +97,6 @@ export const verifyBalancesAfterFulfill = async ({
   unitsToFill?: BigNumberish;
   fulfillReceipt: TransactionReceipt;
   fulfillerAddress: string;
-  provider: ethers.Provider;
   timeBasedItemParams?: TimeBasedItemParams;
 }) => {
   const totalFilled = orderStatus?.totalFilled ?? 0n;
@@ -203,11 +199,7 @@ export const verifyBalancesAfterFulfill = async ({
               Promise.all([
                 ...Object.values(identifierToBalance).map(
                   async ({ balance, item }) => {
-                    const actualBalance = await balanceOf(
-                      owner,
-                      item,
-                      provider,
-                    );
+                    const actualBalance = await balanceOf(owner, item);
 
                     expect(balance).equal(actualBalance);
                   },

@@ -91,7 +91,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -134,7 +133,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 
@@ -252,7 +251,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -315,7 +313,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 
@@ -381,7 +379,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -444,7 +441,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 
@@ -507,7 +504,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -576,7 +572,7 @@ describeWithFixture(
             orderStatus,
             unitsToFill: 2,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 
@@ -655,7 +651,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -711,7 +706,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 
@@ -754,7 +749,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -830,7 +824,7 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 
@@ -901,7 +895,6 @@ describeWithFixture(
             await getBalancesForFulfillOrder(
               order,
               await fulfiller.getAddress(),
-              ethers.provider,
             );
 
           const { actions } = await seaport.fulfillOrder({
@@ -1016,7 +1009,7 @@ describeWithFixture(
             orderStatus,
             unitsToFill: 2,
             fulfillerAddress: await fulfiller.getAddress(),
-            provider: ethers.provider,
+
             fulfillReceipt: receipt!,
           });
 

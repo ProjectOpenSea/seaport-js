@@ -1,10 +1,8 @@
-import { ethers, keccak256 } from "ethers";
+import { keccak256, toBeHex } from "ethers";
 import MerkleTreeJS from "merkletreejs";
 
 const hashIdentifier = (identifier: string) =>
-  keccak256(
-    Buffer.from(ethers.toBeHex(identifier).slice(2).padStart(64, "0"), "hex"),
-  );
+  keccak256(Buffer.from(toBeHex(identifier).slice(2).padStart(64, "0"), "hex"));
 
 /**
  * Simple wrapper over the MerkleTree in merkletreejs.

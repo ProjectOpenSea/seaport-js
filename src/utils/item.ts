@@ -78,7 +78,7 @@ export const getPresentItemAmount = ({
   return (
     (startAmountBn * remaining +
       endAmountBn * elapsed +
-      (isConsiderationItem ? BigInt(duration - 1n) : 0n)) /
+      (isConsiderationItem ? duration - 1n : 0n)) /
     duration
   );
 };

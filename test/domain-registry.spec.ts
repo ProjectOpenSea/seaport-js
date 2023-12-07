@@ -96,11 +96,8 @@ describeWithFixture(
     it("Should return an array of domains even if getDomains throws", async () => {
       const { seaport } = fixture;
 
-      (seaport.domainRegistry as any) = {
-        ...seaport.domainRegistry,
-        getDomains: () => {
-          throw new Error();
-        },
+      (seaport.domainRegistry as any).getDomains = () => {
+        throw new Error("intentional error");
       };
 
       expect(await seaport.getDomains(exampleTag)).to.deep.eq(

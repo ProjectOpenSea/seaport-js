@@ -5,6 +5,7 @@ import {
   keccak256,
   randomBytes,
   toUtf8Bytes,
+  toBeHex,
 } from "ethers";
 import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants";
 import type {
@@ -274,13 +275,13 @@ export const mapOrderAmountsFromUnitsToFill = (
 
 export const generateRandomSalt = (domain?: string) => {
   if (domain) {
-    return `0x${Buffer.from(
+    return toBeHex(
       concat([
         keccak256(toUtf8Bytes(domain)).slice(0, 10),
         Uint8Array.from(Array(20).fill(0)),
         randomBytes(8),
       ]),
-    ).toString("hex")}`;
+    );
   }
   return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`;
 };

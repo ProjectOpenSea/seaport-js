@@ -1,4 +1,3 @@
-import { ethers } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
 import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
@@ -66,37 +65,24 @@ export const getBalancesAndApprovals = async ({
   items,
   criterias,
   operator,
-  provider,
 }: {
   owner: string;
   items: Item[];
   criterias: InputCriteria[];
   operator: string;
-  provider: ethers.Provider;
 }): Promise<BalancesAndApprovals> => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
 
   return Promise.all(
     items.map(async (item) => {
-      let approvedAmount;
+      let approvedAmount = 0n;
 
       if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
-        approvedAmount = await approvedItemAmount(
-          owner,
-          item,
-          operator,
-          provider,
-        );
+        approvedAmount = await approvedItemAmount(owner, item, operator);
       } else if (isErc20Item(item.itemType)) {
-        approvedAmount = await approvedItemAmount(
-          owner,
-          item,
-          operator,
-          provider,
-        );
-      }
-      // If native token, we don't need to check for approvals
-      else {
+        approvedAmount = await approvedItemAmount(owner, item, operator);
+      } else {
+        // If native token, we don't need to check for approvals
         approvedAmount = MAX_INT;
       }
 
@@ -104,12 +90,7 @@ export const getBalancesAndApprovals = async ({
         token: item.token,
         identifierOrCriteria:
           itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
-        balance: await balanceOf(
-          owner,
-          item,
-          provider,
-          itemToCriteria.get(item),
-        ),
+        balance: await balanceOf(owner, item, itemToCriteria.get(item)),
         approvedAmount,
         itemType: item.itemType,
       };

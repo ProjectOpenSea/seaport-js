@@ -114,11 +114,7 @@ describeWithFixture(
         const order = await createOrderAction.createOrder();
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -161,7 +157,7 @@ describeWithFixture(
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
         });
 
@@ -260,11 +256,7 @@ describeWithFixture(
         const order = await createOrderAction.createOrder();
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -307,7 +299,7 @@ describeWithFixture(
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
         });
 
@@ -418,11 +410,7 @@ describeWithFixture(
         const order = await createOrderAction.createOrder();
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(
-            order,
-            await fulfiller.getAddress(),
-            ethers.provider,
-          );
+          await getBalancesForFulfillOrder(order, await fulfiller.getAddress());
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -485,7 +473,7 @@ describeWithFixture(
           ownerToTokenToIdentifierBalances,
           order,
           fulfillerAddress: await fulfiller.getAddress(),
-          provider: ethers.provider,
+
           fulfillReceipt: receipt!,
         });
 

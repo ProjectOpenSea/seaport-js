@@ -409,14 +409,7 @@ export class Seaport {
     accountAddress?: string,
   ): Promise<Signer | JsonRpcSigner> {
     if (this.signer) {
-      if (!accountAddress) {
-        return this.signer;
-      } else if (
-        (await this.signer.getAddress()).toLowerCase() ==
-        accountAddress?.toLowerCase()
-      ) {
-        return this.signer;
-      }
+      return this.signer;
     }
 
     if (!("send" in this.provider)) {
@@ -643,8 +636,10 @@ export class Seaport {
    * @param orderHash the hash of the order
    * @returns an order status struct
    */
-  public getOrderStatus(orderHash: string): Promise<OrderStatus> {
-    return this.contract.getOrderStatus(orderHash);
+  public async getOrderStatus(orderHash: string): Promise<OrderStatus> {
+    const result = await this.contract.getOrderStatus(orderHash);
+    const [isValidated, isCancelled, totalFilled, totalSize] = result;
+    return { isValidated, isCancelled, totalFilled, totalSize };
   }
 
   /**
@@ -1160,12 +1155,12 @@ export class Seaport {
       const totalDomains = await this.domainRegistry.getNumberOfDomains(tag);
 
       const domainArray = Promise.all(
-        [...Array(totalDomains).keys()].map((i) =>
+        [...Array(Number(totalDomains)).keys()].map((i) =>
           this.domainRegistry.getDomain(tag, i),
         ),
       );
 
-      return domainArray;
+      return await domainArray;
     }
   }
 }
