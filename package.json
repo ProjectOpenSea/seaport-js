@@ -13,14 +13,10 @@
     "url": "https://github.com/ProjectOpenSea/seaport-js/issues"
   },
   "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "files": [
     "src",
     "lib"
   ],
-  "engines": {
-    "node": ">=16.0.0"
-  },
   "scripts": {
     "build": "hardhat compile && tsc -p tsconfig.build.json",
     "check-types": "tsc --noEmit",
@@ -35,6 +31,7 @@
     "prettier:fix": "prettier --write . && prettier-package-json --write package.json",
     "test": "hardhat test"
   },
+  "types": "lib/index.d.ts",
   "dependencies": {
     "ethers": "^6.9.0",
     "merkletreejs": "^0.3.11"
@@ -73,6 +70,9 @@
     "ts-node": "^10.9.1",
     "typechain": "^8.2.0",
     "typescript": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "lint-staged": {
     "package.json": [

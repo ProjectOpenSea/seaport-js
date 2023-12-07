@@ -157,11 +157,11 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             [await seaport.contract.getAddress(), MAX_INT],
           ).transact();
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await privateListingRecipient.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const transaction = await seaport
             .matchOrders({
@@ -320,11 +320,11 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             [await seaport.contract.getAddress(), MAX_INT],
           ).transact();
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await privateListingRecipient.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const transaction = await seaport
             .matchOrders({

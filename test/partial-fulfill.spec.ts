@@ -278,11 +278,11 @@ describeWithFixture(
           await approvalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[1];
 
@@ -407,11 +407,11 @@ describeWithFixture(
           await approvalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20USDC.allowance(
+            await testErc20USDC.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[1];
 
@@ -552,11 +552,11 @@ describeWithFixture(
           await second.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[2];
 
@@ -780,11 +780,11 @@ describeWithFixture(
           await approvalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[1];
 
@@ -966,11 +966,11 @@ describeWithFixture(
           await second.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[3];
 

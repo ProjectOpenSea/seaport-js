@@ -206,11 +206,11 @@ describeWithFixture(
           await approvalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[1];
 
@@ -376,11 +376,11 @@ describeWithFixture(
           await thirdApprovalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[3];
 
@@ -582,11 +582,11 @@ describeWithFixture(
           await approvalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[1];
 
@@ -779,11 +779,11 @@ describeWithFixture(
           await fourthApprovalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[4];
 
@@ -992,11 +992,11 @@ describeWithFixture(
           await approvalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[1];
 
@@ -1174,11 +1174,11 @@ describeWithFixture(
           await thirdApprovalAction.transactionMethods.transact();
 
           expect(
-            (await testErc20.allowance(
+            await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            )) === MAX_INT,
-          );
+            ),
+          ).to.eq(MAX_INT);
 
           const fulfillAction = actions[3];
 
