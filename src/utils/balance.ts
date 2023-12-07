@@ -1,4 +1,5 @@
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
+import { ethers as hardhatEthers } from "hardhat";
 import { ItemType } from "../constants";
 import {
   TestERC721__factory,
@@ -12,9 +13,10 @@ export const balanceOf = async (
   owner: string,
   item: Item,
   criteria?: InputCriteria,
+  provider: ethers.Provider = hardhatEthers.provider,
 ): Promise<bigint> => {
   if (isErc721Item(item.itemType)) {
-    const contract = TestERC721__factory.connect(item.token, ethers.provider);
+    const contract = TestERC721__factory.connect(item.token, provider);
 
     if (item.itemType === ItemType.ERC721_WITH_CRITERIA) {
       return criteria
@@ -30,7 +32,7 @@ export const balanceOf = async (
       .ownerOf(item.identifierOrCriteria)
       .then((ownerOf) => BigInt(ownerOf.toLowerCase() === owner.toLowerCase()));
   } else if (isErc1155Item(item.itemType)) {
-    const contract = TestERC1155__factory.connect(item.token, ethers.provider);
+    const contract = TestERC1155__factory.connect(item.token, provider);
 
     if (item.itemType === ItemType.ERC1155_WITH_CRITERIA) {
       if (!criteria) {
@@ -48,9 +50,9 @@ export const balanceOf = async (
   }
 
   if (isErc20Item(item.itemType)) {
-    const contract = TestERC20__factory.connect(item.token, ethers.provider);
+    const contract = TestERC20__factory.connect(item.token, provider);
     return contract.balanceOf(owner);
   }
 
-  return ethers.provider.getBalance(owner);
+  return provider.getBalance(owner);
 };

@@ -491,12 +491,6 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            const ownerToTokenToIdentifierBalances =
-              await getBalancesForFulfillOrder(
-                order,
-                await fulfiller.getAddress(),
-              );
-
             const { actions: revertedActions } = await seaport.fulfillOrder({
               order,
               offerCriteria: [
@@ -521,6 +515,12 @@ describeWithFixture(
             await expect(
               revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWithCustomError(seaportContract, "InvalidProof");
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                await fulfiller.getAddress(),
+              );
 
             const { actions } = await seaport.fulfillOrder({
               order,
@@ -579,12 +579,6 @@ describeWithFixture(
 
             const order = await executeAllActions();
 
-            const ownerToTokenToIdentifierBalances =
-              await getBalancesForFulfillOrder(
-                order,
-                await fulfiller.getAddress(),
-              );
-
             const { actions: revertedActions } = await seaport.fulfillOrder({
               order,
               offerCriteria: [
@@ -609,6 +603,12 @@ describeWithFixture(
             await expect(
               revertedFulfill.transactionMethods.transact(),
             ).to.be.revertedWithCustomError(seaportContract, "InvalidProof");
+
+            const ownerToTokenToIdentifierBalances =
+              await getBalancesForFulfillOrder(
+                order,
+                await fulfiller.getAddress(),
+              );
 
             const { actions } = await seaport.fulfillOrder({
               order,

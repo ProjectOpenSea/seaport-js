@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
 import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
@@ -65,11 +66,13 @@ export const getBalancesAndApprovals = async ({
   items,
   criterias,
   operator,
+  provider,
 }: {
   owner: string;
   items: Item[];
   criterias: InputCriteria[];
   operator: string;
+  provider: ethers.Provider;
 }): Promise<BalancesAndApprovals> => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
 
@@ -90,7 +93,12 @@ export const getBalancesAndApprovals = async ({
         token: item.token,
         identifierOrCriteria:
           itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
-        balance: await balanceOf(owner, item, itemToCriteria.get(item)),
+        balance: await balanceOf(
+          owner,
+          item,
+          itemToCriteria.get(item),
+          provider,
+        ),
         approvedAmount,
         itemType: item.itemType,
       };
