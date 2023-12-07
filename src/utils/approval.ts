@@ -55,6 +55,16 @@ export function getApprovalActions(
         if (isErc721Item(itemType) || isErc1155) {
           // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
           const contract = TestERC721__factory.connect(token, signer);
+          const transactionMethods =
+            exactApproval && !isErc1155
+              ? getTransactionMethods(signer, contract, "approve", [
+                  operator,
+                  identifierOrCriteria,
+                ])
+              : getTransactionMethods(signer, contract, "setApprovalForAll", [
+                  operator,
+                  true,
+                ]);
 
           return {
             type: "approval",
@@ -62,14 +72,7 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             operator,
-            transactionMethods: getTransactionMethods(
-              contract.connect(signer),
-              exactApproval && !isErc1155 ? "approve" : "setApprovalForAll",
-              [
-                operator,
-                exactApproval && !isErc1155 ? identifierOrCriteria : true,
-              ],
-            ),
+            transactionMethods,
           };
         } else {
           const contract = TestERC20__factory.connect(token, signer);
@@ -80,7 +83,8 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             transactionMethods: getTransactionMethods(
-              contract.connect(signer),
+              signer,
+              contract,
               "approve",
               [operator, exactApproval ? requiredApprovedAmount : MAX_INT],
             ),

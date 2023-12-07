@@ -6,14 +6,13 @@ import {
   Signer,
 } from "ethers";
 import type {
-  Seaport as SeaportContract,
   BasicOrderParametersStruct,
-  Seaport,
   FulfillmentComponentStruct,
   OrderStruct,
 } from "../typechain-types/seaport_v1_5/contracts/Seaport";
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
+  SeaportContract,
   AdvancedOrder,
   ConsiderationItem,
   ExchangeAction,
@@ -197,7 +196,7 @@ export function fulfillBasicOrder(
     overrides,
   }: {
     order: Order;
-    seaportContract: Seaport;
+    seaportContract: SeaportContract;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
@@ -297,7 +296,8 @@ export function fulfillBasicOrder(
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
-      seaportContract.connect(signer),
+      signer,
+      seaportContract,
       "fulfillBasicOrder",
       [basicOrderParameters, overrides],
       domain,
@@ -343,7 +343,7 @@ export function fulfillStandardOrder(
     considerationCriteria: InputCriteria[];
     tips?: ConsiderationItem[];
     extraData?: string;
-    seaportContract: Seaport;
+    seaportContract: SeaportContract;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     offererOperator: string;
@@ -454,7 +454,8 @@ export function fulfillStandardOrder(
     type: "exchange",
     transactionMethods: useAdvanced
       ? getTransactionMethods(
-          seaportContract.connect(signer),
+          signer,
+          seaportContract,
           "fulfillAdvancedOrder",
           [
             {
@@ -477,7 +478,8 @@ export function fulfillStandardOrder(
           domain,
         )
       : getTransactionMethods(
-          seaportContract.connect(signer),
+          signer,
+          seaportContract,
           "fulfillOrder",
           [orderAccountingForTips, conduitKey, overrides],
           domain,
@@ -541,7 +543,7 @@ export function fulfillAvailableOrders({
   domain,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
-  seaportContract: Seaport;
+  seaportContract: SeaportContract;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   fulfillerOperator: string;
   currentBlockTimestamp: number;
@@ -713,7 +715,8 @@ export function fulfillAvailableOrders({
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
-      seaportContract.connect(signer),
+      signer,
+      seaportContract,
       "fulfillAvailableAdvancedOrders",
       [
         advancedOrdersWithTips,

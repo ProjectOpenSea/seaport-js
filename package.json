@@ -14,8 +14,8 @@
   },
   "main": "lib/index.js",
   "files": [
-    "src",
-    "lib"
+    "lib",
+    "src"
   ],
   "scripts": {
     "build": "hardhat compile && tsc -p tsconfig.build.json",

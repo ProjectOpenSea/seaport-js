@@ -36,6 +36,7 @@ import type {
   Signer,
   ApprovalAction,
   CreateBulkOrdersAction,
+  SeaportContract,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -71,7 +72,6 @@ import {
   DomainRegistry__factory,
   Seaport__factory,
 } from "./typechain-types";
-import { Seaport as SeaportContract } from "./typechain-types/seaport_v1_5/contracts/Seaport";
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
@@ -409,7 +409,14 @@ export class Seaport {
     accountAddress?: string,
   ): Promise<Signer | JsonRpcSigner> {
     if (this.signer) {
-      return this.signer;
+      if (!accountAddress) {
+        return this.signer;
+      } else if (
+        (await this.signer.getAddress()).toLowerCase() ==
+        accountAddress?.toLowerCase()
+      ) {
+        return this.signer;
+      }
     }
 
     if (!("send" in this.provider)) {
@@ -418,7 +425,7 @@ export class Seaport {
       );
     }
 
-    return await (this.provider as JsonRpcProvider).getSigner(accountAddress);
+    return (this.provider as JsonRpcProvider).getSigner(accountAddress);
   }
 
   /**
@@ -569,16 +576,15 @@ export class Seaport {
    * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
-  public async cancelOrders(
+  public cancelOrders(
     orders: OrderComponents[],
     accountAddress?: string,
     domain?: string,
     overrides?: Overrides,
-  ): Promise<SeaportContract["cancel"]> {
-    const signer = await this._getSigner(accountAddress);
-
+  ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(accountAddress),
+      this.contract,
       "cancel",
       [orders, overrides],
       domain,
@@ -592,17 +598,16 @@ export class Seaport {
    * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
-  public async bulkCancelOrders(
+  public bulkCancelOrders(
     offerer?: string,
     domain?: string,
     overrides?: Overrides,
-  ): Promise<
-    TransactionMethods<ReturnType<SeaportContract["incrementCounter"]>>
+  ): TransactionMethods<
+    ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
-    const signer = await this._getSigner(offerer);
-
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(offerer),
+      this.contract,
       "incrementCounter",
       [overrides],
       domain,
@@ -618,16 +623,15 @@ export class Seaport {
    * @param overrides any transaction overrides the client wants, ignored if not set
    * @returns the set of transaction methods that can be used
    */
-  public async validate(
+  public validate(
     orders: Order[],
     accountAddress?: string,
     domain?: string,
     overrides?: Overrides,
-  ): Promise<TransactionMethods<ReturnType<SeaportContract["validate"]>>> {
-    const signer = await this._getSigner(accountAddress);
-
+  ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(accountAddress),
+      this.contract,
       "validate",
       [orders, overrides],
       domain,
@@ -1079,7 +1083,7 @@ export class Seaport {
    * @param input.domain optional domain to be hashed and appended to calldata
    * @returns set of transaction methods for matching orders
    */
-  public async matchOrders({
+  public matchOrders({
     orders,
     fulfillments,
     overrides,
@@ -1091,11 +1095,12 @@ export class Seaport {
     overrides?: Overrides;
     accountAddress?: string;
     domain?: string;
-  }): ReturnType<SeaportContract["matchOrders"]> {
-    const signer = await this._getSigner(accountAddress);
-
+  }): TransactionMethods<
+    ContractMethodReturnType<SeaportContract, "matchOrders">
+  > {
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(accountAddress),
+      this.contract,
       "matchOrders",
       [orders, fulfillments, overrides],
       domain,
@@ -1109,15 +1114,14 @@ export class Seaport {
    * @param overrides Any transaction overrides the client wants, ignored if not set
    * @returns The domain tag (4 byte keccak hash of the domain)
    */
-  public async setDomain(
+  public setDomain(
     domain: string,
     accountAddress?: string,
     overrides?: Overrides,
-  ): ReturnType<DomainRegistry["setDomain"]> {
-    const signer = await this._getSigner(accountAddress);
-
+  ): TransactionMethods<ContractMethodReturnType<DomainRegistry, "setDomain">> {
     return getTransactionMethods(
-      this.domainRegistry.connect(signer),
+      this._getSigner(accountAddress),
+      this.domainRegistry,
       "setDomain",
       [domain, overrides],
     );

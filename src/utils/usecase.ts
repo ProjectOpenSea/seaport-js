@@ -2,6 +2,7 @@ import {
   BaseContract,
   ContractTransaction,
   Overrides,
+  Signer,
   TransactionResponse,
   keccak256,
   toUtf8Bytes,
@@ -71,12 +72,11 @@ const instanceOfOverrides = <T extends Overrides>(
 export type ContractMethodReturnType<
   T extends BaseContract,
   U extends keyof T,
-> = Awaited<ReturnType<T[U] extends TypedContractMethod ? T[U] : never>>;
+> = T[U] extends TypedContractMethod<any, infer Output, any> ? Output : never;
 
 export type TransactionMethods<T = unknown> = {
   buildTransaction: (overrides?: Overrides) => Promise<ContractTransaction>;
   staticCall: (overrides?: Overrides) => Promise<DefaultReturnType<T>>;
-  staticCallResult: (overrides?: Overrides) => Promise<T>;
   estimateGas: (overrides?: Overrides) => Promise<bigint>;
   transact: (overrides?: Overrides) => Promise<TransactionResponse>;
 };
@@ -85,27 +85,32 @@ export const getTransactionMethods = <
   T extends BaseContract,
   U extends keyof T,
 >(
+  signer: Signer | Promise<Signer>,
   contract: T,
   method: U,
-  args: any, //T[U] extends TypedContractMethod ? Parameters<T[U]> : never,
+  args: T[U] extends TypedContractMethod<infer Args, any, any>
+    ? Args | [...Args, Overrides | undefined]
+    : never,
   domain?: string,
-): any => {
-  const lastArg = args[args.length - 1];
-
+): TransactionMethods<ContractMethodReturnType<T, U>> => {
   let initialOverrides: Overrides;
-
-  if (instanceOfOverrides(lastArg)) {
-    initialOverrides = lastArg;
-    args.pop();
+  if (args?.length > 0) {
+    const lastArg = args[args.length - 1];
+    if (instanceOfOverrides(lastArg)) {
+      initialOverrides = lastArg;
+      args.pop();
+    }
   }
 
-  const contractMethod = contract[method] as T[U] extends TypedContractMethod
-    ? T[U]
-    : never;
+  const contractMethod = async (signer: Signer | Promise<Signer>) =>
+    (contract.connect(await signer) as T)[
+      method
+    ] as T[U] extends TypedContractMethod ? T[U] : never;
 
   const buildTransaction = async (overrides?: Overrides) => {
     const mergedOverrides = { ...initialOverrides, ...overrides };
-    const populatedTransaction = await contractMethod.populateTransaction(
+    const method = await contractMethod(signer);
+    const populatedTransaction = await method.populateTransaction(
       ...[...args, mergedOverrides],
     );
 
@@ -118,33 +123,22 @@ export const getTransactionMethods = <
   };
 
   return {
-    staticCall: (overrides?: Overrides) => {
+    staticCall: async (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides };
-
-      return contractMethod.staticCall(...[...args, mergedOverrides]);
+      const mergedArgs = [...args, mergedOverrides];
+      const method = await contractMethod(signer);
+      return method.staticCall(...mergedArgs);
     },
-    staticCallResult: (overrides?: Overrides) => {
+    estimateGas: async (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides };
-
-      return contractMethod.staticCallResult(...[...args, mergedOverrides]);
-    },
-    estimateGas: (overrides?: Overrides) => {
-      const mergedOverrides = { ...initialOverrides, ...overrides };
-
-      return contractMethod.estimateGas(...[...args, mergedOverrides]);
+      const mergedArgs = [...args, mergedOverrides];
+      const method = await contractMethod(signer);
+      return method.estimateGas(...mergedArgs);
     },
     transact: async (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides };
-
       const data = await buildTransaction(mergedOverrides);
-
-      if (!contract.runner?.sendTransaction) {
-        throw new Error(
-          "Missing connected runner (provider or signer) for contract",
-        );
-      }
-
-      return contract.runner.sendTransaction(data);
+      return (await signer).sendTransaction(data);
     },
     buildTransaction,
   };

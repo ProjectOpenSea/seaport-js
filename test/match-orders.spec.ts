@@ -152,7 +152,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           await getTransactionMethods(
-            testErc20.connect(privateListingRecipient),
+            privateListingRecipient,
+            testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
           ).transact();
@@ -315,7 +316,8 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           await getTransactionMethods(
-            testErc20.connect(privateListingRecipient),
+            privateListingRecipient,
+            testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
           ).transact();
