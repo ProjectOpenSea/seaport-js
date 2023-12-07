@@ -22,7 +22,7 @@ describeWithFixture(
       const nftId3 = "3";
       const nftIds = [nftId1, nftId2, nftId3];
       for (const nftId of nftIds) {
-        await testErc721.mint(offerer.address, nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId);
       }
 
       const startTime = "0";
@@ -36,18 +36,18 @@ describeWithFixture(
         offer: [
           {
             itemType: ItemType.ERC721,
-            token: testErc721.address,
+            token: await testErc721.getAddress(),
             identifier: nftId1,
           } as BasicErc721Item,
         ],
         consideration: [
           {
-            amount: ethers.utils.parseEther("10").toString(),
-            recipient: offerer.address,
+            amount: ethers.parseEther("10").toString(),
+            recipient: await offerer.getAddress(),
           },
         ],
         // 2.5% fee
-        fees: [{ recipient: zone.address, basisPoints: 250 }],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
       };
 
       const orders = [
@@ -65,11 +65,11 @@ describeWithFixture(
 
       expect(approvalAction).to.be.deep.equal({
         type: "approval",
-        token: testErc721.address,
+        token: await testErc721.getAddress(),
         identifierOrCriteria: nftId1,
         itemType: ItemType.ERC721,
         transactionMethods: approvalAction.transactionMethods,
-        operator: seaportContract.address,
+        operator: await seaportContract.getAddress(),
       });
 
       await approvalAction.transactionMethods.transact();
@@ -77,8 +77,8 @@ describeWithFixture(
       // NFT should now be approved
       expect(
         await testErc721.isApprovedForAll(
-          offerer.address,
-          seaportContract.address,
+          await offerer.getAddress(),
+          await seaportContract.getAddress(),
         ),
       ).to.be.true;
 
@@ -94,20 +94,20 @@ describeWithFixture(
             consideration: [
               {
                 // Fees were deducted
-                endAmount: ethers.utils.parseEther("9.75").toString(),
+                endAmount: ethers.parseEther("9.75").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
-                recipient: offerer.address,
-                startAmount: ethers.utils.parseEther("9.75").toString(),
-                token: ethers.constants.AddressZero,
+                recipient: await offerer.getAddress(),
+                startAmount: ethers.parseEther("9.75").toString(),
+                token: ethers.ZeroAddress,
               },
               {
-                endAmount: ethers.utils.parseEther(".25").toString(),
+                endAmount: ethers.parseEther(".25").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
-                recipient: zone.address,
-                startAmount: ethers.utils.parseEther(".25").toString(),
-                token: ethers.constants.AddressZero,
+                recipient: await zone.getAddress(),
+                startAmount: ethers.parseEther(".25").toString(),
+                token: ethers.ZeroAddress,
               },
             ],
             endTime,
@@ -117,16 +117,16 @@ describeWithFixture(
                 identifierOrCriteria: nftIds[index],
                 itemType: ItemType.ERC721,
                 startAmount: "1",
-                token: testErc721.address,
+                token: await testErc721.getAddress(),
               },
             ],
-            offerer: offerer.address,
+            offerer: await offerer.getAddress(),
             orderType: OrderType.FULL_OPEN,
             salt,
             startTime,
             totalOriginalConsiderationItems: 2,
-            zone: ethers.constants.AddressZero,
-            zoneHash: ethers.constants.HashZero,
+            zone: ethers.ZeroAddress,
+            zoneHash: ethers.ZeroHash,
             conduitKey: NO_CONDUIT,
             counter: "0",
           },
@@ -135,7 +135,7 @@ describeWithFixture(
 
         const isValid = await seaportContract
           .connect(randomSigner)
-          .callStatic.validate([
+          .validate.staticCall([
             {
               parameters: {
                 ...order.parameters,

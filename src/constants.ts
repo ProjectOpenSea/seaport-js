@@ -1,4 +1,4 @@
-import { BigNumber, constants } from "ethers";
+import { ethers } from "ethers";
 
 export const SEAPORT_CONTRACT_NAME = "Seaport";
 export const SEAPORT_CONTRACT_VERSION_V1_4 = "1.4";
@@ -105,19 +105,16 @@ export enum BasicOrderRouteType {
   ERC1155_TO_ERC20,
 }
 
-export const MAX_INT = BigNumber.from(
+export const MAX_INT = BigInt(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 );
-export const ONE_HUNDRED_PERCENT_BP = 10_000;
-export const NO_CONDUIT = constants.HashZero;
+export const ONE_HUNDRED_PERCENT_BP = 10_000n;
+export const NO_CONDUIT = ethers.ZeroHash;
 
 // Supply here any known conduit keys as well as their conduits
 export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {
   [OPENSEA_CONDUIT_KEY]: OPENSEA_CONDUIT_ADDRESS,
 };
-
-export const CROSS_CHAIN_SEAPORT_V1_4_ADDRESS =
-  "0x00000000000001ad428e4906aE43D8F9852d0dD6";
 
 export const CROSS_CHAIN_SEAPORT_V1_5_ADDRESS =
   "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";

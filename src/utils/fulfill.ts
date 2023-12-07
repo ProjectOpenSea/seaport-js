@@ -1,20 +1,18 @@
 import {
-  BigNumber,
   BigNumberish,
   ContractTransaction,
   ethers,
-  PayableOverrides,
+  Overrides,
   Signer,
 } from "ethers";
 import type {
-  Seaport as SeaportContract,
   BasicOrderParametersStruct,
-  Seaport,
   FulfillmentComponentStruct,
   OrderStruct,
-} from "../typechain-types/seaport_v1_4/contracts/Seaport";
+} from "../typechain-types/seaport_v1_5/contracts/Seaport";
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
+  SeaportContract,
   AdvancedOrder,
   ConsiderationItem,
   ExchangeAction,
@@ -23,7 +21,6 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
-  ContractMethodReturnType,
 } from "../types";
 import { getApprovalActions } from "./approval";
 import {
@@ -49,7 +46,11 @@ import {
   mapOrderAmountsFromUnitsToFill,
   totalItemsAmount,
 } from "./order";
-import { executeAllActions, getTransactionMethods } from "./usecase";
+import {
+  ContractMethodReturnType,
+  executeAllActions,
+  getTransactionMethods,
+} from "./usecase";
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:
@@ -72,7 +73,7 @@ export const shouldUseBasicFulfill = (
   totalFilled: OrderStatus["totalFilled"],
 ) => {
   // 1. The order must not be partially filled
-  if (!totalFilled.eq(0)) {
+  if (totalFilled !== 0n) {
     return false;
   }
 
@@ -134,7 +135,7 @@ export const shouldUseBasicFulfill = (
   if (
     consideration.length > 1 &&
     restConsideration.every((item) => item.itemType === offer[0].itemType) &&
-    totalItemsAmount(restConsideration).endAmount.gt(offer[0].endAmount)
+    totalItemsAmount(restConsideration).endAmount > BigInt(offer[0].endAmount)
   ) {
     return false;
   }
@@ -145,10 +146,10 @@ export const shouldUseBasicFulfill = (
   //  currencies needs to be zero, and the amounts on the 721 item need to be 1
   const nativeCurrencyIsZeroAddress = currencies
     .filter(({ itemType }) => itemType === ItemType.NATIVE)
-    .every(({ token }) => token === ethers.constants.AddressZero);
+    .every(({ token }) => token === ethers.ZeroAddress);
 
   const currencyIdentifiersAreZero = currencies.every(
-    ({ identifierOrCriteria }) => BigNumber.from(identifierOrCriteria).eq(0),
+    ({ identifierOrCriteria }) => BigInt(identifierOrCriteria) === 0n,
   );
 
   const erc721sAreSingleAmount = nfts
@@ -195,7 +196,7 @@ export function fulfillBasicOrder(
     overrides,
   }: {
     order: Order;
-    seaportContract: Seaport;
+    seaportContract: SeaportContract;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     timeBasedItemParams: TimeBasedItemParams;
@@ -205,7 +206,7 @@ export function fulfillBasicOrder(
     tips?: ConsiderationItem[];
     conduitKey: string;
     domain?: string;
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
   },
   exactApproval: boolean,
 ): OrderUseCase<
@@ -246,7 +247,7 @@ export function fulfillBasicOrder(
       ...timeBasedItemParams,
       isConsiderationItem: true,
     },
-  })[ethers.constants.AddressZero]?.["0"];
+  })[ethers.ZeroAddress]?.["0"];
 
   const insufficientApprovals = validateBasicFulfillBalancesAndApprovals({
     offer,
@@ -284,7 +285,7 @@ export function fulfillBasicOrder(
     zoneHash: order.parameters.zoneHash,
   };
 
-  const payableOverrides = { ...overrides, value: totalNativeAmount };
+  overrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,
@@ -295,9 +296,10 @@ export function fulfillBasicOrder(
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
-      seaportContract.connect(signer),
+      signer,
+      seaportContract,
       "fulfillBasicOrder",
-      [basicOrderParameters, payableOverrides],
+      [basicOrderParameters, overrides],
       domain,
     ),
   } as const;
@@ -335,13 +337,13 @@ export function fulfillStandardOrder(
   }: {
     order: Order;
     unitsToFill?: BigNumberish;
-    totalFilled: BigNumber;
-    totalSize: BigNumber;
+    totalFilled: bigint;
+    totalSize: bigint;
     offerCriteria: InputCriteria[];
     considerationCriteria: InputCriteria[];
     tips?: ConsiderationItem[];
     extraData?: string;
-    seaportContract: Seaport;
+    seaportContract: SeaportContract;
     offererBalancesAndApprovals: BalancesAndApprovals;
     fulfillerBalancesAndApprovals: BalancesAndApprovals;
     offererOperator: string;
@@ -351,7 +353,7 @@ export function fulfillStandardOrder(
     timeBasedItemParams: TimeBasedItemParams;
     signer: Signer;
     domain?: string;
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
   },
   exactApproval: boolean,
 ): OrderUseCase<
@@ -408,7 +410,7 @@ export function fulfillStandardOrder(
       ...timeBasedItemParams,
       isConsiderationItem: true,
     },
-  })[ethers.constants.AddressZero]?.["0"];
+  })[ethers.ZeroAddress]?.["0"];
 
   const insufficientApprovals = validateStandardFulfillBalancesAndApprovals({
     offer,
@@ -422,7 +424,7 @@ export function fulfillStandardOrder(
     fulfillerOperator,
   });
 
-  const payableOverrides = { ...overrides, value: totalNativeAmount };
+  overrides = { ...overrides, value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     insufficientApprovals,
@@ -430,7 +432,7 @@ export function fulfillStandardOrder(
     signer,
   );
 
-  const isGift = recipientAddress !== ethers.constants.AddressZero;
+  const isGift = recipientAddress !== ethers.ZeroAddress;
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems || isGift;
 
@@ -452,7 +454,8 @@ export function fulfillStandardOrder(
     type: "exchange",
     transactionMethods: useAdvanced
       ? getTransactionMethods(
-          seaportContract.connect(signer),
+          signer,
+          seaportContract,
           "fulfillAdvancedOrder",
           [
             {
@@ -470,14 +473,15 @@ export function fulfillStandardOrder(
               : [],
             conduitKey,
             recipientAddress,
-            payableOverrides,
+            overrides,
           ],
           domain,
         )
       : getTransactionMethods(
-          seaportContract.connect(signer),
+          signer,
+          seaportContract,
           "fulfillOrder",
-          [orderAccountingForTips, conduitKey, payableOverrides],
+          [orderAccountingForTips, conduitKey, overrides],
           domain,
         ),
   } as const;
@@ -497,7 +501,7 @@ export function validateAndSanitizeFromOrderStatus(
 ): Order {
   const { isValidated, isCancelled, totalFilled, totalSize } = orderStatus;
 
-  if (totalSize.gt(0) && totalFilled.div(totalSize).eq(1)) {
+  if (totalSize > 0n && totalFilled / totalSize === 1n) {
     throw new Error("The order you are trying to fulfill is already filled");
   }
 
@@ -539,7 +543,7 @@ export function fulfillAvailableOrders({
   domain,
 }: {
   ordersMetadata: FulfillOrdersMetadata;
-  seaportContract: Seaport;
+  seaportContract: SeaportContract;
   fulfillerBalancesAndApprovals: BalancesAndApprovals;
   fulfillerOperator: string;
   currentBlockTimestamp: number;
@@ -580,7 +584,7 @@ export function fulfillAvailableOrders({
     }),
   );
 
-  let totalNativeAmount = BigNumber.from(0);
+  let totalNativeAmount = 0n;
   const totalInsufficientApprovals: InsufficientApprovals = [];
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap((orderMetadata) => [
@@ -628,13 +632,13 @@ export function fulfillAvailableOrders({
         isConsiderationItem: true,
       };
 
-      totalNativeAmount = totalNativeAmount.add(
-        getSummedTokenAndIdentifierAmounts({
+      totalNativeAmount =
+        totalNativeAmount +
+        (getSummedTokenAndIdentifierAmounts({
           items: considerationIncludingTips,
           criterias: considerationCriteria,
           timeBasedItemParams,
-        })[ethers.constants.AddressZero]?.["0"] ?? BigNumber.from(0),
-      );
+        })[ethers.ZeroAddress]?.["0"] ?? 0n);
 
       const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
         {
@@ -671,7 +675,7 @@ export function fulfillAvailableOrders({
     },
   );
 
-  const payableOverrides = { value: totalNativeAmount };
+  const overrides = { value: totalNativeAmount };
 
   const approvalActions = getApprovalActions(
     totalInsufficientApprovals,
@@ -711,7 +715,8 @@ export function fulfillAvailableOrders({
   const exchangeAction = {
     type: "exchange",
     transactionMethods: getTransactionMethods(
-      seaportContract.connect(signer),
+      signer,
+      seaportContract,
       "fulfillAvailableAdvancedOrders",
       [
         advancedOrdersWithTips,
@@ -731,7 +736,7 @@ export function fulfillAvailableOrders({
         conduitKey,
         recipientAddress,
         advancedOrdersWithTips.length,
-        payableOverrides,
+        overrides,
       ],
       domain,
     ),
@@ -839,15 +844,15 @@ export const getAdvancedOrderNumeratorDenominator = (
 ) => {
   // Used for advanced order cases
   const maxUnits = getMaximumSizeForOrder(order);
-  const unitsToFillBn = BigNumber.from(unitsToFill);
 
   // Reduce the numerator/denominator as optimization
-  const unitsGcd = gcd(unitsToFillBn, maxUnits);
-
-  const numerator = unitsToFill
-    ? unitsToFillBn.div(unitsGcd)
-    : BigNumber.from(1);
-  const denominator = unitsToFill ? maxUnits.div(unitsGcd) : BigNumber.from(1);
+  let numerator = 1n;
+  let denominator = 1n;
+  if (unitsToFill) {
+    const unitsGcd = gcd(BigInt(unitsToFill), maxUnits);
+    numerator = BigInt(unitsToFill) / unitsGcd;
+    denominator = maxUnits / unitsGcd;
+  }
 
   return { numerator, denominator };
 };

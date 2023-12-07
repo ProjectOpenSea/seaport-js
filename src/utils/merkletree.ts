@@ -1,14 +1,8 @@
-import { BigNumber } from "ethers";
-import { keccak256 } from "ethers/lib/utils";
+import { keccak256, toBeHex } from "ethers";
 import MerkleTreeJS from "merkletreejs";
 
 const hashIdentifier = (identifier: string) =>
-  keccak256(
-    Buffer.from(
-      BigNumber.from(identifier).toHexString().slice(2).padStart(64, "0"),
-      "hex",
-    ),
-  );
+  keccak256(Buffer.from(toBeHex(identifier).slice(2).padStart(64, "0"), "hex"));
 
 /**
  * Simple wrapper over the MerkleTree in merkletreejs.

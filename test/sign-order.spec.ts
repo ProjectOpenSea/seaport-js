@@ -18,7 +18,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     const offer: OfferItem[] = [
       {
         itemType: ItemType.ERC721,
-        token: testErc721.address,
+        token: await testErc721.getAddress(),
         identifierOrCriteria: nftId,
         startAmount: "1",
         endAmount: "1",
@@ -28,27 +28,29 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     const considerationData: ConsiderationItem[] = [
       {
         itemType: ItemType.NATIVE,
-        token: ethers.constants.AddressZero,
-        startAmount: ethers.utils.parseEther("10").toString(),
-        endAmount: ethers.utils.parseEther("10").toString(),
-        recipient: offerer.address,
+        token: ethers.ZeroAddress,
+        startAmount: ethers.parseEther("10").toString(),
+        endAmount: ethers.parseEther("10").toString(),
+        recipient: await offerer.getAddress(),
         identifierOrCriteria: "0",
       },
       {
         itemType: ItemType.NATIVE,
-        token: ethers.constants.AddressZero,
-        startAmount: ethers.utils.parseEther("1").toString(),
-        endAmount: ethers.utils.parseEther("1").toString(),
-        recipient: zone.address,
+        token: ethers.ZeroAddress,
+        startAmount: ethers.parseEther("1").toString(),
+        endAmount: ethers.parseEther("1").toString(),
+        recipient: await zone.getAddress(),
         identifierOrCriteria: "0",
       },
     ];
 
-    const counter = await seaportContract.getCounter(offerer.address);
+    const counter = await seaportContract.getCounter(
+      await offerer.getAddress(),
+    );
 
     const orderComponents = {
-      offerer: offerer.address,
-      zone: ethers.constants.AddressZero,
+      offerer: await offerer.getAddress(),
+      zone: ethers.ZeroAddress,
       offer,
       consideration: considerationData,
       orderType: OrderType.FULL_OPEN,
@@ -56,7 +58,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
       salt,
       startTime,
       endTime,
-      zoneHash: ethers.constants.HashZero,
+      zoneHash: ethers.ZeroHash,
       conduitKey: NO_CONDUIT,
       counter,
     };
@@ -74,7 +76,7 @@ describeWithFixture("As a user I want to sign an order", (fixture) => {
     // Use a random address to verify that the signature is valid
     const isValid = await seaportContract
       .connect(randomSigner)
-      .callStatic.validate([order]);
+      .validate.staticCall([order]);
 
     expect(isValid).to.be.true;
   });

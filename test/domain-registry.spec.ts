@@ -1,6 +1,5 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
+import { Signer, keccak256, toUtf8Bytes } from "ethers";
 import { ethers } from "hardhat";
 import { describeWithFixture } from "./utils/setup";
 import {
@@ -12,7 +11,7 @@ import {
 describeWithFixture(
   "As a user I want to register or look up a domain",
   (fixture) => {
-    let user: SignerWithAddress;
+    let user: Signer;
 
     const expectedExampleDomainArray = [
       "join_tg_invmru_haha_fd06787(address,bool)",
@@ -31,27 +30,33 @@ describeWithFixture(
 
       const overrides = { gasLimit: OVERRIDE_GAS_LIMIT };
       const setDomainTxWithOverrides = await seaport
-        .setDomain(expectedExampleDomainArray[0], user.address, overrides)
+        .setDomain(
+          expectedExampleDomainArray[0],
+          await user.getAddress(),
+          overrides,
+        )
         .transact();
       expect(setDomainTxWithOverrides.gasLimit).to.eq(OVERRIDE_GAS_LIMIT);
 
       await seaport
-        .setDomain(expectedExampleDomainArray[1], user.address)
+        .setDomain(expectedExampleDomainArray[1], await user.getAddress())
         .transact();
 
       await seaport
-        .setDomain(expectedExampleDomainArray[2], user.address)
+        .setDomain(expectedExampleDomainArray[2], await user.getAddress())
         .transact();
 
       await seaport
-        .setDomain(expectedExampleDomainArray[3], user.address)
+        .setDomain(expectedExampleDomainArray[3], await user.getAddress())
         .transact();
     });
 
     it("Should return the proper domain for a given tag", async () => {
       const { seaport } = fixture;
 
-      await seaport.setDomain(OPENSEA_DOMAIN, user.address).transact();
+      await seaport
+        .setDomain(OPENSEA_DOMAIN, await user.getAddress())
+        .transact();
 
       expect(await seaport.getDomain(`0x${OPENSEA_DOMAIN_TAG}`, 0)).to.eq(
         OPENSEA_DOMAIN,
@@ -91,11 +96,8 @@ describeWithFixture(
     it("Should return an array of domains even if getDomains throws", async () => {
       const { seaport } = fixture;
 
-      (seaport.domainRegistry as any) = {
-        ...seaport.domainRegistry,
-        getDomains: () => {
-          throw new Error();
-        },
+      (seaport.domainRegistry as any).getDomains = () => {
+        throw new Error("intentional error");
       };
 
       expect(await seaport.getDomains(exampleTag)).to.deep.eq(

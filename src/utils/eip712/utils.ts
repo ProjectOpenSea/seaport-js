@@ -1,4 +1,4 @@
-import { hexConcat, hexlify, keccak256 } from "ethers/lib/utils";
+import { concat, toBeHex, keccak256 } from "ethers";
 
 import type { BytesLike } from "ethers";
 
@@ -13,14 +13,14 @@ export const chunk = <T>(array: T[], size: number) => {
   );
 };
 
-export const bufferToHex = (buf: Buffer) => hexlify(buf);
+export const bufferToHex = (buf: Buffer) => toBeHex(buf.toString("hex"));
 
 export const hexToBuffer = (value: string) =>
   Buffer.from(value.slice(2), "hex");
 
 export const bufferKeccak = (value: BytesLike) => hexToBuffer(keccak256(value));
 
-export const hashConcat = (arr: BytesLike[]) => bufferKeccak(hexConcat(arr));
+export const hashConcat = (arr: BytesLike[]) => bufferKeccak(concat(arr));
 
 export const fillArray = <T>(arr: T[], length: number, value: T) => {
   if (length > arr.length) arr.push(...Array(length - arr.length).fill(value));

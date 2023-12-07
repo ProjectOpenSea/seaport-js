@@ -1,9 +1,6 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber, Contract, Signer } from "ethers";
-import { ERC20ABI } from "../abi/ERC20";
-import { ERC721ABI } from "../abi/ERC721";
+import { Signer, ethers } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
-import type { TestERC20, TestERC721 } from "../typechain-types";
+import { TestERC721__factory, TestERC20__factory } from "../typechain-types";
 import type { ApprovalAction, Item } from "../types";
 import type { InsufficientApprovals } from "./balanceAndApprovalCheck";
 import { isErc1155Item, isErc721Item } from "./item";
@@ -13,25 +10,17 @@ export const approvedItemAmount = async (
   owner: string,
   item: Item,
   operator: string,
-  multicallProvider: multicallProviders.MulticallProvider,
+  provider: ethers.Provider,
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-    const contract = new Contract(
-      item.token,
-      ERC721ABI,
-      multicallProvider,
-    ) as TestERC721;
-    return contract.isApprovedForAll(owner, operator).then((isApprovedForAll) =>
-      // Setting to the max int to consolidate types and simplify
-      isApprovedForAll ? MAX_INT : BigNumber.from(0),
-    );
+    const contract = TestERC721__factory.connect(item.token, provider);
+
+    const isApprovedForAll = await contract.isApprovedForAll(owner, operator);
+    // Setting to the max int to consolidate types and simplify
+    return isApprovedForAll ? MAX_INT : 0n;
   } else if (item.itemType === ItemType.ERC20) {
-    const contract = new Contract(
-      item.token,
-      ERC20ABI,
-      multicallProvider,
-    ) as TestERC20;
+    const contract = TestERC20__factory.connect(item.token, provider);
 
     return contract.allowance(owner, operator);
   }
@@ -41,7 +30,7 @@ export const approvedItemAmount = async (
 };
 
 /**
- * Get approval actions given a list of insufficent approvals.
+ * Get approval actions given a list of insufficient approvals.
  */
 export function getApprovalActions(
   insufficientApprovals: InsufficientApprovals,
@@ -65,7 +54,17 @@ export function getApprovalActions(
         const isErc1155 = isErc1155Item(itemType);
         if (isErc721Item(itemType) || isErc1155) {
           // setApprovalForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
-          const contract = new Contract(token, ERC721ABI, signer) as TestERC721;
+          const contract = TestERC721__factory.connect(token, signer);
+          const transactionMethods =
+            exactApproval && !isErc1155
+              ? getTransactionMethods(signer, contract, "approve", [
+                  operator,
+                  identifierOrCriteria,
+                ])
+              : getTransactionMethods(signer, contract, "setApprovalForAll", [
+                  operator,
+                  true,
+                ]);
 
           return {
             type: "approval",
@@ -73,17 +72,10 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             operator,
-            transactionMethods: getTransactionMethods(
-              contract.connect(signer),
-              exactApproval && !isErc1155 ? "approve" : "setApprovalForAll",
-              [
-                operator,
-                exactApproval && !isErc1155 ? identifierOrCriteria : true,
-              ],
-            ),
+            transactionMethods,
           };
         } else {
-          const contract = new Contract(token, ERC20ABI, signer) as TestERC20;
+          const contract = TestERC20__factory.connect(token, signer);
 
           return {
             type: "approval",
@@ -91,7 +83,8 @@ export function getApprovalActions(
             identifierOrCriteria,
             itemType,
             transactionMethods: getTransactionMethods(
-              contract.connect(signer),
+              signer,
+              contract,
               "approve",
               [operator, exactApproval ? requiredApprovedAmount : MAX_INT],
             ),

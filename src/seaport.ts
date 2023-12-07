@@ -1,15 +1,12 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
 import {
-  BigNumber,
   BigNumberish,
-  Contract,
   ethers,
-  PayableOverrides,
-  providers,
+  Overrides,
+  TypedDataEncoder,
+  JsonRpcProvider,
+  Provider,
+  JsonRpcSigner,
 } from "ethers";
-import { _TypedDataEncoder } from "ethers/lib/utils";
-import { DomainRegistryABI } from "./abi/DomainRegistry";
-import { SeaportABIv14 } from "./abi/Seaport_v1_4";
 import {
   SEAPORT_CONTRACT_NAME,
   SEAPORT_CONTRACT_VERSION_V1_4,
@@ -21,14 +18,12 @@ import {
   OPENSEA_CONDUIT_KEY,
   OrderType,
   DOMAIN_REGISTRY_ADDRESS,
-  CROSS_CHAIN_SEAPORT_V1_4_ADDRESS,
   CROSS_CHAIN_SEAPORT_V1_5_ADDRESS,
 } from "./constants";
 import type {
   SeaportConfig,
   CreateOrderAction,
   CreateOrderInput,
-  DomainRegistryContract,
   ExchangeAction,
   InputCriteria,
   Order,
@@ -37,13 +32,11 @@ import type {
   OrderUseCase,
   OrderWithCounter,
   TipInputItem,
-  TransactionMethods,
-  ContractMethodReturnType,
   MatchOrdersFulfillment,
-  SeaportContract,
   Signer,
   ApprovalAction,
   CreateBulkOrdersAction,
+  SeaportContract,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -68,36 +61,40 @@ import {
   mapInputItemToOfferItem,
   totalItemsAmount,
 } from "./utils/order";
-import { executeAllActions, getTransactionMethods } from "./utils/usecase";
+import {
+  ContractMethodReturnType,
+  TransactionMethods,
+  executeAllActions,
+  getTransactionMethods,
+} from "./utils/usecase";
+import {
+  DomainRegistry,
+  DomainRegistry__factory,
+  Seaport__factory,
+} from "./typechain-types";
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility
   public contract: SeaportContract;
 
-  public domainRegistry: DomainRegistryContract;
+  public domainRegistry: DomainRegistry;
 
-  private provider: providers.Provider;
+  private provider: Provider;
 
   private signer?: Signer;
-
-  // Use the multicall provider for reads for batching and performance optimisations
-  // NOTE: Do NOT await between sequential requests if you're intending to batch
-  // instead, use Promise.all() and map to fetch data in parallel
-  // https://www.npmjs.com/package/@0xsequence/multicall
-  private multicallProvider: multicallProviders.MulticallProvider;
 
   private config: Required<Omit<SeaportConfig, "overrides">>;
 
   private defaultConduitKey: string;
 
-  readonly OPENSEA_CONDUIT_KEY: string = OPENSEA_CONDUIT_KEY;
+  readonly OPENSEA_CONDUIT_KEY = OPENSEA_CONDUIT_KEY;
 
   /**
    * @param providerOrSigner - The provider or signer to use for web3-related calls
    * @param considerationConfig - A config to provide flexibility in the usage of Seaport
    */
   public constructor(
-    providerOrSigner: providers.JsonRpcProvider | Signer,
+    providerOrSigner: JsonRpcProvider | Signer,
     {
       overrides,
       // Five minute buffer
@@ -108,12 +105,13 @@ export class Seaport {
     }: SeaportConfig = {},
   ) {
     const provider =
-      providerOrSigner instanceof providers.Provider
-        ? providerOrSigner
-        : providerOrSigner.provider;
-    this.signer = (providerOrSigner as Signer)._isSigner
-      ? (providerOrSigner as Signer)
-      : undefined;
+      "provider" in providerOrSigner
+        ? providerOrSigner.provider
+        : providerOrSigner;
+    this.signer =
+      "getAddress" in providerOrSigner
+        ? (providerOrSigner as Signer)
+        : undefined;
 
     if (!provider) {
       throw new Error(
@@ -123,31 +121,32 @@ export class Seaport {
 
     this.provider = provider;
 
-    this.multicallProvider = new multicallProviders.MulticallProvider(
+    if (seaportVersion !== "1.5") {
+      throw new Error(
+        "Only Seaport v1.5 is supported in this version of seaport-js",
+      );
+    }
+
+    const seaportContractAddress =
+      overrides?.contractAddress ?? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS;
+    this.contract = Seaport__factory.connect(
+      seaportContractAddress,
       this.provider,
     );
 
-    this.contract = new Contract(
-      overrides?.contractAddress ??
-        (seaportVersion === "1.5"
-          ? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS
-          : CROSS_CHAIN_SEAPORT_V1_4_ADDRESS),
-      SeaportABIv14,
-      this.multicallProvider,
-    ) as SeaportContract;
-
-    this.domainRegistry = new Contract(
-      overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS,
-      DomainRegistryABI,
-      this.multicallProvider,
-    ) as DomainRegistryContract;
+    const domainRegistryContractAddress =
+      overrides?.domainRegistryAddress ?? DOMAIN_REGISTRY_ADDRESS;
+    this.domainRegistry = DomainRegistry__factory.connect(
+      domainRegistryContractAddress,
+      this.provider,
+    );
 
     this.config = {
       ascendingAmountFulfillmentBuffer,
       balanceAndApprovalChecksOnOrderCreation,
       conduitKeyToConduit: {
         ...KNOWN_CONDUIT_KEYS_TO_CONDUIT,
-        [NO_CONDUIT]: this.contract.address,
+        [NO_CONDUIT]: seaportContractAddress,
         ...conduitKeyToConduit,
       },
       seaportVersion,
@@ -188,7 +187,7 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateOrderAction>> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
     const offerer = accountAddress ?? (await signer.getAddress());
 
     const { orderComponents, approvalActions } = await this._formatOrder(
@@ -237,7 +236,7 @@ export class Seaport {
     accountAddress?: string,
     exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
     const offerer = await signer.getAddress();
     const offererCounter = await this.getCounter(offerer);
 
@@ -290,13 +289,13 @@ export class Seaport {
    * Formats an order for creation.
    */
   private async _formatOrder(
-    signer: Signer,
+    signer: Signer | JsonRpcSigner,
     offerer: string,
     exactApproval: boolean,
     {
       conduitKey = this.defaultConduitKey,
-      zone = ethers.constants.AddressZero,
-      zoneHash = ethers.constants.HashZero,
+      zone = ethers.ZeroAddress,
+      zoneHash = ethers.ZeroHash,
       startTime = Math.floor(Date.now() / 1000).toString(),
       endTime = MAX_INT.toString(),
       offer,
@@ -358,7 +357,7 @@ export class Seaport {
 
     const saltFollowingConditional =
       salt !== undefined
-        ? `0x${BigNumber.from(salt).toHexString().slice(2).padStart(64, "0")}`
+        ? `0x${ethers.toBeHex(salt).slice(2).padStart(64, "0")}`
         : generateRandomSalt(domain);
 
     const orderComponents: OrderComponents = {
@@ -383,7 +382,7 @@ export class Seaport {
         owner: offerer,
         items: offerItems,
         criterias: [],
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
         operator,
       });
 
@@ -406,16 +405,20 @@ export class Seaport {
     return { orderComponents, approvalActions };
   }
 
-  private _getSigner(accountAddress?: string): Signer {
+  private async _getSigner(
+    accountAddress?: string,
+  ): Promise<Signer | JsonRpcSigner> {
     if (this.signer) {
       return this.signer;
     }
 
-    if (!(this.provider instanceof providers.JsonRpcProvider)) {
-      throw new Error("Either signer or a JsonRpcProvider must be provided");
+    if (!("send" in this.provider)) {
+      throw new Error(
+        "Either signer or JsonRpcProvider with signer must be provided",
+      );
     }
 
-    return this.provider.getSigner(accountAddress);
+    return (this.provider as JsonRpcProvider).getSigner(accountAddress);
   }
 
   /**
@@ -453,7 +456,7 @@ export class Seaport {
           ? SEAPORT_CONTRACT_VERSION_V1_5
           : SEAPORT_CONTRACT_VERSION_V1_4,
       chainId,
-      verifyingContract: this.contract.address,
+      verifyingContract: await this.contract.getAddress(),
     };
   }
 
@@ -466,7 +469,7 @@ export class Seaport {
     const domainData = await this._getDomainData();
 
     return JSON.stringify(
-      _TypedDataEncoder.getPayload(
+      TypedDataEncoder.getPayload(
         domainData,
         EIP_712_ORDER_TYPE,
         orderComponents,
@@ -488,7 +491,7 @@ export class Seaport {
     const chunks = tree.getDataToSign();
 
     return JSON.stringify(
-      _TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks }),
+      TypedDataEncoder.getPayload(domainData, bulkOrderType, { tree: chunks }),
     );
   }
 
@@ -502,11 +505,11 @@ export class Seaport {
     orderComponents: OrderComponents,
     accountAddress?: string,
   ): Promise<string> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
 
-    let signature = await signer._signTypedData(
+    let signature = await signer.signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents,
@@ -514,7 +517,7 @@ export class Seaport {
 
     // Use EIP-2098 compact signatures to save gas.
     if (signature.length === 132) {
-      signature = ethers.utils.splitSignature(signature).compact;
+      signature = ethers.Signature.from(signature).compactSerialized;
     }
 
     return signature;
@@ -530,7 +533,7 @@ export class Seaport {
     orderComponents: OrderComponents[],
     accountAddress?: string,
   ): Promise<OrderWithCounter[]> {
-    const signer = this._getSigner(accountAddress);
+    const signer = await this._getSigner(accountAddress);
 
     const domainData = await this._getDomainData();
     const tree = getBulkOrderTree(orderComponents);
@@ -538,7 +541,7 @@ export class Seaport {
     const chunks = tree.getDataToSign();
     const value = { tree: chunks };
 
-    let signature = await signer._signTypedData(
+    let signature = await signer.signTypedData(
       domainData,
       bulkOrderType,
       value,
@@ -546,7 +549,7 @@ export class Seaport {
 
     // Use EIP-2098 compact signatures to save gas.
     if (signature.length === 132) {
-      signature = ethers.utils.splitSignature(signature).compact;
+      signature = ethers.Signature.from(signature).compactSerialized;
     }
 
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
@@ -570,12 +573,11 @@ export class Seaport {
     orders: OrderComponents[],
     accountAddress?: string,
     domain?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "cancel">> {
-    const signer = this._getSigner(accountAddress);
-
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(accountAddress),
+      this.contract,
       "cancel",
       [orders, overrides],
       domain,
@@ -592,14 +594,13 @@ export class Seaport {
   public bulkCancelOrders(
     offerer?: string,
     domain?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "incrementCounter">
   > {
-    const signer = this._getSigner(offerer);
-
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(offerer),
+      this.contract,
       "incrementCounter",
       [overrides],
       domain,
@@ -608,7 +609,7 @@ export class Seaport {
 
   /**
    * Approves a list of orders on-chain. This allows accounts to fulfill the order without requiring
-   * a signature. Can also check if an order is valid using `callStatic`
+   * a signature. Can also check if an order is valid using `staticCall`
    * @param orders list of order structs
    * @param accountAddress optional account address to approve orders.
    * @param domain optional domain to be hashed and appended to calldata
@@ -619,12 +620,11 @@ export class Seaport {
     orders: Order[],
     accountAddress?: string,
     domain?: string,
-    overrides?: PayableOverrides,
+    overrides?: Overrides,
   ): TransactionMethods<ContractMethodReturnType<SeaportContract, "validate">> {
-    const signer = this._getSigner(accountAddress);
-
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(accountAddress),
+      this.contract,
       "validate",
       [orders, overrides],
       domain,
@@ -636,8 +636,10 @@ export class Seaport {
    * @param orderHash the hash of the order
    * @returns an order status struct
    */
-  public getOrderStatus(orderHash: string): Promise<OrderStatus> {
-    return this.contract.getOrderStatus(orderHash);
+  public async getOrderStatus(orderHash: string): Promise<OrderStatus> {
+    const result = await this.contract.getOrderStatus(orderHash);
+    const [isValidated, isCancelled, totalFilled, totalSize] = result;
+    return { isValidated, isCancelled, totalFilled, totalSize };
   }
 
   /**
@@ -645,7 +647,7 @@ export class Seaport {
    * @param offerer the offerer to get the counter of
    * @returns counter as a number
    */
-  public getCounter(offerer: string): Promise<BigNumber> {
+  public async getCounter(offerer: string): Promise<bigint> {
     return this.contract.getCounter(offerer);
   }
 
@@ -662,37 +664,35 @@ export class Seaport {
       "OrderComponents(address offerer,address zone,OfferItem[] offer,ConsiderationItem[] consideration,uint8 orderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 conduitKey,uint256 counter)";
     const orderTypeString = `${orderComponentsPartialTypeString}${considerationItemTypeString}${offerItemTypeString}`;
 
-    const offerItemTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(offerItemTypeString),
+    const offerItemTypeHash = ethers.keccak256(
+      ethers.toUtf8Bytes(offerItemTypeString),
     );
-    const considerationItemTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(considerationItemTypeString),
+    const considerationItemTypeHash = ethers.keccak256(
+      ethers.toUtf8Bytes(considerationItemTypeString),
     );
-    const orderTypeHash = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes(orderTypeString),
-    );
+    const orderTypeHash = ethers.keccak256(ethers.toUtf8Bytes(orderTypeString));
 
-    const offerHash = ethers.utils.keccak256(
+    const offerHash = ethers.keccak256(
       "0x" +
         orderComponents.offer
           .map((offerItem) => {
-            return ethers.utils
+            return ethers
               .keccak256(
                 "0x" +
                   [
                     offerItemTypeHash.slice(2),
                     offerItem.itemType.toString().padStart(64, "0"),
                     offerItem.token.slice(2).padStart(64, "0"),
-                    ethers.BigNumber.from(offerItem.identifierOrCriteria)
-                      .toHexString()
+                    ethers
+                      .toBeHex(offerItem.identifierOrCriteria)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(offerItem.startAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(offerItem.startAmount)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(offerItem.endAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(offerItem.endAmount)
                       .slice(2)
                       .padStart(64, "0"),
                   ].join(""),
@@ -702,29 +702,27 @@ export class Seaport {
           .join(""),
     );
 
-    const considerationHash = ethers.utils.keccak256(
+    const considerationHash = ethers.keccak256(
       "0x" +
         orderComponents.consideration
           .map((considerationItem) => {
-            return ethers.utils
+            return ethers
               .keccak256(
                 "0x" +
                   [
                     considerationItemTypeHash.slice(2),
                     considerationItem.itemType.toString().padStart(64, "0"),
                     considerationItem.token.slice(2).padStart(64, "0"),
-                    ethers.BigNumber.from(
-                      considerationItem.identifierOrCriteria,
-                    )
-                      .toHexString()
+                    ethers
+                      .toBeHex(considerationItem.identifierOrCriteria)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(considerationItem.startAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(considerationItem.startAmount)
                       .slice(2)
                       .padStart(64, "0"),
-                    ethers.BigNumber.from(considerationItem.endAmount)
-                      .toHexString()
+                    ethers
+                      .toBeHex(considerationItem.endAmount)
                       .slice(2)
                       .padStart(64, "0"),
                     considerationItem.recipient.slice(2).padStart(64, "0"),
@@ -735,7 +733,7 @@ export class Seaport {
           .join(""),
     );
 
-    const derivedOrderHash = ethers.utils.keccak256(
+    const derivedOrderHash = ethers.keccak256(
       "0x" +
         [
           orderTypeHash.slice(2),
@@ -744,24 +742,12 @@ export class Seaport {
           offerHash.slice(2),
           considerationHash.slice(2),
           orderComponents.orderType.toString().padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.startTime)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.endTime)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
+          ethers.toBeHex(orderComponents.startTime).slice(2).padStart(64, "0"),
+          ethers.toBeHex(orderComponents.endTime).slice(2).padStart(64, "0"),
           orderComponents.zoneHash.slice(2),
-          BigNumber.from(orderComponents.salt)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
+          ethers.toBeHex(orderComponents.salt).slice(2).padStart(64, "0"),
           orderComponents.conduitKey.slice(2).padStart(64, "0"),
-          ethers.BigNumber.from(orderComponents.counter)
-            .toHexString()
-            .slice(2)
-            .padStart(64, "0"),
+          ethers.toBeHex(orderComponents.counter).slice(2).padStart(64, "0"),
         ].join(""),
     );
 
@@ -798,7 +784,7 @@ export class Seaport {
     extraData = "0x",
     accountAddress,
     conduitKey = this.defaultConduitKey,
-    recipientAddress = ethers.constants.AddressZero,
+    recipientAddress = ethers.ZeroAddress,
     domain,
     exactApproval = false,
     overrides,
@@ -814,7 +800,7 @@ export class Seaport {
     recipientAddress?: string;
     domain?: string;
     exactApproval?: boolean;
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
   }): Promise<
     OrderUseCase<
       ExchangeAction<
@@ -832,7 +818,7 @@ export class Seaport {
     const { parameters: orderParameters } = order;
     const { offerer, offer, consideration } = orderParameters;
 
-    const fulfiller = this._getSigner(accountAddress);
+    const fulfiller = await this._getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
 
@@ -851,7 +837,7 @@ export class Seaport {
         owner: offerer,
         items: offer,
         criterias: offerCriteria,
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
         operator: offererOperator,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
@@ -860,14 +846,14 @@ export class Seaport {
         owner: fulfillerAddress,
         items: [...offer, ...consideration],
         criterias: [...offerCriteria, ...considerationCriteria],
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
         operator: fulfillerOperator,
       }),
-      this.multicallProvider.getBlock("latest"),
+      this.provider.getBlock("latest"),
       this.getOrderStatus(this.getOrderHash(orderParameters)),
     ]);
 
-    const currentBlockTimestamp = currentBlock.timestamp;
+    const currentBlockTimestamp = currentBlock!.timestamp;
 
     const { totalFilled, totalSize } = orderStatus;
 
@@ -889,7 +875,7 @@ export class Seaport {
       recipient: tip.recipient,
     }));
 
-    const isRecipientSelf = recipientAddress === ethers.constants.AddressZero;
+    const isRecipientSelf = recipientAddress === ethers.ZeroAddress;
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.
@@ -924,9 +910,8 @@ export class Seaport {
         order: sanitizedOrder,
         unitsToFill,
         totalFilled,
-        totalSize: totalSize.eq(0)
-          ? getMaximumSizeForOrder(sanitizedOrder)
-          : totalSize,
+        totalSize:
+          totalSize === 0n ? getMaximumSizeForOrder(sanitizedOrder) : totalSize,
         offerCriteria,
         considerationCriteria,
         tips: tipConsiderationItems,
@@ -964,7 +949,7 @@ export class Seaport {
     fulfillOrderDetails,
     accountAddress,
     conduitKey = this.defaultConduitKey,
-    recipientAddress = ethers.constants.AddressZero,
+    recipientAddress = ethers.ZeroAddress,
     domain,
     exactApproval = false,
   }: {
@@ -988,7 +973,7 @@ export class Seaport {
       throw new Error("All orders must include signatures");
     }
 
-    const fulfiller = this._getSigner(accountAddress);
+    const fulfiller = await this._getSigner(accountAddress);
 
     const fulfillerAddress = await fulfiller.getAddress();
 
@@ -1026,7 +1011,7 @@ export class Seaport {
             items: order.parameters.offer,
             criterias: offerCriteria,
             operator: allOffererOperators[i],
-            multicallProvider: this.multicallProvider,
+            provider: this.provider,
           }),
         ),
       ),
@@ -1037,9 +1022,9 @@ export class Seaport {
         items: [...allOfferItems, ...allConsiderationItems],
         criterias: [...allOfferCriteria, ...allConsiderationCriteria],
         operator: fulfillerOperator,
-        multicallProvider: this.multicallProvider,
+        provider: this.provider,
       }),
-      this.multicallProvider.getBlock("latest"),
+      this.provider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
           this.getOrderStatus(this.getOrderHash(order.parameters)),
@@ -1069,7 +1054,7 @@ export class Seaport {
       ordersMetadata,
       seaportContract: this.contract,
       fulfillerBalancesAndApprovals,
-      currentBlockTimestamp: currentBlock.timestamp,
+      currentBlockTimestamp: currentBlock!.timestamp,
       ascendingAmountTimestampBuffer:
         this.config.ascendingAmountFulfillmentBuffer,
       fulfillerOperator,
@@ -1102,16 +1087,15 @@ export class Seaport {
   }: {
     orders: (OrderWithCounter | Order)[];
     fulfillments: MatchOrdersFulfillment[];
-    overrides?: PayableOverrides;
+    overrides?: Overrides;
     accountAddress?: string;
     domain?: string;
   }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
-    const signer = this._getSigner(accountAddress);
-
     return getTransactionMethods(
-      this.contract.connect(signer),
+      this._getSigner(accountAddress),
+      this.contract,
       "matchOrders",
       [orders, fulfillments, overrides],
       domain,
@@ -1128,14 +1112,11 @@ export class Seaport {
   public setDomain(
     domain: string,
     accountAddress?: string,
-    overrides?: PayableOverrides,
-  ): TransactionMethods<
-    ContractMethodReturnType<DomainRegistryContract, "setDomain">
-  > {
-    const signer = this._getSigner(accountAddress);
-
+    overrides?: Overrides,
+  ): TransactionMethods<ContractMethodReturnType<DomainRegistry, "setDomain">> {
     return getTransactionMethods(
-      this.domainRegistry.connect(signer),
+      this._getSigner(accountAddress),
+      this.domainRegistry,
       "setDomain",
       [domain, overrides],
     );
@@ -1146,7 +1127,7 @@ export class Seaport {
    * @param tag The domain tag.
    * @returns The number of domains registered under the tag.
    */
-  public async getNumberOfDomains(tag: string): Promise<BigNumber> {
+  public getNumberOfDomains(tag: string): Promise<bigint> {
     return this.domainRegistry.getNumberOfDomains(tag);
   }
 
@@ -1171,17 +1152,15 @@ export class Seaport {
     } catch (error) {
       // If there are too many domains set under the tag, it will revert when trying to return in memory.
       // This fallback will manually query each index to get the full list of domains.
-      const totalDomains = (
-        await this.domainRegistry.getNumberOfDomains(tag)
-      ).toNumber();
+      const totalDomains = await this.domainRegistry.getNumberOfDomains(tag);
 
       const domainArray = Promise.all(
-        [...Array(totalDomains).keys()].map((i) =>
+        [...Array(Number(totalDomains)).keys()].map((i) =>
           this.domainRegistry.getDomain(tag, i),
         ),
       );
 
-      return domainArray;
+      return await domainArray;
     }
   }
 }

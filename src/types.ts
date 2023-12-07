@@ -1,21 +1,10 @@
-import type { DomainRegistry as TypeChainDomainRegistryContract } from "./typechain-types";
-import type {
-  OrderStruct,
-  Seaport as TypeChainSeaportContract,
-} from "./typechain-types/seaport_v1_4/contracts/Seaport";
-import {
-  BigNumber,
-  BigNumberish,
-  BytesLike,
-  Contract,
-  ContractTransaction,
-  ethers,
-  Overrides,
-  PayableOverrides,
-  PopulatedTransaction,
-} from "ethers";
+import { BigNumberish, BytesLike, ContractTransaction, ethers } from "ethers";
 import { ItemType, OrderType } from "./constants";
 import type { TestERC20, TestERC721 } from "./typechain-types";
+import { TransactionMethods } from "./utils/usecase";
+import { Seaport as SeaportContract } from "./typechain-types/seaport_v1_5/contracts/Seaport";
+
+export type { SeaportContract };
 
 export type SeaportConfig = {
   // Used because fulfillments may be invalid if confirmations take too long. Default buffer is 5 minutes
@@ -28,7 +17,7 @@ export type SeaportConfig = {
   conduitKeyToConduit?: Record<string, string>;
 
   // The Seaport version to use
-  seaportVersion?: "1.4" | "1.5";
+  seaportVersion?: "1.5";
 
   overrides?: {
     contractAddress?: string;
@@ -101,8 +90,8 @@ export type Order = {
 };
 
 export type AdvancedOrder = Order & {
-  numerator: BigNumber;
-  denominator: BigNumber;
+  numerator: bigint;
+  denominator: bigint;
   extraData: string;
 };
 
@@ -180,26 +169,13 @@ export type InputCriteria = {
 export type OrderStatus = {
   isValidated: boolean;
   isCancelled: boolean;
-  totalFilled: BigNumber;
-  totalSize: BigNumber;
+  totalFilled: bigint;
+  totalSize: bigint;
 };
 
 export type OrderWithCounter = {
   parameters: OrderComponents;
   signature: string;
-};
-
-export type ContractMethodReturnType<
-  T extends Contract,
-  U extends keyof T["callStatic"],
-  // eslint-disable-next-line no-undef
-> = Awaited<ReturnType<T["callStatic"][U]>>;
-
-export type TransactionMethods<T = unknown> = {
-  buildTransaction: (overrides?: Overrides) => Promise<PopulatedTransaction>;
-  callStatic: (overrides?: Overrides) => Promise<T>;
-  estimateGas: (overrides?: Overrides) => Promise<BigNumber>;
-  transact: (overrides?: Overrides) => Promise<ContractTransaction>;
 };
 
 export type ApprovalAction = {
@@ -208,11 +184,9 @@ export type ApprovalAction = {
   identifierOrCriteria: string;
   itemType: ItemType;
   operator: string;
-  transactionMethods:
-    | TransactionMethods<
-        ContractMethodReturnType<TestERC721, "setApprovalForAll">
-      >
-    | TransactionMethods<ContractMethodReturnType<TestERC20, "approve">>;
+  transactionMethods: TransactionMethods<
+    TestERC721["setApprovalForAll"] | TestERC20["approve"]
+  >;
 };
 
 export type ExchangeAction<T = unknown> = {
@@ -255,14 +229,14 @@ export type OrderUseCase<
   actions: T extends CreateOrderAction
     ? CreateOrderActions
     : T extends CreateBulkOrdersAction
-    ? CreateBulkOrdersActions
-    : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
+      ? CreateBulkOrdersActions
+      : OrderExchangeActions<T extends ExchangeAction<infer U> ? U : never>;
   executeAllActions: () => Promise<
     T extends CreateOrderAction
       ? OrderWithCounter
       : T extends CreateBulkOrdersAction
-      ? OrderWithCounter[]
-      : ContractTransaction
+        ? OrderWithCounter[]
+        : ContractTransaction
   >;
 };
 
@@ -285,52 +259,3 @@ export type MatchOrdersFulfillment = {
   offerComponents: MatchOrdersFulfillmentComponent[];
   considerationComponents: MatchOrdersFulfillmentComponent[];
 };
-
-// Overrides matchOrders types to fix fulfillments type which is generated
-// by TypeChain incorrectly
-export type SeaportContract = TypeChainSeaportContract & {
-  encodeFunctionData(
-    functionFragment: "matchOrders",
-    values: [OrderStruct[], MatchOrdersFulfillment[]],
-  ): string;
-
-  matchOrders(
-    orders: OrderStruct[],
-    fulfillments: MatchOrdersFulfillment[],
-    overrides?: PayableOverrides & { from?: string | Promise<string> },
-  ): Promise<ContractTransaction>;
-
-  functions: TypeChainSeaportContract["functions"] & {
-    matchOrders(
-      orders: OrderStruct[],
-      fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> },
-    ): Promise<ContractTransaction>;
-  };
-
-  callStatic: TypeChainSeaportContract["callStatic"] & {
-    matchOrders(
-      orders: OrderStruct[],
-      fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> },
-    ): Promise<ContractTransaction>;
-  };
-
-  estimateGas: TypeChainSeaportContract["estimateGas"] & {
-    matchOrders(
-      orders: OrderStruct[],
-      fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> },
-    ): Promise<BigNumber>;
-  };
-
-  populateTransaction: TypeChainSeaportContract["populateTransaction"] & {
-    matchOrders(
-      orders: OrderStruct[],
-      fulfillments: MatchOrdersFulfillment[],
-      overrides?: PayableOverrides & { from?: string | Promise<string> },
-    ): Promise<PopulatedTransaction>;
-  };
-};
-
-export type DomainRegistryContract = TypeChainDomainRegistryContract;

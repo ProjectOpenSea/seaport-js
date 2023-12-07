@@ -1,5 +1,4 @@
-import { providers as multicallProviders } from "@0xsequence/multicall";
-import { BigNumber } from "ethers";
+import { ethers } from "ethers";
 import { ItemType, MAX_INT } from "../constants";
 import type { InputCriteria, Item, OrderParameters } from "../types";
 import { approvedItemAmount } from "./approval";
@@ -16,24 +15,24 @@ import {
 export type BalancesAndApprovals = {
   token: string;
   identifierOrCriteria: string;
-  balance: BigNumber;
-  approvedAmount: BigNumber;
+  balance: bigint;
+  approvedAmount: bigint;
   itemType: ItemType;
 }[];
 
 export type InsufficientBalances = {
   token: string;
   identifierOrCriteria: string;
-  requiredAmount: BigNumber;
-  amountHave: BigNumber;
+  requiredAmount: bigint;
+  amountHave: bigint;
   itemType: ItemType;
 }[];
 
 export type InsufficientApprovals = {
   token: string;
   identifierOrCriteria: string;
-  approvedAmount: BigNumber;
-  requiredApprovedAmount: BigNumber;
+  approvedAmount: bigint;
+  requiredApprovedAmount: bigint;
   operator: string;
   itemType: ItemType;
 }[];
@@ -67,38 +66,37 @@ export const getBalancesAndApprovals = async ({
   items,
   criterias,
   operator,
-  multicallProvider,
+  provider,
 }: {
   owner: string;
   items: Item[];
   criterias: InputCriteria[];
   operator: string;
-  multicallProvider: multicallProviders.MulticallProvider;
+  provider: ethers.Provider;
 }): Promise<BalancesAndApprovals> => {
   const itemToCriteria = getItemToCriteriaMap(items, criterias);
 
   return Promise.all(
     items.map(async (item) => {
-      let approvedAmountPromise = Promise.resolve(BigNumber.from(0));
+      let approvedAmount = 0n;
 
       if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
-        approvedAmountPromise = approvedItemAmount(
+        approvedAmount = await approvedItemAmount(
           owner,
           item,
           operator,
-          multicallProvider,
+          provider,
         );
       } else if (isErc20Item(item.itemType)) {
-        approvedAmountPromise = approvedItemAmount(
+        approvedAmount = await approvedItemAmount(
           owner,
           item,
           operator,
-          multicallProvider,
+          provider,
         );
-      }
-      // If native token, we don't need to check for approvals
-      else {
-        approvedAmountPromise = Promise.resolve(MAX_INT);
+      } else {
+        // If native token, we don't need to check for approvals
+        approvedAmount = MAX_INT;
       }
 
       return {
@@ -108,10 +106,10 @@ export const getBalancesAndApprovals = async ({
         balance: await balanceOf(
           owner,
           item,
-          multicallProvider,
+          provider,
           itemToCriteria.get(item),
         ),
-        approvedAmount: await approvedAmountPromise,
+        approvedAmount,
         itemType: item.itemType,
       };
     }),
@@ -146,12 +144,13 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
     filterKey: "balance" | "approvedAmount",
   ): InsufficientBalances =>
     tokenAndIdentifierAndAmountNeeded
-      .filter(([token, identifierOrCriteria, amountNeeded]) =>
-        findBalanceAndApproval(
-          balancesAndApprovals,
-          token,
-          identifierOrCriteria,
-        )[filterKey].lt(amountNeeded),
+      .filter(
+        ([token, identifierOrCriteria, amountNeeded]) =>
+          findBalanceAndApproval(
+            balancesAndApprovals,
+            token,
+            identifierOrCriteria,
+          )[filterKey] < amountNeeded,
       )
       .map(([token, identifierOrCriteria, amount]) => {
         const balanceAndApproval = findBalanceAndApproval(
@@ -408,7 +407,7 @@ const addToExistingBalances = ({
     (item) => ({ ...item }),
   );
 
-  // Add each summed item amount to the existing balances as we may want tocheck balances after receiving all items
+  // Add each summed item amount to the existing balances as we may want to check balances after receiving all items
   Object.entries(summedItemAmounts).forEach(
     ([token, identifierOrCriteriaToAmount]) =>
       Object.entries(identifierOrCriteriaToAmount).forEach(
@@ -425,9 +424,8 @@ const addToExistingBalances = ({
           balancesAndApprovalsAfterReceivingItems[
             balanceAndApprovalIndex
           ].balance =
-            balancesAndApprovalsAfterReceivingItems[
-              balanceAndApprovalIndex
-            ].balance.add(amount);
+            balancesAndApprovalsAfterReceivingItems[balanceAndApprovalIndex]
+              .balance + amount;
         },
       ),
   );

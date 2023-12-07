@@ -1,10 +1,7 @@
 import * as dotenv from "dotenv";
-
 import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
 import "@typechain/hardhat";
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-waffle";
-import "solidity-coverage";
 
 dotenv.config();
 
@@ -40,7 +37,7 @@ const config: HardhatUserConfig = {
   },
   typechain: {
     outDir: "src/typechain-types",
-    target: "ethers-v5",
+    target: "ethers-v6",
   },
   paths: {
     tests: "test",

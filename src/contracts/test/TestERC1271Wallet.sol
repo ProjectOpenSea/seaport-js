@@ -42,7 +42,6 @@ contract TestERC1271Wallet {
         if (signature.length == 65) {
             // ecrecover takes the signature parameters, and the only way to get them
             // currently is to use assembly.
-            // solhint-disable-next-line no-inline-assembly
             assembly {
                 r := mload(add(signature, 0x20))
                 s := mload(add(signature, 0x40))
@@ -51,7 +50,6 @@ contract TestERC1271Wallet {
         } else if (signature.length == 64) {
             // ecrecover takes the signature parameters, and the only way to get them
             // currently is to use assembly.
-            // solhint-disable-next-line no-inline-assembly
             assembly {
                 let vs := mload(add(signature, 0x40))
                 r := mload(add(signature, 0x20))
@@ -79,11 +77,11 @@ contract TestERC1271Wallet {
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata _data
-    ) public returns (bytes4) {
+        address /* operator */,
+        address /* from */,
+        uint256 /* tokenId */,
+        bytes calldata /* data */
+    ) public pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }
