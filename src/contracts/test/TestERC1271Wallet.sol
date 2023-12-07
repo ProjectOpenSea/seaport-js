@@ -77,11 +77,11 @@ contract TestERC1271Wallet {
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata _data
-    ) public returns (bytes4) {
+        address /* operator */,
+        address /* from */,
+        uint256 /* tokenId */,
+        bytes calldata /* data */
+    ) public pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }
