@@ -13,17 +13,17 @@
     "url": "https://github.com/ProjectOpenSea/seaport-js/issues"
   },
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
-    "lib",
-    "src"
+    "src",
+    "lib"
   ],
-  "directories": {
-    "doc": "docs",
-    "lib": "lib"
+  "engines": {
+    "node": ">=16.0.0"
   },
   "scripts": {
     "build": "hardhat compile && tsc -p tsconfig.build.json",
-    "check-types": "tsc --noEmit ",
+    "check-types": "tsc --noEmit",
     "check-types:incremental": "npm run check-types --incremental",
     "coverage": "c8 npm run test",
     "eslint:check": "eslint . --max-warnings 0 --ext .js,.jsx,.ts,.tsx",
@@ -35,7 +35,6 @@
     "prettier:fix": "prettier --write . && prettier-package-json --write package.json",
     "test": "hardhat test"
   },
-  "types": "lib/index.d.ts",
   "dependencies": {
     "ethers": "^6.9.0",
     "merkletreejs": "^0.3.11"
@@ -60,7 +59,7 @@
     "eslint": "^8.41.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-prettier": "^5.0.0-alpha.2",
+    "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-promise": "^6.1.1",
     "hardhat": "^2.19.2",
     "husky": "^8.0.3",
@@ -71,14 +70,9 @@
     "seaport_v1_5": "ProjectOpenSea/seaport#1.5",
     "sinon": "^17.0.0",
     "sinon-chai": "^3.7.0",
-    "solhint": "^3.4.1",
-    "solidity-coverage": "^0.8.2",
     "ts-node": "^10.9.1",
     "typechain": "^8.2.0",
     "typescript": "^5.0.4"
-  },
-  "engines": {
-    "node": ">=16.0.0"
   },
   "lint-staged": {
     "package.json": [
