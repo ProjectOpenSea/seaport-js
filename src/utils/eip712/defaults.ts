@@ -1,6 +1,4 @@
-import { ethers, zeroPadValue } from "ethers";
-
-import type { TypedDataField } from "@ethersproject/abstract-signer";
+import { ethers, zeroPadValue, TypedDataField } from "ethers";
 
 const baseDefaults: Record<string, any> = {
   integer: 0,
