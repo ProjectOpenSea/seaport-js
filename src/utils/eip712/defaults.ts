@@ -1,9 +1,6 @@
-import { Logger } from "@ethersproject/logger";
 import { ethers, zeroPadValue } from "ethers";
 
 import type { TypedDataField } from "@ethersproject/abstract-signer";
-
-const logger = new Logger("defaults");
 
 const baseDefaults: Record<string, any> = {
   integer: 0,
@@ -50,7 +47,7 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
       const defaultValue = this.getDefaultValue(name);
       this.defaultValues[name] = defaultValue;
       if (!isNullish(defaultValue)) {
-        logger.throwError(
+        throw new Error(
           `Got non-empty value for type ${name} in default generator: ${defaultValue}`,
         );
       }
@@ -107,6 +104,6 @@ export class DefaultGetter<Types extends EIP712TypeDefinitions> {
       );
     }
 
-    return logger.throwArgumentError(`unknown type: ${type}`, "type", type);
+    throw new Error(`unknown type: ${type}`);
   }
 }
