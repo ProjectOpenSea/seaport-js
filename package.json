@@ -37,7 +37,6 @@
   },
   "types": "lib/index.d.ts",
   "dependencies": {
-    "@types/sinon": "^17.0.2",
     "ethers": "^6.9.0",
     "merkletreejs": "^0.3.11"
   },
@@ -50,6 +49,7 @@
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.0.0",
+    "@types/sinon": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "c8": "^8.0.0",
