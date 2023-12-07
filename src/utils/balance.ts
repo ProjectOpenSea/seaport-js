@@ -22,16 +22,14 @@ export const balanceOf = async (
         ? contract
             .ownerOf(criteria.identifier)
             .then((ownerOf) =>
-              BigInt(Number(ownerOf.toLowerCase() === owner.toLowerCase())),
+              BigInt(ownerOf.toLowerCase() === owner.toLowerCase()),
             )
         : contract.balanceOf(owner);
     }
 
     return contract
       .ownerOf(item.identifierOrCriteria)
-      .then((ownerOf) =>
-        BigInt(Number(ownerOf.toLowerCase() === owner.toLowerCase())),
-      );
+      .then((ownerOf) => BigInt(ownerOf.toLowerCase() === owner.toLowerCase()));
   } else if (isErc1155Item(item.itemType)) {
     const contract = TestERC1155__factory.connect(item.token, provider);
 
