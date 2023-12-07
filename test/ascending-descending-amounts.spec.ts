@@ -152,14 +152,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport, testErc20 } = fixture;
 
         // Use ERC20 instead of eth
+        const token = await testErc20.getAddress();
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map(
-            async (item) => ({
-              ...item,
-              token: await testErc20.getAddress(),
-            }),
-          ),
+          consideration: standardCreateOrderInput.consideration.map((item) => ({
+            ...item,
+            token,
+          })),
         };
 
         await testErc20.mint(
@@ -363,14 +362,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport, testErc20 } = fixture;
 
         // Use ERC20 instead of eth
+        const token = await testErc20.getAddress();
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map(
-            async (item) => ({
-              ...item,
-              token: await testErc20.getAddress(),
-            }),
-          ),
+          consideration: standardCreateOrderInput.consideration.map((item) => ({
+            ...item,
+            token,
+          })),
         };
 
         await testErc20.mint(
@@ -591,14 +589,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport, testErc20, testErc1155 } = fixture;
 
         // Use ERC20 instead of eth
+        const token = await testErc20.getAddress();
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map(
-            async (item) => ({
-              ...item,
-              token: await testErc20.getAddress(),
-            }),
-          ),
+          consideration: standardCreateOrderInput.consideration.map((item) => ({
+            ...item,
+            token,
+          })),
         };
 
         await testErc20.mint(
@@ -828,14 +825,13 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         const { seaport, testErc20, testErc1155 } = fixture;
 
         // Use ERC20 instead of eth
+        const token = await testErc20.getAddress();
         standardCreateOrderInput = {
           ...standardCreateOrderInput,
-          consideration: standardCreateOrderInput.consideration.map(
-            async (item) => ({
-              ...item,
-              token: await testErc20.getAddress(),
-            }),
-          ),
+          consideration: standardCreateOrderInput.consideration.map((item) => ({
+            ...item,
+            token,
+          })),
         };
 
         await testErc20.mint(

@@ -63,7 +63,8 @@ const instanceOfOverrides = <T extends Overrides>(
 
   return (
     obj === undefined ||
-    Object.keys(obj).every((key) => validKeys.includes(key))
+    (Object.keys(obj).length > 0 &&
+      Object.keys(obj).every((key) => validKeys.includes(key)))
   );
 };
 

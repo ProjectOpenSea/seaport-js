@@ -82,12 +82,13 @@ describeWithFixture(
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20.getAddress();
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
@@ -221,12 +222,13 @@ describeWithFixture(
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20.getAddress();
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };

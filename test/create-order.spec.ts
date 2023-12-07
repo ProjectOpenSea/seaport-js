@@ -693,7 +693,7 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
       "eth_signTypedData_v4",
       [await offerer.getAddress(), messageToSign],
     );
-    expect(ethers.Signature.from(rawSignTypedMessage).compact).eq(
+    expect(ethers.Signature.from(rawSignTypedMessage).compactSerialized).eq(
       order.signature,
     );
 

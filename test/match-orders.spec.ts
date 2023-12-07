@@ -93,7 +93,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               accountAddress: await privateListingRecipient.getAddress(),
             })
-            .send();
+            .transact();
 
           const receipt = await transaction.wait();
 

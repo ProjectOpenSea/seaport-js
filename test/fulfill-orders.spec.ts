@@ -177,34 +177,35 @@ describeWithFixture(
         });
 
         describe("with ERC20", () => {
-          beforeEach(() => {
+          beforeEach(async () => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20.getAddress();
             firstStandardCreateOrderInput = {
               ...firstStandardCreateOrderInput,
               consideration: firstStandardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
             secondStandardCreateOrderInput = {
               ...secondStandardCreateOrderInput,
               consideration: secondStandardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
             thirdStandardCreateOrderInput = {
               ...thirdStandardCreateOrderInput,
               consideration: thirdStandardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
@@ -453,11 +454,11 @@ describeWithFixture(
           await secondApprovalAction.transactionMethods.transact();
 
           expect(
-            await testErc20.allowance(
+            (await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            ),
-          ).eq(MAX_INT);
+            )) === MAX_INT,
+          );
 
           const thirdApprovalAction = actions[2];
 
@@ -653,34 +654,35 @@ describeWithFixture(
         });
 
         describe("with ERC20", () => {
-          beforeEach(() => {
+          beforeEach(async () => {
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20.getAddress();
             firstStandardCreateOrderInput = {
               ...firstStandardCreateOrderInput,
               consideration: firstStandardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
             secondStandardCreateOrderInput = {
               ...secondStandardCreateOrderInput,
               consideration: secondStandardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
             thirdStandardCreateOrderInput = {
               ...thirdStandardCreateOrderInput,
               consideration: thirdStandardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
@@ -933,11 +935,11 @@ describeWithFixture(
           await secondApprovalAction.transactionMethods.transact();
 
           expect(
-            await testErc20.allowance(
+            (await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            ),
-          ).eq(MAX_INT);
+            )) === MAX_INT,
+          );
 
           const thirdApprovalAction = actions[2];
 

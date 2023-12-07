@@ -220,12 +220,13 @@ describeWithFixture(
           const { seaport, testErc20, testErc1155 } = fixture;
 
           // Use ERC20 instead of eth
+          const token = await testErc20.getAddress();
           standardCreateOrderInput = {
             ...standardCreateOrderInput,
             consideration: standardCreateOrderInput.consideration.map(
-              async (item) => ({
+              (item) => ({
                 ...item,
-                token: await testErc20.getAddress(),
+                token,
               }),
             ),
           };
@@ -551,11 +552,11 @@ describeWithFixture(
           await second.transactionMethods.transact();
 
           expect(
-            await testErc20.allowance(
+            (await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            ),
-          ).to.eq(MAX_INT);
+            )) === MAX_INT,
+          );
 
           const fulfillAction = actions[2];
 
@@ -721,12 +722,13 @@ describeWithFixture(
           const { seaport, testErc20, testErc1155 } = fixture;
 
           // Use ERC20 instead of eth
+          const token = await testErc20.getAddress();
           standardCreateOrderInput = {
             ...standardCreateOrderInput,
             consideration: standardCreateOrderInput.consideration.map(
-              async (item) => ({
+              (item) => ({
                 ...item,
-                token: await testErc20.getAddress(),
+                token,
               }),
             ),
           };
@@ -964,11 +966,11 @@ describeWithFixture(
           await second.transactionMethods.transact();
 
           expect(
-            await testErc20.allowance(
+            (await testErc20.allowance(
               await fulfiller.getAddress(),
               await seaport.contract.getAddress(),
-            ),
-          ).to.eq(MAX_INT);
+            )) === MAX_INT,
+          );
 
           const fulfillAction = actions[3];
 

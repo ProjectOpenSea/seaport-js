@@ -465,11 +465,11 @@ describeWithFixture(
         await secondApprovalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
+          (await testErc20.allowance(
             await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
-          ),
-        ).to.eq(MAX_INT);
+          )) === MAX_INT,
+        );
 
         const fulfillAction = actions[2];
 

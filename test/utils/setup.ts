@@ -49,6 +49,7 @@ export const describeWithFixture = (
       const seaportContract = (await SeaportFactory.deploy(
         await conduitController.getAddress(),
       )) as SeaportContract;
+      await seaportContract.waitForDeployment();
 
       const DomainRegistryFactory =
         await ethers.getContractFactory("DomainRegistry");

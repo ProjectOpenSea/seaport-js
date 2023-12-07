@@ -114,7 +114,7 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ETH (already validated order)", async () => {
-            const { seaport } = fixture;
+            const { seaport, seaportContract } = fixture;
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
             );
@@ -135,7 +135,10 @@ describeWithFixture(
             // Should revert because signature is empty
             await expect(
               action.transactionMethods.transact(),
-            ).to.be.revertedWith("InvalidSignature");
+            ).to.be.revertedWithCustomError(
+              seaportContract,
+              "InvalidSignature",
+            );
 
             await seaport
               .validate([order], await offerer.getAddress())
@@ -168,12 +171,13 @@ describeWithFixture(
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20.getAddress();
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
@@ -251,7 +255,7 @@ describeWithFixture(
           });
 
           it("ERC721 <=> ERC20 (already validated order)", async () => {
-            const { seaport, testErc20 } = fixture;
+            const { seaport, seaportContract, testErc20 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
@@ -306,7 +310,10 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionMethods.transact(),
-            ).to.be.revertedWith("InvalidSignature");
+            ).to.be.revertedWithCustomError(
+              seaportContract,
+              "InvalidSignature",
+            );
 
             await seaport
               .validate([order], await offerer.getAddress())
@@ -503,7 +510,7 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ETH (already validated order)", async () => {
-            const { seaport } = fixture;
+            const { seaport, seaportContract } = fixture;
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
             );
@@ -524,7 +531,10 @@ describeWithFixture(
             // Should revert because signature is empty
             await expect(
               fulfillAction.transactionMethods.transact(),
-            ).to.be.revertedWith("InvalidSignature");
+            ).to.be.revertedWithCustomError(
+              seaportContract,
+              "InvalidSignature",
+            );
 
             await seaport
               .validate([order], await offerer.getAddress())
@@ -563,12 +573,13 @@ describeWithFixture(
             const { testErc20 } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20.getAddress();
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20.getAddress(),
+                  token,
                 }),
               ),
             };
@@ -644,7 +655,7 @@ describeWithFixture(
           });
 
           it("ERC1155 <=> ERC20 (already validated order)", async () => {
-            const { seaport, testErc20 } = fixture;
+            const { seaport, seaportContract, testErc20 } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
@@ -692,7 +703,10 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionMethods.transact(),
-            ).to.be.revertedWith("InvalidSignature");
+            ).to.be.revertedWithCustomError(
+              seaportContract,
+              "InvalidSignature",
+            );
 
             await seaport
               .validate([order], await offerer.getAddress())
@@ -894,7 +908,7 @@ describeWithFixture(
           });
 
           it("ERC20 <=> ETH (already validated order)", async () => {
-            const { seaport } = fixture;
+            const { seaport, seaportContract } = fixture;
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
             );
@@ -915,7 +929,10 @@ describeWithFixture(
             // Should revert because signature is empty
             await expect(
               action.transactionMethods.transact(),
-            ).to.be.revertedWith("InvalidSignature");
+            ).to.be.revertedWithCustomError(
+              seaportContract,
+              "InvalidSignature",
+            );
 
             await seaport
               .validate([order], await offerer.getAddress())
@@ -948,12 +965,13 @@ describeWithFixture(
             const { testErc20USDC } = fixture;
 
             // Use ERC20 instead of eth
+            const token = await testErc20USDC.getAddress();
             standardCreateOrderInput = {
               ...standardCreateOrderInput,
               consideration: standardCreateOrderInput.consideration.map(
-                async (item) => ({
+                (item) => ({
                   ...item,
-                  token: await testErc20USDC.getAddress(),
+                  token,
                 }),
               ),
             };
@@ -1030,7 +1048,7 @@ describeWithFixture(
           });
 
           it("ERC20 <=> ERC20 (already validated order)", async () => {
-            const { seaport, testErc20USDC } = fixture;
+            const { seaport, seaportContract, testErc20USDC } = fixture;
 
             const { executeAllActions } = await seaport.createOrder(
               standardCreateOrderInput,
@@ -1085,7 +1103,10 @@ describeWithFixture(
 
             await expect(
               fulfillAction.transactionMethods.transact(),
-            ).to.be.revertedWith("InvalidSignature");
+            ).to.be.revertedWithCustomError(
+              seaportContract,
+              "InvalidSignature",
+            );
 
             await seaport
               .validate([order], await offerer.getAddress())
