@@ -179,11 +179,11 @@ describeWithFixture("As a user I want to create an order", (fixture) => {
 
     // NFT should now be approved
     expect(
-      await testErc20.allowance(
+      (await testErc20.allowance(
         await offerer.getAddress(),
         await seaportContract.getAddress(),
-      ),
-    ).to.equal(MAX_INT);
+      )) === MAX_INT,
+    );
 
     const createOrderAction = actions[1] as CreateOrderAction;
     const order = await createOrderAction.createOrder();

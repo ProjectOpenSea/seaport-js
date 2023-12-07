@@ -632,11 +632,11 @@ export function fulfillAvailableOrders({
 
       totalNativeAmount =
         totalNativeAmount +
-          getSummedTokenAndIdentifierAmounts({
-            items: considerationIncludingTips,
-            criterias: considerationCriteria,
-            timeBasedItemParams,
-          })[ethers.ZeroAddress]?.["0"] ?? 0n;
+        (getSummedTokenAndIdentifierAmounts({
+          items: considerationIncludingTips,
+          criterias: considerationCriteria,
+          timeBasedItemParams,
+        })[ethers.ZeroAddress]?.["0"] ?? 0n);
 
       const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
         {

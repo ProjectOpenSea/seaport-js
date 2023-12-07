@@ -179,11 +179,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const fulfillAction = actions[1];
 
@@ -498,7 +498,7 @@ describeWithFixture(
             const order = await executeAllActions();
 
             const ownerToTokenToIdentifierBalances =
-              await getBalancesForFulfillOrder(
+              await getBalanceSfORfULFILLoRDER(
                 order,
                 await fulfiller.getAddress(),
                 ethers.provider,
@@ -721,11 +721,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const revertedFulfill = revertedActions[1];
 
@@ -1049,11 +1049,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const fulfillAction = actions[1];
 
@@ -1356,11 +1356,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const revertedFulfill = revertedActions[1];
 
@@ -1472,11 +1472,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const revertedFulfill = revertedActions[1];
 

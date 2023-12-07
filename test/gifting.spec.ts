@@ -128,11 +128,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const fulfillAction = actions[1];
 
@@ -268,11 +268,11 @@ describeWithFixture(
             await approvalAction.transactionMethods.transact();
 
             expect(
-              await testErc20.allowance(
+              (await testErc20.allowance(
                 await fulfiller.getAddress(),
                 await seaport.contract.getAddress(),
-              ),
-            ).to.equal(MAX_INT);
+              )) === MAX_INT,
+            );
 
             const fulfillAction = actions[1];
 

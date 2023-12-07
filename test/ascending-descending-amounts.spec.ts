@@ -212,11 +212,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
+          (await testErc20.allowance(
             await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
-          ),
-        ).to.equal(MAX_INT);
+          )) === MAX_INT,
+        );
 
         const fulfillAction = actions[1];
 
@@ -421,11 +421,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
+          (await testErc20.allowance(
             await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
-          ),
-        ).to.equal(MAX_INT);
+          )) === MAX_INT,
+        );
 
         const fulfillAction = actions[1];
 
@@ -649,11 +649,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
+          (await testErc20.allowance(
             await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
-          ),
-        ).to.equal(MAX_INT);
+          )) === MAX_INT,
+        );
 
         const fulfillAction = actions[1];
 
@@ -884,11 +884,11 @@ describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
         await approvalAction.transactionMethods.transact();
 
         expect(
-          await testErc20.allowance(
+          (await testErc20.allowance(
             await fulfiller.getAddress(),
             await seaport.contract.getAddress(),
-          ),
-        ).to.equal(MAX_INT);
+          )) === MAX_INT,
+        );
 
         const fulfillAction = actions[1];
 
