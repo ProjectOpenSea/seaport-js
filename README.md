@@ -12,7 +12,7 @@
 
 # Seaport.js
 
-[Seaport][seaport-link] is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a JavaScript library intended to make interfacing with the contract reasonable and easy.
+[Seaport][seaport-link] is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a TypeScript library intended to make interfacing with the contract reasonable and easy.
 
 - [Synopsis](#synopsis)
 - [Installation](#installation)
@@ -22,7 +22,7 @@
 
 ## Synopsis
 
-This is a JavaScript library to help interface with Seaport. It includes various helper methods and constants that makes interfacing with Seaport easier. These include creating orders, fulfilling orders, doing the necessary balance and approval checks, and more. We recommend taking a look at the [Seaport][seaport-link] docs to get a better understanding of how the Seaport marketplace works.
+This is a TypeScript library to help interface with Seaport. It includes various helper methods and constants that makes interfacing with Seaport easier. These include creating orders, fulfilling orders, doing the necessary balance and approval checks, and more. We recommend taking a look at the [Seaport][seaport-link] docs to get a better understanding of how the Seaport marketplace works.
 
 ## Installation
 
