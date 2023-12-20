@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Signer, parseEther, parseUnits } from "ethers";
+import { Signer, parseEther, parseUnits, Interface } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, OrderType } from "../src/constants";
 import { TestERC1155 } from "../src/typechain-types";
@@ -12,6 +12,7 @@ import {
 import { describeWithFixture } from "./utils/setup";
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 import { SinonSpy } from "sinon";
+import { SeaportABIv15 } from "../src/abi/Seaport_v1_5";
 
 const sinon = require("sinon");
 
@@ -134,6 +135,192 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
 
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+        });
+
+        it("ERC1155 <=> ETH adjust tips correctly", async () => {
+          // Note: For simplicity in this test, tips are returned to the fulfiller.
+          const tips = [
+            {
+              amount: parseEther("1").toString(),
+              recipient: await fulfiller.getAddress(),
+            },
+          ];
+          const { seaport, testErc1155 } = fixture;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 2,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+            tips,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const { value } = await action.transactionMethods.buildTransaction();
+
+          // This test verifies that the tips are adjusted correctly in the transaction.
+          // The expected total is 2 ETH for tokens and 0.2 ETH for tips, totaling 2.2 ETH.
+          expect(value?.toString()).to.eq(parseEther("2.2").toString());
+
+          const transaction = await action.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(BigInt(8));
+          expect(fulfillerErc1155Balance).eq(BigInt(2));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 2,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+        });
+
+        it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
+          // Note: For simplicity in this test, tips are returned to the fulfiller.
+          const totalTips = "2"; // 2 wei
+          const totalPrice = "10"; // 10 wei
+          const offerAmount = "2"; // 2 tokens (ERC1155)
+
+          const tips = [
+            {
+              amount: totalTips,
+              recipient: await fulfiller.getAddress(),
+            },
+          ];
+
+          const { seaport, testErc1155 } = fixture;
+
+          standardCreateOrderInput.offer = [
+            {
+              itemType: ItemType.ERC1155,
+              token: await testErc1155.getAddress(),
+              amount: offerAmount,
+              identifier: nftId,
+            },
+          ];
+
+          standardCreateOrderInput.consideration = [
+            {
+              amount: totalPrice,
+              recipient: await offerer.getAddress(),
+            },
+          ];
+
+          // since denominations are very low, we need to remove the fees in this test
+          delete standardCreateOrderInput.fees;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 1,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+            tips,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const { value } = await action.transactionMethods.buildTransaction();
+
+          // This test verifies that the tips are adjusted correctly in the transaction when denominations are very low.
+          // The expected total is 5 wei for tokens and 1 wei for tips, totaling 6 wei.
+          expect(value?.toString()).to.eq("6");
+
+          const transaction = await action.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(BigInt(9));
+          expect(fulfillerErc1155Balance).eq(BigInt(1));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 1,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
           });
 
@@ -320,6 +507,142 @@ describeWithFixture(
           expect(fulfillStandardOrderSpy.calledOnce);
         });
 
+        it("ERC1155 <=> ERC20 include tips correctly", async () => {
+          const { seaport, testErc20, testErc1155 } = fixture;
+
+          // Note: For simplicity in this test, tips are returned to the fulfiller.
+          const tips = [
+            {
+              amount: parseEther("1").toString(),
+              recipient: await fulfiller.getAddress(),
+              token: await testErc20.getAddress(),
+            },
+          ];
+
+          // Use ERC20 instead of eth
+          const token = await testErc20.getAddress();
+          standardCreateOrderInput = {
+            ...standardCreateOrderInput,
+            consideration: standardCreateOrderInput.consideration.map(
+              (item) => ({
+                ...item,
+                token,
+              }),
+            ),
+          };
+
+          await testErc20.mint(
+            await fulfiller.getAddress(),
+            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
+          );
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 2,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+            tips,
+          });
+
+          expect(actions.length).to.eq(2);
+
+          const approvalAction = actions[0];
+
+          expect(approvalAction).to.deep.equal({
+            type: "approval",
+            token: await testErc20.getAddress(),
+            identifierOrCriteria: "0",
+            itemType: ItemType.ERC20,
+            transactionMethods: approvalAction.transactionMethods,
+            operator: await seaport.contract.getAddress(),
+          });
+
+          await approvalAction.transactionMethods.transact();
+
+          expect(
+            await testErc20.allowance(
+              await fulfiller.getAddress(),
+              await seaport.contract.getAddress(),
+            ),
+          ).to.eq(MAX_INT);
+
+          const fulfillAction = actions[1];
+
+          expect(fulfillAction).to.be.deep.equal({
+            type: "exchange",
+            transactionMethods: fulfillAction.transactionMethods,
+          });
+
+          const { data } =
+            await fulfillAction.transactionMethods.buildTransaction();
+
+          const iface = new Interface(SeaportABIv15);
+          const decoded = iface.parseTransaction({ data });
+          const considerations = decoded?.args[0][0][3];
+          expect(considerations.length).to.eq(3);
+
+          const tipConsideration = considerations.find(
+            (consideration: {
+              recipient: string;
+              token: string;
+              startAmount: BigInt;
+            }) =>
+              consideration.recipient === tips[0].recipient &&
+              consideration.token === tips[0].token &&
+              consideration.startAmount === BigInt(tips[0].amount),
+          );
+          // This test verifies that the tip consideration exists.
+          // Tip considerations will be adjusted correctly by the seaport protocol.
+          expect(tipConsideration).to.exist;
+
+          const transaction = await fulfillAction.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(8n);
+          expect(fulfillerErc1155Balance).eq(2n);
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 2,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+        });
+
         it("ERC1155 <=> ERC20 (6 decimals) doesn't fail due to rounding error", async () => {
           const { seaport, testErc20USDC, testErc1155 } = fixture;
 
@@ -441,7 +764,6 @@ describeWithFixture(
             unitsToFill: 2,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
-
             fulfillReceipt: receipt!,
           });
 
