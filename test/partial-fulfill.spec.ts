@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Signer, parseEther, parseUnits } from "ethers";
+import { Signer, formatEther, parseEther, parseUnits } from "ethers";
 import { ethers } from "hardhat";
 import { ItemType, MAX_INT, OrderType } from "../src/constants";
 import { TestERC1155 } from "../src/typechain-types";
@@ -214,6 +214,111 @@ describeWithFixture(
             ownerToTokenToIdentifierBalances,
             order,
             unitsToFill: 2,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+        });
+
+        it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
+          // Note: For simplicity in this test, tips are returned to the fulfiller.
+          const totalTips = "2"; // 2 wei
+          const totalPrice = "10"; // 10 wei
+          const offerAmount = "2"; // 2 tokens (ERC1155)
+
+          const tips = [
+            {
+              amount: totalTips,
+              recipient: await fulfiller.getAddress(),
+            },
+          ];
+
+          const { seaport, testErc1155 } = fixture;
+
+          standardCreateOrderInput.offer = [
+            {
+              itemType: ItemType.ERC1155,
+              token: await testErc1155.getAddress(),
+              amount: offerAmount,
+              identifier: nftId,
+            },
+          ];
+
+          standardCreateOrderInput.consideration = [
+            {
+              amount: totalPrice,
+              recipient: await offerer.getAddress(),
+            },
+          ];
+
+          // since denominations are very low, we need to remove the fees in this test
+          delete standardCreateOrderInput.fees;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 1,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+            tips,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const { value } = await action.transactionMethods.buildTransaction();
+
+          // This test verifies that the tips are adjusted correctly in the transaction when denominations are very low.
+          // The expected total is 5 wei for tokens and 1 wei for tips, totaling 6 wei.
+          if (value) expect(value.toString()).to.eq("6");
+
+          const transaction = await action.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(BigInt(9));
+          expect(fulfillerErc1155Balance).eq(BigInt(1));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 1,
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
