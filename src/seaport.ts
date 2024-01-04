@@ -6,6 +6,7 @@ import {
   JsonRpcProvider,
   Provider,
   JsonRpcSigner,
+  Signer,
 } from "ethers";
 import {
   SEAPORT_CONTRACT_NAME,
@@ -33,7 +34,6 @@ import type {
   OrderWithCounter,
   TipInputItem,
   MatchOrdersFulfillment,
-  Signer,
   ApprovalAction,
   CreateBulkOrdersAction,
   SeaportContract,

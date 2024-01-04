@@ -1,4 +1,4 @@
-import { BigNumberish, BytesLike, ContractTransaction, ethers } from "ethers";
+import { BigNumberish, ContractTransaction } from "ethers";
 import { ItemType, OrderType } from "./constants";
 import type { TestERC20, TestERC721 } from "./typechain-types";
 import { TransactionMethods } from "./utils/usecase";
@@ -25,28 +25,6 @@ export type SeaportConfig = {
     // A default conduit key to use when creating and fulfilling orders
     defaultConduitKey?: string;
   };
-};
-
-type TypedDataDomain = {
-  name?: string;
-  version?: string;
-  chainId?: BigNumberish;
-  verifyingContract?: string;
-  salt?: BytesLike;
-};
-
-type TypedDataField = {
-  name: string;
-  type: string;
-};
-
-// Temporary until TypedDataSigner is added in ethers (in v6)
-export type Signer = ethers.Signer & {
-  _signTypedData(
-    domain: TypedDataDomain,
-    types: Record<string, Array<TypedDataField>>,
-    value: Record<string, any>,
-  ): Promise<string>;
 };
 
 export type OfferItem = {
