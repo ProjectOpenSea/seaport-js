@@ -771,6 +771,139 @@ describeWithFixture(
         });
       });
 
+      describe("[Buy now] I want to partially buy an ERC1155 twice", () => {
+        beforeEach(async () => {
+          const { testErc1155 } = fixture;
+
+          // Mint 100 ERC1155s to offerer
+          await testErc1155.mint(await offerer.getAddress(), nftId, 100);
+
+          standardCreateOrderInput = {
+            allowPartialFills: true,
+
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await testErc1155.getAddress(),
+                amount: "100",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("100").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+        });
+
+        it("ERC1155 <=> ETH", async () => {
+          const { seaport, testErc1155 } = fixture;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 50,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const transaction = await action.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(50n);
+          expect(fulfillerErc1155Balance).eq(50n);
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 50,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
+
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+
+          // Fulfill the order again for another 7 units
+          const { actions: actions2 } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 7,
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+          });
+
+          expect(actions2.length).to.eq(1);
+
+          const action2 = actions2[0];
+
+          expect(action2).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action2.transactionMethods,
+          });
+
+          const transaction2 = await action2.transactionMethods.transact();
+          expect(transaction2.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const offererErc1155Balance2 = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance2 = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance2).eq(43n);
+          expect(fulfillerErc1155Balance2).eq(57n);
+
+          expect(fulfillStandardOrderSpy.calledTwice);
+        });
+      });
+
       describe("[Accept offer] I want to accept a partial offer for my ERC1155", () => {
         beforeEach(async () => {
           const { testErc20, testErc1155 } = fixture;

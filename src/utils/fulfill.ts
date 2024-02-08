@@ -21,6 +21,7 @@ import type {
   OrderParameters,
   OrderStatus,
   OrderUseCase,
+  OrderWithCounter,
 } from "../types";
 import { getApprovalActions } from "./approval";
 import {
@@ -862,4 +863,22 @@ export const getAdvancedOrderNumeratorDenominator = (
   }
 
   return { numerator, denominator };
+};
+
+export const scaleOrderStatusToMaxUnits = (
+  order: OrderWithCounter,
+  orderStatus: OrderStatus,
+) => {
+  const maxUnits = getMaximumSizeForOrder(order);
+  if (orderStatus.totalSize === 0n) {
+    // Seaport returns 0 for totalSize if the order has not been fulfilled before.
+    orderStatus.totalSize = maxUnits;
+  } else {
+    // Scale the total filled and total size to the max units,
+    // so we can properly calculate the units to fill.
+    orderStatus.totalFilled =
+      (orderStatus.totalFilled * maxUnits) / orderStatus.totalSize;
+    orderStatus.totalSize = maxUnits;
+  }
+  return orderStatus;
 };
