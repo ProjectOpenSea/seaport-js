@@ -37,7 +37,7 @@
     "merkletreejs": "^0.3.11"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@rari-capital/solmate": "^6.4.0",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
