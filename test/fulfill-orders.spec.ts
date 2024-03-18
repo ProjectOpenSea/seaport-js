@@ -778,6 +778,177 @@ describeWithFixture(
         });
       });
 
+      describe("[Buy now] I want to buy three ERC1155 listings twice", () => {
+        beforeEach(async () => {
+          const { testErc1155 } = fixture;
+
+          // These will be used in 3 separate orders
+          await testErc1155.mint(await offerer.getAddress(), nftId, 100);
+          await testErc1155.mint(await offerer.getAddress(), nftId, 100);
+          await secondTestErc1155.mint(
+            await secondOfferer.getAddress(),
+            nftId,
+            100,
+          );
+
+          firstStandardCreateOrderInput = {
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await testErc1155.getAddress(),
+                amount: "100",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+
+          secondStandardCreateOrderInput = {
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await testErc1155.getAddress(),
+                amount: "100",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+
+          thirdStandardCreateOrderInput = {
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await secondTestErc1155.getAddress(),
+                amount: "100",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: await secondOfferer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+        });
+
+        describe("with ETH", () => {
+          it("3 ERC1155 <=> ETH", async () => {
+            const { seaport, testErc1155 } = fixture;
+
+            const firstOrderUseCase = await seaport.createOrder(
+              firstStandardCreateOrderInput,
+            );
+
+            const firstOrder = await firstOrderUseCase.executeAllActions();
+
+            const secondOrderUseCase = await seaport.createOrder(
+              secondStandardCreateOrderInput,
+            );
+
+            const secondOrder = await secondOrderUseCase.executeAllActions();
+
+            const thirdOrderUseCase = await seaport.createOrder(
+              thirdStandardCreateOrderInput,
+              await secondOfferer.getAddress(),
+            );
+
+            const thirdOrder = await thirdOrderUseCase.executeAllActions();
+
+            const { actions } = await seaport.fulfillOrders({
+              fulfillOrderDetails: [
+                { order: firstOrder, unitsToFill: 50 },
+                { order: secondOrder, unitsToFill: 50 },
+                { order: thirdOrder, unitsToFill: 50 },
+              ],
+              accountAddress: await fulfiller.getAddress(),
+              domain: OPENSEA_DOMAIN,
+            });
+
+            expect(actions.length).to.eq(1);
+
+            const action = actions[0];
+
+            expect(action.type).eq("exchange");
+
+            expect(
+              (await action.transactionMethods.buildTransaction()).data?.slice(
+                -8,
+              ),
+            ).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const transaction = await action.transactionMethods.transact();
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const balances = await Promise.all([
+              testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+              secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+            ]);
+
+            expect(balances[0]).to.equal(100n);
+            expect(balances[1]).to.equal(50n);
+
+            expect(fulfillAvailableOrdersSpy.calledOnce);
+
+            // Fulfill the order again for another 7 units
+            const { actions: actions2 } = await seaport.fulfillOrders({
+              fulfillOrderDetails: [
+                { order: firstOrder, unitsToFill: 7 },
+                { order: secondOrder, unitsToFill: 7 },
+                { order: thirdOrder, unitsToFill: 7 },
+              ],
+              accountAddress: await fulfiller.getAddress(),
+              domain: OPENSEA_DOMAIN,
+            });
+
+            expect(actions2.length).to.eq(1);
+
+            const action2 = actions2[0];
+
+            expect(action2.type).eq("exchange");
+
+            expect(
+              (await action2.transactionMethods.buildTransaction()).data?.slice(
+                -8,
+              ),
+            ).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const transaction2 = await action2.transactionMethods.transact();
+            expect(transaction2.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const balances2 = await Promise.all([
+              testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+              secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+            ]);
+
+            expect(balances2[0]).to.equal(114n);
+            expect(balances2[1]).to.equal(BigInt(57n));
+
+            expect(fulfillAvailableOrdersSpy.calledTwice);
+          });
+        });
+      });
+
       describe("[Accept offer] I want to accept three ERC1155 offers", () => {
         beforeEach(async () => {
           const { testErc1155, testErc20 } = fixture;

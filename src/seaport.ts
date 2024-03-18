@@ -49,10 +49,11 @@ import {
   fulfillBasicOrder,
   FulfillOrdersMetadata,
   fulfillStandardOrder,
+  scaleOrderStatusToMaxUnits,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
-import { getMaximumSizeForOrder, isCurrencyItem } from "./utils/item";
+import { isCurrencyItem } from "./utils/item";
 import {
   areAllCurrenciesSame,
   deductFees,
@@ -855,6 +856,8 @@ export class Seaport {
 
     const currentBlockTimestamp = currentBlock!.timestamp;
 
+    scaleOrderStatusToMaxUnits(order, orderStatus);
+
     const { totalFilled, totalSize } = orderStatus;
 
     const sanitizedOrder = validateAndSanitizeFromOrderStatus(
@@ -910,8 +913,7 @@ export class Seaport {
         order: sanitizedOrder,
         unitsToFill,
         totalFilled,
-        totalSize:
-          totalSize === 0n ? getMaximumSizeForOrder(sanitizedOrder) : totalSize,
+        totalSize,
         offerCriteria,
         considerationCriteria,
         tips: tipConsiderationItems,
@@ -1036,7 +1038,10 @@ export class Seaport {
       (orderDetails, index) => ({
         order: orderDetails.order,
         unitsToFill: orderDetails.unitsToFill,
-        orderStatus: orderStatuses[index],
+        orderStatus: scaleOrderStatusToMaxUnits(
+          orderDetails.order,
+          orderStatuses[index],
+        ),
         offerCriteria: orderDetails.offerCriteria ?? [],
         considerationCriteria: orderDetails.considerationCriteria ?? [],
         tips:
