@@ -72,7 +72,7 @@
     "typescript": "^5.0.4"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "lint-staged": {
     "package.json": [
