@@ -38,7 +38,7 @@ export const describeWithFixture = (
 
     beforeEach(async () => {
       const SeaportFactory = await ethers.getContractFactory(
-        "seaport_v1_5/contracts/Seaport.sol:Seaport",
+        "seaport/contracts/Seaport.sol:Seaport",
       );
 
       const ConduitControllerFactory =
@@ -61,7 +61,6 @@ export const describeWithFixture = (
           contractAddress: await seaportContract.getAddress(),
           domainRegistryAddress: await domainRegistry.getAddress(),
         },
-        seaportVersion: "1.5",
       });
       const [signer] = await ethers.getSigners();
       const seaportWithSigner = new Seaport(signer as any, {
@@ -69,7 +68,6 @@ export const describeWithFixture = (
           contractAddress: await seaportContract.getAddress(),
           domainRegistryAddress: await domainRegistry.getAddress(),
         },
-        seaportVersion: "1.5",
       });
 
       const TestERC721 = await ethers.getContractFactory("TestERC721");

@@ -2,7 +2,7 @@ import { BigNumberish, ContractTransaction } from "ethers";
 import { ItemType, OrderType } from "./constants";
 import type { TestERC20, TestERC721 } from "./typechain-types";
 import { TransactionMethods } from "./utils/usecase";
-import { Seaport as SeaportContract } from "./typechain-types/seaport_v1_5/contracts/Seaport";
+import { Seaport as SeaportContract } from "./typechain-types/seaport/contracts/Seaport";
 
 export type { SeaportContract };
 
@@ -16,13 +16,14 @@ export type SeaportConfig = {
   // A mapping of conduit key to conduit
   conduitKeyToConduit?: Record<string, string>;
 
-  // The Seaport version to use
-  seaportVersion?: "1.5";
-
   overrides?: {
+    // The Seaport version to use
+    seaportVersion?: string;
+    // The Seaport contract address to use
     contractAddress?: string;
+    // The domain registry address to use
     domainRegistryAddress?: string;
-    // A default conduit key to use when creating and fulfilling orders
+    // The default conduit key to use when creating and fulfilling orders
     defaultConduitKey?: string;
   };
 };

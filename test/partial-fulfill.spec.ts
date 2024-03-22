@@ -12,7 +12,7 @@ import {
 import { describeWithFixture } from "./utils/setup";
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 import { SinonSpy } from "sinon";
-import { SeaportABIv15 } from "../src/abi/Seaport_v1_5";
+import { SeaportABI } from "../src/abi/Seaport";
 
 const sinon = require("sinon");
 
@@ -594,7 +594,7 @@ describeWithFixture(
           const { data } =
             await fulfillAction.transactionMethods.buildTransaction();
 
-          const iface = new Interface(SeaportABIv15);
+          const iface = new Interface(SeaportABI);
           const decoded = iface.parseTransaction({ data });
           const considerations = decoded?.args[0][0][3];
           expect(considerations.length).to.eq(3);

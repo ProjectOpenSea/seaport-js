@@ -1,4 +1,4 @@
-const SeaportABIv15 = [
+export const SeaportABI = [
   {
     inputs: [
       {
@@ -2811,5 +2811,3 @@ const SeaportABIv15 = [
     type: "receive",
   },
 ];
-
-export { SeaportABIv15 };
