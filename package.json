@@ -1,6 +1,6 @@
 {
   "name": "@opensea/seaport-js",
-  "version": "3.0.3",
+  "version": "4.0.0",
   "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a TypeScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
@@ -58,13 +58,13 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-promise": "^6.1.1",
-    "hardhat": "^2.19.2",
+    "hardhat": "^2.22.2",
     "husky": "^9.0.0",
     "lint-staged": "^15.2.0",
     "prettier": "^3.0.0",
     "prettier-package-json": "^2.8.0",
     "prettier-plugin-solidity": "^1.1.3",
-    "seaport_v1_5": "ProjectOpenSea/seaport#1.5",
+    "seaport": "ProjectOpenSea/seaport#1d12e33",
     "sinon": "^17.0.0",
     "sinon-chai": "^3.7.0",
     "ts-node": "^10.9.1",
@@ -72,7 +72,7 @@
     "typescript": "^5.0.4"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "lint-staged": {
     "package.json": [

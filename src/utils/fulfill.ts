@@ -9,7 +9,7 @@ import type {
   BasicOrderParametersStruct,
   FulfillmentComponentStruct,
   OrderStruct,
-} from "../typechain-types/seaport_v1_5/contracts/Seaport";
+} from "../typechain-types/seaport/contracts/Seaport";
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants";
 import type {
   SeaportContract,

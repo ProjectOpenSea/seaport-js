@@ -1,4 +1,4 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.14;
 
-import "seaport_v1_5/contracts/conduit/ConduitController.sol";
+import "seaport/contracts/conduit/ConduitController.sol";

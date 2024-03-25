@@ -1,12 +1,21 @@
 import { ethers } from "ethers";
 
 export const SEAPORT_CONTRACT_NAME = "Seaport";
-export const SEAPORT_CONTRACT_VERSION_V1_4 = "1.4";
-export const SEAPORT_CONTRACT_VERSION_V1_5 = "1.5";
+
+export const SEAPORT_CONTRACT_VERSION_V1_6 = "1.6";
+
+export const CROSS_CHAIN_SEAPORT_V1_6_ADDRESS =
+  "0x0000000000000068F116a894984e2DB1123eB395";
+
+export const CROSS_CHAIN_SEAPORT_V1_5_ADDRESS =
+  "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
+
 export const OPENSEA_CONDUIT_KEY =
   "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000";
+
 export const OPENSEA_CONDUIT_ADDRESS =
   "0x1e0049783f008a0085193e00003d00cd54003c71";
+
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
     { name: "offerer", type: "address" },
@@ -37,6 +46,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "recipient", type: "address" },
   ],
 };
+
 export const EIP_712_BULK_ORDER_TYPE = {
   BulkOrder: [{ name: "tree", type: "OrderComponents[2][2][2][2][2][2][2]" }],
   OrderComponents: [
@@ -115,9 +125,6 @@ export const NO_CONDUIT = ethers.ZeroHash;
 export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {
   [OPENSEA_CONDUIT_KEY]: OPENSEA_CONDUIT_ADDRESS,
 };
-
-export const CROSS_CHAIN_SEAPORT_V1_5_ADDRESS =
-  "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
 
 export const DOMAIN_REGISTRY_ADDRESS =
   "0x000000000DaD0DE04D2B2D4a5A74581EBA94124A";

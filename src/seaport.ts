@@ -10,8 +10,6 @@ import {
 } from "ethers";
 import {
   SEAPORT_CONTRACT_NAME,
-  SEAPORT_CONTRACT_VERSION_V1_4,
-  SEAPORT_CONTRACT_VERSION_V1_5,
   EIP_712_ORDER_TYPE,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
@@ -19,7 +17,8 @@ import {
   OPENSEA_CONDUIT_KEY,
   OrderType,
   DOMAIN_REGISTRY_ADDRESS,
-  CROSS_CHAIN_SEAPORT_V1_5_ADDRESS,
+  CROSS_CHAIN_SEAPORT_V1_6_ADDRESS,
+  SEAPORT_CONTRACT_VERSION_V1_6,
 } from "./constants";
 import type {
   SeaportConfig,
@@ -84,7 +83,9 @@ export class Seaport {
 
   private signer?: Signer;
 
-  private config: Required<Omit<SeaportConfig, "overrides">>;
+  private config: Required<Omit<SeaportConfig, "overrides">> & {
+    seaportVersion: string;
+  };
 
   private defaultConduitKey: string;
 
@@ -102,7 +103,6 @@ export class Seaport {
       ascendingAmountFulfillmentBuffer = 300,
       balanceAndApprovalChecksOnOrderCreation = true,
       conduitKeyToConduit,
-      seaportVersion = "1.5",
     }: SeaportConfig = {},
   ) {
     const provider =
@@ -122,14 +122,11 @@ export class Seaport {
 
     this.provider = provider;
 
-    if (seaportVersion !== "1.5") {
-      throw new Error(
-        "Only Seaport v1.5 is supported in this version of seaport-js",
-      );
-    }
+    const seaportVersion =
+      overrides?.seaportVersion ?? SEAPORT_CONTRACT_VERSION_V1_6;
 
     const seaportContractAddress =
-      overrides?.contractAddress ?? CROSS_CHAIN_SEAPORT_V1_5_ADDRESS;
+      overrides?.contractAddress ?? CROSS_CHAIN_SEAPORT_V1_6_ADDRESS;
     this.contract = Seaport__factory.connect(
       seaportContractAddress,
       this.provider,
@@ -452,10 +449,7 @@ export class Seaport {
 
     return {
       name: SEAPORT_CONTRACT_NAME,
-      version:
-        this.config.seaportVersion === "1.5"
-          ? SEAPORT_CONTRACT_VERSION_V1_5
-          : SEAPORT_CONTRACT_VERSION_V1_4,
+      version: this.config.seaportVersion,
       chainId,
       verifyingContract: await this.contract.getAddress(),
     };
@@ -648,7 +642,7 @@ export class Seaport {
    * @param offerer the offerer to get the counter of
    * @returns counter as a number
    */
-  public async getCounter(offerer: string): Promise<bigint> {
+  public getCounter(offerer: string): Promise<bigint> {
     return this.contract.getCounter(offerer);
   }
 
