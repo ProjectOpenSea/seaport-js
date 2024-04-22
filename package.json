@@ -64,7 +64,7 @@
     "prettier": "^3.0.0",
     "prettier-package-json": "^2.8.0",
     "prettier-plugin-solidity": "^1.1.3",
-    "seaport": "ProjectOpenSea/seaport#4b40a25",
+    "seaport": "ProjectOpenSea/seaport#2ff6ea3",
     "sinon": "^17.0.0",
     "sinon-chai": "^3.7.0",
     "ts-node": "^10.9.1",
