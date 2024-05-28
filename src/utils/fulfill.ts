@@ -698,9 +698,18 @@ export function fulfillAvailableOrders({
         unitsToFill,
       );
 
+      let adjustedTips: ConsiderationItem[] = [];
+      if (tips.length > 0) {
+        adjustedTips = adjustTipsForPartialFills(
+          tips,
+          unitsToFill,
+          BigInt(order.parameters.totalOriginalConsiderationItems),
+        );
+      }
+
       const considerationIncludingTips = [
         ...order.parameters.consideration,
-        ...tips,
+        ...adjustedTips,
       ];
       return {
         ...order,
