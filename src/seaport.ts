@@ -36,7 +36,6 @@ import type {
   ApprovalAction,
   CreateBulkOrdersAction,
   SeaportContract,
-  ConsiderationItem,
 } from "./types";
 import { getApprovalActions } from "./utils/approval";
 import {
@@ -1032,7 +1031,7 @@ export class Seaport {
 
     const ordersMetadata: FulfillOrdersMetadata = fulfillOrderDetails.map(
       (orderDetails, index) => {
-        const o = {
+        const order = {
           order: orderDetails.order,
           unitsToFill: orderDetails.unitsToFill,
           orderStatus: scaleOrderStatusToMaxUnits(
@@ -1050,18 +1049,18 @@ export class Seaport {
           offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
           offererOperator: allOffererOperators[index],
         };
-        if (o.tips.length > 0) {
-          o.tips = adjustTipsForPartialFills(
-            o.tips,
-            o.unitsToFill || 1,
+        if (order.tips.length > 0) {
+          order.tips = adjustTipsForPartialFills(
+            order.tips,
+            order.unitsToFill || 1,
             // Max total amount to fulfill for scaling
             getMaximumSizeForOrder({
-              ...o.order,
+              ...order.order,
             }),
           );
         }
 
-        return o;
+        return order;
       },
     );
 
