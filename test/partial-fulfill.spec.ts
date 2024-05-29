@@ -222,6 +222,91 @@ describeWithFixture(
           expect(fulfillStandardOrderSpy.calledOnce);
         });
 
+        it("ERC1155 <=> ETH adjust tips correctly using fulfillOrders", async () => {
+          // same test as above, but instead of fulfillOrder we use fulfillOrders
+          const tips = [
+            {
+              amount: parseEther("1").toString(),
+              recipient: await fulfiller.getAddress(),
+            },
+          ];
+          const { seaport, testErc1155 } = fixture;
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          );
+
+          const order = await executeAllActions();
+
+          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
+
+          const orderStatus = await seaport.getOrderStatus(
+            seaport.getOrderHash(order.parameters),
+          );
+
+          const ownerToTokenToIdentifierBalances =
+            await getBalancesForFulfillOrder(
+              order,
+              await fulfiller.getAddress(),
+            );
+
+          const { actions } = await seaport.fulfillOrders({
+            fulfillOrderDetails: [
+              {
+                order,
+                unitsToFill: 2,
+                tips,
+              },
+            ],
+            accountAddress: await fulfiller.getAddress(),
+            domain: OPENSEA_DOMAIN,
+          });
+
+          expect(actions.length).to.eq(1);
+
+          const action = actions[0];
+
+          expect(action).to.deep.equal({
+            type: "exchange",
+            transactionMethods: action.transactionMethods,
+          });
+
+          const { value } = await action.transactionMethods.buildTransaction();
+
+          // This test verifies that the tips are adjusted correctly in the transaction.
+          // The expected total is 2 ETH for tokens and 0.2 ETH for tips, totaling 2.2 ETH.
+          expect(value?.toString()).to.eq(parseEther("2.2").toString());
+
+          const transaction = await action.transactionMethods.transact();
+          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+          const receipt = await transaction.wait();
+
+          const offererErc1155Balance = await testErc1155.balanceOf(
+            await offerer.getAddress(),
+            nftId,
+          );
+
+          const fulfillerErc1155Balance = await testErc1155.balanceOf(
+            await fulfiller.getAddress(),
+            nftId,
+          );
+
+          expect(offererErc1155Balance).eq(BigInt(8));
+          expect(fulfillerErc1155Balance).eq(BigInt(2));
+
+          await verifyBalancesAfterFulfill({
+            ownerToTokenToIdentifierBalances,
+            order,
+            unitsToFill: 2,
+            orderStatus,
+            fulfillerAddress: await fulfiller.getAddress(),
+            fulfillReceipt: receipt!,
+          });
+
+          expect(fulfillStandardOrderSpy.calledOnce);
+        });
+
         it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
           // Note: For simplicity in this test, tips are returned to the fulfiller.
           const totalTips = "2"; // 2 wei
@@ -597,150 +682,6 @@ describeWithFixture(
           const iface = new Interface(SeaportABI);
           const decoded = iface.parseTransaction({ data });
           const considerations = decoded?.args[0][0][3];
-          expect(considerations.length).to.eq(3);
-
-          const tipConsideration = considerations.find(
-            (consideration: {
-              recipient: string;
-              token: string;
-              startAmount: BigInt;
-            }) =>
-              consideration.recipient === tips[0].recipient &&
-              consideration.token === tips[0].token &&
-              consideration.startAmount === BigInt(tips[0].amount),
-          );
-          // This test verifies that the tip consideration exists.
-          // Tip considerations will be adjusted correctly by the seaport protocol.
-          expect(tipConsideration).to.exist;
-
-          const transaction = await fulfillAction.transactionMethods.transact();
-          expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
-
-          const receipt = await transaction.wait();
-
-          const offererErc1155Balance = await testErc1155.balanceOf(
-            await offerer.getAddress(),
-            nftId,
-          );
-
-          const fulfillerErc1155Balance = await testErc1155.balanceOf(
-            await fulfiller.getAddress(),
-            nftId,
-          );
-
-          expect(offererErc1155Balance).eq(8n);
-          expect(fulfillerErc1155Balance).eq(2n);
-
-          await verifyBalancesAfterFulfill({
-            ownerToTokenToIdentifierBalances,
-            order,
-            unitsToFill: 2,
-            orderStatus,
-            fulfillerAddress: await fulfiller.getAddress(),
-            fulfillReceipt: receipt!,
-          });
-
-          expect(fulfillStandardOrderSpy.calledOnce);
-        });
-
-        it("ERC1155 <=> ERC20 include tips correctly using fulfillOrders", async () => {
-          // Same setup and assertions, but instead of fulfillOrder we use fulfillOrders
-          // to ensure the tip scaling behaviour is consistent across the two code paths
-          const { seaport, testErc20, testErc1155 } = fixture;
-
-          // Note: For simplicity in this test, tips are returned to the fulfiller.
-          const tips = [
-            {
-              amount: parseEther("1").toString(),
-              recipient: await fulfiller.getAddress(),
-              token: await testErc20.getAddress(),
-            },
-          ];
-
-          // Use ERC20 instead of eth
-          const token = await testErc20.getAddress();
-          standardCreateOrderInput = {
-            ...standardCreateOrderInput,
-            consideration: standardCreateOrderInput.consideration.map(
-              (item) => ({
-                ...item,
-                token,
-              }),
-            ),
-          };
-
-          await testErc20.mint(
-            await fulfiller.getAddress(),
-            (standardCreateOrderInput.consideration[0] as CurrencyItem).amount,
-          );
-
-          const { executeAllActions } = await seaport.createOrder(
-            standardCreateOrderInput,
-          );
-
-          const order = await executeAllActions();
-
-          expect(order.parameters.orderType).eq(OrderType.PARTIAL_OPEN);
-
-          const orderStatus = await seaport.getOrderStatus(
-            seaport.getOrderHash(order.parameters),
-          );
-
-          const ownerToTokenToIdentifierBalances =
-            await getBalancesForFulfillOrder(
-              order,
-              await fulfiller.getAddress(),
-            );
-
-          const { actions } = await seaport.fulfillOrders({
-            fulfillOrderDetails: [
-              {
-                order,
-                unitsToFill: 2,
-                tips,
-              },
-            ],
-            domain: OPENSEA_DOMAIN,
-            accountAddress: await fulfiller.getAddress(),
-          });
-
-          expect(actions.length).to.eq(2);
-
-          const approvalAction = actions[0];
-
-          expect(approvalAction).to.deep.equal({
-            type: "approval",
-            token: await testErc20.getAddress(),
-            identifierOrCriteria: "0",
-            itemType: ItemType.ERC20,
-            transactionMethods: approvalAction.transactionMethods,
-            operator: await seaport.contract.getAddress(),
-          });
-
-          await approvalAction.transactionMethods.transact();
-
-          expect(
-            await testErc20.allowance(
-              await fulfiller.getAddress(),
-              await seaport.contract.getAddress(),
-            ),
-          ).to.eq(MAX_INT);
-
-          const fulfillAction = actions[1];
-
-          expect(fulfillAction).to.be.deep.equal({
-            type: "exchange",
-            transactionMethods: fulfillAction.transactionMethods,
-          });
-
-          const { data } =
-            await fulfillAction.transactionMethods.buildTransaction();
-
-          const iface = new Interface(SeaportABI);
-          const decoded = iface.parseTransaction({ data });
-
-          // arg[0] is now array of advancedOrders
-          const considerations = decoded?.args[0][0][0][3];
           expect(considerations.length).to.eq(3);
 
           const tipConsideration = considerations.find(
