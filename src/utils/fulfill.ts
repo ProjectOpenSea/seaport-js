@@ -702,6 +702,7 @@ export function fulfillAvailableOrders({
         ...order.parameters.consideration,
         ...tips,
       ];
+
       return {
         ...order,
         parameters: {

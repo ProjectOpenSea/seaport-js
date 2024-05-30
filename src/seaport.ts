@@ -52,8 +52,9 @@ import {
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
-import { isCurrencyItem } from "./utils/item";
+import { getMaximumSizeForOrder, isCurrencyItem } from "./utils/item";
 import {
+  adjustTipsForPartialFills,
   areAllCurrenciesSame,
   deductFees,
   feeToConsiderationItem,
@@ -1029,24 +1030,38 @@ export class Seaport {
     ]);
 
     const ordersMetadata: FulfillOrdersMetadata = fulfillOrderDetails.map(
-      (orderDetails, index) => ({
-        order: orderDetails.order,
-        unitsToFill: orderDetails.unitsToFill,
-        orderStatus: scaleOrderStatusToMaxUnits(
-          orderDetails.order,
-          orderStatuses[index],
-        ),
-        offerCriteria: orderDetails.offerCriteria ?? [],
-        considerationCriteria: orderDetails.considerationCriteria ?? [],
-        tips:
-          orderDetails.tips?.map((tip) => ({
-            ...mapInputItemToOfferItem(tip),
-            recipient: tip.recipient,
-          })) ?? [],
-        extraData: orderDetails.extraData ?? "0x",
-        offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
-        offererOperator: allOffererOperators[index],
-      }),
+      (orderDetails, index) => {
+        const order = {
+          order: orderDetails.order,
+          unitsToFill: orderDetails.unitsToFill,
+          orderStatus: scaleOrderStatusToMaxUnits(
+            orderDetails.order,
+            orderStatuses[index],
+          ),
+          offerCriteria: orderDetails.offerCriteria ?? [],
+          considerationCriteria: orderDetails.considerationCriteria ?? [],
+          tips:
+            orderDetails.tips?.map((tip) => ({
+              ...mapInputItemToOfferItem(tip),
+              recipient: tip.recipient,
+            })) ?? [],
+          extraData: orderDetails.extraData ?? "0x",
+          offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
+          offererOperator: allOffererOperators[index],
+        };
+        if (order.tips.length > 0) {
+          order.tips = adjustTipsForPartialFills(
+            order.tips,
+            order.unitsToFill || 1,
+            // Max total amount to fulfill for scaling
+            getMaximumSizeForOrder({
+              ...order.order,
+            }),
+          );
+        }
+
+        return order;
+      },
     );
 
     return fulfillAvailableOrders({
