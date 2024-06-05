@@ -52,9 +52,8 @@ import {
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill";
-import { getMaximumSizeForOrder, isCurrencyItem } from "./utils/item";
+import { isCurrencyItem } from "./utils/item";
 import {
-  adjustTipsForPartialFills,
   areAllCurrenciesSame,
   deductFees,
   feeToConsiderationItem,
@@ -1049,16 +1048,6 @@ export class Seaport {
           offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
           offererOperator: allOffererOperators[index],
         };
-        if (order.tips.length > 0) {
-          order.tips = adjustTipsForPartialFills(
-            order.tips,
-            order.unitsToFill || 1,
-            // Max total amount to fulfill for scaling
-            getMaximumSizeForOrder({
-              ...order.order,
-            }),
-          );
-        }
 
         return order;
       },

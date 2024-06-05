@@ -24,6 +24,7 @@ describeWithFixture(
     let fulfiller: Signer;
 
     let fulfillStandardOrderSpy: SinonSpy;
+    let fulfillAvailableOrdersSpy: SinonSpy;
     let standardCreateOrderInput: CreateOrderInput;
     let secondTestErc1155: TestERC1155;
 
@@ -33,6 +34,7 @@ describeWithFixture(
       [offerer, zone, fulfiller] = await ethers.getSigners();
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
+      fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
 
       const TestERC1155 = await ethers.getContractFactory("TestERC1155");
       secondTestErc1155 = await TestERC1155.deploy();
@@ -41,6 +43,7 @@ describeWithFixture(
 
     afterEach(() => {
       fulfillStandardOrderSpy.restore();
+      fulfillAvailableOrdersSpy.restore();
     });
 
     describe("An ERC1155 is partially transferred", () => {
@@ -304,7 +307,7 @@ describeWithFixture(
             fulfillReceipt: receipt!,
           });
 
-          expect(fulfillStandardOrderSpy.calledOnce);
+          expect(fulfillAvailableOrdersSpy.calledOnce).to.be.true;
         });
 
         it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
