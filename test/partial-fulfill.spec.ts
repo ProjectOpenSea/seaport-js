@@ -13,6 +13,7 @@ import { describeWithFixture } from "./utils/setup";
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 import { SinonSpy } from "sinon";
 import { SeaportABI } from "../src/abi/Seaport";
+import { FulfillOrdersMetadata } from "../lib/utils/fulfill";
 
 const sinon = require("sinon");
 
@@ -226,7 +227,6 @@ describeWithFixture(
         });
 
         it("ERC1155 <=> ETH adjust tips correctly using fulfillOrders", async () => {
-          // same test as above, but instead of fulfillOrder we use fulfillOrders
           const tips = [
             {
               amount: parseEther("1").toString(),
@@ -307,7 +307,37 @@ describeWithFixture(
             fulfillReceipt: receipt!,
           });
 
-          expect(fulfillAvailableOrdersSpy.calledOnce).to.be.true;
+          const expectedArgs = {
+            ordersMetadata: [
+              {
+                order,
+                unitsToFill: 2,
+              },
+            ],
+          };
+
+          expect(
+            fulfillAvailableOrdersSpy.withArgs(
+              sinon.match(function ({
+                ordersMetadata,
+              }: {
+                ordersMetadata: FulfillOrdersMetadata;
+              }) {
+                let match = true;
+                ordersMetadata.every((metadata, index) => {
+                  if (
+                    metadata.order !=
+                      expectedArgs.ordersMetadata[index].order ||
+                    metadata.unitsToFill !=
+                      expectedArgs.ordersMetadata[index].unitsToFill
+                  ) {
+                    match = false;
+                  }
+                });
+                return match;
+              }, "fulfillAvailableOrders arguments don't match expected values"),
+            ).calledOnce,
+          ).to.be.true;
         });
 
         it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
