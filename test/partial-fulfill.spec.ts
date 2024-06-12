@@ -319,7 +319,7 @@ describeWithFixture(
               {
                 order,
                 unitsToFill: 2,
-                tipConsiderationItems,
+                tips: tipConsiderationItems,
               },
             ],
           };
@@ -331,20 +331,22 @@ describeWithFixture(
               }: {
                 ordersMetadata: FulfillOrdersMetadata;
               }) {
-                let match = true;
                 ordersMetadata.every((metadata, index) => {
-                  if (
-                    metadata.order !=
-                      expectedArgs.ordersMetadata[index].order ||
-                    metadata.unitsToFill !=
-                      expectedArgs.ordersMetadata[index].unitsToFill ||
-                    metadata.tips !== tipConsiderationItems
-                  ) {
-                    match = false;
-                  }
+                  expect(metadata.order).to.deep.equal(
+                    expectedArgs.ordersMetadata[index].order,
+                    "order doesn't match expected value",
+                  );
+                  expect(metadata.unitsToFill).to.deep.equal(
+                    expectedArgs.ordersMetadata[index].unitsToFill,
+                    "unitsToFill doesn't match expected value",
+                  );
+                  expect(metadata.tips).to.deep.equal(
+                    expectedArgs.ordersMetadata[index].tips,
+                    "tips doesn't match expected value",
+                  );
                 });
-                return match;
-              }, "fulfillAvailableOrders arguments don't match expected values"),
+                return true;
+              }),
             ).calledOnce,
           ).to.be.true;
         });
