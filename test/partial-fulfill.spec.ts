@@ -13,6 +13,8 @@ import { describeWithFixture } from "./utils/setup";
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants";
 import { SinonSpy } from "sinon";
 import { SeaportABI } from "../src/abi/Seaport";
+import { FulfillOrdersMetadata } from "../lib/utils/fulfill";
+import { mapInputItemToOfferItem } from "../src/utils/order";
 
 const sinon = require("sinon");
 
@@ -24,6 +26,7 @@ describeWithFixture(
     let fulfiller: Signer;
 
     let fulfillStandardOrderSpy: SinonSpy;
+    let fulfillAvailableOrdersSpy: SinonSpy;
     let standardCreateOrderInput: CreateOrderInput;
     let secondTestErc1155: TestERC1155;
 
@@ -33,6 +36,7 @@ describeWithFixture(
       [offerer, zone, fulfiller] = await ethers.getSigners();
 
       fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder");
+      fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders");
 
       const TestERC1155 = await ethers.getContractFactory("TestERC1155");
       secondTestErc1155 = await TestERC1155.deploy();
@@ -41,6 +45,7 @@ describeWithFixture(
 
     afterEach(() => {
       fulfillStandardOrderSpy.restore();
+      fulfillAvailableOrdersSpy.restore();
     });
 
     describe("An ERC1155 is partially transferred", () => {
@@ -223,7 +228,6 @@ describeWithFixture(
         });
 
         it("ERC1155 <=> ETH adjust tips correctly using fulfillOrders", async () => {
-          // same test as above, but instead of fulfillOrder we use fulfillOrders
           const tips = [
             {
               amount: parseEther("1").toString(),
@@ -304,7 +308,46 @@ describeWithFixture(
             fulfillReceipt: receipt!,
           });
 
-          expect(fulfillStandardOrderSpy.calledOnce);
+          const tipConsiderationItems = tips.map((tip) => ({
+            ...mapInputItemToOfferItem(tip),
+            recipient: tip.recipient,
+          }));
+
+          const expectedArgs = {
+            ordersMetadata: [
+              {
+                order,
+                unitsToFill: 2,
+                tips: tipConsiderationItems,
+              },
+            ],
+          };
+
+          expect(
+            fulfillAvailableOrdersSpy.withArgs(
+              sinon.match(function ({
+                ordersMetadata,
+              }: {
+                ordersMetadata: FulfillOrdersMetadata;
+              }) {
+                ordersMetadata.every((metadata, index) => {
+                  expect(metadata.order).to.deep.equal(
+                    expectedArgs.ordersMetadata[index].order,
+                    "order doesn't match expected value",
+                  );
+                  expect(metadata.unitsToFill).to.deep.equal(
+                    expectedArgs.ordersMetadata[index].unitsToFill,
+                    "unitsToFill doesn't match expected value",
+                  );
+                  expect(metadata.tips).to.deep.equal(
+                    expectedArgs.ordersMetadata[index].tips,
+                    "tips doesn't match expected value",
+                  );
+                });
+                return true;
+              }),
+            ).calledOnce,
+          ).to.be.true;
         });
 
         it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
