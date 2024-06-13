@@ -574,6 +574,31 @@ export function fulfillAvailableOrders({
     ),
   }));
 
+  const adjustTips = (orderMetadata: {
+    order: Order;
+    unitsToFill?: BigNumberish;
+    orderStatus: OrderStatus;
+    offerCriteria: InputCriteria[];
+    considerationCriteria: InputCriteria[];
+    tips: ConsiderationItem[];
+    extraData: string;
+    offererBalancesAndApprovals: BalancesAndApprovals;
+    offererOperator: string;
+  }): ConsiderationItem[] => {
+    if (!orderMetadata.tips || !orderMetadata.tips.length) {
+      return [];
+    }
+
+    // Max total amount to fulfill for scaling
+    const maxUnits = getMaximumSizeForOrder(orderMetadata.order);
+
+    return adjustTipsForPartialFills(
+      orderMetadata.tips,
+      orderMetadata.unitsToFill || 1,
+      maxUnits,
+    );
+  };
+
   const ordersMetadataWithAdjustedFills = sanitizedOrdersMetadata.map(
     (orderMetadata) => ({
       ...orderMetadata,
@@ -589,6 +614,7 @@ export function fulfillAvailableOrders({
             totalFilled: orderMetadata.orderStatus.totalFilled,
             totalSize: orderMetadata.orderStatus.totalSize,
           }),
+      tips: adjustTips(orderMetadata),
     }),
   );
 

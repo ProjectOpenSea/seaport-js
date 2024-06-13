@@ -228,7 +228,6 @@ describeWithFixture(
         });
 
         it("ERC1155 <=> ETH adjust tips correctly using fulfillOrders", async () => {
-          // same test as above, but instead of fulfillOrder we use fulfillOrders
           const tips = [
             {
               amount: parseEther("1").toString(),
