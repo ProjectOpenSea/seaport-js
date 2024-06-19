@@ -45,7 +45,8 @@ import {
   areAllCurrenciesSame,
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
-  adjustTipsForPartialFills,
+  mapTipAmountsFromFilledStatus,
+  mapTipAmountsFromUnitsToFill,
   totalItemsAmount,
 } from "./order";
 import {
@@ -382,7 +383,7 @@ export function fulfillStandardOrder(
   let adjustedTips: ConsiderationItem[] = [];
 
   if (tips.length > 0) {
-    adjustedTips = adjustTipsForPartialFills(tips, unitsToFill, totalSize);
+    adjustedTips = mapTipAmountsFromUnitsToFill(tips, unitsToFill, totalSize);
   }
 
   const {
@@ -589,14 +590,17 @@ export function fulfillAvailableOrders({
       return [];
     }
 
-    // Max total amount to fulfill for scaling
-    const maxUnits = getMaximumSizeForOrder(orderMetadata.order);
-
-    return adjustTipsForPartialFills(
-      orderMetadata.tips,
-      orderMetadata.unitsToFill || 1,
-      maxUnits,
-    );
+    return orderMetadata.unitsToFill
+      ? mapTipAmountsFromUnitsToFill(
+          orderMetadata.tips,
+          orderMetadata.unitsToFill,
+          orderMetadata.orderStatus.totalSize,
+        )
+      : mapTipAmountsFromFilledStatus(
+          orderMetadata.tips,
+          orderMetadata.orderStatus.totalFilled,
+          orderMetadata.orderStatus.totalSize,
+        );
   };
 
   const ordersMetadataWithAdjustedFills = sanitizedOrdersMetadata.map(
