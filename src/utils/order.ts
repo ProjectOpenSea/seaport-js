@@ -185,7 +185,7 @@ export const mapOrderAmountsFromFilledStatus = (
 
   // i.e if totalFilled is 3 and totalSize is 4, there are 1 / 4 order amounts left to fill.
   const basisPoints =
-    totalSize - (totalFilled * ONE_HUNDRED_PERCENT_BP) / totalSize;
+    ((totalSize - totalFilled) * ONE_HUNDRED_PERCENT_BP) / totalSize;
 
   return {
     parameters: {
@@ -273,7 +273,7 @@ export const mapOrderAmountsFromUnitsToFill = (
   };
 };
 
-export function adjustTipsForPartialFills(
+export function mapTipAmountsFromUnitsToFill(
   tips: ConsiderationItem[],
   unitsToFill: BigNumberish,
   totalSize: bigint,
@@ -296,6 +296,26 @@ export function adjustTipsForPartialFills(
       unitsToFillBn,
       totalSize,
     ).toString(),
+  }));
+}
+
+export function mapTipAmountsFromFilledStatus(
+  tips: ConsiderationItem[],
+  totalFilled: bigint,
+  totalSize: bigint,
+): ConsiderationItem[] {
+  if (totalFilled === 0n || totalSize === 0n) {
+    return tips;
+  }
+
+  // i.e if totalFilled is 3 and totalSize is 4, there are 1 / 4 order amounts left to fill.
+  const basisPoints =
+    ((totalSize - totalFilled) * ONE_HUNDRED_PERCENT_BP) / totalSize;
+
+  return tips.map((tip) => ({
+    ...tip,
+    startAmount: multiplyBasisPoints(tip.startAmount, basisPoints).toString(),
+    endAmount: multiplyBasisPoints(tip.endAmount, basisPoints).toString(),
   }));
 }
 
