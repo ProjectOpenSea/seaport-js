@@ -352,6 +352,7 @@ export const validateStandardFulfillBalancesAndApprovals = ({
     throwOnInsufficientApprovals: true,
     operator: offererOperator,
   });
+
   const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
     addToExistingBalances({
       items: offer,
