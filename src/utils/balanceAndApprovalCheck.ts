@@ -54,7 +54,7 @@ const findBalanceAndApproval = (
 
   if (!balanceAndApproval) {
     throw new Error(
-      "Balances and approvals didn't contain all tokens and identifiers",
+      `Checking for balance and approvals for token ${token} id ${identifierOrCriteria} failed`,
     );
   }
 
