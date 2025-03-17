@@ -875,11 +875,15 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions();
 
+            const firstFillAmount = 50;
+            const secondFillAmount = 50;
+            const thirdFillAmount = 50;
+
             const { actions } = await seaport.fulfillOrders({
               fulfillOrderDetails: [
-                { order: firstOrder, unitsToFill: 50 },
-                { order: secondOrder, unitsToFill: 50 },
-                { order: thirdOrder, unitsToFill: 50 },
+                { order: firstOrder, unitsToFill: firstFillAmount },
+                { order: secondOrder, unitsToFill: secondFillAmount },
+                { order: thirdOrder, unitsToFill: thirdFillAmount },
               ],
               accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
@@ -905,17 +909,23 @@ describeWithFixture(
               secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
             ]);
 
-            expect(balances[0]).to.equal(100n);
-            expect(balances[1]).to.equal(50n);
+            expect(balances[0]).to.equal(
+              BigInt(firstFillAmount + secondFillAmount),
+            );
+            expect(balances[1]).to.equal(BigInt(thirdFillAmount));
 
             expect(fulfillAvailableOrdersSpy.calledOnce);
 
-            // Fulfill the order again for another 7 units
+            // Fulfill the order again for another set of units
+            const additionalFirstFillAmount = 7;
+            const additionalSecondFillAmount = 7;
+            const additionalThirdFillAmount = 7;
+
             const { actions: actions2 } = await seaport.fulfillOrders({
               fulfillOrderDetails: [
-                { order: firstOrder, unitsToFill: 7 },
-                { order: secondOrder, unitsToFill: 7 },
-                { order: thirdOrder, unitsToFill: 7 },
+                { order: firstOrder, unitsToFill: additionalFirstFillAmount },
+                { order: secondOrder, unitsToFill: additionalSecondFillAmount },
+                { order: thirdOrder, unitsToFill: additionalThirdFillAmount },
               ],
               accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
@@ -941,8 +951,205 @@ describeWithFixture(
               secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
             ]);
 
-            expect(balances2[0]).to.equal(114n);
-            expect(balances2[1]).to.equal(BigInt(57n));
+            const expectedFirstBalance =
+              firstFillAmount +
+              secondFillAmount +
+              additionalFirstFillAmount +
+              additionalSecondFillAmount;
+            const expectedSecondBalance =
+              thirdFillAmount + additionalThirdFillAmount;
+
+            expect(balances2[0]).to.equal(BigInt(expectedFirstBalance));
+            expect(balances2[1]).to.equal(BigInt(expectedSecondBalance));
+
+            expect(fulfillAvailableOrdersSpy.calledTwice);
+          });
+        });
+      });
+
+      describe("[Buy now] I want to buy three ERC1155 listings twice", () => {
+        beforeEach(async () => {
+          const { testErc1155 } = fixture;
+
+          // These will be used in 3 separate orders
+          await testErc1155.mint(await offerer.getAddress(), nftId, 9);
+          await testErc1155.mint(await offerer.getAddress(), nftId, 9);
+          await secondTestErc1155.mint(
+            await secondOfferer.getAddress(),
+            nftId,
+            9,
+          );
+
+          firstStandardCreateOrderInput = {
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await testErc1155.getAddress(),
+                amount: "9",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+
+          secondStandardCreateOrderInput = {
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await testErc1155.getAddress(),
+                amount: "9",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+
+          thirdStandardCreateOrderInput = {
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await secondTestErc1155.getAddress(),
+                amount: "9",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("10").toString(),
+                recipient: await secondOfferer.getAddress(),
+              },
+            ],
+            // 2.5% fee
+            fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+          };
+        });
+
+        describe("with ETH", () => {
+          it("3 ERC1155 <=> ETH 1", async () => {
+            const { seaport, testErc1155 } = fixture;
+
+            const firstOrderUseCase = await seaport.createOrder(
+              firstStandardCreateOrderInput,
+            );
+
+            const firstOrder = await firstOrderUseCase.executeAllActions();
+
+            const secondOrderUseCase = await seaport.createOrder(
+              secondStandardCreateOrderInput,
+            );
+
+            const secondOrder = await secondOrderUseCase.executeAllActions();
+
+            const thirdOrderUseCase = await seaport.createOrder(
+              thirdStandardCreateOrderInput,
+              await secondOfferer.getAddress(),
+            );
+
+            const thirdOrder = await thirdOrderUseCase.executeAllActions();
+
+            const firstFillAmount = 2;
+            const secondFillAmount = 2;
+            const thirdFillAmount = 2;
+
+            const { actions } = await seaport.fulfillOrders({
+              fulfillOrderDetails: [
+                { order: firstOrder, unitsToFill: firstFillAmount },
+                { order: secondOrder, unitsToFill: secondFillAmount },
+                { order: thirdOrder, unitsToFill: thirdFillAmount },
+              ],
+              accountAddress: await fulfiller.getAddress(),
+              domain: OPENSEA_DOMAIN,
+            });
+
+            expect(actions.length).to.eq(1);
+
+            const action = actions[0];
+
+            expect(action.type).eq("exchange");
+
+            expect(
+              (await action.transactionMethods.buildTransaction()).data?.slice(
+                -8,
+              ),
+            ).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const transaction = await action.transactionMethods.transact();
+            expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const balances = await Promise.all([
+              testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+              secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+            ]);
+
+            expect(balances[0]).to.equal(
+              BigInt(firstFillAmount + secondFillAmount),
+            );
+            expect(balances[1]).to.equal(BigInt(thirdFillAmount));
+
+            expect(fulfillAvailableOrdersSpy.calledOnce);
+
+            // Fulfill the order again for another set of units
+            const additionalFirstFillAmount = 3;
+            const additionalSecondFillAmount = 3;
+            const additionalThirdFillAmount = 3;
+
+            const { actions: actions2 } = await seaport.fulfillOrders({
+              fulfillOrderDetails: [
+                { order: firstOrder, unitsToFill: additionalFirstFillAmount },
+                { order: secondOrder, unitsToFill: additionalSecondFillAmount },
+                { order: thirdOrder, unitsToFill: additionalThirdFillAmount },
+              ],
+              accountAddress: await fulfiller.getAddress(),
+              domain: OPENSEA_DOMAIN,
+            });
+
+            expect(actions2.length).to.eq(1);
+
+            const action2 = actions2[0];
+
+            expect(action2.type).eq("exchange");
+
+            expect(
+              (await action2.transactionMethods.buildTransaction()).data?.slice(
+                -8,
+              ),
+            ).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const transaction2 = await action2.transactionMethods.transact();
+            expect(transaction2.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+            const balances2 = await Promise.all([
+              testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+              secondTestErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+            ]);
+
+            const expectedFirstBalance =
+              firstFillAmount +
+              secondFillAmount +
+              additionalFirstFillAmount +
+              additionalSecondFillAmount;
+            const expectedSecondBalance =
+              thirdFillAmount + additionalThirdFillAmount;
+
+            expect(balances2[0]).to.equal(BigInt(expectedFirstBalance));
+            expect(balances2[1]).to.equal(BigInt(expectedSecondBalance));
 
             expect(fulfillAvailableOrdersSpy.calledTwice);
           });
@@ -1165,6 +1372,89 @@ describeWithFixture(
 
           expect(fulfillAvailableOrdersSpy.calledOnce);
         });
+      });
+    });
+
+    describe("I want to buy 2 out of 9 units of an ERC1155 order", () => {
+      it("with limited ETH", async () => {
+        const { seaport, testErc1155 } = fixture;
+
+        // Mint 9 units of the NFT to the offerer
+        await testErc1155.mint(await offerer.getAddress(), nftId, "9");
+
+        // Set fulfiller balance to exactly 2.3 ETH
+        const provider = ethers.provider;
+        const fulfillerAddress = await fulfiller.getAddress();
+        const originalBalance = await provider.getBalance(fulfillerAddress);
+
+        await provider.send("hardhat_setBalance", [
+          fulfillerAddress,
+          "0x" + ethers.parseEther("2.3").toString(16),
+        ]);
+
+        const createOrderInput = {
+          offer: [
+            {
+              itemType: ItemType.ERC1155,
+              token: await testErc1155.getAddress(),
+              identifier: nftId,
+              amount: "9",
+            },
+          ],
+          consideration: [
+            {
+              amount: parseEther("1").toString(), // 1 ETH per unit
+              recipient: await offerer.getAddress(),
+            },
+          ],
+          // 2.5% fee
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+        };
+
+        const orderUseCase = await seaport.createOrder(createOrderInput);
+        const order = await orderUseCase.executeAllActions();
+
+        // Fulfill only 2 units
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [
+            {
+              order,
+              unitsToFill: 2,
+            },
+          ],
+          accountAddress: await fulfiller.getAddress(),
+          domain: OPENSEA_DOMAIN,
+        });
+
+        expect(actions.length).to.eq(1);
+
+        const action = actions[0];
+        expect(action.type).eq("exchange");
+
+        expect(
+          (await action.transactionMethods.buildTransaction()).data?.slice(-8),
+        ).to.eq(OPENSEA_DOMAIN_TAG);
+
+        const transaction = await action.transactionMethods.transact();
+        expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG);
+
+        // Check balances after partial fill
+        const [fulfillerBalance, offererBalance] = await Promise.all([
+          testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+          testErc1155.balanceOf(await offerer.getAddress(), nftId),
+        ]);
+
+        expect(fulfillerBalance).to.equal(2n);
+        expect(offererBalance).to.equal(7n);
+
+        expect(fulfillAvailableOrdersSpy.calledOnce);
+
+        // Restore original balance
+        await provider.send("hardhat_setBalance", [
+          fulfillerAddress,
+          "0x" +
+            ethers.parseEther(ethers.formatEther(originalBalance)).toString(16),
+        ]);
       });
     });
 
