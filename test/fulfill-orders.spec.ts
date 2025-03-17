@@ -967,7 +967,7 @@ describeWithFixture(
         });
       });
 
-      describe("[Buy now] I want to buy three ERC1155 listings twice", () => {
+      describe("[Buy now] I want to buy three ERC1155 uneven listings twice", () => {
         beforeEach(async () => {
           const { testErc1155 } = fixture;
 
@@ -1042,7 +1042,7 @@ describeWithFixture(
         });
 
         describe("with ETH", () => {
-          it("3 ERC1155 <=> ETH 1", async () => {
+          it("3 ERC1155 <=> ETH (uneven)", async () => {
             const { seaport, testErc1155 } = fixture;
 
             const firstOrderUseCase = await seaport.createOrder(
