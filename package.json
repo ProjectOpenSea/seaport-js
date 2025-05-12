@@ -60,7 +60,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "hardhat": "^2.22.2",
     "husky": "^9.0.0",
-    "lint-staged": "^15.2.0",
+    "lint-staged": "^16.0.0",
     "prettier": "^3.0.0",
     "prettier-package-json": "^2.8.0",
     "prettier-plugin-solidity": "^1.1.3",
