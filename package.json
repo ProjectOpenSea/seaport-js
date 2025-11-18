@@ -41,7 +41,7 @@
     "@rari-capital/solmate": "^6.4.0",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
-    "@types/chai": "^4.3.5",
+    "@types/chai": "^5.0.0",
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^22.0.0",
