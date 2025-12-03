@@ -48,8 +48,8 @@ const findBalanceAndApproval = (
       identifierOrCriteria: checkedIdentifierOrCriteria,
     }) =>
       token.toLowerCase() === checkedToken.toLowerCase() &&
-      checkedIdentifierOrCriteria.toLowerCase() ===
-        identifierOrCriteria.toLowerCase(),
+      `${checkedIdentifierOrCriteria}`.toLowerCase() ===
+        `${identifierOrCriteria}`.toLowerCase(),
   );
 
   if (!balanceAndApproval) {
