@@ -383,7 +383,9 @@ export function fulfillStandardOrder(
   let adjustedTips: ConsiderationItem[] = [];
 
   if (tips.length > 0) {
-    adjustedTips = mapTipAmountsFromUnitsToFill(tips, unitsToFill, totalSize);
+    adjustedTips = unitsToFill
+      ? mapTipAmountsFromUnitsToFill(tips, unitsToFill, totalSize)
+      : mapTipAmountsFromFilledStatus(tips, totalFilled, totalSize);
   }
 
   const {
