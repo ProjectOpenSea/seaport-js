@@ -1,4 +1,4 @@
-import { parseEther } from "ethers";
+import { parseEther, Signer } from "ethers";
 import { ethers } from "hardhat";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
@@ -151,7 +151,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           await getTransactionMethods(
-            privateListingRecipient,
+            privateListingRecipient as unknown as Signer,
             testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
@@ -313,7 +313,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           await getTransactionMethods(
-            privateListingRecipient,
+            privateListingRecipient as unknown as Signer,
             testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
