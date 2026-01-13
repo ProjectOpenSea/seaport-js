@@ -1,5 +1,6 @@
-import { Signer, parseEther } from "ethers";
+import { parseEther, Signer } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { ItemType, MAX_INT } from "../src/constants";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
@@ -16,9 +17,9 @@ import { getTransactionMethods } from "../src/utils/usecase";
 import { expect } from "chai";
 
 describeWithFixture("As a user I want to match an order", (fixture) => {
-  let offerer: Signer;
-  let zone: Signer;
-  let privateListingRecipient: Signer;
+  let offerer: HardhatEthersSigner;
+  let zone: HardhatEthersSigner;
+  let privateListingRecipient: HardhatEthersSigner;
   let privateListingCreateOrderInput: CreateOrderInput;
   const nftId = "1";
   const erc1155Amount = "3";
@@ -150,7 +151,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           await getTransactionMethods(
-            privateListingRecipient,
+            privateListingRecipient as unknown as Signer,
             testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
@@ -312,7 +313,7 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             );
 
           await getTransactionMethods(
-            privateListingRecipient,
+            privateListingRecipient as unknown as Signer,
             testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],

@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { Signer, parseEther } from "ethers";
+import { parseEther } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ItemType, MAX_INT } from "../src/constants";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
 import { describeWithFixture } from "./utils/setup";
@@ -8,10 +9,10 @@ import { describeWithFixture } from "./utils/setup";
 describeWithFixture(
   "As a user I want to buy now and gift it to another address",
   (fixture) => {
-    let offerer: Signer;
-    let zone: Signer;
-    let fulfiller: Signer;
-    let recipient: Signer;
+    let offerer: HardhatEthersSigner;
+    let zone: HardhatEthersSigner;
+    let fulfiller: HardhatEthersSigner;
+    let recipient: HardhatEthersSigner;
     let standardCreateOrderInput: CreateOrderInput;
     const nftId = "1";
     const erc1155Amount = "3";

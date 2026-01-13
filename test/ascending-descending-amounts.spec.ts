@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { Signer, parseEther } from "ethers";
+import { parseEther } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ItemType, MAX_INT, OrderType } from "../src/constants";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
 import * as fulfill from "../src/utils/fulfill";
@@ -18,9 +19,9 @@ const sinon = require("sinon");
 const SECONDS_IN_WEEK = 604800;
 
 describeWithFixture("As a user I want to create a dutch auction", (fixture) => {
-  let offerer: Signer;
-  let zone: Signer;
-  let fulfiller: Signer;
+  let offerer: HardhatEthersSigner;
+  let zone: HardhatEthersSigner;
+  let fulfiller: HardhatEthersSigner;
 
   let fulfillStandardOrderSpy: SinonSpy;
   let standardCreateOrderInput: CreateOrderInput;

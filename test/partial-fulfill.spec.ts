@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { Signer, parseEther, parseUnits, Interface } from "ethers";
+import { parseEther, parseUnits, Interface } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ItemType, MAX_INT, OrderType } from "../src/constants";
 import { TestERC1155 } from "../src/typechain-types";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
@@ -21,9 +22,9 @@ const sinon = require("sinon");
 describeWithFixture(
   "As a user I want to buy now or accept an offer partially",
   (fixture) => {
-    let offerer: Signer;
-    let zone: Signer;
-    let fulfiller: Signer;
+    let offerer: HardhatEthersSigner;
+    let zone: HardhatEthersSigner;
+    let fulfiller: HardhatEthersSigner;
 
     let fulfillStandardOrderSpy: SinonSpy;
     let fulfillAvailableOrdersSpy: SinonSpy;

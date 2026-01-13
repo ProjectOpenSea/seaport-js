@@ -1,15 +1,16 @@
 import { expect } from "chai";
-import { Signer, parseEther } from "ethers";
+import { parseEther } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ItemType } from "../src/constants";
 import { CreateOrderInput } from "../src/types";
 import { describeWithFixture } from "./utils/setup";
 import { OVERRIDE_GAS_LIMIT } from "./utils/constants";
 
 describeWithFixture("As a user I want to cancel an order", (fixture) => {
-  let offerer: Signer;
-  let zone: Signer;
-  let fulfiller: Signer;
+  let offerer: HardhatEthersSigner;
+  let zone: HardhatEthersSigner;
+  let fulfiller: HardhatEthersSigner;
   let standardCreateOrderInput: CreateOrderInput;
   const nftId = "1";
 
