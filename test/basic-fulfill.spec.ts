@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { Signer, parseEther } from "ethers";
+import { parseEther } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ItemType, MAX_INT } from "../src/constants";
 import { CreateOrderInput, CurrencyItem } from "../src/types";
 import * as fulfill from "../src/utils/fulfill";
@@ -17,9 +18,9 @@ const sinon = require("sinon");
 describeWithFixture(
   "As a user I want to buy now or accept an offer",
   (fixture) => {
-    let offerer: Signer;
-    let zone: Signer;
-    let fulfiller: Signer;
+    let offerer: HardhatEthersSigner;
+    let zone: HardhatEthersSigner;
+    let fulfiller: HardhatEthersSigner;
     let standardCreateOrderInput: CreateOrderInput;
     let fulfillBasicOrderSpy: SinonSpy;
     let fulfillStandardOrderSpy: SinonSpy;

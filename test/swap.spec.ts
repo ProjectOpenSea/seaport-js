@@ -1,6 +1,7 @@
 import { expect } from "chai";
-import { Signer, parseEther } from "ethers";
+import { parseEther } from "ethers";
 import { ethers } from "hardhat";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { ItemType, MAX_INT } from "../src/constants";
 import { TestERC1155, TestERC721 } from "../src/typechain-types";
 import {
@@ -21,9 +22,9 @@ const sinon = require("sinon");
 describeWithFixture(
   "As a user I want to swap any numbers of items",
   (fixture) => {
-    let offerer: Signer;
-    let zone: Signer;
-    let fulfiller: Signer;
+    let offerer: HardhatEthersSigner;
+    let zone: HardhatEthersSigner;
+    let fulfiller: HardhatEthersSigner;
 
     let fulfillStandardOrderSpy: SinonSpy;
     let secondTestErc721: TestERC721;
