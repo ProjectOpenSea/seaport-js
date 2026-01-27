@@ -230,7 +230,7 @@ export const mapOrderAmountsFromUnitsToFill = (
   const unitsToFillBn = BigInt(unitsToFill);
 
   if (unitsToFillBn <= 0n) {
-    throw new Error("Units to fill must be greater than 1");
+    throw new Error("Units to fill must be greater than 0");
   }
 
   const maxUnits = getMaximumSizeForOrder(order);
