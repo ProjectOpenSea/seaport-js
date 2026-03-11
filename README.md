@@ -120,7 +120,7 @@ const { executeAllActions: executeAllFulfillActions } =
     accountAddress: fulfiller,
   });
 
-const transaction = executeAllFulfillActions();
+const transaction = await executeAllFulfillActions();
 ```
 
 #### Making an offer for an ERC-721 for 10 WETH and fulfilling it
@@ -157,7 +157,7 @@ const { executeAllActions: executeAllFulfillActions } =
     accountAddress: fulfiller,
   });
 
-const transaction = executeAllFulfillActions();
+const transaction = await executeAllFulfillActions();
 ```
 
 ## Contributing
