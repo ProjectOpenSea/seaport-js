@@ -949,7 +949,7 @@ describeWithFixture(
             (consideration: {
               recipient: string;
               token: string;
-              startAmount: BigInt;
+              startAmount: bigint;
             }) =>
               consideration.recipient === tips[0].recipient &&
               consideration.token === tips[0].token &&

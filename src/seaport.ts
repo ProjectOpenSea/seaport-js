@@ -342,14 +342,14 @@ export class Seaport {
     const considerationItemsWithFees = [
       ...deductFees(considerationItems, fees),
       ...(currencies.length
-        ? fees?.map((fee) =>
+        ? (fees?.map((fee) =>
             feeToConsiderationItem({
               fee,
               token: currencies[0].token,
               baseAmount: totalCurrencyAmount.startAmount,
               baseEndAmount: totalCurrencyAmount.endAmount,
             }),
-          ) ?? []
+          ) ?? [])
         : []),
     ];
 
@@ -1152,7 +1152,7 @@ export class Seaport {
   public async getDomains(tag: string): Promise<string[]> {
     try {
       return this.domainRegistry.getDomains(tag);
-    } catch (error) {
+    } catch {
       // If there are too many domains set under the tag, it will revert when trying to return in memory.
       // This fallback will manually query each index to get the full list of domains.
       const totalDomains = await this.domainRegistry.getNumberOfDomains(tag);
