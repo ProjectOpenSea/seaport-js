@@ -101,9 +101,9 @@ export const mapInputItemToOfferItem = (item: CreateInputItem): OfferItem => {
         token: item.token,
         // prevent undefined for fungible items
         identifierOrCriteria: item.identifier ?? "0",
-        // @ts-ignore
+        // @ts-expect-error - amount exists on fungible items
         startAmount: item.amount,
-        // @ts-ignore
+        // @ts-expect-error - amount/endAmount exists on fungible items
         endAmount: item.endAmount ?? item.amount ?? "1",
       };
     }
@@ -145,17 +145,12 @@ export const areAllCurrenciesSame = ({
 };
 
 export const totalItemsAmount = <T extends OfferItem>(items: T[]) => {
-  const initialValues = {
-    startAmount: 0n,
-    endAmount: 0n,
-  };
-
   return items
     .map(({ startAmount, endAmount }) => ({
       startAmount,
       endAmount,
     }))
-    .reduce<typeof initialValues>(
+    .reduce<{ startAmount: bigint; endAmount: bigint }>(
       (
         { startAmount: totalStartAmount, endAmount: totalEndAmount },
         { startAmount, endAmount },

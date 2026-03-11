@@ -19,5 +19,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["./src", "./test", "./hardhat.config.ts", ".eslintrc.js"]
+  "include": ["./src", "./test", "./hardhat.config.ts"]
 }

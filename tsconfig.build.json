@@ -7,7 +7,6 @@
     "./src/artifacts/**/*",
     "./src/typechain-types/**/*",
     "./test",
-    "./hardhat.config.ts",
-    ".eslintrc.js"
+    "./hardhat.config.ts"
   ]
 }
