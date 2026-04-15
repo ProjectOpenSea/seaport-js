@@ -26,10 +26,12 @@ import {
   Seaport__factory,
 } from "./typechain-types/index"
 import type {
+  AdvancedOrder,
   ApprovalAction,
   CreateBulkOrdersAction,
   CreateOrderAction,
   CreateOrderInput,
+  CriteriaResolver,
   ExchangeAction,
   InputCriteria,
   MatchOrdersFulfillment,
@@ -1096,6 +1098,48 @@ export class Seaport {
       this.contract,
       "matchOrders",
       [orders, fulfillments, overrides],
+      domain,
+    )
+  }
+
+  /**
+   * NOTE: Largely incomplete. Does NOT do any balance or approval checks.
+   * Just exposes the bare bones matchAdvancedOrders where clients will have to supply
+   * their own overrides as needed.
+   * @param input
+   * @param input.orders the list of advanced orders to match
+   * @param input.criteriaResolvers the list of criteria resolvers
+   * @param input.fulfillments the list of fulfillments to match offer and considerations
+   * @param input.recipient the recipient of any unspent offer item amounts or native tokens
+   * @param input.overrides any transaction overrides the client wants, will need to pass in value for matching orders with ETH.
+   * @param input.accountAddress Optional address for which to match the order with
+   * @param input.domain optional domain to be hashed and appended to calldata
+   * @returns set of transaction methods for matching advanced orders
+   */
+  public matchAdvancedOrders({
+    orders,
+    criteriaResolvers,
+    fulfillments,
+    recipient,
+    overrides,
+    accountAddress,
+    domain,
+  }: {
+    orders: AdvancedOrder[]
+    criteriaResolvers: CriteriaResolver[]
+    fulfillments: MatchOrdersFulfillment[]
+    recipient: string
+    overrides?: Overrides
+    accountAddress?: string
+    domain?: string
+  }): TransactionMethods<
+    ContractMethodReturnType<SeaportContract, "matchAdvancedOrders">
+  > {
+    return getTransactionMethods(
+      this._getSigner(accountAddress),
+      this.contract,
+      "matchAdvancedOrders",
+      [orders, criteriaResolvers, fulfillments, recipient, overrides],
       domain,
     )
   }
