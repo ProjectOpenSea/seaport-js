@@ -1103,18 +1103,27 @@ export class Seaport {
   }
 
   /**
-   * NOTE: Largely incomplete. Does NOT do any balance or approval checks.
-   * Just exposes the bare bones matchAdvancedOrders where clients will have to supply
-   * their own overrides as needed.
-   * @param input
-   * @param input.orders the list of advanced orders to match
-   * @param input.criteriaResolvers the list of criteria resolvers
-   * @param input.fulfillments the list of fulfillments to match offer and considerations
-   * @param input.recipient the recipient of any unspent offer item amounts or native tokens
-   * @param input.overrides any transaction overrides the client wants, will need to pass in value for matching orders with ETH.
-   * @param input.accountAddress Optional address for which to match the order with
-   * @param input.domain optional domain to be hashed and appended to calldata
-   * @returns set of transaction methods for matching advanced orders
+   * Matches a set of advanced orders against each other, supporting partial fills
+   * (numerator/denominator), criteria resolvers, extra data, and an explicit recipient
+   * for any unspent offer amounts or native tokens.
+   *
+   * WARNING: This is a low-level method that passes arguments directly to the Seaport
+   * contract. It does NOT perform balance or approval checks. Callers are responsible
+   * for ensuring all parties have sufficient balances and approvals before calling.
+   * Pass `value` in `overrides` when matching orders that include ETH.
+   *
+   * @param input.orders The list of advanced orders to match. Each order includes
+   *   numerator/denominator for partial fill amounts and extraData for zone validation.
+   * @param input.criteriaResolvers Resolvers for criteria-based items (e.g. collection offers),
+   *   mapping criteria to specific token identifiers with merkle proofs.
+   * @param input.fulfillments The list of fulfillments pairing offer and consideration
+   *   components across the provided orders.
+   * @param input.recipient The address to receive any unspent offer item amounts or
+   *   native tokens remaining after all fulfillments are applied.
+   * @param input.overrides Transaction overrides (e.g. `{ value }` for ETH-based matches).
+   * @param input.accountAddress Optional address to send the transaction from.
+   * @param input.domain Optional domain to be hashed and appended to calldata.
+   * @returns A set of transaction methods (transact, estimateGas, staticCall, buildTransaction).
    */
   public matchAdvancedOrders({
     orders,
