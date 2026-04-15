@@ -1,8 +1,8 @@
 import type { BigNumberish, ContractTransaction } from "ethers"
-import type { ItemType, OrderType } from "./constants"
-import type { TestERC20, TestERC721 } from "./typechain-types"
-import type { Seaport as SeaportContract } from "./typechain-types/seaport/contracts/Seaport"
-import type { TransactionMethods } from "./utils/usecase"
+import type { ItemType, OrderType } from "./constants.js"
+import type { TestERC20, TestERC721 } from "./typechain-types/index.js"
+import type { Seaport as SeaportContract } from "./typechain-types/seaport/contracts/Seaport.js"
+import type { TransactionMethods } from "./utils/usecase.js"
 
 export type { SeaportContract }
 

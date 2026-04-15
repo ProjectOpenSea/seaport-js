@@ -1,10 +1,13 @@
 import type { ethers, Signer } from "ethers"
-import { ItemType, MAX_INT } from "../constants"
-import { TestERC20__factory, TestERC721__factory } from "../typechain-types"
-import type { ApprovalAction, Item } from "../types"
-import type { InsufficientApprovals } from "./balanceAndApprovalCheck"
-import { isErc721Item, isErc1155Item } from "./item"
-import { getTransactionMethods } from "./usecase"
+import { ItemType, MAX_INT } from "../constants.js"
+import {
+  TestERC20__factory,
+  TestERC721__factory,
+} from "../typechain-types/index.js"
+import type { ApprovalAction, Item } from "../types.js"
+import type { InsufficientApprovals } from "./balanceAndApprovalCheck.js"
+import { isErc721Item, isErc1155Item } from "./item.js"
+import { getTransactionMethods } from "./usecase.js"
 
 export const approvedItemAmount = async (
   owner: string,

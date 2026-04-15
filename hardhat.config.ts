@@ -1,12 +1,9 @@
-import * as dotenv from "dotenv"
-import type { HardhatUserConfig } from "hardhat/config"
-import "@nomicfoundation/hardhat-toolbox"
-import "@typechain/hardhat"
+import "dotenv/config"
+import hardhatToolbox from "@nomicfoundation/hardhat-toolbox-mocha-ethers"
+import { defineConfig } from "hardhat/config"
 
-dotenv.config()
-
-// Go to https://hardhat.org/config to learn more
-const config: HardhatUserConfig = {
+export default defineConfig({
+  plugins: [hardhatToolbox],
   solidity: {
     compilers: [
       {
@@ -38,22 +35,25 @@ const config: HardhatUserConfig = {
         },
       },
     ],
+    npmFilesToBuild: [
+      "seaport/contracts/Seaport.sol",
+      "seaport/contracts/conduit/Conduit.sol",
+      "seaport/contracts/conduit/ConduitController.sol",
+    ],
   },
   networks: {
     hardhat: {
+      type: "edr-simulated",
       allowUnlimitedContractSize: true,
       chainId: 1,
     },
   },
   typechain: {
     outDir: "src/typechain-types",
-    target: "ethers-v6",
   },
   paths: {
-    tests: "test",
+    tests: { mocha: "test" },
     artifacts: "src/artifacts",
     sources: "src/contracts",
   },
-}
-
-export default config
+})

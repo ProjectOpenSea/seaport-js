@@ -1,10 +1,10 @@
 import { keccak256, TypedDataEncoder, toUtf8Bytes } from "ethers"
-import { EIP_712_BULK_ORDER_TYPE } from "../../constants"
-import type { OrderComponents } from "../../types"
-import type { EIP712TypeDefinitions } from "./defaults"
-import { DefaultGetter } from "./defaults"
-import { Eip712MerkleTree } from "./Eip712MerkleTree"
-import { fillArray } from "./utils"
+import { EIP_712_BULK_ORDER_TYPE } from "../../constants.js"
+import type { OrderComponents } from "../../types.js"
+import type { EIP712TypeDefinitions } from "./defaults.js"
+import { DefaultGetter } from "./defaults.js"
+import { Eip712MerkleTree } from "./Eip712MerkleTree.js"
+import { fillArray } from "./utils.js"
 
 function getBulkOrderTypes(height: number): EIP712TypeDefinitions {
   const types = { ...EIP_712_BULK_ORDER_TYPE }

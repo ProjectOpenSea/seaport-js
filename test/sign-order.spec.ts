@@ -1,13 +1,13 @@
 import { expect } from "chai"
-import { ethers } from "hardhat"
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
-import type { ConsiderationItem, OfferItem } from "../src/types"
-import { generateRandomSalt } from "../src/utils/order"
-import { describeWithFixture } from "./utils/setup"
+import { parseEther, ZeroAddress, ZeroHash } from "ethers"
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants.js"
+import type { ConsiderationItem, OfferItem } from "../src/types.js"
+import { generateRandomSalt } from "../src/utils/order.js"
+import { describeWithFixture } from "./utils/setup.js"
 
 describeWithFixture("As a user I want to sign an order", fixture => {
   it("should be a valid order", async () => {
-    const { seaportContract, seaport, testErc721 } = fixture
+    const { seaportContract, seaport, testErc721, ethers } = fixture
     const [offerer, zone, randomSigner] = await ethers.getSigners()
 
     const startTime = 0
@@ -28,17 +28,17 @@ describeWithFixture("As a user I want to sign an order", fixture => {
     const considerationData: ConsiderationItem[] = [
       {
         itemType: ItemType.NATIVE,
-        token: ethers.ZeroAddress,
-        startAmount: ethers.parseEther("10").toString(),
-        endAmount: ethers.parseEther("10").toString(),
+        token: ZeroAddress,
+        startAmount: parseEther("10").toString(),
+        endAmount: parseEther("10").toString(),
         recipient: await offerer.getAddress(),
         identifierOrCriteria: "0",
       },
       {
         itemType: ItemType.NATIVE,
-        token: ethers.ZeroAddress,
-        startAmount: ethers.parseEther("1").toString(),
-        endAmount: ethers.parseEther("1").toString(),
+        token: ZeroAddress,
+        startAmount: parseEther("1").toString(),
+        endAmount: parseEther("1").toString(),
         recipient: await zone.getAddress(),
         identifierOrCriteria: "0",
       },
@@ -48,7 +48,7 @@ describeWithFixture("As a user I want to sign an order", fixture => {
 
     const orderComponents = {
       offerer: await offerer.getAddress(),
-      zone: ethers.ZeroAddress,
+      zone: ZeroAddress,
       offer,
       consideration: considerationData,
       orderType: OrderType.FULL_OPEN,
@@ -56,7 +56,7 @@ describeWithFixture("As a user I want to sign an order", fixture => {
       salt,
       startTime,
       endTime,
-      zoneHash: ethers.ZeroHash,
+      zoneHash: ZeroHash,
       conduitKey: NO_CONDUIT,
       counter,
     }

@@ -19,12 +19,12 @@ import {
   OrderType,
   SEAPORT_CONTRACT_NAME,
   SEAPORT_CONTRACT_VERSION_V1_6,
-} from "./constants"
+} from "./constants.js"
 import {
   type DomainRegistry,
   DomainRegistry__factory,
   Seaport__factory,
-} from "./typechain-types"
+} from "./typechain-types/index.js"
 import type {
   ApprovalAction,
   CreateBulkOrdersAction,
@@ -41,13 +41,13 @@ import type {
   SeaportConfig,
   SeaportContract,
   TipInputItem,
-} from "./types"
-import { getApprovalActions } from "./utils/approval"
+} from "./types.js"
+import { getApprovalActions } from "./utils/approval.js"
 import {
   getBalancesAndApprovals,
   validateOfferBalancesAndApprovals,
-} from "./utils/balanceAndApprovalCheck"
-import { getBulkOrderTree } from "./utils/eip712/bulk-orders"
+} from "./utils/balanceAndApprovalCheck.js"
+import { getBulkOrderTree } from "./utils/eip712/bulk-orders.js"
 import {
   type FulfillOrdersMetadata,
   fulfillAvailableOrders,
@@ -56,8 +56,8 @@ import {
   scaleOrderStatusToMaxUnits,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
-} from "./utils/fulfill"
-import { isCurrencyItem } from "./utils/item"
+} from "./utils/fulfill.js"
+import { isCurrencyItem } from "./utils/item.js"
 import {
   areAllCurrenciesSame,
   deductFees,
@@ -65,13 +65,13 @@ import {
   generateRandomSalt,
   mapInputItemToOfferItem,
   totalItemsAmount,
-} from "./utils/order"
+} from "./utils/order.js"
 import {
   type ContractMethodReturnType,
   executeAllActions,
   getTransactionMethods,
   type TransactionMethods,
-} from "./utils/usecase"
+} from "./utils/usecase.js"
 
 export class Seaport {
   // Provides the raw interface to the contract for flexibility

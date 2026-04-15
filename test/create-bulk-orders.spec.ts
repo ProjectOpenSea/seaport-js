@@ -1,19 +1,19 @@
 import { expect } from "chai"
-import { ethers } from "hardhat"
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
+import { parseEther, ZeroAddress, ZeroHash } from "ethers"
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants.js"
 import type {
   ApprovalAction,
   BasicErc721Item,
   CreateBulkOrdersAction,
-} from "../src/types"
-import { generateRandomSalt } from "../src/utils/order"
-import { describeWithFixture } from "./utils/setup"
+} from "../src/types.js"
+import { generateRandomSalt } from "../src/utils/order.js"
+import { describeWithFixture } from "./utils/setup.js"
 
 describeWithFixture(
   "As a user I want to create bulk orders with one signature",
   fixture => {
     it("should create the orders after setting needed approvals", async () => {
-      const { seaportContract, seaport, testErc721 } = fixture
+      const { seaportContract, seaport, testErc721, ethers } = fixture
 
       const [offerer, zone, randomSigner] = await ethers.getSigners()
 
@@ -42,7 +42,7 @@ describeWithFixture(
         ],
         consideration: [
           {
-            amount: ethers.parseEther("10").toString(),
+            amount: parseEther("10").toString(),
             recipient: await offerer.getAddress(),
           },
         ],
@@ -94,20 +94,20 @@ describeWithFixture(
             consideration: [
               {
                 // Fees were deducted
-                endAmount: ethers.parseEther("9.75").toString(),
+                endAmount: parseEther("9.75").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
                 recipient: await offerer.getAddress(),
-                startAmount: ethers.parseEther("9.75").toString(),
-                token: ethers.ZeroAddress,
+                startAmount: parseEther("9.75").toString(),
+                token: ZeroAddress,
               },
               {
-                endAmount: ethers.parseEther(".25").toString(),
+                endAmount: parseEther(".25").toString(),
                 identifierOrCriteria: "0",
                 itemType: ItemType.NATIVE,
                 recipient: await zone.getAddress(),
-                startAmount: ethers.parseEther(".25").toString(),
-                token: ethers.ZeroAddress,
+                startAmount: parseEther(".25").toString(),
+                token: ZeroAddress,
               },
             ],
             endTime,
@@ -125,8 +125,8 @@ describeWithFixture(
             salt,
             startTime,
             totalOriginalConsiderationItems: 2,
-            zone: ethers.ZeroAddress,
-            zoneHash: ethers.ZeroHash,
+            zone: ZeroAddress,
+            zoneHash: ZeroHash,
             conduitKey: NO_CONDUIT,
             counter: "0",
           },

@@ -1,19 +1,18 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther, type Signer } from "ethers"
-import { ethers } from "hardhat"
-import { ItemType, MAX_INT } from "../src/constants"
-import type { CreateOrderInput, CurrencyItem } from "../src/types"
-import { getTransactionMethods } from "../src/utils/usecase"
+import { ItemType, MAX_INT } from "../src/constants.js"
+import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
+import { getTransactionMethods } from "../src/utils/usecase.js"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance"
+} from "./utils/balance.js"
 import {
   constructPrivateListingCounterOrder,
   getPrivateListingFulfillments,
-} from "./utils/examples/privateListings"
-import { describeWithFixture } from "./utils/setup"
+} from "./utils/examples/privateListings.js"
+import { describeWithFixture } from "./utils/setup.js"
 
 describeWithFixture("As a user I want to match an order", fixture => {
   let offerer: HardhatEthersSigner
@@ -25,6 +24,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
   const erc1155ListingQuantity = "1"
 
   beforeEach(async () => {
+    const { ethers } = fixture
     ;[offerer, zone, privateListingRecipient] = await ethers.getSigners()
   })
 
@@ -79,6 +79,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await privateListingRecipient.getAddress(),
             )
@@ -102,6 +103,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
         })
       })
@@ -145,6 +147,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await privateListingRecipient.getAddress(),
             )
@@ -178,6 +181,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
         })
       })
@@ -237,6 +241,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await privateListingRecipient.getAddress(),
             )
@@ -260,6 +265,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
         })
       })
@@ -303,6 +309,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await privateListingRecipient.getAddress(),
             )
@@ -336,6 +343,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
         })
       })

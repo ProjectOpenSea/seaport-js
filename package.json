@@ -12,13 +12,14 @@
   "bugs": {
     "url": "https://github.com/ProjectOpenSea/seaport-js/issues"
   },
+  "type": "module",
   "main": "lib/index.js",
   "files": [
     "lib",
     "src"
   ],
   "scripts": {
-    "build": "hardhat compile && tsc -p tsconfig.build.json",
+    "build": "hardhat build && tsc -p tsconfig.build.json",
     "check-types": "tsc --noEmit",
     "check-types:incremental": "npm run check-types --incremental",
     "coverage": "c8 npm run test",
@@ -37,36 +38,29 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.10",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.0",
     "@rari-capital/solmate": "^6.4.0",
-    "@typechain/ethers-v6": "^0.5.1",
-    "@typechain/hardhat": "^9.1.0",
-    "@types/chai": "^4.3.5",
-    "@types/chai-as-promised": "^7.1.5",
+    "@types/chai-as-promised": "^8.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
-    "@types/sinon": "^21.0.0",
     "c8": "^11.0.0",
-    "chai": "^4.3.7",
-    "chai-as-promised": "^7.1.1",
+    "chai": "^5.1.2",
+    "chai-as-promised": "^8.0.0",
     "concurrently": "^9.2.1",
     "dotenv": "17.3.1",
-    "hardhat": "^2.28.0",
+    "hardhat": "^3.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "seaport": "ProjectOpenSea/seaport#080133906585660f6a76b82984f3fb690ff4b2a9",
-    "sinon": "21.0.2",
-    "sinon-chai": "^3.7.0",
-    "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
     "typescript": "^6.0.2"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "overrides": {
-    "@sinonjs/fake-timers": "15.1.1",
-    "@sinonjs/samsam": "9.0.2"
+    "get-tsconfig": "4.13.7",
+    "undici": "6.24.0",
+    "brace-expansion@2": "2.0.1"
   },
   "lint-staged": {
     "**/*.{ts,js,json}": [

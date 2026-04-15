@@ -6,8 +6,8 @@ import {
   toUtf8Bytes,
 } from "ethers"
 import { MerkleTree } from "merkletreejs"
-import type { EIP712TypeDefinitions } from "./defaults"
-import { DefaultGetter } from "./defaults"
+import type { EIP712TypeDefinitions } from "./defaults.js"
+import { DefaultGetter } from "./defaults.js"
 import {
   bufferKeccak,
   bufferToHex,
@@ -15,7 +15,7 @@ import {
   fillArray,
   getRoot,
   hexToBuffer,
-} from "./utils"
+} from "./utils.js"
 
 type BulkOrderElements<T> =
   | [T, T]

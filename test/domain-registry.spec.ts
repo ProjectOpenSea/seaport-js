@@ -1,13 +1,12 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { keccak256, toUtf8Bytes } from "ethers"
-import { ethers } from "hardhat"
 import {
   OPENSEA_DOMAIN,
   OPENSEA_DOMAIN_TAG,
   OVERRIDE_GAS_LIMIT,
-} from "./utils/constants"
-import { describeWithFixture } from "./utils/setup"
+} from "./utils/constants.js"
+import { describeWithFixture } from "./utils/setup.js"
 
 describeWithFixture(
   "As a user I want to register or look up a domain",
@@ -25,7 +24,7 @@ describeWithFixture(
     ).slice(0, 10)
 
     beforeEach(async () => {
-      const { seaport } = fixture
+      const { seaport, ethers } = fixture
 
       ;[user] = await ethers.getSigners()
 
