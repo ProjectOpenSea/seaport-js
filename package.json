@@ -45,24 +45,28 @@
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
-    "@types/sinon": "^17.0.2",
+    "@types/sinon": "^21.0.0",
     "c8": "^11.0.0",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
-    "concurrently": "^9.0.0",
-    "dotenv": "^16.0.3",
+    "concurrently": "^9.2.1",
+    "dotenv": "17.3.1",
     "hardhat": "^2.28.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.2.0",
+    "lint-staged": "^16.4.0",
     "seaport": "ProjectOpenSea/seaport#080133906585660f6a76b82984f3fb690ff4b2a9",
-    "sinon": "^19.0.0",
+    "sinon": "21.0.2",
     "sinon-chai": "^3.7.0",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "overrides": {
+    "@sinonjs/fake-timers": "15.1.1",
+    "@sinonjs/samsam": "9.0.2"
   },
   "lint-staged": {
     "**/*.{ts,js,json}": [

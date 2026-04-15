@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "rootDir": ".",
     "outDir": "lib",
     "target": "es2020",
     "lib": ["dom", "esnext"],
@@ -17,7 +18,9 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["chai", "chai-as-promised", "mocha", "node", "sinon"]
   },
   "include": ["./src", "./test", "./hardhat.config.ts"]
 }
