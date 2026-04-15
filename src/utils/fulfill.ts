@@ -5,12 +5,12 @@ import {
   type Overrides,
   type Signer,
 } from "ethers"
-import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants.js"
+import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants"
 import type {
   BasicOrderParametersStruct,
   FulfillmentComponentStruct,
   OrderStruct,
-} from "../typechain-types/seaport/contracts/Seaport.js"
+} from "../typechain-types/seaport/contracts/Seaport"
 import type {
   AdvancedOrder,
   ConsiderationItem,
@@ -22,16 +22,16 @@ import type {
   OrderUseCase,
   OrderWithCounter,
   SeaportContract,
-} from "../types.js"
-import { getApprovalActions } from "./approval.js"
+} from "../types"
+import { getApprovalActions } from "./approval"
 import {
   type BalancesAndApprovals,
   type InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
-} from "./balanceAndApprovalCheck.js"
-import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria.js"
-import { gcd } from "./gcd.js"
+} from "./balanceAndApprovalCheck"
+import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria"
+import { gcd } from "./gcd"
 import {
   getMaximumSizeForOrder,
   getSummedTokenAndIdentifierAmounts,
@@ -40,7 +40,7 @@ import {
   isErc721Item,
   isNativeCurrencyItem,
   type TimeBasedItemParams,
-} from "./item.js"
+} from "./item"
 import {
   areAllCurrenciesSame,
   mapOrderAmountsFromFilledStatus,
@@ -48,12 +48,12 @@ import {
   mapTipAmountsFromFilledStatus,
   mapTipAmountsFromUnitsToFill,
   totalItemsAmount,
-} from "./order.js"
+} from "./order"
 import {
   type ContractMethodReturnType,
   executeAllActions,
   getTransactionMethods,
-} from "./usecase.js"
+} from "./usecase"
 
 /**
  * We should use basic fulfill order if the order adheres to the following criteria:

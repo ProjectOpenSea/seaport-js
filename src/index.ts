@@ -1,3 +1,3 @@
-import { Seaport } from "./seaport.js"
+import { Seaport } from "./seaport"
 
 export { Seaport }

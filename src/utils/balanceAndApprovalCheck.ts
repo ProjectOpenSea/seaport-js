@@ -1,16 +1,16 @@
 import type { ethers } from "ethers"
-import { type ItemType, MAX_INT } from "../constants.js"
-import type { InputCriteria, Item, OrderParameters } from "../types.js"
-import { approvedItemAmount } from "./approval.js"
-import { balanceOf } from "./balance.js"
-import { getItemToCriteriaMap } from "./criteria.js"
+import { type ItemType, MAX_INT } from "../constants"
+import type { InputCriteria, Item, OrderParameters } from "../types"
+import { approvedItemAmount } from "./approval"
+import { balanceOf } from "./balance"
+import { getItemToCriteriaMap } from "./criteria"
 import {
   getSummedTokenAndIdentifierAmounts,
   isErc20Item,
   isErc721Item,
   isErc1155Item,
   type TimeBasedItemParams,
-} from "./item.js"
+} from "./item"
 
 export type BalancesAndApprovals = {
   token: string

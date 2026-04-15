@@ -10,13 +10,13 @@ import {
 import type {
   DefaultReturnType,
   TypedContractMethod,
-} from "../typechain-types/common.js"
+} from "../typechain-types/common"
 import type {
   CreateBulkOrdersAction,
   CreateOrderAction,
   ExchangeAction,
   OrderUseCase,
-} from "../types.js"
+} from "../types"
 
 export const executeAllActions = async <
   T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,

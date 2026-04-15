@@ -1,9 +1,9 @@
 import { expect } from "chai"
 import { parseEther, ZeroAddress, ZeroHash } from "ethers"
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants.js"
-import type { ConsiderationItem, OfferItem } from "../src/types.js"
-import { generateRandomSalt } from "../src/utils/order.js"
-import { describeWithFixture } from "./utils/setup.js"
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
+import type { ConsiderationItem, OfferItem } from "../src/types"
+import { generateRandomSalt } from "../src/utils/order"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture("As a user I want to sign an order", fixture => {
   it("should be a valid order", async () => {

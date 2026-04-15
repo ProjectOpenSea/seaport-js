@@ -7,7 +7,7 @@ import {
   toBeHex,
   toUtf8Bytes,
 } from "ethers"
-import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants.js"
+import { ItemType, ONE_HUNDRED_PERCENT_BP } from "../constants"
 import type {
   ConsiderationItem,
   CreateInputItem,
@@ -16,9 +16,9 @@ import type {
   OfferItem,
   Order,
   OrderParameters,
-} from "../types.js"
-import { getMaximumSizeForOrder, isCurrencyItem } from "./item.js"
-import { MerkleTree } from "./merkletree.js"
+} from "../types"
+import { getMaximumSizeForOrder, isCurrencyItem } from "./item"
+import { MerkleTree } from "./merkletree"
 
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: BigNumberish) =>
   (BigInt(amount) * BigInt(basisPoints)) / ONE_HUNDRED_PERCENT_BP

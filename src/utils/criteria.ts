@@ -1,6 +1,6 @@
-import { Side } from "../constants.js"
-import type { InputCriteria, Item, Order } from "../types.js"
-import { isCriteriaItem } from "./item.js"
+import { Side } from "../constants"
+import type { InputCriteria, Item, Order } from "../types"
+import { isCriteriaItem } from "./item"
 
 export const generateCriteriaResolvers = ({
   orders,

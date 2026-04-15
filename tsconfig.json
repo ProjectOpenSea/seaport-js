@@ -15,8 +15,8 @@
     "sourceMap": true,
     "strict": true,
     "declaration": true,
-    "module": "node16",
-    "moduleResolution": "node16",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "types": ["mocha", "node"]

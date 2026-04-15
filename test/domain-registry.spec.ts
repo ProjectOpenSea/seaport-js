@@ -5,8 +5,8 @@ import {
   OPENSEA_DOMAIN,
   OPENSEA_DOMAIN_TAG,
   OVERRIDE_GAS_LIMIT,
-} from "./utils/constants.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "./utils/constants"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to register or look up a domain",

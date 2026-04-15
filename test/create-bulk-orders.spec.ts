@@ -1,13 +1,13 @@
 import { expect } from "chai"
 import { parseEther, ZeroAddress, ZeroHash } from "ethers"
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants.js"
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
 import type {
   ApprovalAction,
   BasicErc721Item,
   CreateBulkOrdersAction,
-} from "../src/types.js"
-import { generateRandomSalt } from "../src/utils/order.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "../src/types"
+import { generateRandomSalt } from "../src/utils/order"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to create bulk orders with one signature",

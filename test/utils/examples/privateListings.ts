@@ -2,9 +2,9 @@ import type {
   MatchOrdersFulfillment,
   Order,
   OrderWithCounter,
-} from "../../../src/types.js"
-import { isCurrencyItem } from "../../../src/utils/item.js"
-import { generateRandomSalt } from "../../../src/utils/order.js"
+} from "../../../src/types"
+import { isCurrencyItem } from "../../../src/utils/item"
+import { generateRandomSalt } from "../../../src/utils/order"
 
 export const constructPrivateListingCounterOrder = (
   order: OrderWithCounter,

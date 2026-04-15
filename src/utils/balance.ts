@@ -1,12 +1,12 @@
 import type { ethers } from "ethers"
-import { ItemType } from "../constants.js"
+import { ItemType } from "../constants"
 import {
   TestERC20__factory,
   TestERC721__factory,
   TestERC1155__factory,
-} from "../typechain-types/index.js"
-import type { InputCriteria, Item } from "../types.js"
-import { isErc20Item, isErc721Item, isErc1155Item } from "./item.js"
+} from "../typechain-types/index"
+import type { InputCriteria, Item } from "../types"
+import { isErc20Item, isErc721Item, isErc1155Item } from "./item"
 
 export const balanceOf = async (
   owner: string,

@@ -1,16 +1,16 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { Interface, parseEther, parseUnits } from "ethers"
-import { SeaportABI } from "../src/abi/Seaport.js"
-import { ItemType, MAX_INT, OrderType } from "../src/constants.js"
-import type { TestERC1155 } from "../src/typechain-types/index.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
+import { SeaportABI } from "../src/abi/Seaport"
+import { ItemType, MAX_INT, OrderType } from "../src/constants"
+import type { TestERC1155 } from "../src/typechain-types/index"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance.js"
-import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "./utils/balance"
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer partially",

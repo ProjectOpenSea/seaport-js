@@ -1,9 +1,9 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ItemType, MAX_INT } from "../src/constants.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
-import { describeWithFixture } from "./utils/setup.js"
+import { ItemType, MAX_INT } from "../src/constants"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to buy now and gift it to another address",

@@ -1,15 +1,15 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ItemType, MAX_INT } from "../src/constants.js"
-import type { TestERC721, TestERC1155 } from "../src/typechain-types/index.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
-import { getTagFromDomain } from "../src/utils/usecase.js"
+import { ItemType, MAX_INT } from "../src/constants"
+import type { TestERC721, TestERC1155 } from "../src/typechain-types/index"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import { getTagFromDomain } from "../src/utils/usecase"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "./utils/balance"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer for a bundle of items",

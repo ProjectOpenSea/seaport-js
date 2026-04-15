@@ -1,14 +1,14 @@
 import { expect } from "chai"
 import { keccak256, parseEther, Signature, ZeroAddress, ZeroHash } from "ethers"
-import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants.js"
+import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
 import type {
   ApprovalAction,
   CreateOrderAction,
   CreateOrderInput,
-} from "../src/types.js"
-import { generateRandomSalt } from "../src/utils/order.js"
-import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "../src/types"
+import { generateRandomSalt } from "../src/utils/order"
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture("As a user I want to create an order", fixture => {
   it("should create the order after setting needed approvals", async () => {

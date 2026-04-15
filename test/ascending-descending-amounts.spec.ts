@@ -1,15 +1,15 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ItemType, MAX_INT, OrderType } from "../src/constants.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
-import { generateRandomSalt } from "../src/utils/order.js"
-import { getTagFromDomain } from "../src/utils/usecase.js"
+import { ItemType, MAX_INT, OrderType } from "../src/constants"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import { generateRandomSalt } from "../src/utils/order"
+import { getTagFromDomain } from "../src/utils/usecase"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "./utils/balance"
+import { describeWithFixture } from "./utils/setup"
 
 const SECONDS_IN_WEEK = 604800
 

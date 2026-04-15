@@ -1,10 +1,10 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ItemType } from "../src/constants.js"
-import type { CreateOrderInput } from "../src/types.js"
-import { OVERRIDE_GAS_LIMIT } from "./utils/constants.js"
-import { describeWithFixture } from "./utils/setup.js"
+import { ItemType } from "../src/constants"
+import type { CreateOrderInput } from "../src/types"
+import { OVERRIDE_GAS_LIMIT } from "./utils/constants"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture("As a user I want to cancel an order", fixture => {
   let offerer: HardhatEthersSigner

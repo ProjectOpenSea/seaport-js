@@ -1,14 +1,14 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ItemType, MAX_INT } from "../src/constants.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
+import { ItemType, MAX_INT } from "../src/constants"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance.js"
-import { OPENSEA_DOMAIN, OVERRIDE_GAS_LIMIT } from "./utils/constants.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "./utils/balance"
+import { OPENSEA_DOMAIN, OVERRIDE_GAS_LIMIT } from "./utils/constants"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer",

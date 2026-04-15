@@ -1,12 +1,12 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ItemType, MAX_INT } from "../src/constants.js"
-import type { TestERC721, TestERC1155 } from "../src/typechain-types/index.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
-import { getTagFromDomain } from "../src/utils/usecase.js"
-import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants.js"
-import { describeWithFixture } from "./utils/setup.js"
+import { ItemType, MAX_INT } from "../src/constants"
+import type { TestERC721, TestERC1155 } from "../src/typechain-types/index"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import { getTagFromDomain } from "../src/utils/usecase"
+import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
   "As a user I want to buy multiple listings or accept multiple offers",

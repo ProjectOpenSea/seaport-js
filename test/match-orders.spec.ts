@@ -1,18 +1,18 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther, type Signer } from "ethers"
-import { ItemType, MAX_INT } from "../src/constants.js"
-import type { CreateOrderInput, CurrencyItem } from "../src/types.js"
-import { getTransactionMethods } from "../src/utils/usecase.js"
+import { ItemType, MAX_INT } from "../src/constants"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import { getTransactionMethods } from "../src/utils/usecase"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance.js"
+} from "./utils/balance"
 import {
   constructPrivateListingCounterOrder,
   getPrivateListingFulfillments,
-} from "./utils/examples/privateListings.js"
-import { describeWithFixture } from "./utils/setup.js"
+} from "./utils/examples/privateListings"
+import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture("As a user I want to match an order", fixture => {
   let offerer: HardhatEthersSigner

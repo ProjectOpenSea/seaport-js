@@ -7,16 +7,16 @@ import {
   toBeHex,
   ZeroAddress,
 } from "ethers"
-import type { Item, Order, OrderStatus } from "../../src/types.js"
-import { balanceOf } from "../../src/utils/balance.js"
+import type { Item, Order, OrderStatus } from "../../src/types"
+import { balanceOf } from "../../src/utils/balance"
 import {
   getPresentItemAmount,
   type TimeBasedItemParams,
-} from "../../src/utils/item.js"
+} from "../../src/utils/item"
 import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
-} from "../../src/utils/order.js"
+} from "../../src/utils/order"
 
 export const setBalance = async (
   provider: Provider,

@@ -1,7 +1,7 @@
-import { ItemType } from "../constants.js"
-import type { InputCriteria, Item, Order, OrderParameters } from "../types.js"
-import { getItemToCriteriaMap } from "./criteria.js"
-import { findGcd } from "./gcd.js"
+import { ItemType } from "../constants"
+import type { InputCriteria, Item, Order, OrderParameters } from "../types"
+import { getItemToCriteriaMap } from "./criteria"
+import { findGcd } from "./gcd"
 
 export const isCurrencyItem = ({ itemType }: Item) =>
   [ItemType.NATIVE, ItemType.ERC20].includes(itemType)

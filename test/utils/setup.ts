@@ -2,7 +2,7 @@ import type { HardhatEthersHelpers } from "@nomicfoundation/hardhat-ethers/types
 import { use } from "chai"
 import chaiAsPromised from "chai-as-promised"
 import hre from "hardhat"
-import { Seaport } from "../../src/seaport.js"
+import { Seaport } from "../../src/seaport"
 import type {
   DomainRegistry,
   Seaport as SeaportContract,
@@ -11,7 +11,7 @@ import type {
   TestERC721,
   TestERC1155,
   TestERC1271Wallet,
-} from "../../src/typechain-types/index.js"
+} from "../../src/typechain-types/index"
 
 use(chaiAsPromised)
 
