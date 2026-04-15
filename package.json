@@ -1,7 +1,7 @@
 {
   "name": "@opensea/seaport-js",
-  "version": "4.1.0",
-  "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a new marketplace protocol for safely and efficiently buying and selling NFTs. This is a TypeScript library intended to make interfacing with the contract reasonable and easy.",
+  "version": "4.1.1",
+  "description": "[Seaport](https://github.com/ProjectOpenSea/seaport) is a marketplace protocol for safely and efficiently buying and selling NFTs. This is a TypeScript library intended to make interfacing with the contract reasonable and easy.",
   "license": "MIT",
   "author": "OpenSea Developers",
   "homepage": "https://github.com/ProjectOpenSea/seaport-js#readme",
@@ -19,7 +19,7 @@
     "src"
   ],
   "scripts": {
-    "build": "hardhat build && tsc -p tsconfig.build.json",
+    "build": "hardhat build && tsc -p tsconfig.build.json && node scripts/postbuild.mjs",
     "check-types": "tsc --noEmit",
     "check-types:incremental": "npm run check-types --incremental",
     "coverage": "c8 npm run test",
