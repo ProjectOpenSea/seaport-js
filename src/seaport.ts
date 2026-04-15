@@ -293,7 +293,7 @@ export class Seaport {
       conduitKey = this.defaultConduitKey,
       zone = ethers.ZeroAddress,
       zoneHash = ethers.ZeroHash,
-      startTime = "0",
+      startTime = Math.floor(Date.now() / 1000 - 300).toString(),
       endTime = MAX_INT.toString(),
       offer,
       consideration,

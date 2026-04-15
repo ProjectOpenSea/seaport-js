@@ -1,4 +1,4 @@
-import type { HardhatEthersHelpers } from "@nomicfoundation/hardhat-ethers/types"
+import type { HardhatEthers } from "@nomicfoundation/hardhat-ethers/types"
 import { use } from "chai"
 import chaiAsPromised from "chai-as-promised"
 import hre from "hardhat"
@@ -25,7 +25,7 @@ type Fixture = {
   testErc1155: TestERC1155
   testERC1271Wallet: TestERC1271Wallet
   seaportWithSigner: Seaport
-  ethers: HardhatEthersHelpers
+  ethers: HardhatEthers
 }
 
 export const describeWithFixture = (

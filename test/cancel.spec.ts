@@ -89,10 +89,10 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
       })
 
     await expect(executeAllFulfillActionsOffChainOrder()).to.be.revert(
-      fixture.ethers as any,
+      fixture.ethers,
     )
     await expect(executeAllFulfillActionsOnChainOrder()).to.be.revert(
-      fixture.ethers as any,
+      fixture.ethers,
     )
 
     expect(
