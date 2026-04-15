@@ -124,6 +124,38 @@ describeWithFixture("As a user I want to match an advanced order", fixture => {
             provider: fixture.ethers.provider,
           })
         })
+
+        it("throws when no value override is provided for ETH orders", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            privateListingCreateOrderInput,
+          )
+
+          const order = await executeAllActions()
+
+          const counterOrder = constructPrivateListingCounterOrder(
+            order,
+            await privateListingRecipient.getAddress(),
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
+          const recipientAddress = await privateListingRecipient.getAddress()
+
+          expect(() =>
+            seaport.matchAdvancedOrders({
+              orders: [
+                orderToAdvancedOrder(order),
+                orderToAdvancedOrder(counterOrder),
+              ],
+              criteriaResolvers: [],
+              fulfillments,
+              recipient: recipientAddress,
+              accountAddress: recipientAddress,
+            }),
+          ).to.throw(
+            "Orders contain native ETH items but no `value` was provided",
+          )
+        })
       })
 
       describe("with ERC20", () => {

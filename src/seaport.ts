@@ -12,6 +12,7 @@ import {
   CROSS_CHAIN_SEAPORT_V1_6_ADDRESS,
   DOMAIN_REGISTRY_ADDRESS,
   EIP_712_ORDER_TYPE,
+  ItemType,
   KNOWN_CONDUIT_KEYS_TO_CONDUIT,
   MAX_INT,
   NO_CONDUIT,
@@ -1067,16 +1068,21 @@ export class Seaport {
   }
 
   /**
-   * NOTE: Largely incomplete. Does NOT do any balance or approval checks.
-   * Just exposes the bare bones matchOrders where clients will have to supply
-   * their own overrides as needed.
-   * @param input
-   * @param input.orders the list of orders to match
-   * @param input.fulfillments the list of fulfillments to match offer and considerations
-   * @param input.overrides any transaction overrides the client wants, will need to pass in value for matching orders with ETH.
-   * @param input.accountAddress Optional address for which to match the order with
-   * @param input.domain optional domain to be hashed and appended to calldata
-   * @returns set of transaction methods for matching orders
+   * Matches a set of orders against each other so that the total offer amounts
+   * satisfy the total consideration amounts across all matched fulfillments.
+   *
+   * WARNING: This is a low-level method that passes arguments directly to the Seaport
+   * contract. It does NOT perform balance or approval checks. Callers are responsible
+   * for ensuring all parties have sufficient balances and approvals before calling.
+   * Pass `value` in `overrides` when matching orders that include ETH.
+   *
+   * @param input.orders The list of orders to match.
+   * @param input.fulfillments The list of fulfillments pairing offer and consideration
+   *   components across the provided orders.
+   * @param input.overrides Transaction overrides (e.g. `{ value }` for ETH-based matches).
+   * @param input.accountAddress Optional address to send the transaction from.
+   * @param input.domain Optional domain to be hashed and appended to calldata.
+   * @returns A set of transaction methods (transact, estimateGas, staticCall, buildTransaction).
    */
   public matchOrders({
     orders,
@@ -1093,6 +1099,11 @@ export class Seaport {
   }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchOrders">
   > {
+    this._validateMatchOrdersNativeValue(
+      orders.map(o => o.parameters),
+      overrides,
+    )
+
     return getTransactionMethods(
       this._getSigner(accountAddress),
       this.contract,
@@ -1144,6 +1155,11 @@ export class Seaport {
   }): TransactionMethods<
     ContractMethodReturnType<SeaportContract, "matchAdvancedOrders">
   > {
+    this._validateMatchOrdersNativeValue(
+      orders.map(o => o.parameters),
+      overrides,
+    )
+
     return getTransactionMethods(
       this._getSigner(accountAddress),
       this.contract,
@@ -1212,6 +1228,32 @@ export class Seaport {
       )
 
       return await domainArray
+    }
+  }
+
+  /**
+   * Validates that `overrides.value` is provided when any of the matched orders
+   * involve native ETH. Forgetting to set `value` is a common mistake that
+   * results in an opaque revert from the Seaport contract.
+   */
+  private _validateMatchOrdersNativeValue(
+    orderParams: {
+      offer: { itemType: ItemType }[]
+      consideration: { itemType: ItemType }[]
+    }[],
+    overrides?: Overrides,
+  ) {
+    const hasNativeToken = orderParams.some(
+      params =>
+        params.offer.some(item => item.itemType === ItemType.NATIVE) ||
+        params.consideration.some(item => item.itemType === ItemType.NATIVE),
+    )
+
+    if (hasNativeToken && !overrides?.value) {
+      throw new Error(
+        "Orders contain native ETH items but no `value` was provided in overrides. " +
+          "Pass the required ETH amount via `overrides: { value }` to avoid a revert.",
+      )
     }
   }
 }
