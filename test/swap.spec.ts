@@ -53,6 +53,7 @@ describeWithFixture(
         await secondTestErc721.mint(await fulfiller.getAddress(), nftId)
 
         standardCreateOrderInput = {
+          startTime: "0",
           offer: [
             {
               itemType: ItemType.ERC721,
@@ -191,6 +192,7 @@ describeWithFixture(
         )
 
         standardCreateOrderInput = {
+          startTime: "0",
           offer: [
             {
               itemType: ItemType.ERC1155,
@@ -335,6 +337,7 @@ describeWithFixture(
         )
 
         standardCreateOrderInput = {
+          startTime: "0",
           offer: [
             {
               itemType: ItemType.ERC721,

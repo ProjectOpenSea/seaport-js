@@ -42,6 +42,7 @@ describeWithFixture(
             await testErc721.mint(await offerer.getAddress(), nftId)
 
             standardCreateOrderInput = {
+              startTime: "0",
               offer: [
                 {
                   itemType: ItemType.ERC721,
@@ -213,6 +214,7 @@ describeWithFixture(
             )
 
             standardCreateOrderInput = {
+              startTime: "0",
               allowPartialFills: true,
 
               offer: [
@@ -452,6 +454,7 @@ describeWithFixture(
             await testErc721.mint(await offerer.getAddress(), nftId3)
 
             standardCreateOrderInput = {
+              startTime: "0",
               offer: [
                 {
                   itemType: ItemType.ERC721,
@@ -770,6 +773,7 @@ describeWithFixture(
             )
 
             standardCreateOrderInput = {
+              startTime: "0",
               allowPartialFills: true,
 
               offer: [
@@ -920,6 +924,7 @@ describeWithFixture(
             )
 
             standardCreateOrderInput = {
+              startTime: "0",
               offer: [
                 {
                   itemType: ItemType.ERC1155,
@@ -1061,6 +1066,7 @@ describeWithFixture(
             )
 
             standardCreateOrderInput = {
+              startTime: "0",
               allowPartialFills: true,
 
               offer: [
@@ -1182,6 +1188,7 @@ describeWithFixture(
             )
 
             standardCreateOrderInput = {
+              startTime: "0",
               offer: [
                 {
                   itemType: ItemType.ERC1155,
@@ -1510,6 +1517,7 @@ describeWithFixture(
             )
 
             standardCreateOrderInput = {
+              startTime: "0",
               allowPartialFills: true,
 
               offer: [
@@ -1646,6 +1654,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -1743,6 +1752,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC1155,
