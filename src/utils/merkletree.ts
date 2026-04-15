@@ -1,27 +1,27 @@
-import { keccak256, toBeHex } from "ethers";
-import MerkleTreeJS from "merkletreejs";
+import { keccak256, toBeHex } from "ethers"
+import MerkleTreeJS from "merkletreejs"
 
 const hashIdentifier = (identifier: string) =>
-  keccak256(Buffer.from(toBeHex(identifier).slice(2).padStart(64, "0"), "hex"));
+  keccak256(Buffer.from(toBeHex(identifier).slice(2).padStart(64, "0"), "hex"))
 
 /**
  * Simple wrapper over the MerkleTree in merkletreejs.
  * Handles hashing identifiers to be compatible with Seaport.
  */
 export class MerkleTree {
-  tree: MerkleTreeJS;
+  tree: MerkleTreeJS
 
   constructor(identifiers: string[]) {
     this.tree = new MerkleTreeJS(identifiers.map(hashIdentifier), keccak256, {
       sort: true,
-    });
+    })
   }
 
   getProof(identifier: string): string[] {
-    return this.tree.getHexProof(hashIdentifier(identifier));
+    return this.tree.getHexProof(hashIdentifier(identifier))
   }
 
   getRoot() {
-    return this.tree.getRoot().toString("hex") ? this.tree.getHexRoot() : "0";
+    return this.tree.getRoot().toString("hex") ? this.tree.getHexRoot() : "0"
   }
 }

@@ -1,9 +1,9 @@
-import * as dotenv from "dotenv";
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import "@typechain/hardhat";
+import * as dotenv from "dotenv"
+import type { HardhatUserConfig } from "hardhat/config"
+import "@nomicfoundation/hardhat-toolbox"
+import "@typechain/hardhat"
 
-dotenv.config();
+dotenv.config()
 
 // Go to https://hardhat.org/config to learn more
 const config: HardhatUserConfig = {
@@ -54,6 +54,6 @@ const config: HardhatUserConfig = {
     artifacts: "src/artifacts",
     sources: "src/contracts",
   },
-};
+}
 
-export default config;
+export default config

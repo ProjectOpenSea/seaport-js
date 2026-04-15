@@ -1,17 +1,21 @@
-import { BigNumberish, toBeHex, TransactionReceipt, parseEther } from "ethers";
-import { ethers } from "hardhat";
-import { Item, Order, OrderStatus } from "../../src/types";
-import { balanceOf } from "../../src/utils/balance";
-
+import { expect } from "chai"
+import {
+  type BigNumberish,
+  parseEther,
+  type TransactionReceipt,
+  toBeHex,
+} from "ethers"
+import { ethers } from "hardhat"
+import type { Item, Order, OrderStatus } from "../../src/types"
+import { balanceOf } from "../../src/utils/balance"
 import {
   getPresentItemAmount,
-  TimeBasedItemParams,
-} from "../../src/utils/item";
-import { expect } from "chai";
+  type TimeBasedItemParams,
+} from "../../src/utils/item"
 import {
   mapOrderAmountsFromFilledStatus,
   mapOrderAmountsFromUnitsToFill,
-} from "../../src/utils/order";
+} from "../../src/utils/order"
 
 export const setBalance = async (
   address: string,
@@ -20,31 +24,31 @@ export const setBalance = async (
   await ethers.provider.send("hardhat_setBalance", [
     address,
     toBeHex(parseEther(amountEth)).replace("0x0", "0x"),
-  ]);
-};
+  ])
+}
 
 export const getBalancesForFulfillOrder = async (
   order: Order,
   fulfillerAddress: string,
 ) => {
-  const { offer, consideration, offerer } = order.parameters;
+  const { offer, consideration, offerer } = order.parameters
 
   const relevantAddresses = Array.from(
     new Set([
       offerer,
       fulfillerAddress,
-      ...consideration.map((item) => item.recipient),
+      ...consideration.map(item => item.recipient),
     ]),
-  );
+  )
 
   const ownerToTokenToIdentifierBalances: Record<
     string,
     Record<string, Record<string, { balance: bigint; item: Item }>>
-  > = {};
+  > = {}
 
-  relevantAddresses.forEach((address) => {
-    ownerToTokenToIdentifierBalances[address] = {};
-  });
+  relevantAddresses.forEach(address => {
+    ownerToTokenToIdentifierBalances[address] = {}
+  })
 
   // Just prepopulate all the keys so we can do an async map
   for (const item of [...offer, ...consideration]) {
@@ -57,27 +61,27 @@ export const getBalancesForFulfillOrder = async (
             balance: 0n,
           },
         },
-      };
+      }
     }
   }
 
   await Promise.all(
-    [...offer, ...consideration].map((item) =>
+    [...offer, ...consideration].map(item =>
       Promise.all([
-        ...relevantAddresses.map(async (address) => {
+        ...relevantAddresses.map(async address => {
           ownerToTokenToIdentifierBalances[address][item.token][
             item.identifierOrCriteria
           ] = {
             item,
             balance: await balanceOf(address, item, ethers.provider),
-          };
+          }
         }),
       ]),
     ),
-  );
+  )
 
-  return ownerToTokenToIdentifierBalances;
-};
+  return ownerToTokenToIdentifierBalances
+}
 
 export const verifyBalancesAfterFulfill = async ({
   ownerToTokenToIdentifierBalances,
@@ -91,16 +95,16 @@ export const verifyBalancesAfterFulfill = async ({
   ownerToTokenToIdentifierBalances: Record<
     string,
     Record<string, Record<string, { balance: bigint; item: Item }>>
-  >;
-  order: Order;
-  orderStatus?: OrderStatus;
-  unitsToFill?: BigNumberish;
-  fulfillReceipt: TransactionReceipt;
-  fulfillerAddress: string;
-  timeBasedItemParams?: TimeBasedItemParams;
+  >
+  order: Order
+  orderStatus?: OrderStatus
+  unitsToFill?: BigNumberish
+  fulfillReceipt: TransactionReceipt
+  fulfillerAddress: string
+  timeBasedItemParams?: TimeBasedItemParams
 }) => {
-  const totalFilled = orderStatus?.totalFilled ?? 0n;
-  const totalSize = orderStatus?.totalSize ?? 0n;
+  const totalFilled = orderStatus?.totalFilled ?? 0n
+  const totalSize = orderStatus?.totalSize ?? 0n
 
   const orderWithAdjustedFills = unitsToFill
     ? mapOrderAmountsFromUnitsToFill(order, {
@@ -110,19 +114,19 @@ export const verifyBalancesAfterFulfill = async ({
     : mapOrderAmountsFromFilledStatus(order, {
         totalFilled,
         totalSize,
-      });
+      })
 
-  const { offer, consideration, offerer } = orderWithAdjustedFills.parameters;
+  const { offer, consideration, offerer } = orderWithAdjustedFills.parameters
 
   // Offer items are depleted
-  offer.forEach((item) => {
+  offer.forEach(item => {
     const exchangedAmount = getPresentItemAmount({
       startAmount: item.startAmount,
       endAmount: item.endAmount,
       timeBasedItemParams: timeBasedItemParams
         ? { ...timeBasedItemParams, isConsiderationItem: false }
         : undefined,
-    });
+    })
 
     ownerToTokenToIdentifierBalances[offerer][item.token][
       item.identifierOrCriteria
@@ -132,7 +136,7 @@ export const verifyBalancesAfterFulfill = async ({
         ownerToTokenToIdentifierBalances[offerer][item.token][
           item.identifierOrCriteria
         ].balance - exchangedAmount,
-    };
+    }
 
     ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
       item.identifierOrCriteria
@@ -142,17 +146,17 @@ export const verifyBalancesAfterFulfill = async ({
         ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
           item.identifierOrCriteria
         ].balance + exchangedAmount,
-    };
-  });
+    }
+  })
 
-  consideration.forEach((item) => {
+  consideration.forEach(item => {
     const exchangedAmount = getPresentItemAmount({
       startAmount: item.startAmount,
       endAmount: item.endAmount,
       timeBasedItemParams: timeBasedItemParams
         ? { ...timeBasedItemParams, isConsiderationItem: true }
         : undefined,
-    });
+    })
 
     ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
       item.identifierOrCriteria
@@ -162,7 +166,7 @@ export const verifyBalancesAfterFulfill = async ({
         ownerToTokenToIdentifierBalances[fulfillerAddress][item.token][
           item.identifierOrCriteria
         ].balance - exchangedAmount,
-    };
+    }
 
     ownerToTokenToIdentifierBalances[item.recipient][item.token][
       item.identifierOrCriteria
@@ -172,8 +176,8 @@ export const verifyBalancesAfterFulfill = async ({
         ownerToTokenToIdentifierBalances[item.recipient][item.token][
           item.identifierOrCriteria
         ].balance + exchangedAmount,
-    };
-  });
+    }
+  })
 
   // Take into account gas costs
   if (ownerToTokenToIdentifierBalances[fulfillerAddress][ethers.ZeroAddress]) {
@@ -187,30 +191,29 @@ export const verifyBalancesAfterFulfill = async ({
             ethers.ZeroAddress
           ][0].balance -
           fulfillReceipt.gasUsed * fulfillReceipt.gasPrice,
-      };
+      }
   }
 
   await Promise.all([
     ...Object.entries(ownerToTokenToIdentifierBalances).map(
       ([owner, tokenToIdentifierBalances]) =>
         Promise.all([
-          ...Object.values(tokenToIdentifierBalances).map(
-            (identifierToBalance) =>
-              Promise.all([
-                ...Object.values(identifierToBalance).map(
-                  async ({ balance, item }) => {
-                    const actualBalance = await balanceOf(
-                      owner,
-                      item,
-                      ethers.provider,
-                    );
+          ...Object.values(tokenToIdentifierBalances).map(identifierToBalance =>
+            Promise.all([
+              ...Object.values(identifierToBalance).map(
+                async ({ balance, item }) => {
+                  const actualBalance = await balanceOf(
+                    owner,
+                    item,
+                    ethers.provider,
+                  )
 
-                    expect(balance).equal(actualBalance);
-                  },
-                ),
-              ]),
+                  expect(balance).equal(actualBalance)
+                },
+              ),
+            ]),
           ),
         ]),
     ),
-  ]);
-};
+  ])
+}

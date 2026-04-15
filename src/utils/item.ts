@@ -1,46 +1,46 @@
-import { ItemType } from "../constants";
-import type { InputCriteria, Item, Order, OrderParameters } from "../types";
-import { getItemToCriteriaMap } from "./criteria";
-import { findGcd } from "./gcd";
+import { ItemType } from "../constants"
+import type { InputCriteria, Item, Order, OrderParameters } from "../types"
+import { getItemToCriteriaMap } from "./criteria"
+import { findGcd } from "./gcd"
 
 export const isCurrencyItem = ({ itemType }: Item) =>
-  [ItemType.NATIVE, ItemType.ERC20].includes(itemType);
+  [ItemType.NATIVE, ItemType.ERC20].includes(itemType)
 
 export const isNativeCurrencyItem = ({ itemType }: Item) =>
-  itemType === ItemType.NATIVE;
+  itemType === ItemType.NATIVE
 
 export const isErc20Item = (itemType: Item["itemType"]) =>
-  itemType === ItemType.ERC20;
+  itemType === ItemType.ERC20
 
 export const isErc721Item = (itemType: Item["itemType"]) =>
-  [ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(itemType);
+  [ItemType.ERC721, ItemType.ERC721_WITH_CRITERIA].includes(itemType)
 
 export const isErc1155Item = (itemType: Item["itemType"]) =>
-  [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType);
+  [ItemType.ERC1155, ItemType.ERC1155_WITH_CRITERIA].includes(itemType)
 
 export const isCriteriaItem = (itemType: Item["itemType"]) =>
   [ItemType.ERC721_WITH_CRITERIA, ItemType.ERC1155_WITH_CRITERIA].includes(
     itemType,
-  );
+  )
 
 export type TimeBasedItemParams = {
-  isConsiderationItem?: boolean;
-  currentBlockTimestamp: number;
-  ascendingAmountTimestampBuffer: number;
-} & Pick<OrderParameters, "startTime" | "endTime">;
+  isConsiderationItem?: boolean
+  currentBlockTimestamp: number
+  ascendingAmountTimestampBuffer: number
+} & Pick<OrderParameters, "startTime" | "endTime">
 
 export const getPresentItemAmount = ({
   startAmount,
   endAmount,
   timeBasedItemParams,
 }: Pick<Item, "startAmount" | "endAmount"> & {
-  timeBasedItemParams?: TimeBasedItemParams;
+  timeBasedItemParams?: TimeBasedItemParams
 }): bigint => {
-  const startAmountBn = BigInt(startAmount);
-  const endAmountBn = BigInt(endAmount);
+  const startAmountBn = BigInt(startAmount)
+  const endAmountBn = BigInt(endAmount)
 
   if (!timeBasedItemParams) {
-    return startAmountBn > endAmountBn ? startAmountBn : endAmountBn;
+    return startAmountBn > endAmountBn ? startAmountBn : endAmountBn
   }
 
   const {
@@ -49,28 +49,28 @@ export const getPresentItemAmount = ({
     ascendingAmountTimestampBuffer,
     startTime,
     endTime,
-  } = timeBasedItemParams;
+  } = timeBasedItemParams
 
-  const startTimeBn = BigInt(startTime);
-  const endTimeBn = BigInt(endTime);
+  const startTimeBn = BigInt(startTime)
+  const endTimeBn = BigInt(endTime)
 
-  const duration = endTimeBn - startTimeBn;
-  const isAscending = endAmountBn > startAmountBn;
+  const duration = endTimeBn - startTimeBn
+  const isAscending = endAmountBn > startAmountBn
   const adjustedBlockTimestamp = BigInt(
     isAscending
       ? currentBlockTimestamp + ascendingAmountTimestampBuffer
       : currentBlockTimestamp,
-  );
+  )
 
   if (adjustedBlockTimestamp < startTimeBn) {
-    return startAmountBn;
+    return startAmountBn
   }
 
   const elapsed =
     (adjustedBlockTimestamp > endTimeBn ? endTimeBn : adjustedBlockTimestamp) -
-    startTimeBn;
+    startTimeBn
 
-  const remaining = duration - elapsed;
+  const remaining = duration - elapsed
 
   // Adjust amounts based on current time
   // For offer items, we round down
@@ -80,25 +80,25 @@ export const getPresentItemAmount = ({
       endAmountBn * elapsed +
       (isConsiderationItem ? duration - 1n : 0n)) /
     duration
-  );
-};
+  )
+}
 
 export const getSummedTokenAndIdentifierAmounts = ({
   items,
   criterias,
   timeBasedItemParams,
 }: {
-  items: Item[];
-  criterias: InputCriteria[];
-  timeBasedItemParams?: TimeBasedItemParams;
+  items: Item[]
+  criterias: InputCriteria[]
+  timeBasedItemParams?: TimeBasedItemParams
 }) => {
-  const itemToCriteria = getItemToCriteriaMap(items, criterias);
+  const itemToCriteria = getItemToCriteriaMap(items, criterias)
 
   const tokenAndIdentifierToSummedAmount = items.reduce<
     Record<string, Record<string, bigint>>
   >((map, item) => {
     const identifierOrCriteria =
-      itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria;
+      itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
 
     return {
       ...map,
@@ -114,11 +114,11 @@ export const getSummedTokenAndIdentifierAmounts = ({
             timeBasedItemParams,
           }),
       },
-    };
-  }, {});
+    }
+  }, {})
 
-  return tokenAndIdentifierToSummedAmount;
-};
+  return tokenAndIdentifierToSummedAmount
+}
 
 /**
  * Returns the maximum size of units possible for the order
@@ -130,12 +130,12 @@ export const getSummedTokenAndIdentifierAmounts = ({
 export const getMaximumSizeForOrder = ({
   parameters: { offer, consideration },
 }: Order) => {
-  const allItems = [...offer, ...consideration];
+  const allItems = [...offer, ...consideration]
 
   const amounts = allItems.flatMap(({ startAmount, endAmount }) => [
     startAmount,
     endAmount,
-  ]);
+  ])
 
-  return findGcd(amounts);
-};
+  return findGcd(amounts)
+}
