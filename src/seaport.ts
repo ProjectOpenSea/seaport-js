@@ -24,7 +24,7 @@ import {
   type DomainRegistry,
   DomainRegistry__factory,
   Seaport__factory,
-} from "./typechain-types"
+} from "./typechain-types/index"
 import type {
   ApprovalAction,
   CreateBulkOrdersAction,
@@ -293,7 +293,7 @@ export class Seaport {
       conduitKey = this.defaultConduitKey,
       zone = ethers.ZeroAddress,
       zoneHash = ethers.ZeroHash,
-      startTime = Math.floor(Date.now() / 1000).toString(),
+      startTime = Math.floor(Date.now() / 1000 - 300).toString(),
       endTime = MAX_INT.toString(),
       offer,
       consideration,

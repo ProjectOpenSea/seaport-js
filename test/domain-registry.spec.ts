@@ -1,7 +1,6 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { keccak256, toUtf8Bytes } from "ethers"
-import { ethers } from "hardhat"
 import {
   OPENSEA_DOMAIN,
   OPENSEA_DOMAIN_TAG,
@@ -25,7 +24,7 @@ describeWithFixture(
     ).slice(0, 10)
 
     beforeEach(async () => {
-      const { seaport } = fixture
+      const { seaport, ethers } = fixture
 
       ;[user] = await ethers.getSigners()
 

@@ -1,6 +1,6 @@
 import type { BigNumberish, ContractTransaction } from "ethers"
 import type { ItemType, OrderType } from "./constants"
-import type { TestERC20, TestERC721 } from "./typechain-types"
+import type { TestERC20, TestERC721 } from "./typechain-types/index"
 import type { Seaport as SeaportContract } from "./typechain-types/seaport/contracts/Seaport"
 import type { TransactionMethods } from "./utils/usecase"
 

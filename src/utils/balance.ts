@@ -4,7 +4,7 @@ import {
   TestERC20__factory,
   TestERC721__factory,
   TestERC1155__factory,
-} from "../typechain-types"
+} from "../typechain-types/index"
 import type { InputCriteria, Item } from "../types"
 import { isErc20Item, isErc721Item, isErc1155Item } from "./item"
 

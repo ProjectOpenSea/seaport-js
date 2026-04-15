@@ -1,17 +1,12 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ethers } from "hardhat"
-import type { SinonSpy } from "sinon"
 import { ItemType, MAX_INT } from "../src/constants"
-import type { TestERC721, TestERC1155 } from "../src/typechain-types"
+import type { TestERC721, TestERC1155 } from "../src/typechain-types/index"
 import type { CreateOrderInput, CurrencyItem } from "../src/types"
-import * as fulfill from "../src/utils/fulfill"
 import { getTagFromDomain } from "../src/utils/usecase"
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
-
-const sinon = require("sinon")
 
 describeWithFixture(
   "As a user I want to buy multiple listings or accept multiple offers",
@@ -23,7 +18,6 @@ describeWithFixture(
     let firstStandardCreateOrderInput: CreateOrderInput
     let secondStandardCreateOrderInput: CreateOrderInput
     let thirdStandardCreateOrderInput: CreateOrderInput
-    let fulfillAvailableOrdersSpy: SinonSpy
     let secondTestErc721: TestERC721
     let secondTestErc1155: TestERC1155
 
@@ -33,7 +27,7 @@ describeWithFixture(
     const erc1155Amount2 = "7"
 
     beforeEach(async () => {
-      fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders")
+      const { ethers } = fixture
 
       ;[offerer, secondOfferer, zone, fulfiller] = await ethers.getSigners()
 
@@ -44,10 +38,6 @@ describeWithFixture(
       const TestERC1155 = await ethers.getContractFactory("TestERC1155")
       secondTestErc1155 = await TestERC1155.deploy()
       await secondTestErc1155.waitForDeployment()
-    })
-
-    afterEach(() => {
-      fulfillAvailableOrdersSpy.restore()
     })
 
     describe("Multiple ERC721s are to be transferred from separate orders", () => {
@@ -172,8 +162,6 @@ describeWithFixture(
                 async owner => owner === (await fulfiller.getAddress()),
               ),
             ).to.be.true
-
-            expect(fulfillAvailableOrdersSpy.calledOnce)
           })
         })
 
@@ -308,8 +296,6 @@ describeWithFixture(
                 async owner => owner === (await fulfiller.getAddress()),
               ),
             ).to.be.true
-
-            expect(fulfillAvailableOrdersSpy.calledOnce)
           })
         })
       })
@@ -508,8 +494,6 @@ describeWithFixture(
             await offerer.getAddress(),
             await secondOfferer.getAddress(),
           ])
-
-          expect(fulfillAvailableOrdersSpy.calledOnce)
         })
       })
     })
@@ -649,8 +633,6 @@ describeWithFixture(
 
             expect(balances[0]).to.equal(10n)
             expect(balances[1]).to.equal(BigInt(erc1155Amount))
-
-            expect(fulfillAvailableOrdersSpy.calledOnce)
           })
         })
 
@@ -773,8 +755,6 @@ describeWithFixture(
 
             expect(balances[0]).to.equal(10n)
             expect(balances[1]).to.equal(BigInt(erc1155Amount))
-
-            expect(fulfillAvailableOrdersSpy.calledOnce)
           })
         })
       })
@@ -909,8 +889,6 @@ describeWithFixture(
             expect(balances[0]).to.equal(100n)
             expect(balances[1]).to.equal(50n)
 
-            expect(fulfillAvailableOrdersSpy.calledOnce)
-
             // Fulfill the order again for another 7 units
             const { actions: actions2 } = await seaport.fulfillOrders({
               fulfillOrderDetails: [
@@ -944,8 +922,6 @@ describeWithFixture(
 
             expect(balances2[0]).to.equal(114n)
             expect(balances2[1]).to.equal(BigInt(57n))
-
-            expect(fulfillAvailableOrdersSpy.calledTwice)
           })
         })
       })
@@ -1163,8 +1139,6 @@ describeWithFixture(
 
           expect(balances[0]).to.equal(10n)
           expect(balances[1]).to.equal(BigInt(erc1155Amount))
-
-          expect(fulfillAvailableOrdersSpy.calledOnce)
         })
       })
     })

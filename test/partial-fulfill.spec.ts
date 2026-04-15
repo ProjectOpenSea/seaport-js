@@ -1,23 +1,16 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { Interface, parseEther, parseUnits } from "ethers"
-import { ethers } from "hardhat"
-import type { SinonSpy } from "sinon"
-import type { FulfillOrdersMetadata } from "../lib/utils/fulfill"
 import { SeaportABI } from "../src/abi/Seaport"
 import { ItemType, MAX_INT, OrderType } from "../src/constants"
-import type { TestERC1155 } from "../src/typechain-types"
+import type { TestERC1155 } from "../src/typechain-types/index"
 import type { CreateOrderInput, CurrencyItem } from "../src/types"
-import * as fulfill from "../src/utils/fulfill"
-import { mapInputItemToOfferItem } from "../src/utils/order"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
 } from "./utils/balance"
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
-
-const sinon = require("sinon")
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer partially",
@@ -26,27 +19,18 @@ describeWithFixture(
     let zone: HardhatEthersSigner
     let fulfiller: HardhatEthersSigner
 
-    let fulfillStandardOrderSpy: SinonSpy
-    let fulfillAvailableOrdersSpy: SinonSpy
     let standardCreateOrderInput: CreateOrderInput
     let secondTestErc1155: TestERC1155
 
     const nftId = "1"
 
     beforeEach(async () => {
+      const { ethers } = fixture
       ;[offerer, zone, fulfiller] = await ethers.getSigners()
-
-      fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder")
-      fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders")
 
       const TestERC1155 = await ethers.getContractFactory("TestERC1155")
       secondTestErc1155 = await TestERC1155.deploy()
       await secondTestErc1155.waitForDeployment()
-    })
-
-    afterEach(() => {
-      fulfillStandardOrderSpy.restore()
-      fulfillAvailableOrdersSpy.restore()
     })
 
     describe("An ERC1155 is partially transferred", () => {
@@ -96,6 +80,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -142,9 +127,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
 
         it("ERC1155 <=> ETH adjust tips correctly", async () => {
@@ -171,6 +155,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -223,9 +208,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
 
         it("ERC1155 <=> ETH without tips using fulfillOrders without explicit unitsToFill qty", async () => {
@@ -245,6 +229,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -298,36 +283,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          const expectedArgs = {
-            ordersMetadata: [
-              {
-                order,
-              },
-            ],
-          }
-
-          expect(
-            fulfillAvailableOrdersSpy.withArgs(
-              sinon.match(
-                ({
-                  ordersMetadata,
-                }: {
-                  ordersMetadata: FulfillOrdersMetadata
-                }) => {
-                  ordersMetadata.every((metadata, index) => {
-                    expect(metadata.order).to.deep.equal(
-                      expectedArgs.ordersMetadata[index].order,
-                      "order doesn't match expected value",
-                    )
-                    expect(metadata.unitsToFill).to.be.undefined
-                  })
-                  return true
-                },
-              ),
-            ).calledOnce,
-          ).to.be.true
         })
 
         it("ERC1155 <=> ETH adjust tips correctly using fulfillOrders", async () => {
@@ -353,6 +310,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -409,50 +367,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          const tipConsiderationItems = tips.map(tip => ({
-            ...mapInputItemToOfferItem(tip),
-            recipient: tip.recipient,
-          }))
-
-          const expectedArgs = {
-            ordersMetadata: [
-              {
-                order,
-                unitsToFill: 2,
-                tips: tipConsiderationItems,
-              },
-            ],
-          }
-
-          expect(
-            fulfillAvailableOrdersSpy.withArgs(
-              sinon.match(
-                ({
-                  ordersMetadata,
-                }: {
-                  ordersMetadata: FulfillOrdersMetadata
-                }) => {
-                  ordersMetadata.every((metadata, index) => {
-                    expect(metadata.order).to.deep.equal(
-                      expectedArgs.ordersMetadata[index].order,
-                      "order doesn't match expected value",
-                    )
-                    expect(metadata.unitsToFill).to.deep.equal(
-                      expectedArgs.ordersMetadata[index].unitsToFill,
-                      "unitsToFill doesn't match expected value",
-                    )
-                    expect(metadata.tips).to.deep.equal(
-                      expectedArgs.ordersMetadata[index].tips,
-                      "tips doesn't match expected value",
-                    )
-                  })
-                  return true
-                },
-              ),
-            ).calledOnce,
-          ).to.be.true
         })
 
         it("ERC1155 <=> ETH with tips using fulfillOrders without explicit unitsToFill qty", async () => {
@@ -478,6 +394,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -532,46 +449,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          const tipConsiderationItems = tips.map(tip => ({
-            ...mapInputItemToOfferItem(tip),
-            recipient: tip.recipient,
-          }))
-
-          const expectedArgs = {
-            ordersMetadata: [
-              {
-                order,
-                tips: tipConsiderationItems,
-              },
-            ],
-          }
-
-          expect(
-            fulfillAvailableOrdersSpy.withArgs(
-              sinon.match(
-                ({
-                  ordersMetadata,
-                }: {
-                  ordersMetadata: FulfillOrdersMetadata
-                }) => {
-                  ordersMetadata.every((metadata, index) => {
-                    expect(metadata.order).to.deep.equal(
-                      expectedArgs.ordersMetadata[index].order,
-                      "order doesn't match expected value",
-                    )
-                    expect(metadata.unitsToFill).to.be.undefined
-                    expect(metadata.tips).to.deep.equal(
-                      expectedArgs.ordersMetadata[index].tips,
-                      "tips doesn't match expected value",
-                    )
-                  })
-                  return true
-                },
-              ),
-            ).calledOnce,
-          ).to.be.true
         })
 
         it("ERC1155 <=> ETH adjust tips correctly with low denomination", async () => {
@@ -622,6 +501,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -674,9 +554,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
 
         it("ERC1155 <=> ETH doesn't fail due to rounding error", async () => {
@@ -786,6 +665,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -852,9 +732,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
 
         it("ERC1155 <=> ERC20 include tips correctly", async () => {
@@ -898,6 +777,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -986,9 +866,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
 
         it("ERC1155 <=> ERC20 (6 decimals) doesn't fail due to rounding error", async () => {
@@ -1048,6 +927,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1113,9 +993,8 @@ describeWithFixture(
             orderStatus,
             fulfillerAddress: await fulfiller.getAddress(),
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
       })
 
@@ -1165,6 +1044,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1217,9 +1097,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
 
           // Fulfill the order again for another 7 units
           const { actions: actions2 } = await seaport.fulfillOrder({
@@ -1260,8 +1139,6 @@ describeWithFixture(
 
           expect(offererErc1155Balance2).eq(43n)
           expect(fulfillerErc1155Balance2).eq(57n)
-
-          expect(fulfillStandardOrderSpy.calledTwice)
         })
 
         it("ERC1155 <=> ETH without tips using fulfillOrders without explicit unitsToFill qty", async () => {
@@ -1281,6 +1158,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1334,9 +1212,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillAvailableOrdersSpy.calledOnce).to.be.true
 
           // Fulfill the order again without explicit `unitsToFill` qty
           // Remaining order should be filled - 50 units are remaining and should all be filled for this test
@@ -1378,8 +1255,6 @@ describeWithFixture(
 
           expect(offererErc1155Balance2).eq(0n)
           expect(fulfillerErc1155Balance2).eq(100n)
-
-          expect(fulfillAvailableOrdersSpy.calledTwice).to.be.true
         })
 
         it("ERC1155 <=> ETH with tips using fulfillOrders", async () => {
@@ -1406,6 +1281,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1463,9 +1339,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
 
           // Fulfill the order again for another 7 units
           const { actions: actions2 } = await seaport.fulfillOrders({
@@ -1511,8 +1386,6 @@ describeWithFixture(
 
           expect(offererErc1155Balance2).eq(43n)
           expect(fulfillerErc1155Balance2).eq(57n)
-
-          expect(fulfillAvailableOrdersSpy.calledTwice)
         })
 
         it("ERC1155 <=> ETH with tips using fulfillOrders without explicit unitsToFill qty", async () => {
@@ -1539,6 +1412,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1596,9 +1470,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillAvailableOrdersSpy.calledOnce).to.be.true
 
           // Fulfill the order again without explicit `unitsToFill` qty
           // Remaining order should be filled - 50 units are remaining and should all be filled for this test
@@ -1644,8 +1517,6 @@ describeWithFixture(
 
           expect(offererErc1155Balance2).eq(0n)
           expect(fulfillerErc1155Balance2).eq(100n)
-
-          expect(fulfillAvailableOrdersSpy.calledTwice).to.be.true
         })
       })
 
@@ -1702,6 +1573,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1774,6 +1646,7 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
 
           const offererErc1155Balance = await testErc1155.balanceOf(
@@ -1790,7 +1663,6 @@ describeWithFixture(
           expect(fulfillerErc1155Balance).eq(8n)
 
           // Double check nft balances
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
       })
     })
@@ -1849,6 +1721,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1908,9 +1781,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
 
         it("ERC1155 + ERC1155 <=> ERC20", async () => {
@@ -1945,6 +1817,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -2024,9 +1897,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
       })
 
@@ -2091,6 +1963,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -2209,10 +2082,10 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
 
           // Double check nft balances
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
       })
     })

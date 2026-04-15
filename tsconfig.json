@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "lib",
-    "target": "es2020",
+    "target": "es2022",
     "lib": ["dom", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
@@ -15,12 +15,11 @@
     "sourceMap": true,
     "strict": true,
     "declaration": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "ignoreDeprecations": "6.0",
-    "types": ["chai", "chai-as-promised", "mocha", "node", "sinon"]
+    "types": ["mocha", "node"]
   },
   "include": ["./src", "./test", "./hardhat.config.ts"]
 }

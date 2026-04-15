@@ -1,19 +1,14 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ethers } from "hardhat"
-import type { SinonSpy } from "sinon"
 import { ItemType, MAX_INT } from "../src/constants"
 import type { CreateOrderInput, CurrencyItem } from "../src/types"
-import * as fulfill from "../src/utils/fulfill"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
 } from "./utils/balance"
 import { OPENSEA_DOMAIN, OVERRIDE_GAS_LIMIT } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
-
-const sinon = require("sinon")
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer",
@@ -22,21 +17,13 @@ describeWithFixture(
     let zone: HardhatEthersSigner
     let fulfiller: HardhatEthersSigner
     let standardCreateOrderInput: CreateOrderInput
-    let fulfillBasicOrderSpy: SinonSpy
-    let fulfillStandardOrderSpy: SinonSpy
     const nftId = "1"
     const erc1155Amount = "3"
 
     beforeEach(async () => {
-      fulfillBasicOrderSpy = sinon.spy(fulfill, "fulfillBasicOrder")
-      fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder")
+      const { ethers } = fixture
 
       ;[offerer, zone, fulfiller] = await ethers.getSigners()
-    })
-
-    afterEach(() => {
-      fulfillBasicOrderSpy.restore()
-      fulfillStandardOrderSpy.restore()
     })
 
     describe("A single ERC721 is to be transferred", () => {
@@ -78,6 +65,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -108,8 +96,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
 
           it("ERC721 <=> ETH (already validated order)", async () => {
@@ -142,6 +130,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -155,8 +144,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
         })
 
@@ -193,6 +182,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -241,8 +231,9 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
+
             expect(transaction.gasLimit).equal(OVERRIDE_GAS_LIMIT)
           })
 
@@ -260,6 +251,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -317,8 +309,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
         })
       })
@@ -365,6 +357,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -412,8 +405,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-          expect(fulfillBasicOrderSpy.calledOnce)
         })
       })
     })
@@ -462,6 +455,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -489,8 +483,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
 
           it("ERC1155 <=> ETH (already validated order)", async () => {
@@ -523,6 +517,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -542,8 +537,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
         })
 
@@ -580,6 +575,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -627,8 +623,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
 
           it("ERC1155 <=> ERC20 (already validated order)", async () => {
@@ -645,6 +641,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -700,8 +697,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillBasicOrderSpy.calledOnce)
           })
         })
       })
@@ -758,6 +755,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -805,8 +803,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-          expect(fulfillBasicOrderSpy.calledOnce)
         })
       })
     })
@@ -847,6 +845,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -872,8 +871,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
 
           it("ERC20 <=> ETH (already validated order)", async () => {
@@ -906,6 +905,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -919,8 +919,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
         })
 
@@ -958,6 +958,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -1005,8 +1006,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
 
           it("ERC20 <=> ERC20 (already validated order)", async () => {
@@ -1023,6 +1024,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -1080,8 +1082,8 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
         })
       })
@@ -1127,6 +1129,7 @@ describeWithFixture(
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
+              fixture.ethers.provider,
               order,
               await fulfiller.getAddress(),
             )
@@ -1174,8 +1177,8 @@ describeWithFixture(
             fulfillerAddress: await fulfiller.getAddress(),
 
             fulfillReceipt: receipt!,
+            provider: fixture.ethers.provider,
           })
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
       })
     })

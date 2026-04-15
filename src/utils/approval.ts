@@ -1,6 +1,9 @@
 import type { ethers, Signer } from "ethers"
 import { ItemType, MAX_INT } from "../constants"
-import { TestERC20__factory, TestERC721__factory } from "../typechain-types"
+import {
+  TestERC20__factory,
+  TestERC721__factory,
+} from "../typechain-types/index"
 import type { ApprovalAction, Item } from "../types"
 import type { InsufficientApprovals } from "./balanceAndApprovalCheck"
 import { isErc721Item, isErc1155Item } from "./item"

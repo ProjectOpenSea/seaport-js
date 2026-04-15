@@ -1,7 +1,6 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ethers } from "hardhat"
 import { ItemType } from "../src/constants"
 import type { CreateOrderInput } from "../src/types"
 import { OVERRIDE_GAS_LIMIT } from "./utils/constants"
@@ -14,7 +13,8 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
   let standardCreateOrderInput: CreateOrderInput
   const nftId = "1"
 
-  before(async () => {
+  beforeEach(async () => {
+    const { ethers } = fixture
     ;[offerer, zone, fulfiller] = await ethers.getSigners()
   })
 
@@ -88,8 +88,12 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
         accountAddress: await fulfiller.getAddress(),
       })
 
-    await expect(executeAllFulfillActionsOffChainOrder()).to.be.reverted
-    await expect(executeAllFulfillActionsOnChainOrder()).to.be.reverted
+    await expect(executeAllFulfillActionsOffChainOrder()).to.be.revert(
+      fixture.ethers,
+    )
+    await expect(executeAllFulfillActionsOnChainOrder()).to.be.revert(
+      fixture.ethers,
+    )
 
     expect(
       (await seaport.getCounter(await offerer.getAddress())) >

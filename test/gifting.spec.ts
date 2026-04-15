@@ -1,7 +1,6 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ethers } from "hardhat"
 import { ItemType, MAX_INT } from "../src/constants"
 import type { CreateOrderInput, CurrencyItem } from "../src/types"
 import { describeWithFixture } from "./utils/setup"
@@ -18,6 +17,7 @@ describeWithFixture(
     const erc1155Amount = "3"
 
     beforeEach(async () => {
+      const { ethers } = fixture
       ;[offerer, zone, fulfiller, recipient] = await ethers.getSigners()
     })
 

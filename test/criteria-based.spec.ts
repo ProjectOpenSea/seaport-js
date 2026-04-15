@@ -1,23 +1,18 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ethers } from "hardhat"
-import type { SinonSpy } from "sinon"
 import { ItemType, MAX_INT } from "../src/constants"
 import type {
   CreateOrderInput,
   CurrencyItem,
   OrderWithCounter,
 } from "../src/types"
-import * as fulfill from "../src/utils/fulfill"
 import { MerkleTree } from "../src/utils/merkletree"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
 } from "./utils/balance"
 import { describeWithFixture } from "./utils/setup"
-
-const sinon = require("sinon")
 
 describeWithFixture(
   "As a user I want to buy now or accept an offer for orders with criteria based items",
@@ -26,8 +21,6 @@ describeWithFixture(
     let zone: HardhatEthersSigner
     let fulfiller: HardhatEthersSigner
 
-    let fulfillStandardOrderSpy: SinonSpy
-    let fulfillAvailableOrdersSpy: SinonSpy
     let standardCreateOrderInput: CreateOrderInput
 
     const nftId = "1"
@@ -36,15 +29,8 @@ describeWithFixture(
     const erc1155Amount = "3"
 
     beforeEach(async () => {
+      const { ethers } = fixture
       ;[offerer, zone, fulfiller] = await ethers.getSigners()
-
-      fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder")
-      fulfillAvailableOrdersSpy = sinon.spy(fulfill, "fulfillAvailableOrders")
-    })
-
-    afterEach(() => {
-      fulfillStandardOrderSpy.restore()
-      fulfillAvailableOrdersSpy.restore()
     })
 
     describe("A criteria based ERC721 is to be transferred", () => {
@@ -85,6 +71,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -113,13 +100,12 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId)
 
             expect(ownerOfErc721).to.eq(await fulfiller.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
 
           it("ERC721 <=> ERC20", async () => {
@@ -155,6 +141,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -205,13 +192,12 @@ describeWithFixture(
               orderStatus,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId)
 
             expect(ownerOfErc721).to.eq(await fulfiller.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
         })
 
@@ -260,6 +246,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -329,13 +316,12 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId)
 
             expect(ownerOfErc721).to.eq(await offerer.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
 
           it("ERC20 <=> ERC721 (multiple orders)", async () => {
@@ -452,8 +438,6 @@ describeWithFixture(
 
             expect(ownerOfNftId1).to.eq(await offerer.getAddress())
             expect(ownerOfNftId2).to.eq(await offerer.getAddress())
-
-            expect(fulfillAvailableOrdersSpy.calledOnce)
           })
         })
       })
@@ -523,6 +507,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -557,13 +542,12 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId3)
 
             expect(ownerOfErc721).to.eq(await fulfiller.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
 
           it("ERC721 <=> ETH (custom merkle root)", async () => {
@@ -611,6 +595,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -645,13 +630,12 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId3)
 
             expect(ownerOfErc721).to.eq(await fulfiller.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
 
           it("ERC721 <=> ERC20", async () => {
@@ -683,6 +667,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -763,13 +748,12 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId3)
 
             expect(ownerOfErc721).to.eq(await fulfiller.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
         })
 
@@ -819,6 +803,7 @@ describeWithFixture(
 
             const ownerToTokenToIdentifierBalances =
               await getBalancesForFulfillOrder(
+                fixture.ethers.provider,
                 order,
                 await fulfiller.getAddress(),
               )
@@ -911,13 +896,12 @@ describeWithFixture(
               order,
               fulfillerAddress: await fulfiller.getAddress(),
               fulfillReceipt: receipt!,
+              provider: fixture.ethers.provider,
             })
 
             const ownerOfErc721 = await testErc721.ownerOf(nftId3)
 
             expect(ownerOfErc721).to.eq(await offerer.getAddress())
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
         })
       })
@@ -987,8 +971,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
 
           it("ERC1155 <=> ERC20", async () => {
@@ -1061,8 +1043,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
         })
 
@@ -1176,8 +1156,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledOnce)
           })
         })
       })
@@ -1287,8 +1265,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
 
           it("ERC1155 <=> ERC20", async () => {
@@ -1393,8 +1369,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
 
           it("ERC1155 <=> ERC20 (custom merkle root)", async () => {
@@ -1508,8 +1482,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
         })
 
@@ -1656,8 +1628,6 @@ describeWithFixture(
             )
 
             expect(balanceOfErc1155).to.eq(erc1155Amount)
-
-            expect(fulfillStandardOrderSpy.calledTwice)
           })
         })
       })
@@ -1746,8 +1716,6 @@ describeWithFixture(
           const ownerOfErc721 = await testErc721.ownerOf(nftId)
 
           expect(ownerOfErc721).to.eq(await fulfiller.getAddress())
-
-          expect(fulfillStandardOrderSpy.calledOnce)
         })
       })
 
@@ -1886,8 +1854,6 @@ describeWithFixture(
           const ownerOfErc721 = await testErc721.ownerOf(nftId2)
 
           expect(ownerOfErc721).to.eq(await offerer.getAddress())
-
-          expect(fulfillStandardOrderSpy.calledTwice)
         })
       })
     })

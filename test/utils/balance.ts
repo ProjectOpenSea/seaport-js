@@ -1,11 +1,12 @@
 import { expect } from "chai"
 import {
   type BigNumberish,
+  type Provider,
   parseEther,
   type TransactionReceipt,
   toBeHex,
+  ZeroAddress,
 } from "ethers"
-import { ethers } from "hardhat"
 import type { Item, Order, OrderStatus } from "../../src/types"
 import { balanceOf } from "../../src/utils/balance"
 import {
@@ -18,16 +19,18 @@ import {
 } from "../../src/utils/order"
 
 export const setBalance = async (
+  provider: Provider,
   address: string,
   amountEth = toBeHex(parseEther("10000")).replace("0x0", "0x"),
 ) => {
-  await ethers.provider.send("hardhat_setBalance", [
+  await (provider as any).send("hardhat_setBalance", [
     address,
     toBeHex(parseEther(amountEth)).replace("0x0", "0x"),
   ])
 }
 
 export const getBalancesForFulfillOrder = async (
+  provider: Provider,
   order: Order,
   fulfillerAddress: string,
 ) => {
@@ -73,7 +76,7 @@ export const getBalancesForFulfillOrder = async (
             item.identifierOrCriteria
           ] = {
             item,
-            balance: await balanceOf(address, item, ethers.provider),
+            balance: await balanceOf(address, item, provider),
           }
         }),
       ]),
@@ -91,6 +94,7 @@ export const verifyBalancesAfterFulfill = async ({
   fulfillReceipt,
   fulfillerAddress,
   timeBasedItemParams,
+  provider,
 }: {
   ownerToTokenToIdentifierBalances: Record<
     string,
@@ -102,6 +106,7 @@ export const verifyBalancesAfterFulfill = async ({
   fulfillReceipt: TransactionReceipt
   fulfillerAddress: string
   timeBasedItemParams?: TimeBasedItemParams
+  provider: Provider
 }) => {
   const totalFilled = orderStatus?.totalFilled ?? 0n
   const totalSize = orderStatus?.totalSize ?? 0n
@@ -180,18 +185,14 @@ export const verifyBalancesAfterFulfill = async ({
   })
 
   // Take into account gas costs
-  if (ownerToTokenToIdentifierBalances[fulfillerAddress][ethers.ZeroAddress]) {
-    ownerToTokenToIdentifierBalances[fulfillerAddress][ethers.ZeroAddress][0] =
-      {
-        ...ownerToTokenToIdentifierBalances[fulfillerAddress][
-          ethers.ZeroAddress
-        ][0],
-        balance:
-          ownerToTokenToIdentifierBalances[fulfillerAddress][
-            ethers.ZeroAddress
-          ][0].balance -
-          fulfillReceipt.gasUsed * fulfillReceipt.gasPrice,
-      }
+  if (ownerToTokenToIdentifierBalances[fulfillerAddress][ZeroAddress]) {
+    ownerToTokenToIdentifierBalances[fulfillerAddress][ZeroAddress][0] = {
+      ...ownerToTokenToIdentifierBalances[fulfillerAddress][ZeroAddress][0],
+      balance:
+        ownerToTokenToIdentifierBalances[fulfillerAddress][ZeroAddress][0]
+          .balance -
+        fulfillReceipt.gasUsed * fulfillReceipt.gasPrice,
+    }
   }
 
   await Promise.all([
@@ -202,11 +203,7 @@ export const verifyBalancesAfterFulfill = async ({
             Promise.all([
               ...Object.values(identifierToBalance).map(
                 async ({ balance, item }) => {
-                  const actualBalance = await balanceOf(
-                    owner,
-                    item,
-                    ethers.provider,
-                  )
+                  const actualBalance = await balanceOf(owner, item, provider)
 
                   expect(balance).equal(actualBalance)
                 },

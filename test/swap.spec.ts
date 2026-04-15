@@ -1,23 +1,18 @@
-import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther } from "ethers"
-import { ethers } from "hardhat"
-import type { SinonSpy } from "sinon"
 import { ItemType, MAX_INT } from "../src/constants"
-import type { TestERC721, TestERC1155 } from "../src/typechain-types"
+import type { TestERC721, TestERC1155 } from "../src/typechain-types/index"
 import type {
   ApprovalAction,
   CreateOrderAction,
   CreateOrderInput,
 } from "../src/types"
-import * as fulfill from "../src/utils/fulfill"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
 } from "./utils/balance"
 import { describeWithFixture } from "./utils/setup"
-
-const sinon = require("sinon")
 
 describeWithFixture(
   "As a user I want to swap any numbers of items",
@@ -26,7 +21,6 @@ describeWithFixture(
     let zone: HardhatEthersSigner
     let fulfiller: HardhatEthersSigner
 
-    let fulfillStandardOrderSpy: SinonSpy
     let secondTestErc721: TestERC721
     let secondTestErc1155: TestERC1155
     let standardCreateOrderInput: CreateOrderInput
@@ -36,9 +30,8 @@ describeWithFixture(
     const erc1155Amount = "3"
 
     beforeEach(async () => {
+      const { ethers } = fixture
       ;[offerer, zone, fulfiller] = await ethers.getSigners()
-
-      fulfillStandardOrderSpy = sinon.spy(fulfill, "fulfillStandardOrder")
 
       const TestERC721 = await ethers.getContractFactory("TestERC721")
       secondTestErc721 = await TestERC721.deploy()
@@ -47,10 +40,6 @@ describeWithFixture(
       const TestERC1155 = await ethers.getContractFactory("TestERC1155")
       secondTestErc1155 = await TestERC1155.deploy()
       await secondTestErc1155.waitForDeployment()
-    })
-
-    afterEach(() => {
-      fulfillStandardOrderSpy.restore()
     })
 
     describe("Swapping ERC721s for ERC721s", () => {
@@ -115,7 +104,11 @@ describeWithFixture(
         const order = await createOrderAction.createOrder()
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(order, await fulfiller.getAddress())
+          await getBalancesForFulfillOrder(
+            fixture.ethers.provider,
+            order,
+            await fulfiller.getAddress(),
+          )
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -160,6 +153,7 @@ describeWithFixture(
           fulfillerAddress: await fulfiller.getAddress(),
 
           fulfillReceipt: receipt!,
+          provider: fixture.ethers.provider,
         })
 
         // Double check nft balances
@@ -176,8 +170,6 @@ describeWithFixture(
           ),
         ).to.be.true
         expect(offererOwned).to.eq(await offerer.getAddress())
-
-        expect(fulfillStandardOrderSpy.calledOnce)
       })
     })
     describe("Swapping ERC1155s for ERC1155s", () => {
@@ -253,7 +245,11 @@ describeWithFixture(
         const order = await createOrderAction.createOrder()
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(order, await fulfiller.getAddress())
+          await getBalancesForFulfillOrder(
+            fixture.ethers.provider,
+            order,
+            await fulfiller.getAddress(),
+          )
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -298,6 +294,7 @@ describeWithFixture(
           fulfillerAddress: await fulfiller.getAddress(),
 
           fulfillReceipt: receipt!,
+          provider: fixture.ethers.provider,
         })
 
         // Double check nft balances
@@ -317,8 +314,6 @@ describeWithFixture(
           ),
         ).to.be.true
         expect(offererOwnedAmount).to.eq(erc1155Amount)
-
-        expect(fulfillStandardOrderSpy.calledOnce)
       })
     })
     describe("Swapping ERC721 + WETH for ERC721 + WETH", () => {
@@ -407,7 +402,11 @@ describeWithFixture(
         const order = await createOrderAction.createOrder()
 
         const ownerToTokenToIdentifierBalances =
-          await getBalancesForFulfillOrder(order, await fulfiller.getAddress())
+          await getBalancesForFulfillOrder(
+            fixture.ethers.provider,
+            order,
+            await fulfiller.getAddress(),
+          )
 
         const { actions } = await seaport.fulfillOrder({
           order,
@@ -472,6 +471,7 @@ describeWithFixture(
           fulfillerAddress: await fulfiller.getAddress(),
 
           fulfillReceipt: receipt!,
+          provider: fixture.ethers.provider,
         })
 
         // Double check nft balances
@@ -498,8 +498,6 @@ describeWithFixture(
         expect(offererOwnedErc20Amount).to.eq(parseEther("4.875"))
 
         expect(zoneOwnedErc20Amount).to.eq(parseEther(".375"))
-
-        expect(fulfillStandardOrderSpy.calledOnce)
       })
     })
   },

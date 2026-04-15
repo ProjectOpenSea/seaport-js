@@ -1,4 +1,7 @@
-import { ethers } from "hardhat"
+import type { HardhatEthers } from "@nomicfoundation/hardhat-ethers/types"
+import { use } from "chai"
+import chaiAsPromised from "chai-as-promised"
+import hre from "hardhat"
 import { Seaport } from "../../src/seaport"
 import type {
   DomainRegistry,
@@ -8,14 +11,9 @@ import type {
   TestERC721,
   TestERC1155,
   TestERC1271Wallet,
-} from "../../src/typechain-types"
+} from "../../src/typechain-types/index"
 
-const chai = require("chai")
-const chaiAsPromised = require("chai-as-promised")
-const sinonChai = require("sinon-chai")
-
-chai.use(chaiAsPromised)
-chai.use(sinonChai)
+use(chaiAsPromised)
 
 type Fixture = {
   seaportContract: SeaportContract
@@ -27,6 +25,7 @@ type Fixture = {
   testErc1155: TestERC1155
   testERC1271Wallet: TestERC1271Wallet
   seaportWithSigner: Seaport
+  ethers: HardhatEthers
 }
 
 export const describeWithFixture = (
@@ -37,12 +36,15 @@ export const describeWithFixture = (
     const fixture: Partial<Fixture> = {}
 
     beforeEach(async () => {
+      const { ethers } = await hre.network.connect()
+
       const SeaportFactory = await ethers.getContractFactory(
         "seaport/contracts/Seaport.sol:Seaport",
       )
 
-      const ConduitControllerFactory =
-        await ethers.getContractFactory("ConduitController")
+      const ConduitControllerFactory = await ethers.getContractFactory(
+        "seaport/contracts/conduit/ConduitController.sol:LocalConduitController",
+      )
 
       const conduitController = await ConduitControllerFactory.deploy()
 
@@ -102,6 +104,7 @@ export const describeWithFixture = (
       fixture.testErc20 = testErc20
       fixture.testErc20USDC = testErc20USDC
       fixture.testERC1271Wallet = testERC1271Wallet
+      fixture.ethers = ethers
     })
 
     suiteCb(fixture as Fixture)
