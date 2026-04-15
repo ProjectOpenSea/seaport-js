@@ -2,7 +2,13 @@ import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
 import { parseEther, type Signer } from "ethers"
 import { ItemType, MAX_INT } from "../src/constants"
-import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import type {
+  AdvancedOrder,
+  CreateOrderInput,
+  CurrencyItem,
+  MatchOrdersFulfillment,
+  Order,
+} from "../src/types"
 import { getTransactionMethods } from "../src/utils/usecase"
 import {
   getBalancesForFulfillOrder,
@@ -14,7 +20,14 @@ import {
 } from "./utils/examples/privateListings"
 import { describeWithFixture } from "./utils/setup"
 
-describeWithFixture("As a user I want to match an order", fixture => {
+const orderToAdvancedOrder = (order: Order): AdvancedOrder => ({
+  ...order,
+  numerator: 1n,
+  denominator: 1n,
+  extraData: "0x",
+})
+
+describeWithFixture("As a user I want to match an advanced order", fixture => {
   let offerer: HardhatEthersSigner
   let zone: HardhatEthersSigner
   let privateListingRecipient: HardhatEthersSigner
@@ -76,22 +89,28 @@ describeWithFixture("As a user I want to match an order", fixture => {
             await privateListingRecipient.getAddress(),
           )
           const fulfillments = getPrivateListingFulfillments(order)
+          const recipientAddress = await privateListingRecipient.getAddress()
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               fixture.ethers.provider,
               order,
-              await privateListingRecipient.getAddress(),
+              recipientAddress,
             )
 
           const transaction = await seaport
-            .matchOrders({
-              orders: [order, counterOrder],
+            .matchAdvancedOrders({
+              orders: [
+                orderToAdvancedOrder(order),
+                orderToAdvancedOrder(counterOrder),
+              ],
+              criteriaResolvers: [],
               fulfillments,
+              recipient: recipientAddress,
               overrides: {
                 value: counterOrder.parameters.offer[0].startAmount,
               },
-              accountAddress: await privateListingRecipient.getAddress(),
+              accountAddress: recipientAddress,
             })
             .transact()
 
@@ -100,8 +119,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: await privateListingRecipient.getAddress(),
-
+            fulfillerAddress: recipientAddress,
             fulfillReceipt: receipt!,
             provider: fixture.ethers.provider,
           })
@@ -116,17 +134,22 @@ describeWithFixture("As a user I want to match an order", fixture => {
 
           const order = await executeAllActions()
 
-          const recipientAddress = await privateListingRecipient.getAddress()
           const counterOrder = constructPrivateListingCounterOrder(
             order,
-            recipientAddress,
+            await privateListingRecipient.getAddress(),
           )
           const fulfillments = getPrivateListingFulfillments(order)
+          const recipientAddress = await privateListingRecipient.getAddress()
 
           expect(() =>
-            seaport.matchOrders({
-              orders: [order, counterOrder],
+            seaport.matchAdvancedOrders({
+              orders: [
+                orderToAdvancedOrder(order),
+                orderToAdvancedOrder(counterOrder),
+              ],
+              criteriaResolvers: [],
               fulfillments,
+              recipient: recipientAddress,
               accountAddress: recipientAddress,
             }),
           ).to.throw(
@@ -171,12 +194,13 @@ describeWithFixture("As a user I want to match an order", fixture => {
             await privateListingRecipient.getAddress(),
           )
           const fulfillments = getPrivateListingFulfillments(order)
+          const recipientAddress = await privateListingRecipient.getAddress()
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               fixture.ethers.provider,
               order,
-              await privateListingRecipient.getAddress(),
+              recipientAddress,
             )
 
           await getTransactionMethods(
@@ -187,16 +211,21 @@ describeWithFixture("As a user I want to match an order", fixture => {
           ).transact()
           expect(
             await testErc20.allowance(
-              await privateListingRecipient.getAddress(),
+              recipientAddress,
               await seaport.contract.getAddress(),
             ),
           ).to.eq(MAX_INT)
 
           const transaction = await seaport
-            .matchOrders({
-              orders: [order, counterOrder],
+            .matchAdvancedOrders({
+              orders: [
+                orderToAdvancedOrder(order),
+                orderToAdvancedOrder(counterOrder),
+              ],
+              criteriaResolvers: [],
               fulfillments,
-              accountAddress: await privateListingRecipient.getAddress(),
+              recipient: recipientAddress,
+              accountAddress: recipientAddress,
             })
             .transact()
 
@@ -205,8 +234,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: await privateListingRecipient.getAddress(),
-
+            fulfillerAddress: recipientAddress,
             fulfillReceipt: receipt!,
             provider: fixture.ethers.provider,
           })
@@ -265,22 +293,28 @@ describeWithFixture("As a user I want to match an order", fixture => {
             await privateListingRecipient.getAddress(),
           )
           const fulfillments = getPrivateListingFulfillments(order)
+          const recipientAddress = await privateListingRecipient.getAddress()
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               fixture.ethers.provider,
               order,
-              await privateListingRecipient.getAddress(),
+              recipientAddress,
             )
 
           const transaction = await seaport
-            .matchOrders({
-              orders: [order, counterOrder],
+            .matchAdvancedOrders({
+              orders: [
+                orderToAdvancedOrder(order),
+                orderToAdvancedOrder(counterOrder),
+              ],
+              criteriaResolvers: [],
               fulfillments,
+              recipient: recipientAddress,
               overrides: {
                 value: counterOrder.parameters.offer[0].startAmount,
               },
-              accountAddress: await privateListingRecipient.getAddress(),
+              accountAddress: recipientAddress,
             })
             .transact()
 
@@ -289,8 +323,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: await privateListingRecipient.getAddress(),
-
+            fulfillerAddress: recipientAddress,
             fulfillReceipt: receipt!,
             provider: fixture.ethers.provider,
           })
@@ -333,12 +366,13 @@ describeWithFixture("As a user I want to match an order", fixture => {
             await privateListingRecipient.getAddress(),
           )
           const fulfillments = getPrivateListingFulfillments(order)
+          const recipientAddress = await privateListingRecipient.getAddress()
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               fixture.ethers.provider,
               order,
-              await privateListingRecipient.getAddress(),
+              recipientAddress,
             )
 
           await getTransactionMethods(
@@ -349,16 +383,21 @@ describeWithFixture("As a user I want to match an order", fixture => {
           ).transact()
           expect(
             await testErc20.allowance(
-              await privateListingRecipient.getAddress(),
+              recipientAddress,
               await seaport.contract.getAddress(),
             ),
           ).to.eq(MAX_INT)
 
           const transaction = await seaport
-            .matchOrders({
-              orders: [order, counterOrder],
+            .matchAdvancedOrders({
+              orders: [
+                orderToAdvancedOrder(order),
+                orderToAdvancedOrder(counterOrder),
+              ],
+              criteriaResolvers: [],
               fulfillments,
-              accountAddress: await privateListingRecipient.getAddress(),
+              recipient: recipientAddress,
+              accountAddress: recipientAddress,
             })
             .transact()
 
@@ -367,8 +406,7 @@ describeWithFixture("As a user I want to match an order", fixture => {
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
             order,
-            fulfillerAddress: await privateListingRecipient.getAddress(),
-
+            fulfillerAddress: recipientAddress,
             fulfillReceipt: receipt!,
             provider: fixture.ethers.provider,
           })
