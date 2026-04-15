@@ -42,6 +42,7 @@ describeWithFixture(
           await testErc1155.mint(await offerer.getAddress(), nftId, 10)
 
           standardCreateOrderInput = {
+            startTime: "0",
             allowPartialFills: true,
 
             offer: [
@@ -1006,6 +1007,7 @@ describeWithFixture(
           await testErc1155.mint(await offerer.getAddress(), nftId, 100)
 
           standardCreateOrderInput = {
+            startTime: "0",
             allowPartialFills: true,
 
             offer: [
@@ -1533,6 +1535,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             allowPartialFills: true,
 
             offer: [
@@ -1677,6 +1680,7 @@ describeWithFixture(
           await secondTestErc1155.mint(await offerer.getAddress(), nftId, 5)
 
           standardCreateOrderInput = {
+            startTime: "0",
             allowPartialFills: true,
 
             offer: [
@@ -1916,6 +1920,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             allowPartialFills: true,
 
             offer: [

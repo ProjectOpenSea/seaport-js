@@ -52,6 +52,7 @@ describeWithFixture(
           await secondTestErc721.mint(await offerer.getAddress(), nftId)
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -253,6 +254,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -421,6 +423,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC721,
@@ -628,6 +631,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -829,6 +833,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -1036,6 +1041,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 amount: parseEther("10").toString(),
