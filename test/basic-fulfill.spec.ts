@@ -326,6 +326,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -423,6 +424,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC1155,
@@ -723,6 +725,7 @@ describeWithFixture(
             .approve(await seaportContract.getAddress(), MAX_INT)
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 amount: parseEther("10").toString(),
@@ -1102,6 +1105,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 amount: parseEther("10").toString(),

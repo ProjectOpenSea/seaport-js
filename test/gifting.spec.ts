@@ -164,6 +164,7 @@ describeWithFixture(
           )
 
           standardCreateOrderInput = {
+            startTime: "0",
             offer: [
               {
                 itemType: ItemType.ERC1155,
