@@ -1,109 +1,109 @@
-import { ethers } from "hardhat";
-import { Seaport } from "../../src/seaport";
+import { ethers } from "hardhat"
+import { Seaport } from "../../src/seaport"
 import type {
-  TestERC721,
-  TestERC20,
-  TestERC1155,
-  Seaport as SeaportContract,
   DomainRegistry,
+  Seaport as SeaportContract,
+  TestERC20,
   TestERC20USDC,
+  TestERC721,
+  TestERC1155,
   TestERC1271Wallet,
-} from "../../src/typechain-types";
+} from "../../src/typechain-types"
 
-const chai = require("chai");
-const chaiAsPromised = require("chai-as-promised");
-const sinonChai = require("sinon-chai");
+const chai = require("chai")
+const chaiAsPromised = require("chai-as-promised")
+const sinonChai = require("sinon-chai")
 
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
+chai.use(chaiAsPromised)
+chai.use(sinonChai)
 
 type Fixture = {
-  seaportContract: SeaportContract;
-  seaport: Seaport;
-  domainRegistry: DomainRegistry;
-  testErc721: TestERC721;
-  testErc20: TestERC20;
-  testErc20USDC: TestERC20USDC;
-  testErc1155: TestERC1155;
-  testERC1271Wallet: TestERC1271Wallet;
-  seaportWithSigner: Seaport;
-};
+  seaportContract: SeaportContract
+  seaport: Seaport
+  domainRegistry: DomainRegistry
+  testErc721: TestERC721
+  testErc20: TestERC20
+  testErc20USDC: TestERC20USDC
+  testErc1155: TestERC1155
+  testERC1271Wallet: TestERC1271Wallet
+  seaportWithSigner: Seaport
+}
 
 export const describeWithFixture = (
   name: string,
   suiteCb: (fixture: Fixture) => unknown,
 ) => {
   describe(name, () => {
-    const fixture: Partial<Fixture> = {};
+    const fixture: Partial<Fixture> = {}
 
     beforeEach(async () => {
       const SeaportFactory = await ethers.getContractFactory(
         "seaport/contracts/Seaport.sol:Seaport",
-      );
+      )
 
       const ConduitControllerFactory =
-        await ethers.getContractFactory("ConduitController");
+        await ethers.getContractFactory("ConduitController")
 
-      const conduitController = await ConduitControllerFactory.deploy();
+      const conduitController = await ConduitControllerFactory.deploy()
 
       const seaportContract = (await SeaportFactory.deploy(
         await conduitController.getAddress(),
-      )) as SeaportContract;
-      await seaportContract.waitForDeployment();
+      )) as SeaportContract
+      await seaportContract.waitForDeployment()
 
       const DomainRegistryFactory =
-        await ethers.getContractFactory("DomainRegistry");
-      const domainRegistry = await DomainRegistryFactory.deploy();
-      await domainRegistry.waitForDeployment();
+        await ethers.getContractFactory("DomainRegistry")
+      const domainRegistry = await DomainRegistryFactory.deploy()
+      await domainRegistry.waitForDeployment()
 
       const seaport = new Seaport(ethers.provider as any, {
         overrides: {
           contractAddress: await seaportContract.getAddress(),
           domainRegistryAddress: await domainRegistry.getAddress(),
         },
-      });
-      const [signer] = await ethers.getSigners();
+      })
+      const [signer] = await ethers.getSigners()
       const seaportWithSigner = new Seaport(signer as any, {
         overrides: {
           contractAddress: await seaportContract.getAddress(),
           domainRegistryAddress: await domainRegistry.getAddress(),
         },
-      });
+      })
 
-      const TestERC721 = await ethers.getContractFactory("TestERC721");
-      const testErc721 = await TestERC721.deploy();
-      await testErc721.waitForDeployment();
+      const TestERC721 = await ethers.getContractFactory("TestERC721")
+      const testErc721 = await TestERC721.deploy()
+      await testErc721.waitForDeployment()
 
-      const TestERC1155 = await ethers.getContractFactory("TestERC1155");
-      const testErc1155 = await TestERC1155.deploy();
-      await testErc1155.waitForDeployment();
+      const TestERC1155 = await ethers.getContractFactory("TestERC1155")
+      const testErc1155 = await TestERC1155.deploy()
+      await testErc1155.waitForDeployment()
 
-      const TestERC20 = await ethers.getContractFactory("TestERC20");
-      const testErc20 = await TestERC20.deploy();
-      await testErc20.waitForDeployment();
+      const TestERC20 = await ethers.getContractFactory("TestERC20")
+      const testErc20 = await TestERC20.deploy()
+      await testErc20.waitForDeployment()
 
-      const TestERC20USDC = await ethers.getContractFactory("TestERC20USDC");
-      const testErc20USDC = await TestERC20USDC.deploy();
-      await testErc20USDC.waitForDeployment();
+      const TestERC20USDC = await ethers.getContractFactory("TestERC20USDC")
+      const testErc20USDC = await TestERC20USDC.deploy()
+      await testErc20USDC.waitForDeployment()
 
       const TestERC1271Wallet =
-        await ethers.getContractFactory("TestERC1271Wallet");
-      const testERC1271Wallet = await TestERC1271Wallet.deploy();
-      await testERC1271Wallet.waitForDeployment();
+        await ethers.getContractFactory("TestERC1271Wallet")
+      const testERC1271Wallet = await TestERC1271Wallet.deploy()
+      await testERC1271Wallet.waitForDeployment()
 
       // In order for cb to get the correct fixture values we have
       // to pass a reference to an object that you we mutate.
-      fixture.seaportContract = seaportContract;
-      fixture.seaport = seaport;
-      fixture.seaportWithSigner = seaportWithSigner;
-      fixture.domainRegistry = domainRegistry;
-      fixture.testErc721 = testErc721;
-      fixture.testErc1155 = testErc1155;
-      fixture.testErc20 = testErc20;
-      fixture.testErc20USDC = testErc20USDC;
-      fixture.testERC1271Wallet = testERC1271Wallet;
-    });
+      fixture.seaportContract = seaportContract
+      fixture.seaport = seaport
+      fixture.seaportWithSigner = seaportWithSigner
+      fixture.domainRegistry = domainRegistry
+      fixture.testErc721 = testErc721
+      fixture.testErc1155 = testErc1155
+      fixture.testErc20 = testErc20
+      fixture.testErc20USDC = testErc20USDC
+      fixture.testERC1271Wallet = testERC1271Wallet
+    })
 
-    suiteCb(fixture as Fixture);
-  });
-};
+    suiteCb(fixture as Fixture)
+  })
+}

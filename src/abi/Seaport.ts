@@ -2810,4 +2810,4 @@ export const SeaportABI = [
     stateMutability: "payable",
     type: "receive",
   },
-];
+]

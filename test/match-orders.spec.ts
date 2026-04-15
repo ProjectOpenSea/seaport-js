@@ -1,40 +1,39 @@
-import { parseEther, Signer } from "ethers";
-import { ethers } from "hardhat";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-
-import { ItemType, MAX_INT } from "../src/constants";
-import { CreateOrderInput, CurrencyItem } from "../src/types";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers"
+import { expect } from "chai"
+import { parseEther, type Signer } from "ethers"
+import { ethers } from "hardhat"
+import { ItemType, MAX_INT } from "../src/constants"
+import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import { getTransactionMethods } from "../src/utils/usecase"
 import {
   getBalancesForFulfillOrder,
   verifyBalancesAfterFulfill,
-} from "./utils/balance";
+} from "./utils/balance"
 import {
   constructPrivateListingCounterOrder,
   getPrivateListingFulfillments,
-} from "./utils/examples/privateListings";
-import { describeWithFixture } from "./utils/setup";
-import { getTransactionMethods } from "../src/utils/usecase";
-import { expect } from "chai";
+} from "./utils/examples/privateListings"
+import { describeWithFixture } from "./utils/setup"
 
-describeWithFixture("As a user I want to match an order", (fixture) => {
-  let offerer: HardhatEthersSigner;
-  let zone: HardhatEthersSigner;
-  let privateListingRecipient: HardhatEthersSigner;
-  let privateListingCreateOrderInput: CreateOrderInput;
-  const nftId = "1";
-  const erc1155Amount = "3";
-  const erc1155ListingQuantity = "1";
+describeWithFixture("As a user I want to match an order", fixture => {
+  let offerer: HardhatEthersSigner
+  let zone: HardhatEthersSigner
+  let privateListingRecipient: HardhatEthersSigner
+  let privateListingCreateOrderInput: CreateOrderInput
+  const nftId = "1"
+  const erc1155Amount = "3"
+  const erc1155ListingQuantity = "1"
 
   beforeEach(async () => {
-    [offerer, zone, privateListingRecipient] = await ethers.getSigners();
-  });
+    ;[offerer, zone, privateListingRecipient] = await ethers.getSigners()
+  })
 
   describe("A single ERC721 is to be transferred", () => {
     describe("[Buy now] I want to buy a single ERC721 private listing", () => {
       beforeEach(async () => {
-        const { testErc721 } = fixture;
+        const { testErc721 } = fixture
 
-        await testErc721.mint(await offerer.getAddress(), nftId);
+        await testErc721.mint(await offerer.getAddress(), nftId)
 
         privateListingCreateOrderInput = {
           startTime: "0",
@@ -59,30 +58,30 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           ],
           // 2.5% fee
           fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
-        };
-      });
+        }
+      })
 
       describe("with ETH", () => {
         it("ERC721 <=> ETH", async () => {
-          const { seaport } = fixture;
+          const { seaport } = fixture
 
           const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput,
-          );
+          )
 
-          const order = await executeAllActions();
+          const order = await executeAllActions()
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
             await privateListingRecipient.getAddress(),
-          );
-          const fulfillments = getPrivateListingFulfillments(order);
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-            );
+            )
 
           const transaction = await seaport
             .matchOrders({
@@ -93,9 +92,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               accountAddress: await privateListingRecipient.getAddress(),
             })
-            .transact();
+            .transact()
 
-          const receipt = await transaction.wait();
+          const receipt = await transaction.wait()
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -103,13 +102,13 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
-          });
-        });
-      });
+          })
+        })
+      })
 
       describe("with ERC20", () => {
         beforeEach(async () => {
-          const { testErc20 } = fixture;
+          const { testErc20 } = fixture
 
           // Use ERC20 instead of eth
           privateListingCreateOrderInput = {
@@ -121,47 +120,47 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               ...privateListingCreateOrderInput.consideration.slice(1),
             ],
-          };
+          }
           await testErc20.mint(
             await privateListingRecipient.getAddress(),
             (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
               .amount,
-          );
-        });
+          )
+        })
 
         it("ERC721 <=> ERC20", async () => {
-          const { seaport, testErc20 } = fixture;
+          const { seaport, testErc20 } = fixture
 
           const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput,
-          );
+          )
 
-          const order = await executeAllActions();
+          const order = await executeAllActions()
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
             await privateListingRecipient.getAddress(),
-          );
-          const fulfillments = getPrivateListingFulfillments(order);
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-            );
+            )
 
           await getTransactionMethods(
             privateListingRecipient as unknown as Signer,
             testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
-          ).transact();
+          ).transact()
           expect(
             await testErc20.allowance(
               await privateListingRecipient.getAddress(),
               await seaport.contract.getAddress(),
             ),
-          ).to.eq(MAX_INT);
+          ).to.eq(MAX_INT)
 
           const transaction = await seaport
             .matchOrders({
@@ -169,9 +168,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               fulfillments,
               accountAddress: await privateListingRecipient.getAddress(),
             })
-            .transact();
+            .transact()
 
-          const receipt = await transaction.wait();
+          const receipt = await transaction.wait()
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -179,22 +178,18 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
-          });
-        });
-      });
-    });
-  });
+          })
+        })
+      })
+    })
+  })
 
   describe("A single ERC1155 is to be transferred", () => {
     describe("[Buy now] I want to buy a single ERC1155 private listing", () => {
       beforeEach(async () => {
-        const { testErc1155 } = fixture;
+        const { testErc1155 } = fixture
 
-        await testErc1155.mint(
-          await offerer.getAddress(),
-          nftId,
-          erc1155Amount,
-        );
+        await testErc1155.mint(await offerer.getAddress(), nftId, erc1155Amount)
 
         privateListingCreateOrderInput = {
           startTime: "0",
@@ -221,30 +216,30 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
           ],
           // 2.5% fee
           fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
-        };
-      });
+        }
+      })
 
       describe("with ETH", () => {
         it("ERC1155 <=> ETH", async () => {
-          const { seaport } = fixture;
+          const { seaport } = fixture
 
           const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput,
-          );
+          )
 
-          const order = await executeAllActions();
+          const order = await executeAllActions()
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
             await privateListingRecipient.getAddress(),
-          );
-          const fulfillments = getPrivateListingFulfillments(order);
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-            );
+            )
 
           const transaction = await seaport
             .matchOrders({
@@ -255,9 +250,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               accountAddress: await privateListingRecipient.getAddress(),
             })
-            .transact();
+            .transact()
 
-          const receipt = await transaction.wait();
+          const receipt = await transaction.wait()
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -265,13 +260,13 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
-          });
-        });
-      });
+          })
+        })
+      })
 
       describe("with ERC20", () => {
         beforeEach(async () => {
-          const { testErc20 } = fixture;
+          const { testErc20 } = fixture
 
           // Use ERC20 instead of eth
           privateListingCreateOrderInput = {
@@ -283,47 +278,47 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               },
               ...privateListingCreateOrderInput.consideration.slice(1),
             ],
-          };
+          }
           await testErc20.mint(
             await privateListingRecipient.getAddress(),
             (privateListingCreateOrderInput.consideration[0] as CurrencyItem)
               .amount,
-          );
-        });
+          )
+        })
 
         it("ERC1155 <=> ERC20", async () => {
-          const { seaport, testErc20 } = fixture;
+          const { seaport, testErc20 } = fixture
 
           const { executeAllActions } = await seaport.createOrder(
             privateListingCreateOrderInput,
-          );
+          )
 
-          const order = await executeAllActions();
+          const order = await executeAllActions()
 
           const counterOrder = constructPrivateListingCounterOrder(
             order,
             await privateListingRecipient.getAddress(),
-          );
-          const fulfillments = getPrivateListingFulfillments(order);
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
 
           const ownerToTokenToIdentifierBalances =
             await getBalancesForFulfillOrder(
               order,
               await privateListingRecipient.getAddress(),
-            );
+            )
 
           await getTransactionMethods(
             privateListingRecipient as unknown as Signer,
             testErc20,
             "approve",
             [await seaport.contract.getAddress(), MAX_INT],
-          ).transact();
+          ).transact()
           expect(
             await testErc20.allowance(
               await privateListingRecipient.getAddress(),
               await seaport.contract.getAddress(),
             ),
-          ).to.eq(MAX_INT);
+          ).to.eq(MAX_INT)
 
           const transaction = await seaport
             .matchOrders({
@@ -331,9 +326,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
               fulfillments,
               accountAddress: await privateListingRecipient.getAddress(),
             })
-            .transact();
+            .transact()
 
-          const receipt = await transaction.wait();
+          const receipt = await transaction.wait()
 
           await verifyBalancesAfterFulfill({
             ownerToTokenToIdentifierBalances,
@@ -341,9 +336,9 @@ describeWithFixture("As a user I want to match an order", (fixture) => {
             fulfillerAddress: await privateListingRecipient.getAddress(),
 
             fulfillReceipt: receipt!,
-          });
-        });
-      });
-    });
-  });
-});
+          })
+        })
+      })
+    })
+  })
+})

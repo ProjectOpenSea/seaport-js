@@ -1,0 +1,67 @@
+{
+  "$schema": "node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": [
+      "**/*.ts",
+      "**/*.js",
+      "**/*.json",
+      "!**/node_modules",
+      "!**/lib",
+      "!**/cache",
+      "!**/coverage",
+      "!**/artifacts",
+      "!**/typechain-types",
+      "!**/src/typechain-types",
+      "!**/src/artifacts",
+      "!**/package-lock.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "all",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "asNeeded"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noConsole": "off",
+        "noExplicitAny": "off",
+        "useIterableCallbackReturn": "off"
+      },
+      "correctness": {
+        "noUnusedImports": "warn"
+      },
+      "style": {
+        "noUnusedTemplateLiteral": "off",
+        "noNonNullAssertion": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.spec.ts", "**/test/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off"
+          }
+        }
+      }
+    }
+  ]
+}

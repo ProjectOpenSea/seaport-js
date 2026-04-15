@@ -1,20 +1,20 @@
-import { ethers } from "ethers";
+import { ethers } from "ethers"
 
-export const SEAPORT_CONTRACT_NAME = "Seaport";
+export const SEAPORT_CONTRACT_NAME = "Seaport"
 
-export const SEAPORT_CONTRACT_VERSION_V1_6 = "1.6";
+export const SEAPORT_CONTRACT_VERSION_V1_6 = "1.6"
 
 export const CROSS_CHAIN_SEAPORT_V1_6_ADDRESS =
-  "0x0000000000000068F116a894984e2DB1123eB395";
+  "0x0000000000000068F116a894984e2DB1123eB395"
 
 export const CROSS_CHAIN_SEAPORT_V1_5_ADDRESS =
-  "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
+  "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC"
 
 export const OPENSEA_CONDUIT_KEY =
-  "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000";
+  "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000"
 
 export const OPENSEA_CONDUIT_ADDRESS =
-  "0x1e0049783f008a0085193e00003d00cd54003c71";
+  "0x1e0049783f008a0085193e00003d00cd54003c71"
 
 export const EIP_712_ORDER_TYPE = {
   OrderComponents: [
@@ -45,7 +45,7 @@ export const EIP_712_ORDER_TYPE = {
     { name: "endAmount", type: "uint256" },
     { name: "recipient", type: "address" },
   ],
-};
+}
 
 export const EIP_712_BULK_ORDER_TYPE = {
   BulkOrder: [{ name: "tree", type: "OrderComponents[2][2][2][2][2][2][2]" }],
@@ -77,7 +77,7 @@ export const EIP_712_BULK_ORDER_TYPE = {
     { name: "endAmount", type: "uint256" },
     { name: "recipient", type: "address" },
   ],
-};
+}
 
 export enum OrderType {
   FULL_OPEN = 0, // No partial fills, anyone can execute
@@ -104,7 +104,7 @@ export type NftItemType =
   | ItemType.ERC721
   | ItemType.ERC1155
   | ItemType.ERC721_WITH_CRITERIA
-  | ItemType.ERC1155_WITH_CRITERIA;
+  | ItemType.ERC1155_WITH_CRITERIA
 
 export enum BasicOrderRouteType {
   ETH_TO_ERC721,
@@ -117,14 +117,14 @@ export enum BasicOrderRouteType {
 
 export const MAX_INT = BigInt(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-);
-export const ONE_HUNDRED_PERCENT_BP = 10_000n;
-export const NO_CONDUIT = ethers.ZeroHash;
+)
+export const ONE_HUNDRED_PERCENT_BP = 10_000n
+export const NO_CONDUIT = ethers.ZeroHash
 
 // Supply here any known conduit keys as well as their conduits
 export const KNOWN_CONDUIT_KEYS_TO_CONDUIT = {
   [OPENSEA_CONDUIT_KEY]: OPENSEA_CONDUIT_ADDRESS,
-};
+}
 
 export const DOMAIN_REGISTRY_ADDRESS =
-  "0x000000000DaD0DE04D2B2D4a5A74581EBA94124A";
+  "0x000000000DaD0DE04D2B2D4a5A74581EBA94124A"

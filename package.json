@@ -22,13 +22,12 @@
     "check-types": "tsc --noEmit",
     "check-types:incremental": "npm run check-types --incremental",
     "coverage": "c8 npm run test",
-    "eslint:check": "eslint --max-warnings 0",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "concurrently \"npm run check-types\" \"biome check .\"",
+    "lint:fix": "biome check --write .",
     "postinstall": "husky || exit 0",
-    "lint": "concurrently \"npm run check-types\" \"npm run eslint:check\" \"npm run prettier:check\" \"npm run prettier:check:package.json\"",
     "prepare": "npm run build",
-    "prettier:check": "prettier --check .",
-    "prettier:check:package.json": "prettier-package-json --list-different",
-    "prettier:fix": "prettier --write . && prettier-package-json --write package.json",
     "test": "hardhat test"
   },
   "types": "lib/index.d.ts",
@@ -37,7 +36,7 @@
     "merkletreejs": "^0.6.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
+    "@biomejs/biome": "2.4.10",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@rari-capital/solmate": "^6.4.0",
     "@typechain/ethers-v6": "^0.5.1",
@@ -52,33 +51,22 @@
     "chai-as-promised": "^7.1.1",
     "concurrently": "^9.0.0",
     "dotenv": "^16.0.3",
-    "eslint": "^9.0.0",
-    "eslint-config-prettier": "^10.0.0",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.5",
     "hardhat": "^2.28.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.0",
-    "prettier": "^3.8.1",
-    "prettier-package-json": "^2.8.0",
-    "prettier-plugin-solidity": "^1.4.0",
     "seaport": "ProjectOpenSea/seaport#080133906585660f6a76b82984f3fb690ff4b2a9",
     "sinon": "^19.0.0",
     "sinon-chai": "^3.7.0",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.0.0"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "lint-staged": {
-    "package.json": [
-      "prettier-package-json --write"
-    ],
-    "**/*.{ts,tsx,js,jsx,html,md,mdx,yml,json}": [
-      "prettier --write"
+    "**/*.{ts,js,json}": [
+      "biome check --write --no-errors-on-unmatched"
     ]
   }
 }

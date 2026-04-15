@@ -1,3 +1,3 @@
-import { Seaport } from "./seaport";
+import { Seaport } from "./seaport"
 
-export { Seaport };
+export { Seaport }

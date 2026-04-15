@@ -1,50 +1,48 @@
-import { concat, toBeHex, keccak256 } from "ethers";
-
-import type { BytesLike } from "ethers";
+import type { BytesLike } from "ethers"
+import { concat, keccak256, toBeHex } from "ethers"
 
 export const makeArray = <T>(len: number, getValue: (i: number) => T) =>
   Array(len)
     .fill(0)
-    .map((_, i) => getValue(i));
+    .map((_, i) => getValue(i))
 
 export const chunk = <T>(array: T[], size: number) => {
-  return makeArray(Math.ceil(array.length / size), (i) =>
+  return makeArray(Math.ceil(array.length / size), i =>
     array.slice(i * size, (i + 1) * size),
-  );
-};
+  )
+}
 
-export const bufferToHex = (buf: Buffer) => toBeHex(buf.toString("hex"));
+export const bufferToHex = (buf: Buffer) => toBeHex(buf.toString("hex"))
 
-export const hexToBuffer = (value: string) =>
-  Buffer.from(value.slice(2), "hex");
+export const hexToBuffer = (value: string) => Buffer.from(value.slice(2), "hex")
 
-export const bufferKeccak = (value: BytesLike) => hexToBuffer(keccak256(value));
+export const bufferKeccak = (value: BytesLike) => hexToBuffer(keccak256(value))
 
-export const hashConcat = (arr: BytesLike[]) => bufferKeccak(concat(arr));
+export const hashConcat = (arr: BytesLike[]) => bufferKeccak(concat(arr))
 
 export const fillArray = <T>(arr: T[], length: number, value: T) => {
-  if (length > arr.length) arr.push(...Array(length - arr.length).fill(value));
-  return arr;
-};
+  if (length > arr.length) arr.push(...Array(length - arr.length).fill(value))
+  return arr
+}
 
 export const getRoot = (elements: (Buffer | string)[], hashLeaves = true) => {
-  if (elements.length === 0) throw new Error("empty tree");
+  if (elements.length === 0) throw new Error("empty tree")
 
-  const leaves = elements.map((e) => {
-    const leaf = Buffer.isBuffer(e) ? e : hexToBuffer(e);
-    return hashLeaves ? bufferKeccak(leaf) : leaf;
-  });
+  const leaves = elements.map(e => {
+    const leaf = Buffer.isBuffer(e) ? e : hexToBuffer(e)
+    return hashLeaves ? bufferKeccak(leaf) : leaf
+  })
 
-  const layers: Buffer[][] = [leaves];
+  const layers: Buffer[][] = [leaves]
 
   // Get next layer until we reach the root
   while (layers[layers.length - 1].length > 1) {
-    layers.push(getNextLayer(layers[layers.length - 1]));
+    layers.push(getNextLayer(layers[layers.length - 1]))
   }
 
-  return layers[layers.length - 1][0];
-};
+  return layers[layers.length - 1][0]
+}
 
 export const getNextLayer = (elements: Buffer[]) => {
-  return chunk(elements, 2).map(hashConcat);
-};
+  return chunk(elements, 2).map(hashConcat)
+}

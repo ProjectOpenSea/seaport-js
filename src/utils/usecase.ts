@@ -1,23 +1,22 @@
 import {
-  BaseContract,
-  ContractTransaction,
-  Overrides,
-  Signer,
-  TransactionResponse,
+  type BaseContract,
+  type ContractTransaction,
   keccak256,
+  type Overrides,
+  type Signer,
+  type TransactionResponse,
   toUtf8Bytes,
-} from "ethers";
-
-import {
+} from "ethers"
+import type {
+  DefaultReturnType,
+  TypedContractMethod,
+} from "../typechain-types/common"
+import type {
   CreateBulkOrdersAction,
   CreateOrderAction,
   ExchangeAction,
   OrderUseCase,
-} from "../types";
-import {
-  DefaultReturnType,
-  TypedContractMethod,
-} from "../typechain-types/common";
+} from "../types"
 
 export const executeAllActions = async <
   T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,
@@ -25,24 +24,24 @@ export const executeAllActions = async <
   actions: OrderUseCase<T>["actions"],
 ) => {
   for (let i = 0; i < actions.length - 1; i++) {
-    const action = actions[i];
+    const action = actions[i]
     if (action.type === "approval") {
-      const tx = await action.transactionMethods.transact();
-      await tx.wait();
+      const tx = await action.transactionMethods.transact()
+      await tx.wait()
     }
   }
 
-  const finalAction = actions[actions.length - 1] as T;
+  const finalAction = actions[actions.length - 1] as T
 
   switch (finalAction.type) {
     case "create":
-      return finalAction.createOrder();
+      return finalAction.createOrder()
     case "createBulk":
-      return finalAction.createBulkOrders();
+      return finalAction.createBulkOrders()
     default:
-      return finalAction.transactionMethods.transact();
+      return finalAction.transactionMethods.transact()
   }
-};
+}
 
 const instanceOfOverrides = <T extends Overrides>(
   obj: object | undefined,
@@ -60,26 +59,26 @@ const instanceOfOverrides = <T extends Overrides>(
     "value",
     "blockTag",
     "overrides",
-  ];
+  ]
 
   return (
     obj === undefined ||
     (Object.keys(obj).length > 0 &&
-      Object.keys(obj).every((key) => validKeys.includes(key)))
-  );
-};
+      Object.keys(obj).every(key => validKeys.includes(key)))
+  )
+}
 
 export type ContractMethodReturnType<
   T extends BaseContract,
   U extends keyof T,
-> = T[U] extends TypedContractMethod<any, infer Output, any> ? Output : never;
+> = T[U] extends TypedContractMethod<any, infer Output, any> ? Output : never
 
 export type TransactionMethods<T = unknown> = {
-  buildTransaction: (overrides?: Overrides) => Promise<ContractTransaction>;
-  staticCall: (overrides?: Overrides) => Promise<DefaultReturnType<T>>;
-  estimateGas: (overrides?: Overrides) => Promise<bigint>;
-  transact: (overrides?: Overrides) => Promise<TransactionResponse>;
-};
+  buildTransaction: (overrides?: Overrides) => Promise<ContractTransaction>
+  staticCall: (overrides?: Overrides) => Promise<DefaultReturnType<T>>
+  estimateGas: (overrides?: Overrides) => Promise<bigint>
+  transact: (overrides?: Overrides) => Promise<TransactionResponse>
+}
 
 export const getTransactionMethods = <
   T extends BaseContract,
@@ -93,57 +92,57 @@ export const getTransactionMethods = <
     : never,
   domain?: string,
 ): TransactionMethods<ContractMethodReturnType<T, U>> => {
-  let initialOverrides: Overrides;
+  let initialOverrides: Overrides
   if (args?.length > 0) {
-    const lastArg = args[args.length - 1];
+    const lastArg = args[args.length - 1]
     if (instanceOfOverrides(lastArg)) {
-      initialOverrides = lastArg;
-      args.pop();
+      initialOverrides = lastArg
+      args.pop()
     }
   }
 
   const contractMethod = async (signer: Signer | Promise<Signer>) =>
     (contract.connect(await signer) as T)[
       method
-    ] as T[U] extends TypedContractMethod ? T[U] : never;
+    ] as T[U] extends TypedContractMethod ? T[U] : never
 
   const buildTransaction = async (overrides?: Overrides) => {
-    const mergedOverrides = { ...initialOverrides, ...overrides };
-    const method = await contractMethod(signer);
+    const mergedOverrides = { ...initialOverrides, ...overrides }
+    const method = await contractMethod(signer)
     const populatedTransaction = await method.populateTransaction(
       ...[...args, mergedOverrides],
-    );
+    )
 
     if (domain) {
-      const tag = getTagFromDomain(domain);
-      populatedTransaction.data = populatedTransaction.data + tag;
+      const tag = getTagFromDomain(domain)
+      populatedTransaction.data = populatedTransaction.data + tag
     }
 
-    return populatedTransaction;
-  };
+    return populatedTransaction
+  }
 
   return {
     staticCall: async (overrides?: Overrides) => {
-      const mergedOverrides = { ...initialOverrides, ...overrides };
-      const mergedArgs = [...args, mergedOverrides];
-      const method = await contractMethod(signer);
-      return method.staticCall(...mergedArgs);
+      const mergedOverrides = { ...initialOverrides, ...overrides }
+      const mergedArgs = [...args, mergedOverrides]
+      const method = await contractMethod(signer)
+      return method.staticCall(...mergedArgs)
     },
     estimateGas: async (overrides?: Overrides) => {
-      const mergedOverrides = { ...initialOverrides, ...overrides };
-      const mergedArgs = [...args, mergedOverrides];
-      const method = await contractMethod(signer);
-      return method.estimateGas(...mergedArgs);
+      const mergedOverrides = { ...initialOverrides, ...overrides }
+      const mergedArgs = [...args, mergedOverrides]
+      const method = await contractMethod(signer)
+      return method.estimateGas(...mergedArgs)
     },
     transact: async (overrides?: Overrides) => {
-      const mergedOverrides = { ...initialOverrides, ...overrides };
-      const data = await buildTransaction(mergedOverrides);
-      return (await signer).sendTransaction(data);
+      const mergedOverrides = { ...initialOverrides, ...overrides }
+      const data = await buildTransaction(mergedOverrides)
+      return (await signer).sendTransaction(data)
     },
     buildTransaction,
-  };
-};
+  }
+}
 
 export const getTagFromDomain = (domain: string) => {
-  return keccak256(toUtf8Bytes(domain)).slice(2, 10);
-};
+  return keccak256(toUtf8Bytes(domain)).slice(2, 10)
+}

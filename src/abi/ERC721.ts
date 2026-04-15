@@ -329,6 +329,6 @@ const ERC721ABI = [
     stateMutability: "nonpayable",
     type: "function",
   },
-];
+]
 
-export { ERC721ABI };
+export { ERC721ABI }

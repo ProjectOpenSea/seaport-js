@@ -52,4 +52,4 @@ The algorithm (broad-strokes first pass)
 9. Ensure that all consideration items have been met!
   */
 
-export {};
+export {}
