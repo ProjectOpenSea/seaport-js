@@ -229,6 +229,14 @@ export type Fulfillment = {
   considerationComponents: FulfillmentComponent[]
 }
 
+export type CriteriaResolver = {
+  orderIndex: number
+  side: number
+  index: number
+  identifier: BigNumberish
+  criteriaProof: string[]
+}
+
 type MatchOrdersFulfillmentComponent = {
   orderIndex: number
   itemIndex: number
