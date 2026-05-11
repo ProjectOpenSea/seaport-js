@@ -37,7 +37,7 @@
     "merkletreejs": "^0.6.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.12",
+    "@biomejs/biome": "2.4.15",
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.0",
     "@rari-capital/solmate": "^6.4.0",
     "@types/chai-as-promised": "^8.0.0",
