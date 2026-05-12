@@ -552,6 +552,7 @@ export function fulfillAvailableOrders({
   recipientAddress,
   exactApproval,
   domain,
+  overrides,
 }: {
   ordersMetadata: FulfillOrdersMetadata
   seaportContract: SeaportContract
@@ -564,6 +565,7 @@ export function fulfillAvailableOrders({
   recipientAddress: string
   exactApproval: boolean
   domain?: string
+  overrides?: Overrides
 }): OrderUseCase<
   ExchangeAction<
     ContractMethodReturnType<SeaportContract, "fulfillAvailableAdvancedOrders">
@@ -715,7 +717,7 @@ export function fulfillAvailableOrders({
     },
   )
 
-  const overrides = { value: totalNativeAmount }
+  overrides = { ...overrides, value: totalNativeAmount }
 
   const approvalActions = getApprovalActions(
     totalInsufficientApprovals,

@@ -937,6 +937,7 @@ export class Seaport {
    *                               Defaults to the zero address which means the offer goes to the fulfiller
    * @param input.domain optional domain to be hashed and appended to calldata
    * @param input.exactApproval optional boolean to indicate whether the approval should be exact or not
+   * @param input.overrides any transaction overrides the client wants, ignored if not set
    * @returns a use case containing the set of approval actions and fulfillment action
    */
   public async fulfillOrders({
@@ -946,6 +947,7 @@ export class Seaport {
     recipientAddress = ethers.ZeroAddress,
     domain,
     exactApproval = false,
+    overrides,
   }: {
     fulfillOrderDetails: {
       order: OrderWithCounter
@@ -960,6 +962,7 @@ export class Seaport {
     recipientAddress?: string
     domain?: string
     exactApproval?: boolean
+    overrides?: Overrides
   }) {
     if (
       fulfillOrderDetails.some(orderDetails => !orderDetails.order.signature)
@@ -1064,6 +1067,7 @@ export class Seaport {
       recipientAddress,
       domain,
       exactApproval,
+      overrides,
     })
   }
 

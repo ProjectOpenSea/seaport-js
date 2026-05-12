@@ -128,6 +128,7 @@ describeWithFixture(
 
             const thirdOrder = await thirdOrderUseCase.executeAllActions()
 
+            const gasLimit = 10_000_000n
             const { actions } = await seaport.fulfillOrders({
               fulfillOrderDetails: [
                 { order: firstOrder },
@@ -136,17 +137,17 @@ describeWithFixture(
               ],
               accountAddress: await fulfiller.getAddress(),
               domain: OPENSEA_DOMAIN,
+              overrides: { gasLimit },
             })
 
             expect(actions.length).to.eq(1)
 
             const action = actions[0]
             expect(action.type).eq("exchange")
-            expect(
-              (await action.transactionMethods.buildTransaction()).data?.slice(
-                -8,
-              ),
-            ).to.eq(OPENSEA_DOMAIN_TAG)
+            const transactionRequest =
+              await action.transactionMethods.buildTransaction()
+            expect(transactionRequest.data?.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG)
+            expect(transactionRequest.gasLimit).to.eq(gasLimit)
 
             const transaction = await action.transactionMethods.transact()
             expect(transaction.data.slice(-8)).to.eq(OPENSEA_DOMAIN_TAG)
