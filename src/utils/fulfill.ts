@@ -717,7 +717,7 @@ export function fulfillAvailableOrders({
     },
   )
 
-  const transactionOverrides = { ...overrides, value: totalNativeAmount }
+  overrides = { ...overrides, value: totalNativeAmount }
 
   const approvalActions = getApprovalActions(
     totalInsufficientApprovals,
@@ -779,7 +779,7 @@ export function fulfillAvailableOrders({
         conduitKey,
         recipientAddress,
         advancedOrdersWithTips.length,
-        transactionOverrides,
+        overrides,
       ],
       domain,
     ),
