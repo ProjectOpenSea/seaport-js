@@ -50,7 +50,7 @@
     "dotenv": "17.4.2",
     "hardhat": "^3.0.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^17.0.0",
     "seaport": "ProjectOpenSea/seaport#080133906585660f6a76b82984f3fb690ff4b2a9",
     "typescript": "^6.0.2"
   },
