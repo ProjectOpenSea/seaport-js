@@ -892,8 +892,25 @@ export const getAdvancedOrderNumeratorDenominator = (
   let numerator = 1n
   let denominator = 1n
   if (unitsToFill) {
-    const unitsGcd = gcd(BigInt(unitsToFill), maxUnits)
-    numerator = BigInt(unitsToFill) / unitsGcd
+    const unitsToFillBn = BigInt(unitsToFill)
+
+    // maxUnits is the greatest common divisor of every item amount, i.e. the
+    // number of units the order can be split into while keeping every fill
+    // exact. When item amounts (e.g. once fees are added) share no common
+    // divisor, maxUnits collapses to 1 and the order is effectively
+    // non-partially-fillable. Requesting more units than that would produce a
+    // numerator/denominator greater than 1 (an over-fill), which reverts
+    // on-chain with an opaque error, so surface a clear error here instead.
+    if (unitsToFillBn > maxUnits) {
+      throw new Error(
+        `Cannot fill ${unitsToFillBn} units: this order is only divisible into ${maxUnits} unit(s). ` +
+          "This usually means the item amounts (including fees) share no common divisor, " +
+          "making the order effectively non-partially-fillable.",
+      )
+    }
+
+    const unitsGcd = gcd(unitsToFillBn, maxUnits)
+    numerator = unitsToFillBn / unitsGcd
     denominator = maxUnits / unitsGcd
   }
 
