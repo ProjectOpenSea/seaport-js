@@ -1219,7 +1219,7 @@ export class Seaport {
    */
   public async getDomains(tag: string): Promise<string[]> {
     try {
-      return this.domainRegistry.getDomains(tag)
+      return await this.domainRegistry.getDomains(tag)
     } catch {
       // If there are too many domains set under the tag, it will revert when trying to return in memory.
       // This fallback will manually query each index to get the full list of domains.
