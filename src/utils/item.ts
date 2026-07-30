@@ -56,7 +56,7 @@ export const getPresentItemAmount = ({
 
   const duration = endTimeBn - startTimeBn
   if (duration === 0n) {
-    return endAmountBn
+    return endAmountBn // zero-duration: treat order as at its end
   }
   const isAscending = endAmountBn > startAmountBn
   const adjustedBlockTimestamp = BigInt(
