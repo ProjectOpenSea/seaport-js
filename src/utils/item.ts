@@ -55,9 +55,6 @@ export const getPresentItemAmount = ({
   const endTimeBn = BigInt(endTime)
 
   const duration = endTimeBn - startTimeBn
-  if (duration === 0n) {
-    return endAmountBn // zero-duration: treat order as at its end
-  }
   const isAscending = endAmountBn > startAmountBn
   const adjustedBlockTimestamp = BigInt(
     isAscending
@@ -67,6 +64,13 @@ export const getPresentItemAmount = ({
 
   if (adjustedBlockTimestamp < startTimeBn) {
     return startAmountBn
+  }
+
+  // A zero-duration order would divide by zero below. Seaport rejects these at
+  // _verifyTime (endTime <= block.timestamp reverts InvalidTime), so the value
+  // is inert; returning endAmount just avoids a RangeError during derivation.
+  if (duration === 0n) {
+    return endAmountBn
   }
 
   const elapsed =

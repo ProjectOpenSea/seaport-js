@@ -47,5 +47,23 @@ describe("getPresentItemAmount", () => {
       })
       expect(result).to.equal(3000n)
     })
+
+    it("still returns startAmount when the order has not started yet", () => {
+      // This case never threw: the not-yet-started branch returns before the
+      // division. The zero-duration guard sits below that branch so this keeps
+      // returning startAmount rather than endAmount.
+      const result = getPresentItemAmount({
+        startAmount: "1000",
+        endAmount: "2000",
+        timeBasedItemParams: {
+          startTime: "2000",
+          endTime: "2000",
+          currentBlockTimestamp: 1000,
+          ascendingAmountTimestampBuffer: 0,
+          isConsiderationItem: false,
+        },
+      })
+      expect(result).to.equal(1000n)
+    })
   })
 })
