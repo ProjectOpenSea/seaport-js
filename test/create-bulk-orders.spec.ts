@@ -6,6 +6,7 @@ import type {
   BasicErc721Item,
   CreateBulkOrdersAction,
 } from "../src/types"
+import { getApprovalActions } from "../src/utils/approval"
 import { generateRandomSalt } from "../src/utils/order"
 import { describeWithFixture } from "./utils/setup"
 
@@ -148,6 +149,44 @@ describeWithFixture(
 
         expect(isValid).to.be.true
       }
+    })
+
+    it("should not dedupe approval actions with the same token but different operators", async () => {
+      const { seaportContract, testErc721, ethers } = fixture
+      const [signer] = await ethers.getSigners()
+
+      const token = await testErc721.getAddress()
+      const seaportOperator = await seaportContract.getAddress()
+      const conduitOperator = "0x000000000000000000000000000000000000dEaD"
+
+      const approvalActions = getApprovalActions(
+        [
+          {
+            token,
+            operator: seaportOperator,
+            itemType: ItemType.ERC721,
+            identifierOrCriteria: "1",
+            requiredApprovedAmount: 1n,
+            approvedAmount: 0n,
+          },
+          {
+            token,
+            operator: conduitOperator,
+            itemType: ItemType.ERC721,
+            identifierOrCriteria: "2",
+            requiredApprovedAmount: 1n,
+            approvedAmount: 0n,
+          },
+        ],
+        false,
+        signer,
+      )
+
+      expect(approvalActions).to.have.lengthOf(2)
+      expect(approvalActions.map(action => action.operator)).to.deep.equal([
+        seaportOperator,
+        conduitOperator,
+      ])
     })
   },
 )

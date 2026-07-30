@@ -32,6 +32,29 @@ export const approvedItemAmount = async (
   return MAX_INT
 }
 
+export const getApprovalDedupKey = (
+  approval: {
+    token: string
+    operator: string
+    itemType: ItemType
+    identifierOrCriteria: string
+  },
+  exactApproval: boolean,
+): string => {
+  const token = approval.token.toLowerCase()
+  const operator = approval.operator.toLowerCase()
+
+  if (
+    exactApproval &&
+    isErc721Item(approval.itemType) &&
+    !isErc1155Item(approval.itemType)
+  ) {
+    return `${token}:${operator}:${approval.identifierOrCriteria}`
+  }
+
+  return `${token}:${operator}`
+}
+
 /**
  * Get approval actions given a list of insufficient approvals.
  */
@@ -40,12 +63,21 @@ export function getApprovalActions(
   exactApproval: boolean,
   signer: Signer,
 ): ApprovalAction[] {
-  return insufficientApprovals
-    .filter(
-      (approval, index) =>
-        index === insufficientApprovals.length - 1 ||
-        insufficientApprovals[index + 1].token !== approval.token,
-    )
+  const seenApprovalKeys = new Set<string>()
+
+  return [...insufficientApprovals]
+    .reverse()
+    .filter(approval => {
+      const key = getApprovalDedupKey(approval, exactApproval)
+
+      if (seenApprovalKeys.has(key)) {
+        return false
+      }
+
+      seenApprovalKeys.add(key)
+      return true
+    })
+    .reverse()
     .map(
       ({
         token,

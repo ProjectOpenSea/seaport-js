@@ -45,7 +45,7 @@ import type {
   SeaportContract,
   TipInputItem,
 } from "./types"
-import { getApprovalActions } from "./utils/approval"
+import { getApprovalActions, getApprovalDedupKey } from "./utils/approval"
 import {
   getBalancesAndApprovals,
   validateOfferBalancesAndApprovals,
@@ -255,11 +255,18 @@ export class Seaport {
 
       allOrderComponents.push(orderComponents)
 
-      // Dedupe approvals by token address
+      // Dedupe approvals by token and operator (and identifier for exact ERC721)
+      const seenApprovalKeys = new Set(
+        allApprovalActions.map(approval =>
+          getApprovalDedupKey(approval, Boolean(exactApproval)),
+        ),
+      )
+
       for (const approval of approvalActions) {
-        if (
-          allApprovalActions.find(a => a.token === approval.token) === undefined
-        ) {
+        const key = getApprovalDedupKey(approval, Boolean(exactApproval))
+
+        if (!seenApprovalKeys.has(key)) {
+          seenApprovalKeys.add(key)
           allApprovalActions.push(approval)
         }
       }
