@@ -66,6 +66,13 @@ export const getPresentItemAmount = ({
     return startAmountBn
   }
 
+  // A zero-duration order would divide by zero below. Seaport rejects these at
+  // _verifyTime (endTime <= block.timestamp reverts InvalidTime), so the value
+  // is inert; returning endAmount just avoids a RangeError during derivation.
+  if (duration === 0n) {
+    return endAmountBn
+  }
+
   const elapsed =
     (adjustedBlockTimestamp > endTimeBn ? endTimeBn : adjustedBlockTimestamp) -
     startTimeBn
