@@ -47,7 +47,21 @@ export const generateCriteriaResolvers = ({
   ) =>
     criteriaItems.map(({ orderIndex, item, index, side }) => {
       const merkleRoot = item.identifierOrCriteria || "0"
-      const inputCriteria: InputCriteria = criterias[orderIndex][index]
+      const items =
+        side === Side.OFFER
+          ? orders[orderIndex].parameters.offer
+          : orders[orderIndex].parameters.consideration
+      const inputCriteria = getItemToCriteriaMap(
+        items,
+        criterias[orderIndex] ?? [],
+      ).get(item)
+
+      if (!inputCriteria) {
+        throw new Error(
+          "You must supply the appropriate criterias for criteria based items",
+        )
+      }
+
       return {
         orderIndex,
         index,
