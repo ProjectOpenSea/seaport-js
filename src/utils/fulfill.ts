@@ -774,8 +774,8 @@ export function fulfillAvailableOrders({
               ),
             })
           : [],
-        offerFulfillments as any,
-        considerationFulfillments as any,
+        offerFulfillments,
+        considerationFulfillments,
         conduitKey,
         recipientAddress,
         advancedOrdersWithTips.length,
@@ -814,12 +814,12 @@ export function generateFulfillOrdersFulfillments(
 
   const offerAggregatedFulfillments: Record<
     string,
-    FulfillmentComponentStruct
+    FulfillmentComponentStruct[]
   > = {}
 
   const considerationAggregatedFulfillments: Record<
     string,
-    FulfillmentComponentStruct
+    FulfillmentComponentStruct[]
   > = {}
 
   ordersMetadata.forEach(
@@ -840,9 +840,9 @@ export function generateFulfillOrdersFulfillments(
         })}${isErc721Item(item.itemType) ? `${orderIndex}-${itemIndex}` : ""}`
 
         offerAggregatedFulfillments[aggregateKey] = [
-          ...((offerAggregatedFulfillments[aggregateKey] ?? []) as any),
+          ...(offerAggregatedFulfillments[aggregateKey] ?? []),
           { orderIndex, itemIndex },
-        ] as any
+        ]
       })
     },
   )
@@ -864,10 +864,9 @@ export function generateFulfillOrdersFulfillments(
           })}${isErc721Item(item.itemType) ? `${orderIndex}-${itemIndex}` : ""}`
 
           considerationAggregatedFulfillments[aggregateKey] = [
-            ...((considerationAggregatedFulfillments[aggregateKey] ??
-              []) as any),
+            ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
             { orderIndex, itemIndex },
-          ] as any
+          ]
         },
       )
     },
