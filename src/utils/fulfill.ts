@@ -23,7 +23,7 @@ import type {
   OrderWithCounter,
   SeaportContract,
 } from "../types"
-import { getApprovalActions } from "./approval"
+import { getApprovalActions, getApprovalDedupKey } from "./approval"
 import {
   type BalancesAndApprovals,
   type InsufficientApprovals,
@@ -642,9 +642,10 @@ export function fulfillAvailableOrders({
     orderInsufficientApprovals: InsufficientApprovals,
   ) => {
     orderInsufficientApprovals.forEach(insufficientApproval => {
+      const key = getApprovalDedupKey(insufficientApproval, exactApproval)
       if (
-        !totalInsufficientApprovals.find(
-          approval => approval.token === insufficientApproval.token,
+        !totalInsufficientApprovals.some(
+          approval => getApprovalDedupKey(approval, exactApproval) === key,
         )
       ) {
         totalInsufficientApprovals.push(insufficientApproval)
