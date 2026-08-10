@@ -57,6 +57,17 @@ export const deductFees = <T extends Item>(
     0,
   )
 
+  // Fees are deducted from the order's currency consideration items. A total
+  // above 100% (ONE_HUNDRED_PERCENT_BP) would deduct more than the item amount,
+  // producing a negative consideration amount and a malformed order that later
+  // reverts opaquely at ABI-encode time, so surface a clear error here instead.
+  if (totalBasisPoints > Number(ONE_HUNDRED_PERCENT_BP)) {
+    throw new Error(
+      `Total fee basisPoints (${totalBasisPoints}) cannot exceed ${ONE_HUNDRED_PERCENT_BP} (100%). ` +
+        "Fees are deducted from the order's consideration items, so a higher total would produce negative item amounts.",
+    )
+  }
+
   return items.map(item => ({
     ...item,
     startAmount: isCurrencyItem(item)
