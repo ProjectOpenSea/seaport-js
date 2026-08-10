@@ -58,7 +58,7 @@
     "node": ">=20.0.0"
   },
   "overrides": {
-    "get-tsconfig": "4.14.0",
+    "get-tsconfig": "4.14.1",
     "undici": "6.28.0",
     "brace-expansion@2": "2.0.1"
   },
