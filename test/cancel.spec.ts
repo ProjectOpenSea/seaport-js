@@ -134,4 +134,24 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
     )
     expect(cancelOrdersTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT)
   })
+
+  it("treats empty overrides as a no-op", async () => {
+    const { seaport } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const tx = await seaport
+      .cancelOrders(
+        [order.parameters],
+        await offerer.getAddress(),
+        undefined,
+        {},
+      )
+      .buildTransaction()
+
+    expect(tx.to).to.equal(await fixture.seaportContract.getAddress())
+  })
 })
