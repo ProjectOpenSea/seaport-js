@@ -160,7 +160,14 @@ export const getInsufficientBalanceAndApprovalAmounts = ({
         )
 
         return {
-          token,
+          // Report the address as the order carried it, not as the summation
+          // keyed it. `token` here is a key from getSummedTokenAndIdentifierAmounts,
+          // which lowercases so that two casings of one address sum into a
+          // single bucket. That key is an internal grouping detail; it reaches
+          // callers through InsufficientApprovals -> ApprovalAction.token, so
+          // using it here silently lowercased every approval action's token and
+          // broke consumers comparing against a checksummed address.
+          token: balanceAndApproval.token,
           identifierOrCriteria,
           requiredAmount: amount,
           amountHave: balanceAndApproval[filterKey],
