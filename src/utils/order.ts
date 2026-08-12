@@ -15,6 +15,7 @@ import type {
   Item,
   OfferItem,
   Order,
+  OrderComponents,
   OrderParameters,
 } from "../types"
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item"
@@ -22,6 +23,38 @@ import { MerkleTree } from "./merkletree"
 
 const multiplyBasisPoints = (amount: BigNumberish, basisPoints: BigNumberish) =>
   (BigInt(amount) * BigInt(basisPoints)) / ONE_HUNDRED_PERCENT_BP
+
+const deepFreeze = <T>(value: T): T => {
+  if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
+    return value
+  }
+
+  for (const key of Object.keys(value)) {
+    deepFreeze((value as Record<string, unknown>)[key])
+  }
+
+  return Object.freeze(value)
+}
+
+/**
+ * Freezes an order's components before they are handed to a caller.
+ *
+ * `createOrder` and `createBulkOrders` expose the built `orderComponents` on
+ * their create action, and the same object is what `getMessageToSign()` and
+ * `createOrder()` sign. Without this, a caller could read the components,
+ * mutate them, and then sign terms that differ from the ones the SDK built and
+ * validated -- and in an app where one layer inspects the order and another
+ * signs it, those two layers would disagree silently.
+ *
+ * Freezing rather than copying keeps a single object, so a mutation attempt
+ * fails loudly under ESM's strict mode instead of being quietly dropped on a
+ * clone the signer never sees. Every consumer of these components (`signOrder`,
+ * `signBulkOrder`, `_getMessageToSign`, `getBulkOrderTree`) only reads them, and
+ * `getBulkOrderTree` copies before padding, so nothing needs them mutable.
+ */
+export const freezeOrderComponents = <T extends OrderComponents>(
+  orderComponents: T,
+): T => deepFreeze(orderComponents)
 
 export const feeToConsiderationItem = ({
   fee,
