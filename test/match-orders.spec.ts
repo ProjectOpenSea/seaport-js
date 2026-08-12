@@ -183,15 +183,17 @@ describeWithFixture("As a user I want to match an order", fixture => {
           expect(() =>
             seaport.matchAdvancedOrders({
               orders: [
-                { ...order, numerator: 1, denominator: 1, extraData: "0x" },
+                { ...order, numerator: 1n, denominator: 1n, extraData: "0x" },
                 {
                   ...counterOrder,
-                  numerator: 1,
-                  denominator: 1,
+                  numerator: 1n,
+                  denominator: 1n,
                   extraData: "0x",
                 },
               ],
+              criteriaResolvers: [],
               fulfillments,
+              recipient: recipientAddress,
               overrides: { value: 0n },
               accountAddress: recipientAddress,
             }),
