@@ -75,6 +75,7 @@ import {
 export const shouldUseBasicFulfill = (
   { offer, consideration, offerer }: OrderParameters,
   totalFilled: OrderStatus["totalFilled"],
+  tips: ConsiderationItem[] = [],
 ) => {
   // 1. The order must not be partially filled
   if (totalFilled !== 0n) {
@@ -86,7 +87,11 @@ export const shouldUseBasicFulfill = (
     return false
   }
 
-  const allItems = [...offer, ...consideration]
+  // Tips are passed to Seaport as additional recipients on the basic order, so
+  // they have to satisfy the same constraints as the order's own consideration.
+  const considerationIncludingTips = [...consideration, ...tips]
+
+  const allItems = [...offer, ...considerationIncludingTips]
 
   const nfts = allItems.filter(({ itemType }) =>
     [ItemType.ERC721, ItemType.ERC1155].includes(itemType),
@@ -109,7 +114,12 @@ export const shouldUseBasicFulfill = (
   }
 
   // 5. All currencies need to have the same address and item type (Native, ERC20)
-  if (!areAllCurrenciesSame({ offer, consideration })) {
+  if (
+    !areAllCurrenciesSame({
+      offer,
+      consideration: considerationIncludingTips,
+    })
+  ) {
     return false
   }
 
@@ -122,7 +132,7 @@ export const shouldUseBasicFulfill = (
     return false
   }
 
-  const [firstConsideration, ...restConsideration] = consideration
+  const [firstConsideration, ...restConsideration] = considerationIncludingTips
 
   // 7. First consideration item must contain the offerer as the recipient
   const firstConsiderationRecipientIsNotOfferer =
@@ -137,7 +147,7 @@ export const shouldUseBasicFulfill = (
   // amount is not less than the sum of all consideration item amounts excluding the
   // first consideration item amount
   if (
-    consideration.length > 1 &&
+    considerationIncludingTips.length > 1 &&
     restConsideration.every(item => item.itemType === offer[0].itemType) &&
     totalItemsAmount(restConsideration).endAmount > BigInt(offer[0].endAmount)
   ) {
