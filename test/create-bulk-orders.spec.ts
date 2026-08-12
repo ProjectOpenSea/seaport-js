@@ -188,5 +188,39 @@ describeWithFixture(
         conduitOperator,
       ])
     })
+
+  it("does not mutate caller's CreateOrderInput objects", async () => {
+    const { seaport, testErc721, ethers } = fixture
+
+    const [offerer, zone] = await ethers.getSigners()
+
+    await testErc721.mint(await offerer.getAddress(), "1")
+
+    const input = {
+      offer: [
+        {
+          itemType: ItemType.ERC721,
+          token: await testErc721.getAddress(),
+          identifier: "1",
+        },
+      ],
+      consideration: [
+        {
+          amount: parseEther("1").toString(),
+          recipient: await offerer.getAddress(),
+        },
+      ],
+      fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+    }
+
+    // counter is intentionally absent — caller did not set it
+    expect((input as Record<string, unknown>).counter).to.be.undefined
+
+    await seaport.createBulkOrders([input], await offerer.getAddress())
+
+    // Regression: input.counter ??= offererCounter mutated the caller's object.
+    // After the fix (spread copy), the original must remain untouched.
+    expect((input as Record<string, unknown>).counter).to.be.undefined
+  })
   },
 )
