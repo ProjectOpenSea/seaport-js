@@ -1,5 +1,5 @@
 import type { BytesLike } from "ethers"
-import { concat, keccak256, toBeHex } from "ethers"
+import { concat, keccak256 } from "ethers"
 
 export const makeArray = <T>(len: number, getValue: (i: number) => T) =>
   Array(len)
@@ -12,7 +12,7 @@ export const chunk = <T>(array: T[], size: number) => {
   )
 }
 
-export const bufferToHex = (buf: Buffer) => toBeHex(buf.toString("hex"))
+export const bufferToHex = (buf: Buffer) => `0x${buf.toString("hex")}`
 
 export const hexToBuffer = (value: string) => Buffer.from(value.slice(2), "hex")
 
