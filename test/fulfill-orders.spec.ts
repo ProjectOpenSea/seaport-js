@@ -3,7 +3,11 @@ import { expect } from "chai"
 import { parseEther } from "ethers"
 import { ItemType, MAX_INT } from "../src/constants"
 import type { TestERC721, TestERC1155 } from "../src/typechain-types/index"
-import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import type {
+  ApprovalAction,
+  CreateOrderInput,
+  CurrencyItem,
+} from "../src/types"
 import { getTagFromDomain } from "../src/utils/usecase"
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
@@ -1144,6 +1148,96 @@ describeWithFixture(
       })
     })
 
+    describe("exactApproval: true", () => {
+      it("generates a separate approve action for each ERC721 token ID when filling multiple buy orders from the same collection", async () => {
+        const { seaport, testErc721, testErc20 } = fixture
+
+        await testErc721.mint(await fulfiller.getAddress(), nftId)
+        await testErc721.mint(await fulfiller.getAddress(), nftId2)
+        await testErc20.mint(
+          await offerer.getAddress(),
+          parseEther("20").toString(),
+        )
+        await testErc20.mint(
+          await secondOfferer.getAddress(),
+          parseEther("10").toString(),
+        )
+
+        const firstOrder = await (
+          await seaport.createOrder({
+            offer: [
+              {
+                amount: parseEther("10").toString(),
+                token: await testErc20.getAddress(),
+              },
+            ],
+            consideration: [
+              {
+                itemType: ItemType.ERC721,
+                token: await testErc721.getAddress(),
+                identifier: nftId,
+                recipient: await offerer.getAddress(),
+              },
+            ],
+          })
+        ).executeAllActions()
+
+        const secondOrder = await (
+          await seaport.createOrder(
+            {
+              offer: [
+                {
+                  amount: parseEther("10").toString(),
+                  token: await testErc20.getAddress(),
+                },
+              ],
+              consideration: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: await testErc721.getAddress(),
+                  identifier: nftId2,
+                  recipient: await secondOfferer.getAddress(),
+                },
+              ],
+            },
+            await secondOfferer.getAddress(),
+          )
+        ).executeAllActions()
+
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [{ order: firstOrder }, { order: secondOrder }],
+          accountAddress: await fulfiller.getAddress(),
+          exactApproval: true,
+        })
+
+        // With exactApproval=true, each token ID needs its own approve() call.
+        // Before the fix, addApprovalIfNeeded deduped by token only, so
+        // the approval for nftId2 was silently dropped.
+        const erc721Address = await testErc721.getAddress()
+        const nftApprovals = actions.filter(
+          (action): action is ApprovalAction =>
+            action.type === "approval" && action.token === erc721Address,
+        )
+        expect(nftApprovals.length).to.equal(2)
+        expect(nftApprovals.map(a => a.identifierOrCriteria)).to.have.members([
+          nftId,
+          nftId2,
+        ])
+
+        for (const action of actions.filter(a => a.type === "approval")) {
+          await action.transactionMethods.transact()
+        }
+
+        await actions[actions.length - 1].transactionMethods.transact()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await offerer.getAddress(),
+        )
+        expect(await testErc721.ownerOf(nftId2)).to.equal(
+          await secondOfferer.getAddress(),
+        )
+      })
+    })
     // TODO
     describe("Special use cases", () => {
       it("Can fulfill dutch auction orders", () => {})
