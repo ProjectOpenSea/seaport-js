@@ -3,7 +3,7 @@ import { expect } from "chai"
 import { parseEther } from "ethers"
 import { ItemType, MAX_INT } from "../src/constants"
 import type { TestERC721, TestERC1155 } from "../src/typechain-types/index"
-import type { CreateOrderInput, CurrencyItem } from "../src/types"
+import type { ApprovalAction, CreateOrderInput, CurrencyItem } from "../src/types"
 import { getTagFromDomain } from "../src/utils/usecase"
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
@@ -1182,8 +1182,10 @@ describeWithFixture(
         // With exactApproval=true, each token ID needs its own approve() call.
         // Before the fix, addApprovalIfNeeded deduped by token only, so
         // the approval for nftId2 was silently dropped.
+        const erc721Address = await testErc721.getAddress()
         const nftApprovals = actions.filter(
-          a => a.type === "approval" && a.token === (await testErc721.getAddress()),
+          (action): action is ApprovalAction =>
+            action.type === "approval" && action.token === erc721Address,
         )
         expect(nftApprovals.length).to.equal(2)
         expect(nftApprovals.map(a => a.identifierOrCriteria)).to.have.members([nftId, nftId2])
