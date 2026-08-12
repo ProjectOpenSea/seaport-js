@@ -28,6 +28,52 @@ type Fixture = {
   ethers: HardhatEthers
 }
 
+/**
+ * Pulls the chain's clock forward to wall-clock time.
+ *
+ * The simulated chain only advances its timestamp when a block is mined, one
+ * second per block, so chain time tracks *blocks mined*, not elapsed real time.
+ * Wall clock keeps running regardless. Over a suite that mines few blocks but
+ * takes a long time, chain time falls behind real time, and it never catches up
+ * on its own because the network is not recreated between tests.
+ *
+ * That matters because `createOrder` defaults `startTime` to
+ * `Math.floor(Date.now() / 1000)`, which is wall clock. Once the drift exceeds
+ * the blocks a test mines, every order it creates has a `startTime` in the
+ * chain's future, Seaport skips them all as not yet active, and a multi-order
+ * fulfillment reverts with `NoSpecifiedOrdersAvailable()`.
+ *
+ * The failure is timing-dependent rather than deterministic, which is why it
+ * showed up only under `npm run coverage` (roughly 3x slower) and only
+ * intermittently: it needs total suite wall time to outrun total blocks mined.
+ *
+ * Only ever moves the clock forward. When a test has mined enough blocks to put
+ * chain time ahead of wall clock, this is a no-op, and
+ * `evm_setNextBlockTimestamp` rejects a timestamp at or behind the current
+ * block anyway.
+ */
+export type ChainTimeProvider = {
+  provider: {
+    getBlock: (tag: string) => Promise<{ timestamp: number } | null>
+    send: (method: string, params: unknown[]) => Promise<unknown>
+  }
+}
+
+export const syncChainTimeToWallClock = async (
+  ethers: ChainTimeProvider,
+  nowSeconds = Math.floor(Date.now() / 1000),
+) => {
+  const latest = await ethers.provider.getBlock("latest")
+
+  if (!latest || latest.timestamp >= nowSeconds) {
+    return false
+  }
+
+  await ethers.provider.send("evm_setNextBlockTimestamp", [nowSeconds])
+  await ethers.provider.send("evm_mine", [])
+  return true
+}
+
 export const describeWithFixture = (
   name: string,
   suiteCb: (fixture: Fixture) => unknown,
@@ -105,6 +151,8 @@ export const describeWithFixture = (
       fixture.testErc20USDC = testErc20USDC
       fixture.testERC1271Wallet = testERC1271Wallet
       fixture.ethers = ethers
+
+      await syncChainTimeToWallClock(ethers)
     })
 
     suiteCb(fixture as Fixture)
