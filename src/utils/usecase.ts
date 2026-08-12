@@ -18,7 +18,21 @@ import type {
   OrderUseCase,
 } from "../types"
 
-export const executeAllActions = async <
+/**
+ * Sends every approval transaction in a use case and waits for its receipt,
+ * without performing the use case's final action.
+ *
+ * Useful when the offerer approves an order onchain instead of by signature,
+ * for example through Seaport's `validate()`. A smart contract account may not
+ * be able to produce an offchain signature at all, so requesting one in order
+ * to build the order is a hard blocker rather than just a wasted prompt. Pair
+ * this with the create action's `orderComponents` to get a ready-to-validate
+ * order without any signature request.
+ *
+ * Approvals run sequentially because they are transactions from a single
+ * account and take consecutive nonces.
+ */
+export const executeApprovals = async <
   T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,
 >(
   actions: OrderUseCase<T>["actions"],
@@ -30,6 +44,14 @@ export const executeAllActions = async <
       await tx.wait()
     }
   }
+}
+
+export const executeAllActions = async <
+  T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,
+>(
+  actions: OrderUseCase<T>["actions"],
+) => {
+  await executeApprovals(actions)
 
   const finalAction = actions[actions.length - 1] as T
 
