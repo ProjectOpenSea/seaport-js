@@ -245,12 +245,12 @@ export class Seaport {
     const allOrderComponents: OrderComponents[] = []
 
     for (const input of createOrderInput) {
-      input.counter ??= offererCounter
+      const orderInput = { ...input, counter: input.counter ?? offererCounter }
       const { orderComponents, approvalActions } = await this._formatOrder(
         signer,
         offerer,
         Boolean(exactApproval),
-        input,
+        orderInput,
       )
 
       allOrderComponents.push(orderComponents)
