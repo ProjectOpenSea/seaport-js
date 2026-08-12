@@ -161,6 +161,42 @@ describeWithFixture("As a user I want to match an order", fixture => {
             }),
           ).not.to.throw()
         })
+
+        it("does not throw when value is explicitly 0n for ETH orders (matchAdvancedOrders)", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            privateListingCreateOrderInput,
+          )
+
+          const order = await executeAllActions()
+
+          const recipientAddress = await privateListingRecipient.getAddress()
+          const counterOrder = constructPrivateListingCounterOrder(
+            order,
+            recipientAddress,
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
+
+          // Regression: same falsy-0n bug exists in matchAdvancedOrders via
+          // the shared _validateMatchOrdersNativeValue helper.
+          expect(() =>
+            seaport.matchAdvancedOrders({
+              orders: [
+                { ...order, numerator: 1, denominator: 1, extraData: "0x" },
+                {
+                  ...counterOrder,
+                  numerator: 1,
+                  denominator: 1,
+                  extraData: "0x",
+                },
+              ],
+              fulfillments,
+              overrides: { value: 0n },
+              accountAddress: recipientAddress,
+            }),
+          ).not.to.throw()
+        })
       })
 
       describe("with ERC20", () => {
