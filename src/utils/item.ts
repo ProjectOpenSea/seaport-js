@@ -106,15 +106,19 @@ export const getSummedTokenAndIdentifierAmounts = ({
   >((map, item) => {
     const identifierOrCriteria =
       itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria
+    // The same token can arrive in different casings (e.g. checksummed from one
+    // source, lowercased from another). Normalize the key so those items are
+    // summed into a single bucket, matching the case-insensitive lookup done by
+    // findBalanceAndApproval.
+    const token = item.token.toLowerCase()
 
     return {
       ...map,
-      [item.token]: {
-        ...map[item.token],
+      [token]: {
+        ...map[token],
         // Being explicit about the undefined type as it's possible for it to be undefined at first iteration
         [identifierOrCriteria]:
-          ((map[item.token]?.[identifierOrCriteria] as bigint | undefined) ??
-            0n) +
+          ((map[token]?.[identifierOrCriteria] as bigint | undefined) ?? 0n) +
           getPresentItemAmount({
             startAmount: item.startAmount,
             endAmount: item.endAmount,

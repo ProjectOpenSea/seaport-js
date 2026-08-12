@@ -1,5 +1,10 @@
 import { expect } from "chai"
-import { getPresentItemAmount } from "../../src/utils/item"
+import { ItemType } from "../../src/constants"
+import type { Item } from "../../src/types"
+import {
+  getPresentItemAmount,
+  getSummedTokenAndIdentifierAmounts,
+} from "../../src/utils/item"
 
 describe("getPresentItemAmount", () => {
   describe("zero-duration order (startTime === endTime)", () => {
@@ -65,5 +70,28 @@ describe("getPresentItemAmount", () => {
       })
       expect(result).to.equal(1000n)
     })
+  })
+})
+
+describe("getSummedTokenAndIdentifierAmounts", () => {
+  const erc20Item = (token: string, amount: string): Item => ({
+    itemType: ItemType.ERC20,
+    token,
+    identifierOrCriteria: "0",
+    startAmount: amount,
+    endAmount: amount,
+  })
+
+  it("sums amounts for the same token regardless of address casing", () => {
+    const checksummed = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    const lowercased = checksummed.toLowerCase()
+
+    const result = getSummedTokenAndIdentifierAmounts({
+      items: [erc20Item(checksummed, "100"), erc20Item(lowercased, "200")],
+      criterias: [],
+    })
+
+    expect(Object.keys(result)).to.deep.equal([lowercased])
+    expect(result[lowercased]["0"]).to.equal(300n)
   })
 })
