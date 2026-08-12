@@ -930,6 +930,79 @@ describeWithFixture("As a user I want to create an order", fixture => {
     expect(order.parameters.zone).eq(zone)
     expect(order.parameters.zoneHash).eq(zoneHash)
   })
+
+  describe("exposed orderComponents", () => {
+    const nftId = "1"
+
+    const orderInput = async () => {
+      const { testErc721, ethers } = fixture
+      const [offerer] = await ethers.getSigners()
+
+      await testErc721.mint(await offerer.getAddress(), nftId)
+
+      const input: CreateOrderInput = {
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: await testErc721.getAddress(),
+            identifier: nftId,
+          },
+        ],
+        consideration: [
+          {
+            amount: parseEther("10").toString(),
+            recipient: await offerer.getAddress(),
+          },
+        ],
+      }
+
+      return { offerer, input }
+    }
+
+    it("cannot be mutated to change what gets signed", async () => {
+      const { seaport } = fixture
+      const { input } = await orderInput()
+
+      const { actions } = await seaport.createOrder(input)
+      const createAction = actions[actions.length - 1]
+      if (createAction.type !== "create") throw new Error("expected create")
+
+      const { orderComponents } = createAction
+
+      // The exposed object is the one that gets signed, so a caller must not be
+      // able to read it, change the terms, and then sign the changed terms.
+      expect(Object.isFrozen(orderComponents)).to.be.true
+      expect(Object.isFrozen(orderComponents.consideration)).to.be.true
+      expect(Object.isFrozen(orderComponents.consideration[0])).to.be.true
+      expect(Object.isFrozen(orderComponents.offer[0])).to.be.true
+
+      const attacker = "0x000000000000000000000000000000000000dEaD"
+      expect(() => {
+        ;(orderComponents.consideration[0] as { recipient: string }).recipient =
+          attacker
+      }).to.throw()
+      expect(orderComponents.consideration[0].recipient).to.not.equal(attacker)
+    })
+
+    it("still signs and hashes correctly once frozen", async () => {
+      const { seaport } = fixture
+      const { input } = await orderInput()
+
+      const { actions, executeAllActions } = await seaport.createOrder(input)
+      const createAction = actions[actions.length - 1]
+      if (createAction.type !== "create") throw new Error("expected create")
+
+      // Freezing must not break any consumer of the components: the EIP-712
+      // payload, the signature, and the order hash all read the same object.
+      const payload = await createAction.getMessageToSign()
+      expect(JSON.parse(payload).message.offerer).to.be.a("string")
+
+      const order = await executeAllActions()
+      expect(order.signature).to.be.a("string")
+      expect(seaport.getOrderHash(order.parameters)).to.be.a("string")
+      expect(order.parameters).to.deep.equal(createAction.orderComponents)
+    })
+  })
 })
 
 describeWithFixture(

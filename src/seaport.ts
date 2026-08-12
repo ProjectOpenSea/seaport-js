@@ -65,6 +65,7 @@ import {
   areAllCurrenciesSame,
   deductFees,
   feeToConsiderationItem,
+  freezeOrderComponents,
   generateRandomSalt,
   mapInputItemToOfferItem,
   totalItemsAmount,
@@ -192,12 +193,12 @@ export class Seaport {
     const signer = await this._getSigner(accountAddress)
     const offerer = accountAddress ?? (await signer.getAddress())
 
-    const { orderComponents, approvalActions } = await this._formatOrder(
-      signer,
-      offerer,
-      Boolean(exactApproval),
-      input,
-    )
+    const { orderComponents: builtComponents, approvalActions } =
+      await this._formatOrder(signer, offerer, Boolean(exactApproval), input)
+
+    // Frozen because this same object is both exposed on the action and signed
+    // below; see freezeOrderComponents.
+    const orderComponents = freezeOrderComponents(builtComponents)
 
     const createOrderAction = {
       type: "create",
@@ -256,7 +257,9 @@ export class Seaport {
         orderInput,
       )
 
-      allOrderComponents.push(orderComponents)
+      // Frozen because these same objects are both exposed on the action and
+      // signed below; see freezeOrderComponents.
+      allOrderComponents.push(freezeOrderComponents(orderComponents))
 
       // Dedupe approvals by token and operator (and identifier for exact ERC721)
       const seenApprovalKeys = new Set(
@@ -274,6 +277,10 @@ export class Seaport {
         }
       }
     }
+
+    // The array itself too, so a caller cannot reorder or drop an order after
+    // reading it; the signature covers the batch in this exact order.
+    Object.freeze(allOrderComponents)
 
     const createBulkOrdersAction = {
       type: "createBulk",

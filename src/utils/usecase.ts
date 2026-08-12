@@ -31,6 +31,12 @@ import type {
  *
  * Approvals run sequentially because they are transactions from a single
  * account and take consecutive nonces.
+ *
+ * Note that this grants the approvals and then stops, so abandoning the flow
+ * afterwards leaves them standing with no order behind them. With the default
+ * `exactApproval: false` an ERC721/ERC1155 approval is `setApprovalForAll`,
+ * which is collection-wide. Callers who may not go on to create or fulfill
+ * should prefer `exactApproval: true`, or revoke afterwards.
  */
 export const executeApprovals = async <
   T extends CreateOrderAction | CreateBulkOrdersAction | ExchangeAction,
