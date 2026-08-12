@@ -133,6 +133,34 @@ describeWithFixture("As a user I want to match an order", fixture => {
             "Orders contain native ETH items but no `value` was provided",
           )
         })
+
+        it("does not throw when value is explicitly 0n for ETH orders", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            privateListingCreateOrderInput,
+          )
+
+          const order = await executeAllActions()
+
+          const recipientAddress = await privateListingRecipient.getAddress()
+          const counterOrder = constructPrivateListingCounterOrder(
+            order,
+            recipientAddress,
+          )
+          const fulfillments = getPrivateListingFulfillments(order)
+
+          // Regression: !overrides?.value treats 0n as falsy and incorrectly
+          // throws. overrides?.value == null must be used instead.
+          expect(() =>
+            seaport.matchOrders({
+              orders: [order, counterOrder],
+              fulfillments,
+              overrides: { value: 0n },
+              accountAddress: recipientAddress,
+            }),
+          ).not.to.throw()
+        })
       })
 
       describe("with ERC20", () => {
