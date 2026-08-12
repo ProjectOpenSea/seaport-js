@@ -5,6 +5,7 @@ import type {
   ApprovalAction,
   BasicErc721Item,
   CreateBulkOrdersAction,
+  CreateOrderInput,
 } from "../src/types"
 import { getApprovalActions } from "../src/utils/approval"
 import { generateRandomSalt } from "../src/utils/order"
@@ -187,6 +188,40 @@ describeWithFixture(
         seaportOperator,
         conduitOperator,
       ])
+    })
+
+    it("does not mutate caller's CreateOrderInput objects", async () => {
+      const { seaport, testErc721, ethers } = fixture
+
+      const [offerer, zone] = await ethers.getSigners()
+
+      await testErc721.mint(await offerer.getAddress(), "1")
+
+      const input: CreateOrderInput = {
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: await testErc721.getAddress(),
+            identifier: "1",
+          },
+        ],
+        consideration: [
+          {
+            amount: parseEther("1").toString(),
+            recipient: await offerer.getAddress(),
+          },
+        ],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+      }
+
+      // counter is intentionally absent — caller did not set it
+      expect(input.counter).to.be.undefined
+
+      await seaport.createBulkOrders([input], await offerer.getAddress())
+
+      // Regression: input.counter ??= offererCounter mutated the caller's object.
+      // After the fix (spread copy), the original must remain untouched.
+      expect(input.counter).to.be.undefined
     })
   },
 )
