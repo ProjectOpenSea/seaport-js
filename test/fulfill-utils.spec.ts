@@ -7,7 +7,10 @@ import type {
   OrderParameters,
 } from "../src/types"
 import type { FulfillOrdersMetadata } from "../src/utils/fulfill"
-import { generateFulfillOrdersFulfillments } from "../src/utils/fulfill"
+import {
+  generateFulfillOrdersFulfillments,
+  shouldUseBasicFulfill,
+} from "../src/utils/fulfill"
 
 const OFFERER = "0x1111111111111111111111111111111111111111"
 const RECIPIENT = "0x2222222222222222222222222222222222222222"
@@ -159,5 +162,51 @@ describe("generateFulfillOrdersFulfillments", () => {
         ],
       ])
     })
+  })
+})
+
+describe("shouldUseBasicFulfill", () => {
+  const ERC20_TOKEN = "0x4444444444444444444444444444444444444444"
+
+  const nativeItem = (amount = "1000"): ConsiderationItem => ({
+    itemType: ItemType.NATIVE,
+    token: ZERO_ADDR,
+    identifierOrCriteria: "0",
+    startAmount: amount,
+    endAmount: amount,
+    recipient: OFFERER,
+  })
+
+  const erc20Item = (amount = "10"): ConsiderationItem => ({
+    itemType: ItemType.ERC20,
+    token: ERC20_TOKEN,
+    identifierOrCriteria: "0",
+    startAmount: amount,
+    endAmount: amount,
+    recipient: RECIPIENT,
+  })
+
+  const listing = makeOrder({
+    offer: [erc721Item()],
+    consideration: [nativeItem()],
+  })
+
+  it("uses basic fulfill for a plain native listing", () => {
+    expect(shouldUseBasicFulfill(listing.parameters, 0n)).to.equal(true)
+  })
+
+  it("still uses basic fulfill when a tip shares the order's currency", () => {
+    expect(
+      shouldUseBasicFulfill(listing.parameters, 0n, [nativeItem("5")]),
+    ).to.equal(true)
+  })
+
+  it("falls back to standard fulfill when a tip uses a different currency", () => {
+    // fulfillBasicOrder passes tips through additionalRecipients, which Seaport
+    // pays out in considerationToken. An ERC20 tip on a native order would be
+    // paid as native currency, so the basic route must be rejected here.
+    expect(
+      shouldUseBasicFulfill(listing.parameters, 0n, [erc20Item()]),
+    ).to.equal(false)
   })
 })
