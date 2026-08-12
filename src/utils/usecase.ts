@@ -83,11 +83,15 @@ const instanceOfOverrides = <T extends Overrides>(
     "overrides",
   ]
 
-  return (
-    obj === undefined ||
-    (Object.keys(obj).length > 0 &&
-      Object.keys(obj).every(key => validKeys.includes(key)))
-  )
+  if (obj === undefined) {
+    return true
+  }
+
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
+    return false
+  }
+
+  return Object.keys(obj).every(key => validKeys.includes(key))
 }
 
 export type ContractMethodReturnType<
