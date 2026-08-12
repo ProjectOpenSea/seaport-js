@@ -1265,7 +1265,7 @@ export class Seaport {
         params.consideration.some(item => item.itemType === ItemType.NATIVE),
     )
 
-    if (hasNativeToken && !overrides?.value) {
+    if (hasNativeToken && overrides?.value == null) {
       throw new Error(
         "Orders contain native ETH items but no `value` was provided in overrides. " +
           "Pass the required ETH amount via `overrides: { value }` to avoid a revert.",
