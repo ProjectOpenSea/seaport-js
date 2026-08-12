@@ -175,12 +175,23 @@ export type ExchangeAction<T = unknown> = {
 
 export type CreateOrderAction = {
   type: "create"
+  /**
+   * The fully built order, ready to sign or to validate onchain. Reading this
+   * requests nothing from the wallet, unlike `createOrder()`.
+   */
+  orderComponents: OrderComponents
   getMessageToSign: () => Promise<string>
   createOrder: () => Promise<OrderWithCounter>
 }
 
 export type CreateBulkOrdersAction = {
   type: "createBulk"
+  /**
+   * The fully built orders, in input order, ready to sign or to validate
+   * onchain. Reading this requests nothing from the wallet, unlike
+   * `createBulkOrders()`.
+   */
+  orderComponents: OrderComponents[]
   getMessageToSign: () => Promise<string>
   createBulkOrders: () => Promise<OrderWithCounter[]>
 }
@@ -217,6 +228,12 @@ export type OrderUseCase<
         ? OrderWithCounter[]
         : ContractTransaction
   >
+  /**
+   * Performs the approval transactions only, skipping the final action. Use
+   * with a create action's `orderComponents` to build an order the offerer
+   * approves onchain rather than by signature.
+   */
+  executeApprovals: () => Promise<void>
 }
 
 export type FulfillmentComponent = {

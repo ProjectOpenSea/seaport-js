@@ -72,6 +72,7 @@ import {
 import {
   type ContractMethodReturnType,
   executeAllActions,
+  executeApprovals,
   getTransactionMethods,
   type TransactionMethods,
 } from "./utils/usecase"
@@ -200,6 +201,7 @@ export class Seaport {
 
     const createOrderAction = {
       type: "create",
+      orderComponents,
       getMessageToSign: () => {
         return this._getMessageToSign(orderComponents)
       },
@@ -219,6 +221,7 @@ export class Seaport {
       actions,
       executeAllActions: () =>
         executeAllActions(actions) as Promise<OrderWithCounter>,
+      executeApprovals: () => executeApprovals(actions),
     }
   }
 
@@ -274,6 +277,7 @@ export class Seaport {
 
     const createBulkOrdersAction = {
       type: "createBulk",
+      orderComponents: allOrderComponents,
       getMessageToSign: () => {
         return this._getBulkMessageToSign(allOrderComponents)
       },
@@ -289,6 +293,7 @@ export class Seaport {
       actions,
       executeAllActions: () =>
         executeAllActions(actions) as Promise<OrderWithCounter[]>,
+      executeApprovals: () => executeApprovals(actions),
     }
   }
 

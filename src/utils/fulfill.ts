@@ -52,6 +52,7 @@ import {
 import {
   type ContractMethodReturnType,
   executeAllActions,
+  executeApprovals,
   getTransactionMethods,
 } from "./usecase"
 
@@ -313,6 +314,7 @@ export function fulfillBasicOrder(
     actions,
     executeAllActions: () =>
       executeAllActions(actions) as Promise<ContractTransaction>,
+    executeApprovals: () => executeApprovals(actions),
   }
 }
 
@@ -503,6 +505,7 @@ export function fulfillStandardOrder(
     actions,
     executeAllActions: () =>
       executeAllActions(actions) as Promise<ContractTransaction>,
+    executeApprovals: () => executeApprovals(actions),
   }
 }
 
@@ -791,6 +794,7 @@ export function fulfillAvailableOrders({
     actions,
     executeAllActions: () =>
       executeAllActions(actions) as Promise<ContractTransaction>,
+    executeApprovals: () => executeApprovals(actions),
   }
 }
 
