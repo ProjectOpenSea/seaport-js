@@ -104,5 +104,29 @@ describeWithFixture(
         expectedExampleDomainArray,
       )
     })
+
+    it("Should revert with DomainIndexOutOfRange for an unregistered tag", async () => {
+      const { seaport } = fixture
+
+      const unknownTag = "0x12345678"
+
+      await expect(
+        seaport.getDomain(unknownTag, 0),
+      ).to.be.revertedWithCustomError(
+        seaport.domainRegistry,
+        "DomainIndexOutOfRange",
+      )
+    })
+
+    it("Should revert with DomainIndexOutOfRange for an out-of-range index", async () => {
+      const { seaport } = fixture
+
+      await expect(
+        seaport.getDomain(exampleTag, 4),
+      ).to.be.revertedWithCustomError(
+        seaport.domainRegistry,
+        "DomainIndexOutOfRange",
+      )
+    })
   },
 )

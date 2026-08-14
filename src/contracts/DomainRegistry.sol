@@ -121,13 +121,16 @@ contract DomainRegistry is DomainRegistryInterface {
         view
         returns (string memory domain)
     {
-        // Get the maximum possible index of the array of registered domains for the input tag.
-        uint256 maxIndex = _registry[tag].length - 1;
+        // Get the length of the array of registered domains for the input tag.
+        uint256 length = _registry[tag].length;
 
-        // Revert if the index parameter is out of range for the array of domains
-        // corresponding to the tag.
-        if (index > maxIndex) {
-            revert DomainIndexOutOfRange(tag, maxIndex, index);
+        // Avoid underflow when the tag has no registered domains.
+        if (index >= length) {
+            revert DomainIndexOutOfRange(
+                tag,
+                length == 0 ? 0 : length - 1,
+                index
+            );
         }
 
         // Return the domain for the given tag at the given index.
