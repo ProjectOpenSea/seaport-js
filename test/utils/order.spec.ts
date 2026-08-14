@@ -1,7 +1,7 @@
 import { expect } from "chai"
-import { ItemType } from "../../src/constants"
-import type { ConsiderationItem } from "../../src/types"
-import { deductFees } from "../../src/utils/order"
+import { ItemType, OrderType } from "../../src/constants"
+import type { ConsiderationItem, OrderComponents } from "../../src/types"
+import { deductFees, freezeOrderComponents } from "../../src/utils/order"
 
 // deductFees subtracts the summed fee basisPoints from every currency item and
 // is the point where an out-of-range fee first turns an order malformed: a total
@@ -75,5 +75,87 @@ describe("deductFees fee-basisPoints bound", () => {
         ],
       ),
     ).to.throw("Total fee basisPoints (10001) cannot exceed 10000 (100%)")
+  })
+})
+
+// freezeOrderComponents is what stops a caller from reading orderComponents off
+// a create action, mutating it, and having the SDK sign different terms than
+// what was exposed -- see the JSDoc on freezeOrderComponents for the full
+// rationale. It's only otherwise exercised indirectly through the
+// hardhat-network-backed execute-approvals.spec.ts, so it's worth covering as a
+// fast, isolated unit here.
+describe("freezeOrderComponents", () => {
+  const orderComponents = (): OrderComponents => ({
+    offerer: "0x0000000000000000000000000000000000000001",
+    zone: "0x0000000000000000000000000000000000000000",
+    offer: [
+      {
+        itemType: ItemType.ERC721,
+        token: "0x0000000000000000000000000000000000000002",
+        identifierOrCriteria: "1",
+        startAmount: "1",
+        endAmount: "1",
+      },
+    ],
+    consideration: [
+      {
+        itemType: ItemType.NATIVE,
+        token: "0x0000000000000000000000000000000000000000",
+        identifierOrCriteria: "0",
+        startAmount: "100",
+        endAmount: "100",
+        recipient: "0x0000000000000000000000000000000000000003",
+      },
+    ],
+    orderType: OrderType.FULL_OPEN,
+    startTime: "0",
+    endTime: "999999",
+    zoneHash: `0x${"00".repeat(32)}`,
+    salt: "1",
+    totalOriginalConsiderationItems: "1",
+    conduitKey: `0x${"00".repeat(32)}`,
+    counter: "0",
+  })
+
+  it("returns the same object reference rather than a clone", () => {
+    const input = orderComponents()
+    expect(freezeOrderComponents(input)).to.equal(input)
+  })
+
+  it("freezes the top-level order components", () => {
+    const frozen = freezeOrderComponents(orderComponents())
+    expect(Object.isFrozen(frozen)).to.be.true
+    expect(() => {
+      frozen.salt = "2"
+    }).to.throw(TypeError)
+  })
+
+  it("deep-freezes offer items, not just the offer array", () => {
+    const frozen = freezeOrderComponents(orderComponents())
+    expect(Object.isFrozen(frozen.offer)).to.be.true
+    expect(Object.isFrozen(frozen.offer[0])).to.be.true
+    expect(() => {
+      frozen.offer[0].startAmount = "999"
+    }).to.throw(TypeError)
+  })
+
+  it("deep-freezes consideration items, not just the consideration array", () => {
+    const frozen = freezeOrderComponents(orderComponents())
+    expect(Object.isFrozen(frozen.consideration)).to.be.true
+    expect(Object.isFrozen(frozen.consideration[0])).to.be.true
+    expect(() => {
+      frozen.consideration[0].recipient =
+        "0x000000000000000000000000000000000000ff"
+    }).to.throw(TypeError)
+    expect(() => {
+      frozen.offer.push(frozen.offer[0])
+    }).to.throw(TypeError)
+  })
+
+  it("does not throw when a nested item is already frozen", () => {
+    const input = orderComponents()
+    Object.freeze(input.offer[0])
+    expect(() => freezeOrderComponents(input)).to.not.throw()
+    expect(Object.isFrozen(input)).to.be.true
   })
 })
