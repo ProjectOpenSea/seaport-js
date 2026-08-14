@@ -104,5 +104,36 @@ describeWithFixture(
         expectedExampleDomainArray,
       )
     })
+
+    it("Should explain the out-of-range index when the tag has no domains", async () => {
+      const { seaport } = fixture
+
+      const unregisteredTag = "0xdeadbeef"
+
+      expect(await seaport.getNumberOfDomains(unregisteredTag)).to.eq(0)
+
+      // The registry underflows on `length - 1` before it bounds-checks, so
+      // without translation this surfaces as Panic(0x11).
+      await expect(seaport.getDomain(unregisteredTag, 0)).to.be.rejectedWith(
+        `No domains are registered under tag ${unregisteredTag}, so index 0 is out of range.`,
+      )
+    })
+
+    it("Should leave DomainIndexOutOfRange intact when the tag has domains", async () => {
+      const { seaport } = fixture
+
+      await expect(
+        seaport.getDomain(exampleTag, 4),
+      ).to.be.revertedWithCustomError(
+        seaport.domainRegistry,
+        "DomainIndexOutOfRange",
+      )
+    })
+
+    it("Should still return an empty array of domains for an unregistered tag", async () => {
+      const { seaport } = fixture
+
+      expect(await seaport.getDomains("0xdeadbeef")).to.deep.eq([])
+    })
   },
 )

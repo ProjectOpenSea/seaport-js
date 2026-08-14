@@ -1231,8 +1231,28 @@ export class Seaport {
    * @param index The index.
    * @returns The domain at the index for the given tag.
    */
-  public getDomain(tag: string, index: number): Promise<string> {
-    return this.domainRegistry.getDomain(tag, index)
+  public async getDomain(tag: string, index: number): Promise<string> {
+    try {
+      return await this.domainRegistry.getDomain(tag, index)
+    } catch (error) {
+      // The registry reads `_registry[tag].length - 1` before bounds-checking
+      // the index, so a tag with no registered domains underflows and reverts
+      // with Panic(0x11) instead of DomainIndexOutOfRange. The registry is
+      // deployed and immutable, so the empty case is translated here. A tag
+      // that does have domains already reverts with DomainIndexOutOfRange and
+      // is left to propagate untouched.
+      const totalDomains = await this.domainRegistry
+        .getNumberOfDomains(tag)
+        .catch(() => undefined)
+
+      if (totalDomains === 0n) {
+        throw new Error(
+          `No domains are registered under tag ${tag}, so index ${index} is out of range.`,
+        )
+      }
+
+      throw error
+    }
   }
 
   /**
