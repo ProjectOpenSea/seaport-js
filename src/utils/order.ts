@@ -360,12 +360,18 @@ export function mapTipAmountsFromFilledStatus(
 
 export const generateRandomSalt = (domain?: string) => {
   if (domain) {
+    // Width the hex to a full 32 bytes. `concat` already produces 32 bytes, but
+    // an unwidthed `toBeHex` re-encodes the value as a number and drops leading
+    // zero bytes, so a domain whose hash starts with 0x00 -- roughly one in 256
+    // -- would yield a 31-byte salt whose first four bytes read as the tag
+    // shifted a byte left, leaving the domain unrecoverable from the salt.
     return toBeHex(
       concat([
         keccak256(toUtf8Bytes(domain)).slice(0, 10),
         Uint8Array.from(Array(20).fill(0)),
         randomBytes(8),
       ]),
+      32,
     )
   }
   return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`

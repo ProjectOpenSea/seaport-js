@@ -1,7 +1,12 @@
 import { expect } from "chai"
 import { ItemType, OrderType } from "../../src/constants"
 import type { ConsiderationItem, OrderComponents } from "../../src/types"
-import { deductFees, freezeOrderComponents } from "../../src/utils/order"
+import {
+  deductFees,
+  freezeOrderComponents,
+  generateRandomSalt,
+} from "../../src/utils/order"
+import { getTagFromDomain } from "../../src/utils/usecase"
 
 // deductFees subtracts the summed fee basisPoints from every currency item and
 // is the point where an out-of-range fee first turns an order malformed: a total
@@ -157,5 +162,41 @@ describe("freezeOrderComponents", () => {
     Object.freeze(input.offer[0])
     expect(() => freezeOrderComponents(input)).to.not.throw()
     expect(Object.isFrozen(input)).to.be.true
+  })
+})
+
+// A domain-tagged salt carries the first four bytes of keccak256(domain) so the
+// order can be attributed back to the domain it came from. That only works if
+// the salt keeps its full 32-byte width: dropping a leading zero byte shifts
+// every following byte left, and the tag can no longer be read off the salt.
+describe("generateRandomSalt domain tag", () => {
+  const tagOf = (domain: string) => getTagFromDomain(domain)
+
+  // keccak256 of each of these starts with a 0x00 byte
+  const zeroLeadingDomains = ["d362", "d562", "d935"]
+
+  it("keeps the tag readable for a domain hashing to a leading zero byte", () => {
+    for (const domain of zeroLeadingDomains) {
+      const tag = tagOf(domain)
+      expect(tag.slice(0, 2), `${domain} should lead with a zero byte`).to.eq(
+        "00",
+      )
+
+      const salt = generateRandomSalt(domain)
+      expect(salt.slice(2, 10), `tag for ${domain}`).to.eq(tag)
+    }
+  })
+
+  it("emits a full 32-byte salt regardless of the domain", () => {
+    for (const domain of [...zeroLeadingDomains, "opensea.io", "gem.xyz"]) {
+      expect(generateRandomSalt(domain)).to.match(/^0x[0-9a-f]{64}$/)
+    }
+  })
+
+  it("still tags an ordinary domain and pads when no domain is given", () => {
+    expect(generateRandomSalt("opensea.io").slice(2, 10)).to.eq(
+      tagOf("opensea.io"),
+    )
+    expect(generateRandomSalt()).to.match(/^0x0{48}[0-9a-f]{16}$/)
   })
 })
