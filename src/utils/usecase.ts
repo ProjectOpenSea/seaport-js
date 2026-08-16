@@ -162,6 +162,19 @@ export const getTransactionMethods = <
     },
     estimateGas: async (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides }
+
+      // With a domain, `transact` sends the calldata that `buildTransaction`
+      // produces, which carries a four byte tag the encoded arguments do not.
+      // Estimating off the arguments alone leaves out the calldata cost of
+      // that tag, so the estimate lands below what the transaction actually
+      // needs and is unusable as a gas limit. Estimate the transaction that
+      // will really be sent instead.
+      if (domain) {
+        return (await signer).estimateGas(
+          await buildTransaction(mergedOverrides),
+        )
+      }
+
       const mergedArgs = [...args, mergedOverrides]
       const method = await contractMethod(signer)
       return method.estimateGas(...mergedArgs)
