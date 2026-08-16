@@ -79,7 +79,41 @@ describe("deductFees fee-basisPoints bound", () => {
           },
         ],
       ),
-    ).to.throw("Total fee basisPoints (10001) cannot exceed 10000 (100%)")
+    ).to.throw(
+      "Fee basisPoints (10001) must be a safe integer between 0 and 10000 (100%).",
+    )
+  })
+
+  it("rejects negative fee basisPoints", () => {
+    expect(() =>
+      deductFees(
+        [currencyItem("100")],
+        [
+          {
+            recipient: "0x0000000000000000000000000000000000000001",
+            basisPoints: -1,
+          },
+        ],
+      ),
+    ).to.throw(
+      "Fee basisPoints (-1) must be a safe integer between 0 and 10000 (100%).",
+    )
+  })
+
+  it("rejects fractional fee basisPoints", () => {
+    expect(() =>
+      deductFees(
+        [currencyItem("100")],
+        [
+          {
+            recipient: "0x0000000000000000000000000000000000000001",
+            basisPoints: 0.5,
+          },
+        ],
+      ),
+    ).to.throw(
+      "Fee basisPoints (0.5) must be a safe integer between 0 and 10000 (100%).",
+    )
   })
 })
 

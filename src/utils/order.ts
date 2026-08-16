@@ -85,6 +85,18 @@ export const deductFees = <T extends Item>(
     return items
   }
 
+  for (const { basisPoints } of fees) {
+    if (
+      !Number.isSafeInteger(basisPoints) ||
+      basisPoints < 0 ||
+      basisPoints > Number(ONE_HUNDRED_PERCENT_BP)
+    ) {
+      throw new Error(
+        `Fee basisPoints (${basisPoints}) must be a safe integer between 0 and ${ONE_HUNDRED_PERCENT_BP} (100%).`,
+      )
+    }
+  }
+
   const totalBasisPoints = fees.reduce(
     (accBasisPoints, fee) => accBasisPoints + fee.basisPoints,
     0,
