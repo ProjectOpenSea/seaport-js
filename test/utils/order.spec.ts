@@ -1,7 +1,11 @@
 import { expect } from "chai"
 import { ItemType, OrderType } from "../../src/constants"
 import type { ConsiderationItem, OrderComponents } from "../../src/types"
-import { deductFees, freezeOrderComponents } from "../../src/utils/order"
+import {
+  deductFees,
+  freezeOrderComponents,
+  generateRandomSalt,
+} from "../../src/utils/order"
 
 // deductFees subtracts the summed fee basisPoints from every currency item and
 // is the point where an out-of-range fee first turns an order malformed: a total
@@ -159,3 +163,23 @@ describe("freezeOrderComponents", () => {
     expect(Object.isFrozen(input)).to.be.true
   })
 })
+
+describe("generateRandomSalt", () => {
+  it("generates a 32-byte hex salt without domain", () => {
+    const salt = generateRandomSalt()
+    expect(salt).to.match(/^0x[0-9a-fA-F]{64}$/)
+  })
+
+  it("generates a 32-byte hex salt with domain tag", () => {
+    const salt = generateRandomSalt("opensea.io")
+    expect(salt).to.match(/^0x[0-9a-fA-F]{64}$/)
+    expect(salt.slice(0, 10)).to.equal("0x367f0174")
+  })
+
+  it("generates unique salts across multiple calls", () => {
+    const salt1 = generateRandomSalt()
+    const salt2 = generateRandomSalt()
+    expect(salt1).to.not.equal(salt2)
+  })
+})
+

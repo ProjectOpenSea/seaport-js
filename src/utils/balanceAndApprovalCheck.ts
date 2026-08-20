@@ -42,14 +42,16 @@ const findBalanceAndApproval = (
   token: string,
   identifierOrCriteria: string,
 ) => {
+  const targetToken = (token ?? "").toLowerCase()
+  const targetId = (identifierOrCriteria ?? "0").toLowerCase()
+
   const balanceAndApproval = balancesAndApprovals.find(
     ({
       token: checkedToken,
       identifierOrCriteria: checkedIdentifierOrCriteria,
     }) =>
-      token.toLowerCase() === checkedToken.toLowerCase() &&
-      checkedIdentifierOrCriteria.toLowerCase() ===
-        identifierOrCriteria.toLowerCase(),
+      (checkedToken ?? "").toLowerCase() === targetToken &&
+      (checkedIdentifierOrCriteria ?? "0").toLowerCase() === targetId,
   )
 
   if (!balanceAndApproval) {

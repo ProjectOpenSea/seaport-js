@@ -2,6 +2,7 @@ import {
   type BigNumberish,
   concat,
   ethers,
+  hexlify,
   keccak256,
   randomBytes,
   toBeHex,
@@ -363,12 +364,13 @@ export const generateRandomSalt = (domain?: string) => {
     return toBeHex(
       concat([
         keccak256(toUtf8Bytes(domain)).slice(0, 10),
-        Uint8Array.from(Array(20).fill(0)),
+        new Uint8Array(20),
         randomBytes(8),
       ]),
+      32,
     )
   }
-  return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`
+  return hexlify(concat([new Uint8Array(24), randomBytes(8)]))
 }
 
 export const shouldUseMatchForFulfill = () => true
