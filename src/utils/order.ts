@@ -2,6 +2,7 @@ import {
   type BigNumberish,
   concat,
   ethers,
+  hexlify,
   keccak256,
   randomBytes,
   toBeHex,
@@ -386,7 +387,11 @@ export const generateRandomSalt = (domain?: string) => {
       32,
     )
   }
-  return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`
+  // `Buffer` is a Node global that browser bundlers do not polyfill by default,
+  // and this branch is on the hot path: opensea-sdk calls generateRandomSalt()
+  // with no domain when it builds a private-listing counter order. Build the
+  // same 24 zero bytes plus 8 random bytes out of ethers primitives instead.
+  return hexlify(concat([new Uint8Array(24), randomBytes(8)]))
 }
 
 export const shouldUseMatchForFulfill = () => true
