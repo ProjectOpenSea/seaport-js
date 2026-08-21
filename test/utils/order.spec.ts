@@ -237,6 +237,25 @@ describe("generateRandomSalt domain tag", () => {
   })
 })
 
+// seaport-js is consumed from browsers as well as Node, and bundlers do not
+// polyfill the `Buffer` global by default. `generateRandomSalt` is on the hot
+// path -- opensea-sdk calls the no-domain branch when it builds a private
+// listing counter order -- so pin that neither branch reaches for a Node global.
+// Nothing else in the suite can catch this, because Node always defines Buffer.
+describe("generateRandomSalt without Node globals", () => {
+  it("builds a salt in an environment with no Buffer", () => {
+    const originalBuffer = globalThis.Buffer
+    // @ts-expect-error deleting a Node global to stand in for a browser bundle
+    delete globalThis.Buffer
+    try {
+      expect(generateRandomSalt()).to.match(/^0x0{48}[0-9a-f]{16}$/)
+      expect(generateRandomSalt("opensea.io")).to.match(/^0x[0-9a-f]{64}$/)
+    } finally {
+      globalThis.Buffer = originalBuffer
+    }
+  })
+})
+
 // mapInputItemToOfferItem is the single normalizer every createOrder input item
 // passes through on its way to a Seaport OfferItem: it fans a CreateInputItem
 // (basic ERC721/ERC1155, criteria items, and bare currency items) out into the
