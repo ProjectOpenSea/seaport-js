@@ -1,10 +1,12 @@
 import { expect } from "chai"
 import { ItemType, OrderType } from "../../src/constants"
 import type { ConsiderationItem, OrderComponents } from "../../src/types"
+import { MerkleTree } from "../../src/utils/merkletree"
 import {
   deductFees,
   freezeOrderComponents,
   generateRandomSalt,
+  mapInputItemToOfferItem,
 } from "../../src/utils/order"
 import { getTagFromDomain } from "../../src/utils/usecase"
 
@@ -232,5 +234,145 @@ describe("generateRandomSalt domain tag", () => {
       tagOf("opensea.io"),
     )
     expect(generateRandomSalt()).to.match(/^0x0{48}[0-9a-f]{16}$/)
+  })
+})
+
+// mapInputItemToOfferItem is the single normalizer every createOrder input item
+// passes through on its way to a Seaport OfferItem: it fans a CreateInputItem
+// (basic ERC721/ERC1155, criteria items, and bare currency items) out into the
+// fully-populated { itemType, token, identifierOrCriteria, startAmount, endAmount }
+// shape the protocol signs over, applying the amount defaults each variant
+// relies on. It is only otherwise exercised indirectly through the
+// hardhat-network-backed create-order specs, so pin its branch-by-branch
+// behavior here as fast, isolated units.
+describe("mapInputItemToOfferItem", () => {
+  const token = "0x0000000000000000000000000000000000000005"
+  const ZERO = "0x0000000000000000000000000000000000000000"
+
+  it("maps a basic ERC721 item, defaulting both amounts to 1", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC721,
+        token,
+        identifier: "42",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC721,
+      token,
+      identifierOrCriteria: "42",
+      startAmount: "1",
+      endAmount: "1",
+    })
+  })
+
+  it("maps a basic ERC1155 item, defaulting endAmount to the start amount", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC1155,
+        token,
+        identifier: "7",
+        amount: "5",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC1155,
+      token,
+      identifierOrCriteria: "7",
+      startAmount: "5",
+      endAmount: "5",
+    })
+  })
+
+  it("preserves distinct start and end amounts for an ascending ERC1155 item", () => {
+    const offerItem = mapInputItemToOfferItem({
+      itemType: ItemType.ERC1155,
+      token,
+      identifier: "7",
+      amount: "5",
+      endAmount: "10",
+    })
+    expect(offerItem.startAmount).to.eq("5")
+    expect(offerItem.endAmount).to.eq("10")
+  })
+
+  it("maps an ERC721 criteria item given an explicit merkle root", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC721,
+        token,
+        criteria: "123",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC721_WITH_CRITERIA,
+      token,
+      identifierOrCriteria: "123",
+      startAmount: "1",
+      endAmount: "1",
+    })
+  })
+
+  it("maps an ERC1155 criteria item, keeping its amount", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC1155,
+        token,
+        amount: "2",
+        criteria: "456",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC1155_WITH_CRITERIA,
+      token,
+      identifierOrCriteria: "456",
+      startAmount: "2",
+      endAmount: "2",
+    })
+  })
+
+  it("derives the merkle root from identifiers for a criteria item", () => {
+    const identifiers = ["1", "2", "3"]
+    const offerItem = mapInputItemToOfferItem({
+      itemType: ItemType.ERC721,
+      token,
+      identifiers,
+    })
+    expect(offerItem.itemType).to.eq(ItemType.ERC721_WITH_CRITERIA)
+    expect(offerItem.identifierOrCriteria).to.eq(
+      new MerkleTree(identifiers).getRoot(),
+    )
+  })
+
+  it("maps a currency item with a token to ERC20", () => {
+    expect(mapInputItemToOfferItem({ token, amount: "1000" })).to.deep.equal({
+      itemType: ItemType.ERC20,
+      token,
+      identifierOrCriteria: "0",
+      startAmount: "1000",
+      endAmount: "1000",
+    })
+  })
+
+  it("maps a currency item without a token to native", () => {
+    expect(mapInputItemToOfferItem({ amount: "1000" })).to.deep.equal({
+      itemType: ItemType.NATIVE,
+      token: ZERO,
+      identifierOrCriteria: "0",
+      startAmount: "1000",
+      endAmount: "1000",
+    })
+  })
+
+  it("treats the zero-address token as native, not ERC20", () => {
+    expect(
+      mapInputItemToOfferItem({ token: ZERO, amount: "1000" }).itemType,
+    ).to.eq(ItemType.NATIVE)
+  })
+
+  it("preserves a descending currency end amount", () => {
+    const offerItem = mapInputItemToOfferItem({
+      token,
+      amount: "1000",
+      endAmount: "900",
+    })
+    expect(offerItem.startAmount).to.eq("1000")
+    expect(offerItem.endAmount).to.eq("900")
   })
 })
