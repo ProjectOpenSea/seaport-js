@@ -1102,5 +1102,100 @@ describeWithFixture(
         parseEther("9.75"),
       )
     })
+
+    // multiplyBasisPoints floors, so a small enough price makes the fee item come
+    // out as zero. Seaport rejects a zero-amount item with MissingItemAmount, so
+    // such an item would leave the signed order impossible to fill.
+    describe("a fee that rounds down to nothing", () => {
+      const nftId = "1"
+
+      const listingFor = async (
+        amount: string,
+        basisPoints: number,
+        endAmount?: string,
+      ): Promise<CreateOrderInput> => {
+        const { ethers, testErc721 } = fixture
+        const [offerer, zone] = await ethers.getSigners()
+
+        return {
+          startTime: "0",
+          offer: [
+            {
+              itemType: ItemType.ERC721,
+              token: await testErc721.getAddress(),
+              identifier: nftId,
+            },
+          ],
+          consideration: [
+            {
+              amount,
+              ...(endAmount ? { endAmount } : {}),
+              recipient: await offerer.getAddress(),
+            },
+          ],
+          fees: [{ recipient: await zone.getAddress(), basisPoints }],
+        }
+      }
+
+      beforeEach(async () => {
+        const { ethers, testErc721 } = fixture
+        const [offerer] = await ethers.getSigners()
+        await testErc721.mint(await offerer.getAddress(), nftId)
+      })
+
+      it("leaves the item out and the order stays fillable", async () => {
+        const { ethers, seaport, testErc721 } = fixture
+        const [, , fulfiller] = await ethers.getSigners()
+
+        // 0.5% of 100 floors to 0.
+        const { executeAllActions } = await seaport.createOrder(
+          await listingFor("100", 50),
+        )
+        const order = await executeAllActions()
+
+        expect(order.parameters.consideration).to.have.lengthOf(1)
+        expect(order.parameters.totalOriginalConsiderationItems).to.eq(1)
+
+        const { actions } = await seaport.fulfillOrder({
+          order,
+          accountAddress: await fulfiller.getAddress(),
+        })
+        for (const action of actions) {
+          await (await action.transactionMethods.transact()).wait()
+        }
+
+        expect(await testErc721.ownerOf(nftId)).to.eq(
+          await fulfiller.getAddress(),
+        )
+      })
+
+      it("still adds a fee that survives the rounding", async () => {
+        const { seaport } = fixture
+
+        const { executeAllActions } = await seaport.createOrder(
+          await listingFor("1000", 250),
+        )
+        const order = await executeAllActions()
+
+        expect(
+          order.parameters.consideration.map(item => item.startAmount),
+        ).to.deep.eq(["975", "25"])
+      })
+
+      it("keeps a fee that is only zero at the start of its range", async () => {
+        const { seaport } = fixture
+
+        // Zero at the start, 250 by the end — it still pays over most of the
+        // range, and Seaport only looks at the amount current at fill time.
+        const { executeAllActions } = await seaport.createOrder(
+          await listingFor("10", 250, "10000"),
+        )
+        const order = await executeAllActions()
+
+        expect(order.parameters.consideration).to.have.lengthOf(2)
+        const fee = order.parameters.consideration[1]
+        expect([fee.startAmount, fee.endAmount]).to.deep.eq(["0", "250"])
+      })
+    })
   },
 )

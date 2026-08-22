@@ -394,6 +394,7 @@ export const validateStandardFulfillBalancesAndApprovals = ({
   timeBasedItemParams,
   offererOperator,
   fulfillerOperator,
+  offerItemsGoToFulfiller = true,
 }: Pick<OrderParameters, "offer" | "consideration"> & {
   offerCriteria: InputCriteria[]
   considerationCriteria: InputCriteria[]
@@ -402,6 +403,7 @@ export const validateStandardFulfillBalancesAndApprovals = ({
   timeBasedItemParams: TimeBasedItemParams
   offererOperator: string
   fulfillerOperator: string
+  offerItemsGoToFulfiller?: boolean
 }) => {
   validateOfferBalancesAndApprovals({
     offer,
@@ -412,13 +414,20 @@ export const validateStandardFulfillBalancesAndApprovals = ({
     operator: offererOperator,
   })
 
+  // Requirement 2 above only holds while the offered items land with the
+  // fulfiller. When they are forwarded to someone else, the fulfiller never
+  // receives them and has to cover every consideration item out of what they
+  // already hold, so crediting the offer here would clear a fulfillment that
+  // reverts on transfer.
   const fulfillerBalancesAndApprovalsAfterReceivingOfferedItems =
-    addToExistingBalances({
-      items: offer,
-      criterias: offerCriteria,
-      balancesAndApprovals: fulfillerBalancesAndApprovals,
-      timeBasedItemParams,
-    })
+    offerItemsGoToFulfiller
+      ? addToExistingBalances({
+          items: offer,
+          criterias: offerCriteria,
+          balancesAndApprovals: fulfillerBalancesAndApprovals,
+          timeBasedItemParams,
+        })
+      : fulfillerBalancesAndApprovals
 
   const { insufficientBalances, insufficientApprovals } =
     getInsufficientBalanceAndApprovalAmounts({

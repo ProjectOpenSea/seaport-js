@@ -147,11 +147,15 @@ export class Seaport {
     this.config = {
       ascendingAmountFulfillmentBuffer,
       balanceAndApprovalChecksOnOrderCreation,
-      conduitKeyToConduit: {
-        ...KNOWN_CONDUIT_KEYS_TO_CONDUIT,
-        [NO_CONDUIT]: seaportContractAddress,
-        ...conduitKeyToConduit,
-      },
+      // Keyed lower case so a conduit key still resolves when it arrives in a
+      // different hex case; see _getConduit.
+      conduitKeyToConduit: Object.fromEntries(
+        Object.entries({
+          ...KNOWN_CONDUIT_KEYS_TO_CONDUIT,
+          [NO_CONDUIT]: seaportContractAddress,
+          ...conduitKeyToConduit,
+        }).map(([key, conduit]) => [key.toLowerCase(), conduit]),
+      ),
       seaportVersion,
     }
 
@@ -353,7 +357,7 @@ export class Seaport {
 
     const totalCurrencyAmount = totalItemsAmount(currencies)
 
-    const operator = this.config.conduitKeyToConduit[conduitKey]
+    const operator = this._getConduit(conduitKey)
 
     const orderType = this._getOrderTypeFromOrderOptions({
       allowPartialFills,
@@ -363,14 +367,24 @@ export class Seaport {
     const considerationItemsWithFees = [
       ...deductFees(considerationItems, fees),
       ...(currencies.length
-        ? (fees?.map(fee =>
-            feeToConsiderationItem({
-              fee,
-              token: currencies[0].token,
-              baseAmount: totalCurrencyAmount.startAmount,
-              baseEndAmount: totalCurrencyAmount.endAmount,
-            }),
-          ) ?? [])
+        ? (fees
+            ?.map(fee =>
+              feeToConsiderationItem({
+                fee,
+                token: currencies[0].token,
+                baseAmount: totalCurrencyAmount.startAmount,
+                baseEndAmount: totalCurrencyAmount.endAmount,
+              }),
+            )
+            // A fee small enough to floor to zero on both ends carries nothing,
+            // and Seaport rejects a zero-amount item with MissingItemAmount, so
+            // including it would leave the order permanently unfulfillable. An
+            // item that is only zero at one end still pays over the rest of its
+            // range and is kept.
+            .filter(
+              ({ startAmount, endAmount }) =>
+                BigInt(startAmount) > 0n || BigInt(endAmount) > 0n,
+            ) ?? [])
         : []),
     ]
 
@@ -422,6 +436,19 @@ export class Seaport {
     }
 
     return { orderComponents, approvalActions }
+  }
+
+  /**
+   * Resolves the operator to source approvals from for a conduit key.
+   *
+   * A conduit key is a bytes32, so the same key can be written in any hex
+   * case and still be the same value on chain. Looking it up as a raw string
+   * would miss on a key that only differs in case, leaving the operator
+   * undefined and failing later with an error that names neither the conduit
+   * nor the key.
+   */
+  private _getConduit(conduitKey: string): string {
+    return this.config.conduitKeyToConduit[conduitKey.toLowerCase()]
   }
 
   private async _getSigner(
@@ -834,10 +861,9 @@ export class Seaport {
 
     const fulfillerAddress = await fulfiller.getAddress()
 
-    const offererOperator =
-      this.config.conduitKeyToConduit[orderParameters.conduitKey]
+    const offererOperator = this._getConduit(orderParameters.conduitKey)
 
-    const fulfillerOperator = this.config.conduitKeyToConduit[conduitKey]
+    const fulfillerOperator = this._getConduit(conduitKey)
 
     const tipConsiderationItems = tips.map(tip => ({
       ...mapInputItemToOfferItem(tip),
@@ -946,6 +972,7 @@ export class Seaport {
         offererOperator,
         fulfillerOperator,
         recipientAddress,
+        fulfillerAddress,
         domain,
         overrides,
       },
@@ -1001,12 +1028,11 @@ export class Seaport {
 
     const fulfillerAddress = await fulfiller.getAddress()
 
-    const allOffererOperators = fulfillOrderDetails.map(
-      ({ order }) =>
-        this.config.conduitKeyToConduit[order.parameters.conduitKey],
+    const allOffererOperators = fulfillOrderDetails.map(({ order }) =>
+      this._getConduit(order.parameters.conduitKey),
     )
 
-    const fulfillerOperator = this.config.conduitKeyToConduit[conduitKey]
+    const fulfillerOperator = this._getConduit(conduitKey)
 
     const allOfferItems = fulfillOrderDetails.flatMap(
       ({ order }) => order.parameters.offer,
@@ -1102,6 +1128,7 @@ export class Seaport {
       signer: fulfiller,
       conduitKey,
       recipientAddress,
+      fulfillerAddress,
       domain,
       exactApproval,
       overrides,

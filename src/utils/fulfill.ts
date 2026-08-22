@@ -1,9 +1,9 @@
 import {
   type BigNumberish,
-  type ContractTransaction,
   ethers,
   type Overrides,
   type Signer,
+  type TransactionResponse,
 } from "ethers"
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants"
 import type {
@@ -324,7 +324,7 @@ export function fulfillBasicOrder(
   return {
     actions,
     executeAllActions: () =>
-      executeAllActions(actions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<TransactionResponse>,
     executeApprovals: () => executeApprovals(actions),
   }
 }
@@ -347,6 +347,7 @@ export function fulfillStandardOrder(
     timeBasedItemParams,
     conduitKey,
     recipientAddress,
+    fulfillerAddress,
     signer,
     domain,
     overrides,
@@ -366,6 +367,7 @@ export function fulfillStandardOrder(
     fulfillerOperator: string
     conduitKey: string
     recipientAddress: string
+    fulfillerAddress: string
     timeBasedItemParams: TimeBasedItemParams
     signer: Signer
     domain?: string
@@ -381,6 +383,10 @@ export function fulfillStandardOrder(
   >
 > {
   assertNoCriteriaTips(tips)
+
+  if (unitsToFill) {
+    unitsToFill = clampUnitsToRemaining(unitsToFill, { totalFilled, totalSize })
+  }
 
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
@@ -463,6 +469,10 @@ export function fulfillStandardOrder(
     timeBasedItemParams,
     offererOperator,
     fulfillerOperator,
+    offerItemsGoToFulfiller: offerItemsLandWithFulfiller(
+      recipientAddress,
+      fulfillerAddress,
+    ),
   })
 
   overrides = { ...overrides, value: totalNativeAmount }
@@ -532,9 +542,26 @@ export function fulfillStandardOrder(
   return {
     actions,
     executeAllActions: () =>
-      executeAllActions(actions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<TransactionResponse>,
     executeApprovals: () => executeApprovals(actions),
   }
+}
+
+/**
+ * Whether the order's offered items end up with the fulfiller.
+ *
+ * `recipientAddress` forwards them somewhere else, with the zero address
+ * meaning "leave them with the fulfiller". Naming the fulfiller explicitly is
+ * the same thing, so it counts as landing with them too.
+ */
+export function offerItemsLandWithFulfiller(
+  recipientAddress: string,
+  fulfillerAddress: string,
+): boolean {
+  return (
+    recipientAddress === ethers.ZeroAddress ||
+    recipientAddress.toLowerCase() === fulfillerAddress.toLowerCase()
+  )
 }
 
 export function validateAndSanitizeFromOrderStatus(
@@ -559,6 +586,23 @@ export function validateAndSanitizeFromOrderStatus(
   return order
 }
 
+/**
+ * Whether an order can still be filled at all.
+ *
+ * Mirrors the two rejections in `validateAndSanitizeFromOrderStatus`, which
+ * throws so that a single-order fulfill fails loudly. A batch fulfill cannot
+ * use that: `fulfillAvailableAdvancedOrders` skips orders it cannot fill and
+ * settles the rest, so one stale order in the batch has to be dropped rather
+ * than take the whole call down with it.
+ */
+export function isOrderFulfillable({
+  isCancelled,
+  totalFilled,
+  totalSize,
+}: OrderStatus): boolean {
+  return !isCancelled && !(totalSize > 0n && totalFilled / totalSize === 1n)
+}
+
 export type FulfillOrdersMetadata = {
   order: Order
   unitsToFill?: BigNumberish
@@ -581,6 +625,7 @@ export function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
+  fulfillerAddress,
   exactApproval,
   domain,
   overrides,
@@ -594,6 +639,7 @@ export function fulfillAvailableOrders({
   conduitKey: string
   signer: Signer
   recipientAddress: string
+  fulfillerAddress: string
   exactApproval: boolean
   domain?: string
   overrides?: Overrides
@@ -604,13 +650,30 @@ export function fulfillAvailableOrders({
 > {
   ordersMetadata.forEach(({ tips }) => assertNoCriteriaTips(tips))
 
-  const sanitizedOrdersMetadata = ordersMetadata.map(orderMetadata => ({
-    ...orderMetadata,
-    order: validateAndSanitizeFromOrderStatus(
-      orderMetadata.order,
-      orderMetadata.orderStatus,
-    ),
-  }))
+  // Drop the orders that cannot be filled instead of throwing on the first one.
+  // Every array built below is indexed by position in this list, so the
+  // fulfillments and criteria resolvers are derived from it too.
+  const sanitizedOrdersMetadata = ordersMetadata
+    .filter(({ orderStatus }) => isOrderFulfillable(orderStatus))
+    .map(orderMetadata => ({
+      ...orderMetadata,
+      unitsToFill: orderMetadata.unitsToFill
+        ? clampUnitsToRemaining(
+            orderMetadata.unitsToFill,
+            orderMetadata.orderStatus,
+          )
+        : orderMetadata.unitsToFill,
+      order: validateAndSanitizeFromOrderStatus(
+        orderMetadata.order,
+        orderMetadata.orderStatus,
+      ),
+    }))
+
+  if (sanitizedOrdersMetadata.length === 0) {
+    throw new Error(
+      "None of the orders can be fulfilled: every one is already filled or cancelled.",
+    )
+  }
 
   const adjustTips = (orderMetadata: {
     order: Order
@@ -777,6 +840,10 @@ export function fulfillAvailableOrders({
           timeBasedItemParams,
           offererOperator,
           fulfillerOperator,
+          offerItemsGoToFulfiller: offerItemsLandWithFulfiller(
+            recipientAddress,
+            fulfillerAddress,
+          ),
         },
       )
 
@@ -860,7 +927,7 @@ export function fulfillAvailableOrders({
   )
 
   const { offerFulfillments, considerationFulfillments } =
-    generateFulfillOrdersFulfillments(ordersMetadata)
+    generateFulfillOrdersFulfillments(sanitizedOrdersMetadata)
 
   const exchangeAction = {
     type: "exchange",
@@ -872,11 +939,11 @@ export function fulfillAvailableOrders({
         advancedOrdersWithTips,
         hasCriteriaItems
           ? generateCriteriaResolvers({
-              orders: ordersMetadata.map(({ order }) => order),
-              offerCriterias: ordersMetadata.map(
+              orders: sanitizedOrdersMetadata.map(({ order }) => order),
+              offerCriterias: sanitizedOrdersMetadata.map(
                 ({ offerCriteria }) => offerCriteria,
               ),
-              considerationCriterias: ordersMetadata.map(
+              considerationCriterias: sanitizedOrdersMetadata.map(
                 ({ considerationCriteria }) => considerationCriteria,
               ),
             })
@@ -897,7 +964,7 @@ export function fulfillAvailableOrders({
   return {
     actions,
     executeAllActions: () =>
-      executeAllActions(actions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<TransactionResponse>,
     executeApprovals: () => executeApprovals(actions),
   }
 }
@@ -1008,6 +1075,32 @@ export function assertNoCriteriaTips(tips: ConsiderationItem[]) {
         "Pass a tip with an explicit identifier instead.",
     )
   }
+}
+
+/**
+ * Caps a requested fill at what is left of a partially filled order.
+ *
+ * Seaport does this itself: asking for 8 of 10 units when only 4 remain
+ * transfers 4 and closes the order. Deriving amounts from the raw request
+ * instead describes a fill that will never happen -- the offer side is sized
+ * for units the offerer no longer holds, so the balance check rejects an order
+ * the contract would have settled.
+ *
+ * Only applies once an order is partially filled. A request larger than the
+ * order was ever divisible into is a different thing entirely, and
+ * getAdvancedOrderNumeratorDenominator still rejects it.
+ */
+export const clampUnitsToRemaining = (
+  unitsToFill: BigNumberish,
+  { totalFilled, totalSize }: Pick<OrderStatus, "totalFilled" | "totalSize">,
+): BigNumberish => {
+  if (totalFilled === 0n) {
+    return unitsToFill
+  }
+
+  const remaining = totalSize - totalFilled
+
+  return BigInt(unitsToFill) > remaining ? remaining : unitsToFill
 }
 
 export const getAdvancedOrderNumeratorDenominator = (
