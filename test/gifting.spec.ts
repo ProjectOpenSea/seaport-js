@@ -295,5 +295,100 @@ describeWithFixture(
         })
       })
     })
+
+    // Accepting a bid pays the fulfiller in the bid currency, and the fee on
+    // that bid is a consideration item the fulfiller settles. Those two net out
+    // while the fulfiller keeps the proceeds. Forward them to someone else and
+    // the fee has to come from the fulfiller's own balance instead.
+    describe("[Accept offer] I want to send the proceeds to another address", () => {
+      const bidNftId = "77"
+      const bidAmount = parseEther("10")
+      let bid: Awaited<ReturnType<typeof buildBid>>
+
+      const buildBid = async () => {
+        const { seaport, testErc20, testErc721 } = fixture
+
+        const input: CreateOrderInput = {
+          startTime: "0",
+          offer: [
+            {
+              token: await testErc20.getAddress(),
+              amount: bidAmount.toString(),
+            },
+          ],
+          consideration: [
+            {
+              itemType: ItemType.ERC721,
+              token: await testErc721.getAddress(),
+              identifier: bidNftId,
+              recipient: await offerer.getAddress(),
+            },
+          ],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+        }
+
+        return (
+          await seaport.createOrder(input, await offerer.getAddress())
+        ).executeAllActions()
+      }
+
+      beforeEach(async () => {
+        const { testErc20, testErc721 } = fixture
+
+        // The fulfiller owns the NFT but holds none of the bid currency.
+        await testErc721.mint(await fulfiller.getAddress(), bidNftId)
+        await testErc20.mint(await offerer.getAddress(), bidAmount)
+
+        bid = await buildBid()
+      })
+
+      it("reports the shortfall when the proceeds go elsewhere", async () => {
+        const { seaport } = fixture
+
+        await expect(
+          seaport.fulfillOrder({
+            order: bid,
+            accountAddress: await fulfiller.getAddress(),
+            recipientAddress: await recipient.getAddress(),
+          }),
+        ).to.be.rejectedWith("The fulfiller does not have the balances needed")
+      })
+
+      it("still lets the fee come out of the proceeds when they are kept", async () => {
+        const { seaport, testErc20 } = fixture
+
+        const { actions } = await seaport.fulfillOrder({
+          order: bid,
+          accountAddress: await fulfiller.getAddress(),
+        })
+
+        for (const action of actions) {
+          await (await action.transactionMethods.transact()).wait()
+        }
+
+        // 10 received, 0.25 paid out as the fee.
+        expect(await testErc20.balanceOf(await fulfiller.getAddress())).to.eq(
+          parseEther("9.75"),
+        )
+      })
+
+      it("treats naming yourself as the recipient the same as keeping them", async () => {
+        const { seaport, testErc20 } = fixture
+
+        const { actions } = await seaport.fulfillOrder({
+          order: bid,
+          accountAddress: await fulfiller.getAddress(),
+          recipientAddress: await fulfiller.getAddress(),
+        })
+
+        for (const action of actions) {
+          await (await action.transactionMethods.transact()).wait()
+        }
+
+        expect(await testErc20.balanceOf(await fulfiller.getAddress())).to.eq(
+          parseEther("9.75"),
+        )
+      })
+    })
   },
 )

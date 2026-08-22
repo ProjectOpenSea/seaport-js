@@ -346,6 +346,7 @@ export function fulfillStandardOrder(
     timeBasedItemParams,
     conduitKey,
     recipientAddress,
+    fulfillerAddress,
     signer,
     domain,
     overrides,
@@ -365,6 +366,7 @@ export function fulfillStandardOrder(
     fulfillerOperator: string
     conduitKey: string
     recipientAddress: string
+    fulfillerAddress: string
     timeBasedItemParams: TimeBasedItemParams
     signer: Signer
     domain?: string
@@ -466,6 +468,10 @@ export function fulfillStandardOrder(
     timeBasedItemParams,
     offererOperator,
     fulfillerOperator,
+    offerItemsGoToFulfiller: offerItemsLandWithFulfiller(
+      recipientAddress,
+      fulfillerAddress,
+    ),
   })
 
   overrides = { ...overrides, value: totalNativeAmount }
@@ -540,6 +546,23 @@ export function fulfillStandardOrder(
   }
 }
 
+/**
+ * Whether the order's offered items end up with the fulfiller.
+ *
+ * `recipientAddress` forwards them somewhere else, with the zero address
+ * meaning "leave them with the fulfiller". Naming the fulfiller explicitly is
+ * the same thing, so it counts as landing with them too.
+ */
+export function offerItemsLandWithFulfiller(
+  recipientAddress: string,
+  fulfillerAddress: string,
+): boolean {
+  return (
+    recipientAddress === ethers.ZeroAddress ||
+    recipientAddress.toLowerCase() === fulfillerAddress.toLowerCase()
+  )
+}
+
 export function validateAndSanitizeFromOrderStatus(
   order: Order,
   orderStatus: OrderStatus,
@@ -601,6 +624,7 @@ export function fulfillAvailableOrders({
   conduitKey,
   signer,
   recipientAddress,
+  fulfillerAddress,
   exactApproval,
   domain,
   overrides,
@@ -614,6 +638,7 @@ export function fulfillAvailableOrders({
   conduitKey: string
   signer: Signer
   recipientAddress: string
+  fulfillerAddress: string
   exactApproval: boolean
   domain?: string
   overrides?: Overrides
@@ -793,6 +818,10 @@ export function fulfillAvailableOrders({
           timeBasedItemParams,
           offererOperator,
           fulfillerOperator,
+          offerItemsGoToFulfiller: offerItemsLandWithFulfiller(
+            recipientAddress,
+            fulfillerAddress,
+          ),
         },
       )
 
