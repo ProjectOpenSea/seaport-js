@@ -1237,6 +1237,84 @@ describeWithFixture(
           await secondOfferer.getAddress(),
         )
       })
+
+      it("approves the batch total for one ERC20, not the first order's share", async () => {
+        const { seaport, testErc721, testErc20 } = fixture
+
+        // Two listings priced in the same ERC20, 10 and 20, so the batch needs 30.
+        await testErc721.mint(await offerer.getAddress(), nftId)
+        await testErc721.mint(await secondOfferer.getAddress(), nftId2)
+        await testErc20.mint(
+          await fulfiller.getAddress(),
+          parseEther("30").toString(),
+        )
+
+        const listing = async (
+          seller: HardhatEthersSigner,
+          identifier: string,
+          price: string,
+        ) =>
+          (
+            await seaport.createOrder(
+              {
+                offer: [
+                  {
+                    itemType: ItemType.ERC721,
+                    token: await testErc721.getAddress(),
+                    identifier,
+                  },
+                ],
+                consideration: [
+                  {
+                    amount: parseEther(price).toString(),
+                    token: await testErc20.getAddress(),
+                    recipient: await seller.getAddress(),
+                  },
+                ],
+              },
+              await seller.getAddress(),
+            )
+          ).executeAllActions()
+
+        const firstOrder = await listing(offerer, nftId, "10")
+        const secondOrder = await listing(secondOfferer, nftId2, "20")
+
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [{ order: firstOrder }, { order: secondOrder }],
+          accountAddress: await fulfiller.getAddress(),
+          exactApproval: true,
+        })
+
+        const erc20Address = await testErc20.getAddress()
+        const erc20Approvals = actions.filter(
+          (action): action is ApprovalAction =>
+            action.type === "approval" && action.token === erc20Address,
+        )
+        // One allowance is shared by the whole batch, so one action is correct.
+        expect(erc20Approvals.length).to.equal(1)
+
+        for (const action of actions.filter(a => a.type === "approval")) {
+          await action.transactionMethods.transact()
+        }
+
+        // The allowance has to cover 10 + 20, not just the first order's 10.
+        // Read the spender off the action rather than recomputing the conduit.
+        expect(
+          await testErc20.allowance(
+            await fulfiller.getAddress(),
+            erc20Approvals[0].operator,
+          ),
+        ).to.equal(parseEther("30"))
+
+        await actions[actions.length - 1].transactionMethods.transact()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await fulfiller.getAddress(),
+        )
+        expect(await testErc721.ownerOf(nftId2)).to.equal(
+          await fulfiller.getAddress(),
+        )
+      })
     })
     // TODO
     describe("Special use cases", () => {
