@@ -332,6 +332,58 @@ export const validateBasicFulfillBalancesAndApprovals = ({
  *
  * @returns the list of insufficient owner and proxy approvals
  */
+/**
+ * Check the fulfiller can cover a whole batch, not just each order in it.
+ *
+ * `fulfillOrders` validates every order against the same un-decremented
+ * balances, so a fulfiller who can afford each order individually but not all
+ * of them together was handed a transaction that cannot succeed, with no error.
+ *
+ * Currency the batch pays the fulfiller is credited, because it is load-bearing:
+ * accepting a bid means its ERC20 fee items sit in the consideration the
+ * fulfiller owes while being funded by the bid's own ERC20 offer. The per-order
+ * check handles that by crediting each order's offer before checking its
+ * consideration, and this has to match, or every offer-fulfillment batch would
+ * be rejected. Note the credit is batch-wide while the per-order check is
+ * per-order, so this is the looser of the two and cannot reject anything the
+ * per-order check accepts for a reason other than the batch total.
+ *
+ * Scoped to ERC20 deliberately. Native balances cannot be checked without
+ * modelling gas, and an over-strict check here would block a working batch,
+ * which is worse than the silence it replaces. A token with no entry is skipped
+ * for the same reason.
+ */
+export const validateCumulativeFulfillerBalances = ({
+  requiredAmounts,
+  receivedAmounts,
+  fulfillerBalancesAndApprovals,
+}: {
+  requiredAmounts: Record<string, Record<string, bigint>>
+  receivedAmounts: Record<string, Record<string, bigint>>
+  fulfillerBalancesAndApprovals: BalancesAndApprovals
+}) => {
+  for (const [token, identifierToAmount] of Object.entries(requiredAmounts)) {
+    for (const [identifierOrCriteria, required] of Object.entries(
+      identifierToAmount,
+    )) {
+      const balanceAndApproval = fulfillerBalancesAndApprovals.find(
+        entry =>
+          entry.token.toLowerCase() === token.toLowerCase() &&
+          entry.identifierOrCriteria === identifierOrCriteria,
+      )
+      if (!balanceAndApproval || !isErc20Item(balanceAndApproval.itemType)) {
+        continue
+      }
+      const received = receivedAmounts[token]?.[identifierOrCriteria] ?? 0n
+      if (balanceAndApproval.balance + received < required) {
+        throw new Error(
+          "The fulfiller does not have the balances needed to fulfill.",
+        )
+      }
+    }
+  }
+}
+
 export const validateStandardFulfillBalancesAndApprovals = ({
   offer,
   consideration,

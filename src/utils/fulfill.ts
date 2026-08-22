@@ -28,6 +28,7 @@ import {
   type BalancesAndApprovals,
   type InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
+  validateCumulativeFulfillerBalances,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balanceAndApprovalCheck"
 import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria"
@@ -677,6 +678,10 @@ export function fulfillAvailableOrders({
   // an ERC20 approval is one allowance shared by every order in the batch, so
   // the amount to approve is this total rather than any single order's share.
   const cumulativeFulfillerAmounts: Record<string, Record<string, bigint>> = {}
+  // What the batch pays the fulfiller, which funds part of what it owes: a
+  // bid's ERC20 fee items are consideration the fulfiller owes but are paid out
+  // of the bid's own ERC20 offer.
+  const cumulativeReceivedAmounts: Record<string, Record<string, bigint>> = {}
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap(orderMetadata => [
       orderMetadata.order.parameters.offer,
@@ -744,6 +749,23 @@ export function fulfillAvailableOrders({
         }
       }
 
+      const summedOffer = getSummedTokenAndIdentifierAmounts({
+        items: order.parameters.offer,
+        criterias: offerCriteria,
+        timeBasedItemParams: {
+          ...timeBasedItemParams,
+          isConsiderationItem: false,
+        },
+      })
+
+      for (const [token, identifierToAmount] of Object.entries(summedOffer)) {
+        for (const [identifier, amount] of Object.entries(identifierToAmount)) {
+          cumulativeReceivedAmounts[token] ??= {}
+          cumulativeReceivedAmounts[token][identifier] =
+            (cumulativeReceivedAmounts[token][identifier] ?? 0n) + amount
+        }
+      }
+
       const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
         {
           offer: order.parameters.offer,
@@ -780,6 +802,12 @@ export function fulfillAvailableOrders({
   )
 
   overrides = { ...overrides, value: totalNativeAmount }
+
+  validateCumulativeFulfillerBalances({
+    requiredAmounts: cumulativeFulfillerAmounts,
+    receivedAmounts: cumulativeReceivedAmounts,
+    fulfillerBalancesAndApprovals,
+  })
 
   // An approval is deduped to one action per token and operator, and with
   // exactApproval that action approves `requiredApprovedAmount`. Left as the
