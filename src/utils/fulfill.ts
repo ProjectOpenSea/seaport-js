@@ -558,6 +558,23 @@ export function validateAndSanitizeFromOrderStatus(
   return order
 }
 
+/**
+ * Whether an order can still be filled at all.
+ *
+ * Mirrors the two rejections in `validateAndSanitizeFromOrderStatus`, which
+ * throws so that a single-order fulfill fails loudly. A batch fulfill cannot
+ * use that: `fulfillAvailableAdvancedOrders` skips orders it cannot fill and
+ * settles the rest, so one stale order in the batch has to be dropped rather
+ * than take the whole call down with it.
+ */
+export function isOrderFulfillable({
+  isCancelled,
+  totalFilled,
+  totalSize,
+}: OrderStatus): boolean {
+  return !isCancelled && !(totalSize > 0n && totalFilled / totalSize === 1n)
+}
+
 export type FulfillOrdersMetadata = {
   order: Order
   unitsToFill?: BigNumberish
@@ -603,13 +620,24 @@ export function fulfillAvailableOrders({
 > {
   ordersMetadata.forEach(({ tips }) => assertNoCriteriaTips(tips))
 
-  const sanitizedOrdersMetadata = ordersMetadata.map(orderMetadata => ({
-    ...orderMetadata,
-    order: validateAndSanitizeFromOrderStatus(
-      orderMetadata.order,
-      orderMetadata.orderStatus,
-    ),
-  }))
+  // Drop the orders that cannot be filled instead of throwing on the first one.
+  // Every array built below is indexed by position in this list, so the
+  // fulfillments and criteria resolvers are derived from it too.
+  const sanitizedOrdersMetadata = ordersMetadata
+    .filter(({ orderStatus }) => isOrderFulfillable(orderStatus))
+    .map(orderMetadata => ({
+      ...orderMetadata,
+      order: validateAndSanitizeFromOrderStatus(
+        orderMetadata.order,
+        orderMetadata.orderStatus,
+      ),
+    }))
+
+  if (sanitizedOrdersMetadata.length === 0) {
+    throw new Error(
+      "None of the orders can be fulfilled: every one is already filled or cancelled.",
+    )
+  }
 
   const adjustTips = (orderMetadata: {
     order: Order
@@ -832,7 +860,7 @@ export function fulfillAvailableOrders({
   )
 
   const { offerFulfillments, considerationFulfillments } =
-    generateFulfillOrdersFulfillments(ordersMetadata)
+    generateFulfillOrdersFulfillments(sanitizedOrdersMetadata)
 
   const exchangeAction = {
     type: "exchange",
@@ -844,11 +872,11 @@ export function fulfillAvailableOrders({
         advancedOrdersWithTips,
         hasCriteriaItems
           ? generateCriteriaResolvers({
-              orders: ordersMetadata.map(({ order }) => order),
-              offerCriterias: ordersMetadata.map(
+              orders: sanitizedOrdersMetadata.map(({ order }) => order),
+              offerCriterias: sanitizedOrdersMetadata.map(
                 ({ offerCriteria }) => offerCriteria,
               ),
-              considerationCriterias: ordersMetadata.map(
+              considerationCriterias: sanitizedOrdersMetadata.map(
                 ({ considerationCriteria }) => considerationCriteria,
               ),
             })
