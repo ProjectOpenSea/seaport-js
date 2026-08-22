@@ -91,6 +91,8 @@ Many of the main core flows return _use cases_. What this means is that if you w
 #### Listing an ERC-721 for 10 ETH and fulfilling it
 
 ```js
+import { ItemType } from "@opensea/seaport-js";
+
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 const { executeAllActions } = await seaport.createOrder(
@@ -126,13 +128,15 @@ const transaction = await executeAllFulfillActions();
 #### Making an offer for an ERC-721 for 10 WETH and fulfilling it
 
 ```js
+import { ItemType } from "@opensea/seaport-js";
+
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 const { executeAllActions } = await seaport.createOrder(
   {
     offer: [
       {
-        amount: parseEther("10").toString(),
+        amount: ethers.parseEther("10").toString(),
         // WETH
         token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       },
