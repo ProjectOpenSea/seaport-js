@@ -1,6 +1,9 @@
 import { expect } from "chai"
 import type { Order } from "../src/types"
-import { getAdvancedOrderNumeratorDenominator } from "../src/utils/fulfill"
+import {
+  clampUnitsToRemaining,
+  getAdvancedOrderNumeratorDenominator,
+} from "../src/utils/fulfill"
 import { getMaximumSizeForOrder } from "../src/utils/item"
 
 // Builds a minimal Order shaped just enough for the amount-based helpers under
@@ -67,5 +70,37 @@ describe("units-to-fill validation (getAdvancedOrderNumeratorDenominator)", () =
     expect(() => getAdvancedOrderNumeratorDenominator(feedErc721, 2)).to.throw(
       "Cannot fill 2 units: this order is only divisible into 1 unit(s)",
     )
+  })
+})
+
+// Seaport caps a fill at whatever is left of a partially filled order, so the
+// SDK has to size its amounts against the same number. Status here is already
+// scaled to the order's max units by scaleOrderStatusToMaxUnits.
+describe("clamping units to what remains", () => {
+  it("leaves a request that fits inside the remainder alone", () => {
+    expect(clampUnitsToRemaining(3, { totalFilled: 6n, totalSize: 10n })).to.eq(
+      3,
+    )
+  })
+
+  it("caps a request that runs past the remainder", () => {
+    expect(clampUnitsToRemaining(8, { totalFilled: 6n, totalSize: 10n })).to.eq(
+      4n,
+    )
+  })
+
+  it("caps to the remainder when the whole rest is requested", () => {
+    expect(
+      clampUnitsToRemaining(10, { totalFilled: 6n, totalSize: 10n }),
+    ).to.eq(4n)
+  })
+
+  it("leaves an untouched order alone so divisibility is still enforced", () => {
+    // totalFilled 0 means nothing has been taken yet; an oversized request
+    // there is a caller error and stays with
+    // getAdvancedOrderNumeratorDenominator to reject.
+    expect(
+      clampUnitsToRemaining(99, { totalFilled: 0n, totalSize: 10n }),
+    ).to.eq(99)
   })
 })

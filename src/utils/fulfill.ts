@@ -381,6 +381,10 @@ export function fulfillStandardOrder(
 > {
   assertNoCriteriaTips(tips)
 
+  if (unitsToFill) {
+    unitsToFill = clampUnitsToRemaining(unitsToFill, { totalFilled, totalSize })
+  }
+
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills = unitsToFill
@@ -605,6 +609,12 @@ export function fulfillAvailableOrders({
 
   const sanitizedOrdersMetadata = ordersMetadata.map(orderMetadata => ({
     ...orderMetadata,
+    unitsToFill: orderMetadata.unitsToFill
+      ? clampUnitsToRemaining(
+          orderMetadata.unitsToFill,
+          orderMetadata.orderStatus,
+        )
+      : orderMetadata.unitsToFill,
     order: validateAndSanitizeFromOrderStatus(
       orderMetadata.order,
       orderMetadata.orderStatus,
@@ -946,6 +956,32 @@ export function assertNoCriteriaTips(tips: ConsiderationItem[]) {
         "Pass a tip with an explicit identifier instead.",
     )
   }
+}
+
+/**
+ * Caps a requested fill at what is left of a partially filled order.
+ *
+ * Seaport does this itself: asking for 8 of 10 units when only 4 remain
+ * transfers 4 and closes the order. Deriving amounts from the raw request
+ * instead describes a fill that will never happen -- the offer side is sized
+ * for units the offerer no longer holds, so the balance check rejects an order
+ * the contract would have settled.
+ *
+ * Only applies once an order is partially filled. A request larger than the
+ * order was ever divisible into is a different thing entirely, and
+ * getAdvancedOrderNumeratorDenominator still rejects it.
+ */
+export const clampUnitsToRemaining = (
+  unitsToFill: BigNumberish,
+  { totalFilled, totalSize }: Pick<OrderStatus, "totalFilled" | "totalSize">,
+): BigNumberish => {
+  if (totalFilled === 0n) {
+    return unitsToFill
+  }
+
+  const remaining = totalSize - totalFilled
+
+  return BigInt(unitsToFill) > remaining ? remaining : unitsToFill
 }
 
 export const getAdvancedOrderNumeratorDenominator = (
