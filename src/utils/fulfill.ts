@@ -1,9 +1,9 @@
 import {
   type BigNumberish,
-  type ContractTransaction,
   ethers,
   type Overrides,
   type Signer,
+  type TransactionResponse,
 } from "ethers"
 import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants"
 import type {
@@ -323,7 +323,7 @@ export function fulfillBasicOrder(
   return {
     actions,
     executeAllActions: () =>
-      executeAllActions(actions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<TransactionResponse>,
     executeApprovals: () => executeApprovals(actions),
   }
 }
@@ -531,7 +531,7 @@ export function fulfillStandardOrder(
   return {
     actions,
     executeAllActions: () =>
-      executeAllActions(actions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<TransactionResponse>,
     executeApprovals: () => executeApprovals(actions),
   }
 }
@@ -869,7 +869,7 @@ export function fulfillAvailableOrders({
   return {
     actions,
     executeAllActions: () =>
-      executeAllActions(actions) as Promise<ContractTransaction>,
+      executeAllActions(actions) as Promise<TransactionResponse>,
     executeApprovals: () => executeApprovals(actions),
   }
 }
