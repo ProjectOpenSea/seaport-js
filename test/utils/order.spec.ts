@@ -1,12 +1,19 @@
 import { expect } from "chai"
 import { ItemType, OrderType } from "../../src/constants"
-import type { ConsiderationItem, OrderComponents } from "../../src/types"
+import type {
+  ConsiderationItem,
+  Order,
+  OrderComponents,
+  OrderParameters,
+} from "../../src/types"
+import { getMaximumSizeForOrder } from "../../src/utils/item"
 import { MerkleTree } from "../../src/utils/merkletree"
 import {
   deductFees,
   freezeOrderComponents,
   generateRandomSalt,
   mapInputItemToOfferItem,
+  mapTipAmountsFromUnitsToFill,
 } from "../../src/utils/order"
 import { getTagFromDomain } from "../../src/utils/usecase"
 
@@ -393,5 +400,74 @@ describe("mapInputItemToOfferItem", () => {
     })
     expect(offerItem.startAmount).to.eq("1000")
     expect(offerItem.endAmount).to.eq("900")
+  })
+})
+
+// fulfillStandardOrder resolves a raw totalSize of 0 (an order that hasn't
+// been partially filled yet) to the order's own maximum size via
+// getMaximumSizeForOrder before scaling tips with mapTipAmountsFromUnitsToFill.
+// scaleOrderStatusToMaxUnits already rewrites totalSize away from 0 at both
+// of fulfillStandardOrder's call sites, so this resolution isn't reachable
+// through the public API today - see ProjectOpenSea/seaport-js#971 and #972.
+// This pins both halves of that hardening: mapTipAmountsFromUnitsToFill
+// dividing by a raw totalSize of 0 (what the resolution exists to avoid),
+// and the resolved order-maximum value producing the correct scaled tip.
+describe("mapTipAmountsFromUnitsToFill zero-totalSize resolution", () => {
+  const token = "0x0000000000000000000000000000000000000005"
+
+  const tip = (amount: string): ConsiderationItem => ({
+    itemType: ItemType.ERC20,
+    token,
+    identifierOrCriteria: "0",
+    startAmount: amount,
+    endAmount: amount,
+    recipient: "0x0000000000000000000000000000000000000001",
+  })
+
+  const orderWithMaximumSize = (maxSize: bigint): Order => {
+    const parameters: OrderParameters = {
+      offerer: "0x0000000000000000000000000000000000000002",
+      zone: "0x0000000000000000000000000000000000000000",
+      orderType: OrderType.FULL_OPEN,
+      startTime: "0",
+      endTime: "0",
+      zoneHash:
+        "0x0000000000000000000000000000000000000000000000000000000000000",
+      salt: "0",
+      offer: [
+        {
+          itemType: ItemType.ERC1155,
+          token,
+          identifierOrCriteria: "1",
+          startAmount: maxSize.toString(),
+          endAmount: maxSize.toString(),
+        },
+      ],
+      consideration: [],
+      totalOriginalConsiderationItems: "0",
+      conduitKey:
+        "0x0000000000000000000000000000000000000000000000000000000000000",
+    }
+    return { parameters, signature: "0x" }
+  }
+
+  it("throws given a raw totalSize of 0, which is why fulfillStandardOrder resolves it first", () => {
+    expect(() => mapTipAmountsFromUnitsToFill([tip("100")], 1n, 0n)).to.throw()
+  })
+
+  it("scales the tip by the order's maximum size once totalSize is resolved away from 0", () => {
+    const order = orderWithMaximumSize(50n)
+    const resolvedTotalSize = getMaximumSizeForOrder(order)
+    expect(resolvedTotalSize).to.eq(50n)
+
+    const [adjustedTip] = mapTipAmountsFromUnitsToFill(
+      [tip("100")],
+      25n,
+      resolvedTotalSize,
+    )
+    // unitsToFill (25) is half of the resolved totalSize (50), so the tip
+    // should be scaled to half its original amount.
+    expect(adjustedTip.startAmount).to.eq("50")
+    expect(adjustedTip.endAmount).to.eq("50")
   })
 })
