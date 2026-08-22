@@ -1316,6 +1316,122 @@ describeWithFixture(
         )
       })
     })
+    describe("cumulative fulfiller balance", () => {
+      it("rejects a batch the fulfiller cannot cover, even when each order alone is affordable", async () => {
+        const { seaport, testErc721, testErc20 } = fixture
+
+        await testErc721.mint(await offerer.getAddress(), nftId)
+        await testErc721.mint(await secondOfferer.getAddress(), nftId2)
+        // Enough for either listing on its own, not for both together.
+        await testErc20.mint(
+          await fulfiller.getAddress(),
+          parseEther("25").toString(),
+        )
+
+        const listing = async (
+          seller: HardhatEthersSigner,
+          identifier: string,
+          price: string,
+        ) =>
+          (
+            await seaport.createOrder(
+              {
+                offer: [
+                  {
+                    itemType: ItemType.ERC721,
+                    token: await testErc721.getAddress(),
+                    identifier,
+                  },
+                ],
+                consideration: [
+                  {
+                    amount: parseEther(price).toString(),
+                    token: await testErc20.getAddress(),
+                    recipient: await seller.getAddress(),
+                  },
+                ],
+              },
+              await seller.getAddress(),
+            )
+          ).executeAllActions()
+
+        const firstOrder = await listing(offerer, nftId, "10")
+        const secondOrder = await listing(secondOfferer, nftId2, "20")
+
+        await expect(
+          seaport.fulfillOrders({
+            fulfillOrderDetails: [
+              { order: firstOrder },
+              { order: secondOrder },
+            ],
+            accountAddress: await fulfiller.getAddress(),
+          }),
+        ).to.be.rejectedWith(
+          "The fulfiller does not have the balances needed to fulfill.",
+        )
+      })
+
+      it("allows a batch the fulfiller can cover in total", async () => {
+        const { seaport, testErc721, testErc20 } = fixture
+
+        await testErc721.mint(await offerer.getAddress(), nftId)
+        await testErc721.mint(await secondOfferer.getAddress(), nftId2)
+        // Exactly enough for both listings together.
+        await testErc20.mint(
+          await fulfiller.getAddress(),
+          parseEther("30").toString(),
+        )
+
+        const listing = async (
+          seller: HardhatEthersSigner,
+          identifier: string,
+          price: string,
+        ) =>
+          (
+            await seaport.createOrder(
+              {
+                offer: [
+                  {
+                    itemType: ItemType.ERC721,
+                    token: await testErc721.getAddress(),
+                    identifier,
+                  },
+                ],
+                consideration: [
+                  {
+                    amount: parseEther(price).toString(),
+                    token: await testErc20.getAddress(),
+                    recipient: await seller.getAddress(),
+                  },
+                ],
+              },
+              await seller.getAddress(),
+            )
+          ).executeAllActions()
+
+        const firstOrder = await listing(offerer, nftId, "10")
+        const secondOrder = await listing(secondOfferer, nftId2, "20")
+
+        // The cumulative check must not reject a batch that balances exactly.
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [{ order: firstOrder }, { order: secondOrder }],
+          accountAddress: await fulfiller.getAddress(),
+        })
+
+        for (const action of actions.filter(a => a.type === "approval")) {
+          await action.transactionMethods.transact()
+        }
+        await actions[actions.length - 1].transactionMethods.transact()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await fulfiller.getAddress(),
+        )
+        expect(await testErc721.ownerOf(nftId2)).to.equal(
+          await fulfiller.getAddress(),
+        )
+      })
+    })
+
     // TODO
     describe("Special use cases", () => {
       it("Can fulfill dutch auction orders", () => {})
