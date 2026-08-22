@@ -672,6 +672,11 @@ export function fulfillAvailableOrders({
 
   let totalNativeAmount = 0n
   const totalInsufficientApprovals: InsufficientApprovals = []
+  // What the fulfiller owes across the WHOLE batch, per lowercased token and
+  // identifier. Each order's own requirement is checked separately below, but
+  // an ERC20 approval is one allowance shared by every order in the batch, so
+  // the amount to approve is this total rather than any single order's share.
+  const cumulativeFulfillerAmounts: Record<string, Record<string, bigint>> = {}
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap(orderMetadata => [
       orderMetadata.order.parameters.offer,
@@ -719,13 +724,25 @@ export function fulfillAvailableOrders({
         isConsiderationItem: true,
       }
 
+      const summedConsideration = getSummedTokenAndIdentifierAmounts({
+        items: considerationIncludingTips,
+        criterias: considerationCriteria,
+        timeBasedItemParams,
+      })
+
       totalNativeAmount =
         totalNativeAmount +
-        (getSummedTokenAndIdentifierAmounts({
-          items: considerationIncludingTips,
-          criterias: considerationCriteria,
-          timeBasedItemParams,
-        })[ethers.ZeroAddress]?.["0"] ?? 0n)
+        (summedConsideration[ethers.ZeroAddress]?.["0"] ?? 0n)
+
+      for (const [token, identifierToAmount] of Object.entries(
+        summedConsideration,
+      )) {
+        for (const [identifier, amount] of Object.entries(identifierToAmount)) {
+          cumulativeFulfillerAmounts[token] ??= {}
+          cumulativeFulfillerAmounts[token][identifier] =
+            (cumulativeFulfillerAmounts[token][identifier] ?? 0n) + amount
+        }
+      }
 
       const insufficientApprovals = validateStandardFulfillBalancesAndApprovals(
         {
@@ -764,8 +781,25 @@ export function fulfillAvailableOrders({
 
   overrides = { ...overrides, value: totalNativeAmount }
 
+  // An approval is deduped to one action per token and operator, and with
+  // exactApproval that action approves `requiredApprovedAmount`. Left as the
+  // first order's share it under-approves the batch and the fulfillment reverts.
+  // Raise it to the batch total, never lower it: an order whose allowance
+  // already covers it contributes no entry here at all, so summing the entries
+  // that are present would still undercount.
+  const approvalsForBatch = totalInsufficientApprovals.map(approval => {
+    const cumulative =
+      cumulativeFulfillerAmounts[approval.token.toLowerCase()]?.[
+        approval.identifierOrCriteria
+      ]
+    return cumulative !== undefined &&
+      cumulative > approval.requiredApprovedAmount
+      ? { ...approval, requiredApprovedAmount: cumulative }
+      : approval
+  })
+
   const approvalActions = getApprovalActions(
-    totalInsufficientApprovals,
+    approvalsForBatch,
     exactApproval,
     signer,
   )
