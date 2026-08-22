@@ -19,6 +19,7 @@
 - [Getting Started](#getting-started)
   - [Use Cases](#use-cases)
 - [Contributing](#contributing)
+- [Security](#security)
 
 ## Synopsis
 
@@ -167,6 +168,10 @@ const transaction = await executeAllFulfillActions();
 ## Contributing
 
 See [the contributing guide](./.github/CONTRIBUTING.md) for detailed instructions on how to get started with this project.
+
+## Security
+
+Found a vulnerability? Report it through OpenSea's Bugcrowd program at https://bugcrowd.com/engagements/opensea rather than opening a public issue. See [SECURITY.md](SECURITY.md).
 
 ## License
 
