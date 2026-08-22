@@ -1,3 +1,5 @@
+import { ItemType } from "./constants"
 import { Seaport } from "./seaport"
+import { getMaximumSizeForOrder } from "./utils/item"
 
-export { Seaport }
+export { getMaximumSizeForOrder, ItemType, Seaport }
