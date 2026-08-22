@@ -1028,9 +1028,8 @@ export class Seaport {
 
     const fulfillerAddress = await fulfiller.getAddress()
 
-    const allOffererOperators = fulfillOrderDetails.map(
-      ({ order }) =>
-        this._getConduit(order.parameters.conduitKey),
+    const allOffererOperators = fulfillOrderDetails.map(({ order }) =>
+      this._getConduit(order.parameters.conduitKey),
     )
 
     const fulfillerOperator = this._getConduit(conduitKey)
