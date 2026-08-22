@@ -395,9 +395,24 @@ export function fulfillStandardOrder(
   let adjustedTips: ConsiderationItem[] = []
 
   if (tips.length > 0) {
-    adjustedTips = unitsToFill
-      ? mapTipAmountsFromUnitsToFill(tips, unitsToFill, totalSize)
-      : mapTipAmountsFromFilledStatus(tips, totalFilled, totalSize)
+    if (unitsToFill) {
+      // mapOrderAmountsFromUnitsToFill resolves a totalSize of 0 (an order
+      // that hasn't been partially filled yet) to the order's own maximum
+      // size internally; tips must be scaled by that same resolved value,
+      // or a raw totalSize of 0 passed straight through divides by zero.
+      const resolvedTotalSize =
+        totalSize === 0n ? getMaximumSizeForOrder(order) : totalSize
+      adjustedTips = mapTipAmountsFromUnitsToFill(
+        tips,
+        unitsToFill,
+        resolvedTotalSize,
+      )
+    } else {
+      // mapTipAmountsFromFilledStatus already treats totalSize === 0n as
+      // "leave unscaled", matching mapOrderAmountsFromFilledStatus above -
+      // no resolution needed here.
+      adjustedTips = mapTipAmountsFromFilledStatus(tips, totalFilled, totalSize)
+    }
   }
 
   const {
@@ -607,17 +622,29 @@ export function fulfillAvailableOrders({
       return []
     }
 
-    return orderMetadata.unitsToFill
-      ? mapTipAmountsFromUnitsToFill(
-          orderMetadata.tips,
-          orderMetadata.unitsToFill,
-          orderMetadata.orderStatus.totalSize,
-        )
-      : mapTipAmountsFromFilledStatus(
-          orderMetadata.tips,
-          orderMetadata.orderStatus.totalFilled,
-          orderMetadata.orderStatus.totalSize,
-        )
+    if (orderMetadata.unitsToFill) {
+      // mapOrderAmountsFromUnitsToFill (used just below for the order
+      // itself) resolves a totalSize of 0 to the order's own maximum size
+      // internally; tips must be scaled by that same resolved value, or a
+      // raw totalSize of 0 passed straight through divides by zero.
+      const resolvedTotalSize =
+        orderMetadata.orderStatus.totalSize === 0n
+          ? getMaximumSizeForOrder(orderMetadata.order)
+          : orderMetadata.orderStatus.totalSize
+      return mapTipAmountsFromUnitsToFill(
+        orderMetadata.tips,
+        orderMetadata.unitsToFill,
+        resolvedTotalSize,
+      )
+    }
+    // mapTipAmountsFromFilledStatus already treats totalSize === 0n as
+    // "leave unscaled", matching mapOrderAmountsFromFilledStatus below - no
+    // resolution needed here.
+    return mapTipAmountsFromFilledStatus(
+      orderMetadata.tips,
+      orderMetadata.orderStatus.totalFilled,
+      orderMetadata.orderStatus.totalSize,
+    )
   }
 
   const ordersMetadataWithAdjustedFills = sanitizedOrdersMetadata.map(

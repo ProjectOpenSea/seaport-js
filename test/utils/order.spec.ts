@@ -1,7 +1,14 @@
 import { expect } from "chai"
 import { ItemType, OrderType } from "../../src/constants"
 import type { ConsiderationItem, OrderComponents } from "../../src/types"
-import { deductFees, freezeOrderComponents } from "../../src/utils/order"
+import { MerkleTree } from "../../src/utils/merkletree"
+import {
+  deductFees,
+  freezeOrderComponents,
+  generateRandomSalt,
+  mapInputItemToOfferItem,
+} from "../../src/utils/order"
+import { getTagFromDomain } from "../../src/utils/usecase"
 
 // deductFees subtracts the summed fee basisPoints from every currency item and
 // is the point where an out-of-range fee first turns an order malformed: a total
@@ -74,7 +81,41 @@ describe("deductFees fee-basisPoints bound", () => {
           },
         ],
       ),
-    ).to.throw("Total fee basisPoints (10001) cannot exceed 10000 (100%)")
+    ).to.throw(
+      "Fee basisPoints (10001) must be a safe integer between 0 and 10000 (100%).",
+    )
+  })
+
+  it("rejects negative fee basisPoints", () => {
+    expect(() =>
+      deductFees(
+        [currencyItem("100")],
+        [
+          {
+            recipient: "0x0000000000000000000000000000000000000001",
+            basisPoints: -1,
+          },
+        ],
+      ),
+    ).to.throw(
+      "Fee basisPoints (-1) must be a safe integer between 0 and 10000 (100%).",
+    )
+  })
+
+  it("rejects fractional fee basisPoints", () => {
+    expect(() =>
+      deductFees(
+        [currencyItem("100")],
+        [
+          {
+            recipient: "0x0000000000000000000000000000000000000001",
+            basisPoints: 0.5,
+          },
+        ],
+      ),
+    ).to.throw(
+      "Fee basisPoints (0.5) must be a safe integer between 0 and 10000 (100%).",
+    )
   })
 })
 
@@ -157,5 +198,200 @@ describe("freezeOrderComponents", () => {
     Object.freeze(input.offer[0])
     expect(() => freezeOrderComponents(input)).to.not.throw()
     expect(Object.isFrozen(input)).to.be.true
+  })
+})
+
+// A domain-tagged salt carries the first four bytes of keccak256(domain) so the
+// order can be attributed back to the domain it came from. That only works if
+// the salt keeps its full 32-byte width: dropping a leading zero byte shifts
+// every following byte left, and the tag can no longer be read off the salt.
+describe("generateRandomSalt domain tag", () => {
+  const tagOf = (domain: string) => getTagFromDomain(domain)
+
+  // keccak256 of each of these starts with a 0x00 byte
+  const zeroLeadingDomains = ["d362", "d562", "d935"]
+
+  it("keeps the tag readable for a domain hashing to a leading zero byte", () => {
+    for (const domain of zeroLeadingDomains) {
+      const tag = tagOf(domain)
+      expect(tag.slice(0, 2), `${domain} should lead with a zero byte`).to.eq(
+        "00",
+      )
+
+      const salt = generateRandomSalt(domain)
+      expect(salt.slice(2, 10), `tag for ${domain}`).to.eq(tag)
+    }
+  })
+
+  it("emits a full 32-byte salt regardless of the domain", () => {
+    for (const domain of [...zeroLeadingDomains, "opensea.io", "gem.xyz"]) {
+      expect(generateRandomSalt(domain)).to.match(/^0x[0-9a-f]{64}$/)
+    }
+  })
+
+  it("still tags an ordinary domain and pads when no domain is given", () => {
+    expect(generateRandomSalt("opensea.io").slice(2, 10)).to.eq(
+      tagOf("opensea.io"),
+    )
+    expect(generateRandomSalt()).to.match(/^0x0{48}[0-9a-f]{16}$/)
+  })
+})
+
+// seaport-js is consumed from browsers as well as Node, and bundlers do not
+// polyfill the `Buffer` global by default. `generateRandomSalt` is on the hot
+// path -- opensea-sdk calls the no-domain branch when it builds a private
+// listing counter order -- so pin that neither branch reaches for a Node global.
+// Nothing else in the suite can catch this, because Node always defines Buffer.
+describe("generateRandomSalt without Node globals", () => {
+  it("builds a salt in an environment with no Buffer", () => {
+    const originalBuffer = globalThis.Buffer
+    // @ts-expect-error deleting a Node global to stand in for a browser bundle
+    delete globalThis.Buffer
+    try {
+      expect(generateRandomSalt()).to.match(/^0x0{48}[0-9a-f]{16}$/)
+      expect(generateRandomSalt("opensea.io")).to.match(/^0x[0-9a-f]{64}$/)
+    } finally {
+      globalThis.Buffer = originalBuffer
+    }
+  })
+})
+
+// mapInputItemToOfferItem is the single normalizer every createOrder input item
+// passes through on its way to a Seaport OfferItem: it fans a CreateInputItem
+// (basic ERC721/ERC1155, criteria items, and bare currency items) out into the
+// fully-populated { itemType, token, identifierOrCriteria, startAmount, endAmount }
+// shape the protocol signs over, applying the amount defaults each variant
+// relies on. It is only otherwise exercised indirectly through the
+// hardhat-network-backed create-order specs, so pin its branch-by-branch
+// behavior here as fast, isolated units.
+describe("mapInputItemToOfferItem", () => {
+  const token = "0x0000000000000000000000000000000000000005"
+  const ZERO = "0x0000000000000000000000000000000000000000"
+
+  it("maps a basic ERC721 item, defaulting both amounts to 1", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC721,
+        token,
+        identifier: "42",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC721,
+      token,
+      identifierOrCriteria: "42",
+      startAmount: "1",
+      endAmount: "1",
+    })
+  })
+
+  it("maps a basic ERC1155 item, defaulting endAmount to the start amount", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC1155,
+        token,
+        identifier: "7",
+        amount: "5",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC1155,
+      token,
+      identifierOrCriteria: "7",
+      startAmount: "5",
+      endAmount: "5",
+    })
+  })
+
+  it("preserves distinct start and end amounts for an ascending ERC1155 item", () => {
+    const offerItem = mapInputItemToOfferItem({
+      itemType: ItemType.ERC1155,
+      token,
+      identifier: "7",
+      amount: "5",
+      endAmount: "10",
+    })
+    expect(offerItem.startAmount).to.eq("5")
+    expect(offerItem.endAmount).to.eq("10")
+  })
+
+  it("maps an ERC721 criteria item given an explicit merkle root", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC721,
+        token,
+        criteria: "123",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC721_WITH_CRITERIA,
+      token,
+      identifierOrCriteria: "123",
+      startAmount: "1",
+      endAmount: "1",
+    })
+  })
+
+  it("maps an ERC1155 criteria item, keeping its amount", () => {
+    expect(
+      mapInputItemToOfferItem({
+        itemType: ItemType.ERC1155,
+        token,
+        amount: "2",
+        criteria: "456",
+      }),
+    ).to.deep.equal({
+      itemType: ItemType.ERC1155_WITH_CRITERIA,
+      token,
+      identifierOrCriteria: "456",
+      startAmount: "2",
+      endAmount: "2",
+    })
+  })
+
+  it("derives the merkle root from identifiers for a criteria item", () => {
+    const identifiers = ["1", "2", "3"]
+    const offerItem = mapInputItemToOfferItem({
+      itemType: ItemType.ERC721,
+      token,
+      identifiers,
+    })
+    expect(offerItem.itemType).to.eq(ItemType.ERC721_WITH_CRITERIA)
+    expect(offerItem.identifierOrCriteria).to.eq(
+      new MerkleTree(identifiers).getRoot(),
+    )
+  })
+
+  it("maps a currency item with a token to ERC20", () => {
+    expect(mapInputItemToOfferItem({ token, amount: "1000" })).to.deep.equal({
+      itemType: ItemType.ERC20,
+      token,
+      identifierOrCriteria: "0",
+      startAmount: "1000",
+      endAmount: "1000",
+    })
+  })
+
+  it("maps a currency item without a token to native", () => {
+    expect(mapInputItemToOfferItem({ amount: "1000" })).to.deep.equal({
+      itemType: ItemType.NATIVE,
+      token: ZERO,
+      identifierOrCriteria: "0",
+      startAmount: "1000",
+      endAmount: "1000",
+    })
+  })
+
+  it("treats the zero-address token as native, not ERC20", () => {
+    expect(
+      mapInputItemToOfferItem({ token: ZERO, amount: "1000" }).itemType,
+    ).to.eq(ItemType.NATIVE)
+  })
+
+  it("preserves a descending currency end amount", () => {
+    const offerItem = mapInputItemToOfferItem({
+      token,
+      amount: "1000",
+      endAmount: "900",
+    })
+    expect(offerItem.startAmount).to.eq("1000")
+    expect(offerItem.endAmount).to.eq("900")
   })
 })

@@ -2,6 +2,7 @@ import {
   type BigNumberish,
   concat,
   ethers,
+  hexlify,
   keccak256,
   randomBytes,
   toBeHex,
@@ -83,6 +84,18 @@ export const deductFees = <T extends Item>(
 ): T[] => {
   if (!fees) {
     return items
+  }
+
+  for (const { basisPoints } of fees) {
+    if (
+      !Number.isSafeInteger(basisPoints) ||
+      basisPoints < 0 ||
+      basisPoints > Number(ONE_HUNDRED_PERCENT_BP)
+    ) {
+      throw new Error(
+        `Fee basisPoints (${basisPoints}) must be a safe integer between 0 and ${ONE_HUNDRED_PERCENT_BP} (100%).`,
+      )
+    }
   }
 
   const totalBasisPoints = fees.reduce(
@@ -360,15 +373,25 @@ export function mapTipAmountsFromFilledStatus(
 
 export const generateRandomSalt = (domain?: string) => {
   if (domain) {
+    // Width the hex to a full 32 bytes. `concat` already produces 32 bytes, but
+    // an unwidthed `toBeHex` re-encodes the value as a number and drops leading
+    // zero bytes, so a domain whose hash starts with 0x00 -- roughly one in 256
+    // -- would yield a 31-byte salt whose first four bytes read as the tag
+    // shifted a byte left, leaving the domain unrecoverable from the salt.
     return toBeHex(
       concat([
         keccak256(toUtf8Bytes(domain)).slice(0, 10),
         Uint8Array.from(Array(20).fill(0)),
         randomBytes(8),
       ]),
+      32,
     )
   }
-  return `0x${Buffer.from(randomBytes(8)).toString("hex").padStart(64, "0")}`
+  // `Buffer` is a Node global that browser bundlers do not polyfill by default,
+  // and this branch is on the hot path: opensea-sdk calls generateRandomSalt()
+  // with no domain when it builds a private-listing counter order. Build the
+  // same 24 zero bytes plus 8 random bytes out of ethers primitives instead.
+  return hexlify(concat([new Uint8Array(24), randomBytes(8)]))
 }
 
 export const shouldUseMatchForFulfill = () => true

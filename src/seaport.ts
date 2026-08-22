@@ -839,6 +839,11 @@ export class Seaport {
 
     const fulfillerOperator = this.config.conduitKeyToConduit[conduitKey]
 
+    const tipConsiderationItems = tips.map(tip => ({
+      ...mapInputItemToOfferItem(tip),
+      recipient: tip.recipient,
+    }))
+
     const [
       offererBalancesAndApprovals,
       fulfillerBalancesAndApprovals,
@@ -853,10 +858,14 @@ export class Seaport {
         operator: offererOperator,
       }),
       // Get fulfiller balances and approvals of all items in the set, as offer items
-      // may be received by the fulfiller for standard fulfills
+      // may be received by the fulfiller for standard fulfills.
+      // Tips are paid by the fulfiller too, and the balance and approval checks
+      // sum them in alongside the order's consideration, so they have to be
+      // covered here as well. A tip in a token the order does not already carry
+      // would otherwise have no entry to look up.
       getBalancesAndApprovals({
         owner: fulfillerAddress,
-        items: [...offer, ...consideration],
+        items: [...offer, ...consideration, ...tipConsiderationItems],
         criterias: [...offerCriteria, ...considerationCriteria],
         provider: this.provider,
         operator: fulfillerOperator,
@@ -883,11 +892,6 @@ export class Seaport {
       ascendingAmountTimestampBuffer:
         this.config.ascendingAmountFulfillmentBuffer,
     }
-
-    const tipConsiderationItems = tips.map(tip => ({
-      ...mapInputItemToOfferItem(tip),
-      recipient: tip.recipient,
-    }))
 
     const isRecipientSelf = recipientAddress === ethers.ZeroAddress
 
@@ -1011,6 +1015,12 @@ export class Seaport {
     const allConsiderationItems = fulfillOrderDetails.flatMap(
       ({ order }) => order.parameters.consideration,
     )
+    const allTipItems = fulfillOrderDetails.map(({ tips = [] }) =>
+      tips.map(tip => ({
+        ...mapInputItemToOfferItem(tip),
+        recipient: tip.recipient,
+      })),
+    )
     const allOfferCriteria = fulfillOrderDetails.flatMap(
       ({ offerCriteria = [] }) => offerCriteria,
     )
@@ -1036,10 +1046,18 @@ export class Seaport {
         ),
       ),
       // Get fulfiller balances and approvals of all items in the set, as offer items
-      // may be received by the fulfiller for standard fulfills
+      // may be received by the fulfiller for standard fulfills.
+      // Tips are paid by the fulfiller too, and the balance and approval checks
+      // sum them in alongside each order's consideration, so they have to be
+      // covered here as well. A tip in a token the orders do not already carry
+      // would otherwise have no entry to look up.
       getBalancesAndApprovals({
         owner: fulfillerAddress,
-        items: [...allOfferItems, ...allConsiderationItems],
+        items: [
+          ...allOfferItems,
+          ...allConsiderationItems,
+          ...allTipItems.flat(),
+        ],
         criterias: [...allOfferCriteria, ...allConsiderationCriteria],
         operator: fulfillerOperator,
         provider: this.provider,
@@ -1063,11 +1081,7 @@ export class Seaport {
           ),
           offerCriteria: orderDetails.offerCriteria ?? [],
           considerationCriteria: orderDetails.considerationCriteria ?? [],
-          tips:
-            orderDetails.tips?.map(tip => ({
-              ...mapInputItemToOfferItem(tip),
-              recipient: tip.recipient,
-            })) ?? [],
+          tips: allTipItems[index],
           extraData: orderDetails.extraData ?? "0x",
           offererBalancesAndApprovals: offerersBalancesAndApprovals[index],
           offererOperator: allOffererOperators[index],
