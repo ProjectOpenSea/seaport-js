@@ -3,6 +3,7 @@ import { expect } from "chai"
 import { parseEther } from "ethers"
 import { ItemType } from "../src/constants"
 import type { CreateOrderInput } from "../src/types"
+import { MerkleTree } from "../src/utils/merkletree"
 import { describeWithFixture } from "./utils/setup"
 
 describeWithFixture(
@@ -40,6 +41,43 @@ describeWithFixture(
           },
         ],
       }
+    })
+
+    it("rejects a criteria-based tip instead of building an unresolvable order", async () => {
+      const { seaport, testErc721 } = fixture
+
+      const { executeAllActions } = await seaport.createOrder(
+        erc20Listing,
+        await offerer.getAddress(),
+      )
+      const order = await executeAllActions()
+
+      // The fulfiller has to actually own the tipped NFT, or the balance fetch
+      // reverts NOT_MINTED before the guard is reached.
+      await testErc721.mint(await fulfiller.getAddress(), "42")
+      const tree = new MerkleTree(["42", "43"])
+
+      // A criteria tip is counted when validating that enough criterias were
+      // supplied, but resolvers are generated from the order alone, so without
+      // this guard the SDK hands back a transaction that Seaport reverts with
+      // UnresolvedConsiderationCriteria.
+      await expect(
+        seaport.fulfillOrder({
+          order,
+          accountAddress: await fulfiller.getAddress(),
+          considerationCriteria: [
+            { identifier: "42", proof: tree.getProof("42") },
+          ],
+          tips: [
+            {
+              itemType: ItemType.ERC721,
+              token: await testErc721.getAddress(),
+              criteria: tree.getRoot(),
+              recipient: await tipRecipient.getAddress(),
+            },
+          ],
+        }),
+      ).to.be.rejectedWith("Criteria-based tips are not supported")
     })
 
     it("surfaces the approval a second ERC20 tip needs", async () => {
