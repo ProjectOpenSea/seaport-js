@@ -363,14 +363,24 @@ export class Seaport {
     const considerationItemsWithFees = [
       ...deductFees(considerationItems, fees),
       ...(currencies.length
-        ? (fees?.map(fee =>
-            feeToConsiderationItem({
-              fee,
-              token: currencies[0].token,
-              baseAmount: totalCurrencyAmount.startAmount,
-              baseEndAmount: totalCurrencyAmount.endAmount,
-            }),
-          ) ?? [])
+        ? (fees
+            ?.map(fee =>
+              feeToConsiderationItem({
+                fee,
+                token: currencies[0].token,
+                baseAmount: totalCurrencyAmount.startAmount,
+                baseEndAmount: totalCurrencyAmount.endAmount,
+              }),
+            )
+            // A fee small enough to floor to zero on both ends carries nothing,
+            // and Seaport rejects a zero-amount item with MissingItemAmount, so
+            // including it would leave the order permanently unfulfillable. An
+            // item that is only zero at one end still pays over the rest of its
+            // range and is kept.
+            .filter(
+              ({ startAmount, endAmount }) =>
+                BigInt(startAmount) > 0n || BigInt(endAmount) > 0n,
+            ) ?? [])
         : []),
     ]
 
