@@ -379,6 +379,8 @@ export function fulfillStandardOrder(
     >
   >
 > {
+  assertNoCriteriaTips(tips)
+
   // If we are supplying units to fill, we adjust the order by the minimum of the amount to fill and
   // the remaining order left to be fulfilled
   const orderWithAdjustedFills = unitsToFill
@@ -599,6 +601,8 @@ export function fulfillAvailableOrders({
     ContractMethodReturnType<SeaportContract, "fulfillAvailableAdvancedOrders">
   >
 > {
+  ordersMetadata.forEach(({ tips }) => assertNoCriteriaTips(tips))
+
   const sanitizedOrdersMetadata = ordersMetadata.map(orderMetadata => ({
     ...orderMetadata,
     order: validateAndSanitizeFromOrderStatus(
@@ -919,6 +923,28 @@ export function generateFulfillOrdersFulfillments(
     considerationFulfillments: Object.values(
       considerationAggregatedFulfillments,
     ),
+  }
+}
+
+/**
+ * Rejects criteria-based tips.
+ *
+ * Tips are appended to the submitted order's consideration array, but criteria
+ * resolvers are generated from the order alone, so a criteria-based tip is
+ * counted when validating that enough criterias were supplied and then never
+ * given a resolver. Seaport rejects the unresolved item with
+ * `UnresolvedConsiderationCriteria`, and if the caller happened to list the
+ * tip's criteria first, the order's own criteria item resolves against the
+ * tip's identifier on the way there. Refuse it here rather than spending gas
+ * to find out.
+ */
+export function assertNoCriteriaTips(tips: ConsiderationItem[]) {
+  if (tips.some(({ itemType }) => isCriteriaItem(itemType))) {
+    throw new Error(
+      "Criteria-based tips are not supported: a tip is appended to the order's " +
+        "consideration but gets no criteria resolver, so Seaport cannot resolve it. " +
+        "Pass a tip with an explicit identifier instead.",
+    )
   }
 }
 
