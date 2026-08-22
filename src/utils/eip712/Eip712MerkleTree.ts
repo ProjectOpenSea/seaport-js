@@ -8,25 +8,22 @@ import {
 import { MerkleTree } from "merkletreejs"
 import type { EIP712TypeDefinitions } from "./defaults"
 import { DefaultGetter } from "./defaults"
-import {
-  bufferKeccak,
-  bufferToHex,
-  chunk,
-  fillArray,
-  getRoot,
-  hexToBuffer,
-} from "./utils"
+import { bufferToHex, chunk, fillArray, getRoot, hexToBuffer } from "./utils"
 
 type BulkOrderElements<T> =
   | [T, T]
   | [BulkOrderElements<T>, BulkOrderElements<T>]
 
+// merkletreejs accepts hex strings for leaves, for the fill hash, and as the
+// return of the hash function, and bufferifies them itself. Handing it hex
+// keeps the bulk-order signing path clear of the Node-only `Buffer` global,
+// which browser bundlers do not define. The tree this builds is identical.
 const getTree = (leaves: string[], defaultLeafHash: string) =>
-  new MerkleTree(leaves.map(hexToBuffer), bufferKeccak, {
+  new MerkleTree(leaves, keccak256, {
     complete: true,
     sort: false,
     hashLeaves: false,
-    fillDefaultHash: hexToBuffer(defaultLeafHash),
+    fillDefaultHash: defaultLeafHash,
   })
 
 const encodeProof = (
