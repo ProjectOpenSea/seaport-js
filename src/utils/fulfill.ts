@@ -744,6 +744,15 @@ export function fulfillAvailableOrders({
   // What the batch pays the fulfiller, which funds part of what it owes: a
   // bid's ERC20 fee items are consideration the fulfiller owes but are paid out
   // of the bid's own ERC20 offer.
+  //
+  // Only when the offer actually reaches the fulfiller. `recipientAddress`
+  // forwards it elsewhere, and then every consideration item has to come out of
+  // what the fulfiller already holds -- the same reasoning the per-order check
+  // applies via `offerItemsGoToFulfiller`.
+  const offerItemsGoToFulfiller = offerItemsLandWithFulfiller(
+    recipientAddress,
+    fulfillerAddress,
+  )
   const cumulativeReceivedAmounts: Record<string, Record<string, bigint>> = {}
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap(orderMetadata => [
@@ -812,20 +821,24 @@ export function fulfillAvailableOrders({
         }
       }
 
-      const summedOffer = getSummedTokenAndIdentifierAmounts({
-        items: order.parameters.offer,
-        criterias: offerCriteria,
-        timeBasedItemParams: {
-          ...timeBasedItemParams,
-          isConsiderationItem: false,
-        },
-      })
+      if (offerItemsGoToFulfiller) {
+        const summedOffer = getSummedTokenAndIdentifierAmounts({
+          items: order.parameters.offer,
+          criterias: offerCriteria,
+          timeBasedItemParams: {
+            ...timeBasedItemParams,
+            isConsiderationItem: false,
+          },
+        })
 
-      for (const [token, identifierToAmount] of Object.entries(summedOffer)) {
-        for (const [identifier, amount] of Object.entries(identifierToAmount)) {
-          cumulativeReceivedAmounts[token] ??= {}
-          cumulativeReceivedAmounts[token][identifier] =
-            (cumulativeReceivedAmounts[token][identifier] ?? 0n) + amount
+        for (const [token, identifierToAmount] of Object.entries(summedOffer)) {
+          for (const [identifier, amount] of Object.entries(
+            identifierToAmount,
+          )) {
+            cumulativeReceivedAmounts[token] ??= {}
+            cumulativeReceivedAmounts[token][identifier] =
+              (cumulativeReceivedAmounts[token][identifier] ?? 0n) + amount
+          }
         }
       }
 
@@ -840,10 +853,7 @@ export function fulfillAvailableOrders({
           timeBasedItemParams,
           offererOperator,
           fulfillerOperator,
-          offerItemsGoToFulfiller: offerItemsLandWithFulfiller(
-            recipientAddress,
-            fulfillerAddress,
-          ),
+          offerItemsGoToFulfiller,
         },
       )
 
