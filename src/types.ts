@@ -1,4 +1,4 @@
-import type { BigNumberish, ContractTransaction } from "ethers"
+import type { BigNumberish, TransactionResponse } from "ethers"
 import type { ItemType, OrderType } from "./constants"
 import type { TestERC20, TestERC721 } from "./typechain-types/index"
 import type { Seaport as SeaportContract } from "./typechain-types/seaport/contracts/Seaport"
@@ -226,7 +226,9 @@ export type OrderUseCase<
       ? OrderWithCounter
       : T extends CreateBulkOrdersAction
         ? OrderWithCounter[]
-        : ContractTransaction
+        : // An exchange use case ends by sending the transaction, so this
+          // resolves to what transact() hands back, receipt and all.
+          TransactionResponse
   >
   /**
    * Performs the approval transactions only, skipping the final action. Use
