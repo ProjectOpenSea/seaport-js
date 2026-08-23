@@ -236,27 +236,36 @@ export const mapOrderAmountsFromFilledStatus = (
   }
 
   // i.e if totalFilled is 3 and totalSize is 4, there are 1 / 4 order amounts left to fill.
-  const basisPoints =
-    ((totalSize - totalFilled) * ONE_HUNDRED_PERCENT_BP) / totalSize
+  const remainingUnits = totalSize - totalFilled
 
   return {
     parameters: {
       ...order.parameters,
       offer: order.parameters.offer.map(item => ({
         ...item,
-        startAmount: multiplyBasisPoints(
+        startAmount: multiplyDivision(
           item.startAmount,
-          basisPoints,
+          remainingUnits,
+          totalSize,
         ).toString(),
-        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
+        endAmount: multiplyDivision(
+          item.endAmount,
+          remainingUnits,
+          totalSize,
+        ).toString(),
       })),
       consideration: order.parameters.consideration.map(item => ({
         ...item,
-        startAmount: multiplyBasisPoints(
+        startAmount: multiplyDivision(
           item.startAmount,
-          basisPoints,
+          remainingUnits,
+          totalSize,
         ).toString(),
-        endAmount: multiplyBasisPoints(item.endAmount, basisPoints).toString(),
+        endAmount: multiplyDivision(
+          item.endAmount,
+          remainingUnits,
+          totalSize,
+        ).toString(),
       })),
     },
     signature: order.signature,
@@ -361,13 +370,20 @@ export function mapTipAmountsFromFilledStatus(
   }
 
   // i.e if totalFilled is 3 and totalSize is 4, there are 1 / 4 order amounts left to fill.
-  const basisPoints =
-    ((totalSize - totalFilled) * ONE_HUNDRED_PERCENT_BP) / totalSize
+  const remainingUnits = totalSize - totalFilled
 
   return tips.map(tip => ({
     ...tip,
-    startAmount: multiplyBasisPoints(tip.startAmount, basisPoints).toString(),
-    endAmount: multiplyBasisPoints(tip.endAmount, basisPoints).toString(),
+    startAmount: multiplyDivision(
+      tip.startAmount,
+      remainingUnits,
+      totalSize,
+    ).toString(),
+    endAmount: multiplyDivision(
+      tip.endAmount,
+      remainingUnits,
+      totalSize,
+    ).toString(),
   }))
 }
 
