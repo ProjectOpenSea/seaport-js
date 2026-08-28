@@ -1,0 +1,16 @@
+# Normalise line endings to LF in the working tree.
+#
+# Git hands Windows checkouts CRLF by default, which diverges from what
+# everything else here already assumes: biome.json sets "lineEnding": "lf",
+# and CI checks out LF. That gap caused a real failure. The README scan in
+# test/public-exports.spec.ts anchored its code-fence regex on \n, so on a
+# CRLF clone it matched nothing and two export checks passed over an empty
+# document while looking green.
+#
+# PR #990 fixed that parse to read either ending. This stops the divergence
+# at the source, for every file rather than the one that happened to break.
+* text=auto eol=lf
+
+# The only binary file tracked today. text=auto already detects it, but being
+# explicit keeps that true if more images are added.
+*.png binary
