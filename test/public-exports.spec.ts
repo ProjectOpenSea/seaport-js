@@ -43,8 +43,19 @@ const SRC = join(ROOT, "src")
 /** Generated output that lives under src/ but is not hand-written source. */
 const GENERATED_DIRS = new Set(["artifacts", "contracts", "typechain-types"])
 
+/**
+ * Read a file with its line endings normalised.
+ *
+ * Every scan below is a regex over file text, and git hands Windows checkouts
+ * CRLF by default. That is enough to stop a pattern anchored on \n from
+ * matching at all, which leaves the checks reading an empty document.
+ */
+function readText(path: string): string {
+  return readFileSync(path, "utf8").replace(/\r\n/g, "\n")
+}
+
 const PACKAGE_NAME = (
-  JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as {
+  JSON.parse(readText(join(ROOT, "package.json"))) as {
     name: string
   }
 ).name
@@ -74,8 +85,12 @@ const SOURCE_FILES = sourceFiles(SRC)
  * A whole `import type { … }` statement and an individual `type X` specifier
  * are both dropped: neither exists at runtime.
  */
-function readmeImportedSymbols(): { symbol: string; statement: string }[] {
-  const readme = readFileSync(join(ROOT, "README.md"), "utf8")
+function importedSymbolsIn(
+  markdown: string,
+): { symbol: string; statement: string }[] {
+  // Normalised here as well as at the read, so the parse does not depend
+  // on how the caller got hold of the text.
+  const readme = markdown.replace(/\r\n/g, "\n")
   const fence = /```[a-zA-Z]*\n([\s\S]*?)```/g
   const importStatement = new RegExp(
     `import\\s+(type\\s+)?\\{([^}]*)\\}\\s*from\\s*["']${escapeForRegExp(
@@ -106,6 +121,10 @@ function readmeImportedSymbols(): { symbol: string; statement: string }[] {
   return found
 }
 
+function readmeImportedSymbols(): { symbol: string; statement: string }[] {
+  return importedSymbolsIn(readText(join(ROOT, "README.md")))
+}
+
 /** Names of top-level exported declarations anywhere under `src/`. */
 function exportedDeclarations(): Set<string> {
   const declaration =
@@ -114,7 +133,7 @@ function exportedDeclarations(): Set<string> {
 
   const names = new Set<string>()
   for (const file of SOURCE_FILES) {
-    const text = readFileSync(file, "utf8")
+    const text = readText(file)
     for (const [, name] of text.matchAll(declaration)) {
       names.add(name)
     }
@@ -150,7 +169,7 @@ function docCommentPromises(): {
 
   const found: { symbol: string; file: string; sentence: string }[] = []
   for (const file of SOURCE_FILES) {
-    for (const [block] of readFileSync(file, "utf8").matchAll(docBlock)) {
+    for (const [block] of readText(file).matchAll(docBlock)) {
       const prose = block
         .replace(/^\s*\/\*\*|\*\/\s*$/g, " ")
         .replace(/^\s*\*/gm, " ")
@@ -195,6 +214,29 @@ describe("public exports", () => {
       exportedDeclarations().size,
       "exported declarations under src/",
     ).to.be.greaterThan(0)
+  })
+
+  it("reads a code fence the same on LF and on CRLF", () => {
+    // git hands Windows checkouts CRLF by default, and the fence pattern is
+    // anchored on a newline, so a scan written for LF alone quietly returns
+    // nothing on those clones. Every check below it then passes over an empty
+    // list rather than over the docs.
+    const fenced = [
+      "```js",
+      `import { ItemType } from "${PACKAGE_NAME}";`,
+      "```",
+      "",
+    ].join("\n")
+
+    expect(importedSymbolsIn(fenced).map(({ symbol }) => symbol)).to.deep.equal(
+      ["ItemType"],
+    )
+    expect(
+      importedSymbolsIn(fenced.replace(/\n/g, "\r\n")).map(
+        ({ symbol }) => symbol,
+      ),
+      "a CRLF checkout must read the same as an LF one",
+    ).to.deep.equal(["ItemType"])
   })
 
   it("exports every symbol the README's code examples import", () => {
