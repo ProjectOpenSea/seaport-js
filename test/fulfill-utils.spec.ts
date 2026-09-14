@@ -5,11 +5,14 @@ import type {
   OfferItem,
   Order,
   OrderParameters,
+  OrderStatus,
 } from "../src/types"
 import type { FulfillOrdersMetadata } from "../src/utils/fulfill"
 import {
   generateFulfillOrdersFulfillments,
+  isOrderFulfillable,
   shouldUseBasicFulfill,
+  validateAndSanitizeFromOrderStatus,
 } from "../src/utils/fulfill"
 
 const OFFERER = "0x1111111111111111111111111111111111111111"
@@ -208,5 +211,116 @@ describe("shouldUseBasicFulfill", () => {
     expect(
       shouldUseBasicFulfill(listing.parameters, 0n, [erc20Item()]),
     ).to.equal(false)
+  })
+})
+
+const orderStatus = (overrides: Partial<OrderStatus> = {}): OrderStatus => ({
+  isValidated: false,
+  isCancelled: false,
+  totalFilled: 0n,
+  totalSize: 0n,
+  ...overrides,
+})
+
+// validateAndSanitizeFromOrderStatus gates a single-order fulfill on the order's
+// onchain status: it throws on a filled or cancelled order (so the fulfill fails
+// loudly rather than reverting deep in Seaport) and, for an already-validated
+// order, wipes the signature to save the gas of re-supplying it.
+describe("validateAndSanitizeFromOrderStatus", () => {
+  const signedOrder = (): Order => ({
+    ...makeOrder({ offer: [erc721Item()] }),
+    signature: "0xdeadbeef",
+  })
+
+  it("returns the order untouched when it is open, unfilled, and unvalidated", () => {
+    const order = signedOrder()
+    const result = validateAndSanitizeFromOrderStatus(order, orderStatus())
+    // The else branch returns the same reference, signature intact.
+    expect(result).to.equal(order)
+    expect(result.signature).to.equal("0xdeadbeef")
+  })
+
+  it("wipes the signature of an already-validated order", () => {
+    const order = signedOrder()
+    const result = validateAndSanitizeFromOrderStatus(
+      order,
+      orderStatus({ isValidated: true }),
+    )
+    expect(result.signature).to.equal("0x")
+    // A fresh object, so the caller's order is left untouched.
+    expect(result).to.not.equal(order)
+    expect(order.signature).to.equal("0xdeadbeef")
+    expect(result.parameters).to.deep.equal(order.parameters)
+  })
+
+  it("throws when the order is already fully filled", () => {
+    expect(() =>
+      validateAndSanitizeFromOrderStatus(
+        signedOrder(),
+        orderStatus({ totalFilled: 4n, totalSize: 4n }),
+      ),
+    ).to.throw("already filled")
+  })
+
+  it("does not treat a partial fill as fully filled", () => {
+    const order = signedOrder()
+    const result = validateAndSanitizeFromOrderStatus(
+      order,
+      orderStatus({ totalFilled: 2n, totalSize: 4n }),
+    )
+    expect(result).to.equal(order)
+  })
+
+  it("throws when the order is cancelled", () => {
+    expect(() =>
+      validateAndSanitizeFromOrderStatus(
+        signedOrder(),
+        orderStatus({ isCancelled: true }),
+      ),
+    ).to.throw("cancelled")
+  })
+
+  it("reports the filled order first when it is both filled and cancelled", () => {
+    // The filled check runs before the cancelled check.
+    expect(() =>
+      validateAndSanitizeFromOrderStatus(
+        signedOrder(),
+        orderStatus({ isCancelled: true, totalFilled: 4n, totalSize: 4n }),
+      ),
+    ).to.throw("already filled")
+  })
+})
+
+// isOrderFulfillable mirrors the two rejections above without throwing, so a
+// batch fulfill can drop the stale orders and settle the rest instead of taking
+// the whole call down.
+describe("isOrderFulfillable", () => {
+  it("is true for an open, unfilled order", () => {
+    expect(isOrderFulfillable(orderStatus())).to.equal(true)
+  })
+
+  it("is true for a partially filled order", () => {
+    expect(
+      isOrderFulfillable(orderStatus({ totalFilled: 2n, totalSize: 4n })),
+    ).to.equal(true)
+  })
+
+  it("is false for a fully filled order", () => {
+    expect(
+      isOrderFulfillable(orderStatus({ totalFilled: 4n, totalSize: 4n })),
+    ).to.equal(false)
+  })
+
+  it("is false for a cancelled order", () => {
+    expect(isOrderFulfillable(orderStatus({ isCancelled: true }))).to.equal(
+      false,
+    )
+  })
+
+  it("treats a zero totalSize as fulfillable rather than dividing by zero", () => {
+    // Seaport reports totalSize 0 for an order that has never been filled.
+    expect(
+      isOrderFulfillable(orderStatus({ totalFilled: 0n, totalSize: 0n })),
+    ).to.equal(true)
   })
 })
