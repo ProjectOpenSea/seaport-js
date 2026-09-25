@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./img/banner.png" />
+  <img src="https://raw2.seadn.io/app_logos/repo-banners/opensea-repo-banner-2026.png" alt="OpenSea" />
 </p>
 
 [![Version][version-badge]][version-link]
