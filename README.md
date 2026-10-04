@@ -17,7 +17,7 @@
 - [Synopsis](#synopsis)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-  - [Use Cases](#use-cases)
+- [Use Cases](#use-cases)
 - [Contributing](#contributing)
 - [Security](#security)
 
@@ -92,6 +92,7 @@ Many of the main core flows return _use cases_. What this means is that if you w
 #### Listing an ERC-721 for 10 ETH and fulfilling it
 
 ```js
+import { ethers } from "ethers";
 import { ItemType } from "@opensea/seaport-js";
 
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
@@ -129,6 +130,7 @@ const transaction = await executeAllFulfillActions();
 #### Making an offer for an ERC-721 for 10 WETH and fulfilling it
 
 ```js
+import { ethers } from "ethers";
 import { ItemType } from "@opensea/seaport-js";
 
 const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
