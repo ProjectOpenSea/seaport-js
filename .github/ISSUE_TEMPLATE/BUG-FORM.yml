@@ -24,7 +24,7 @@ body:
       label: Have you ensured that all of these are up to date?
       options:
         - label: seaport-js
-        - label: Node (minimum v16)
+        - label: Node (minimum v20)
   - type: input
     attributes:
       label: What version of seaport-js are you on?
