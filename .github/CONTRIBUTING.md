@@ -4,7 +4,7 @@
 
 We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions. Execute `nvm use`, if you have `nvm` installed.
 
-Then, run `npm`
+Then, run `npm install`
 
 ## Running tests
 
