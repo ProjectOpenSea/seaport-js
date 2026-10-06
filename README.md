@@ -17,7 +17,7 @@
 - [Synopsis](#synopsis)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Use Cases](#use-cases)
+  - [Use Cases](#use-cases)
 - [Contributing](#contributing)
 - [Security](#security)
 
