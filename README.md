@@ -87,7 +87,7 @@ Look at the relevant definitions in `seaport.ts` in order to see the different f
 
 Many of the main core flows return _use cases_. What this means is that if you were to create an order (a la `createOrder`), the library helps perform the necessary balance and approval checks based on the `offer` of the order being created. If the `offerer` requires approvals on one asset contract, the `actions` field of the use case would contain an approval action that the user should execute first in order for the trade to succeed in the future.
 
-### Examples
+The examples below assume the `seaport` instance created in [Getting Started](#getting-started).
 
 #### Listing an ERC-721 for 10 ETH and fulfilling it
 
