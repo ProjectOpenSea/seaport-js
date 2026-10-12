@@ -75,18 +75,21 @@ const instanceOfOverrides = <T extends Overrides>(
   obj: object | undefined,
 ): obj is T => {
   const validKeys = [
+    "accessList",
+    "blockTag",
+    "ccipReadEnabled",
+    "chainId",
+    "customData",
+    "enableCcipRead",
+    "from",
     "gasLimit",
     "gasPrice",
     "maxFeePerGas",
     "maxPriorityFeePerGas",
     "nonce",
-    "type",
-    "accessList",
-    "customData",
-    "ccipReadEnabled",
-    "value",
-    "blockTag",
     "overrides",
+    "type",
+    "value",
   ]
 
   if (obj === undefined) {
@@ -125,11 +128,12 @@ export const getTransactionMethods = <
   domain?: string,
 ): TransactionMethods<ContractMethodReturnType<T, U>> => {
   let initialOverrides: Overrides
-  if (args?.length > 0) {
-    const lastArg = args[args.length - 1]
+  const normalizedArgs = Array.isArray(args) ? [...args] : []
+  if (normalizedArgs.length > 0) {
+    const lastArg = normalizedArgs[normalizedArgs.length - 1]
     if (instanceOfOverrides(lastArg)) {
       initialOverrides = lastArg
-      args.pop()
+      normalizedArgs.pop()
     }
   }
 
@@ -142,7 +146,7 @@ export const getTransactionMethods = <
     const mergedOverrides = { ...initialOverrides, ...overrides }
     const method = await contractMethod(signer)
     const populatedTransaction = await method.populateTransaction(
-      ...[...args, mergedOverrides],
+      ...[...normalizedArgs, mergedOverrides],
     )
 
     if (domain) {
@@ -156,7 +160,7 @@ export const getTransactionMethods = <
   return {
     staticCall: async (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides }
-      const mergedArgs = [...args, mergedOverrides]
+      const mergedArgs = [...normalizedArgs, mergedOverrides]
       const method = await contractMethod(signer)
       return method.staticCall(...mergedArgs)
     },
@@ -175,7 +179,7 @@ export const getTransactionMethods = <
         )
       }
 
-      const mergedArgs = [...args, mergedOverrides]
+      const mergedArgs = [...normalizedArgs, mergedOverrides]
       const method = await contractMethod(signer)
       return method.estimateGas(...mergedArgs)
     },
