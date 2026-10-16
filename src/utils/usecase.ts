@@ -71,24 +71,43 @@ export const executeAllActions = async <
   }
 }
 
+/**
+ * Typed as a record over every `Overrides` key so that tsc fails when ethers
+ * adds or renames one. A key missing here would make an overrides object look
+ * like a positional argument, and the call would fail with "no matching
+ * fragment".
+ */
+const ETHERS_OVERRIDE_KEYS: Record<keyof Overrides, true> = {
+  accessList: true,
+  authorizationList: true,
+  blobVersionedHashes: true,
+  blobWrapperVersion: true,
+  blobs: true,
+  blockTag: true,
+  chainId: true,
+  customData: true,
+  enableCcipRead: true,
+  from: true,
+  gasLimit: true,
+  gasPrice: true,
+  kzg: true,
+  maxFeePerBlobGas: true,
+  maxFeePerGas: true,
+  maxPriorityFeePerGas: true,
+  nonce: true,
+  type: true,
+  value: true,
+}
+
+const validOverrideKeys = [
+  ...Object.keys(ETHERS_OVERRIDE_KEYS),
+  "ccipReadEnabled",
+  "overrides",
+]
+
 const instanceOfOverrides = <T extends Overrides>(
   obj: object | undefined,
 ): obj is T => {
-  const validKeys = [
-    "gasLimit",
-    "gasPrice",
-    "maxFeePerGas",
-    "maxPriorityFeePerGas",
-    "nonce",
-    "type",
-    "accessList",
-    "customData",
-    "ccipReadEnabled",
-    "value",
-    "blockTag",
-    "overrides",
-  ]
-
   if (obj === undefined) {
     return true
   }
@@ -97,7 +116,7 @@ const instanceOfOverrides = <T extends Overrides>(
     return false
   }
 
-  return Object.keys(obj).every(key => validKeys.includes(key))
+  return Object.keys(obj).every(key => validOverrideKeys.includes(key))
 }
 
 export type ContractMethodReturnType<
@@ -125,11 +144,12 @@ export const getTransactionMethods = <
   domain?: string,
 ): TransactionMethods<ContractMethodReturnType<T, U>> => {
   let initialOverrides: Overrides
-  if (args?.length > 0) {
-    const lastArg = args[args.length - 1]
+  const normalizedArgs = Array.isArray(args) ? [...args] : []
+  if (normalizedArgs.length > 0) {
+    const lastArg = normalizedArgs[normalizedArgs.length - 1]
     if (instanceOfOverrides(lastArg)) {
       initialOverrides = lastArg
-      args.pop()
+      normalizedArgs.pop()
     }
   }
 
@@ -142,7 +162,7 @@ export const getTransactionMethods = <
     const mergedOverrides = { ...initialOverrides, ...overrides }
     const method = await contractMethod(signer)
     const populatedTransaction = await method.populateTransaction(
-      ...[...args, mergedOverrides],
+      ...[...normalizedArgs, mergedOverrides],
     )
 
     if (domain) {
@@ -156,7 +176,7 @@ export const getTransactionMethods = <
   return {
     staticCall: async (overrides?: Overrides) => {
       const mergedOverrides = { ...initialOverrides, ...overrides }
-      const mergedArgs = [...args, mergedOverrides]
+      const mergedArgs = [...normalizedArgs, mergedOverrides]
       const method = await contractMethod(signer)
       return method.staticCall(...mergedArgs)
     },
@@ -175,7 +195,7 @@ export const getTransactionMethods = <
         )
       }
 
-      const mergedArgs = [...args, mergedOverrides]
+      const mergedArgs = [...normalizedArgs, mergedOverrides]
       const method = await contractMethod(signer)
       return method.estimateGas(...mergedArgs)
     },

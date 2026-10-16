@@ -3,6 +3,7 @@ import { expect } from "chai"
 import { parseEther } from "ethers"
 import { ItemType } from "../src/constants"
 import type { CreateOrderInput } from "../src/types"
+import { getTransactionMethods } from "../src/utils/usecase"
 import { OVERRIDE_GAS_LIMIT } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
 
@@ -153,5 +154,87 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
       .buildTransaction()
 
     expect(tx.to).to.equal(await fixture.seaportContract.getAddress())
+  })
+
+  it("handles from and chainId transaction overrides", async () => {
+    const { seaport } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const tx = await seaport
+      .cancelOrders([order.parameters], await offerer.getAddress(), undefined, {
+        from: await offerer.getAddress(),
+        chainId: 31337,
+      })
+      .buildTransaction()
+
+    expect(tx.to).to.equal(await fixture.seaportContract.getAddress())
+    expect(tx.from).to.equal(await offerer.getAddress())
+    expect(tx.chainId).to.equal(31337n)
+  })
+
+  it("does not mutate caller arguments array or fail on frozen arguments", async () => {
+    const { seaport, ethers } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const overrides = { from: await offerer.getAddress() }
+    const args = Object.freeze([[order.parameters], overrides])
+
+    const methods = getTransactionMethods(
+      ethers.getSigner(await offerer.getAddress()),
+      fixture.seaportContract,
+      "cancel",
+      args as any,
+    )
+
+    const tx = await methods.buildTransaction()
+    expect(tx.from).to.equal(await offerer.getAddress())
+    expect(args).to.have.length(2)
+  })
+
+  it("leaves a mutable caller arguments array intact", async () => {
+    const { seaport, ethers } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const overrides = { gasLimit: OVERRIDE_GAS_LIMIT }
+    const args = [[order.parameters], overrides]
+
+    await getTransactionMethods(
+      ethers.getSigner(await offerer.getAddress()),
+      fixture.seaportContract,
+      "cancel",
+      args as any,
+    ).buildTransaction()
+
+    expect(args).to.deep.equal([[order.parameters], overrides])
+  })
+
+  it("treats an authorizationList as an override", async () => {
+    const { seaport } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const tx = await seaport
+      .cancelOrders([order.parameters], await offerer.getAddress(), undefined, {
+        authorizationList: [],
+      })
+      .buildTransaction()
+
+    expect(tx.to).to.equal(await fixture.seaportContract.getAddress())
+    expect(tx.authorizationList).to.deep.equal([])
   })
 })
