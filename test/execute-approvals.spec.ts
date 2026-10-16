@@ -167,6 +167,43 @@ describeWithFixture(
       expect(useCase.actions[0].type).to.equal("create")
     })
 
+    it("rejects exactApproval for a criteria-based ERC721 in a bulk order", async () => {
+      const { seaport, testErc721, ethers } = fixture
+
+      const [offerer] = await ethers.getSigners()
+      const nftId = "1"
+      await testErc721.mint(await offerer.getAddress(), nftId)
+
+      await expect(
+        seaport.createBulkOrders(
+          [
+            {
+              startTime: "0",
+              endTime: MAX_INT.toString(),
+              salt: generateRandomSalt(),
+              offer: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: await testErc721.getAddress(),
+                  identifiers: [nftId],
+                },
+              ],
+              consideration: [
+                {
+                  amount: parseEther("10").toString(),
+                  recipient: await offerer.getAddress(),
+                },
+              ],
+            },
+          ],
+          await offerer.getAddress(),
+          true,
+        ),
+      ).to.be.rejectedWith(
+        "Exact approval is not available for a criteria-based ERC721 order",
+      )
+    })
+
     it("validates the order onchain from the exposed components", async () => {
       const { seaport, testErc721, ethers } = fixture
 
