@@ -427,6 +427,17 @@ export class Seaport {
         operator,
       })
 
+      if (
+        exactApproval &&
+        insufficientApprovals.some(
+          ({ itemType }) => itemType === ItemType.ERC721_WITH_CRITERIA,
+        )
+      ) {
+        throw new Error(
+          "Exact approval is not available for a criteria-based ERC721 order because it does not identify a single token. Approve the collection first or create the order without exactApproval.",
+        )
+      }
+
       const approvals = getApprovalActions(
         insufficientApprovals,
         exactApproval,
