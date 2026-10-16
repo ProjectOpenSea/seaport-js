@@ -71,27 +71,43 @@ export const executeAllActions = async <
   }
 }
 
+/**
+ * Typed as a record over every `Overrides` key so that tsc fails when ethers
+ * adds or renames one. A key missing here would make an overrides object look
+ * like a positional argument, and the call would fail with "no matching
+ * fragment".
+ */
+const ETHERS_OVERRIDE_KEYS: Record<keyof Overrides, true> = {
+  accessList: true,
+  authorizationList: true,
+  blobVersionedHashes: true,
+  blobWrapperVersion: true,
+  blobs: true,
+  blockTag: true,
+  chainId: true,
+  customData: true,
+  enableCcipRead: true,
+  from: true,
+  gasLimit: true,
+  gasPrice: true,
+  kzg: true,
+  maxFeePerBlobGas: true,
+  maxFeePerGas: true,
+  maxPriorityFeePerGas: true,
+  nonce: true,
+  type: true,
+  value: true,
+}
+
+const validOverrideKeys = [
+  ...Object.keys(ETHERS_OVERRIDE_KEYS),
+  "ccipReadEnabled",
+  "overrides",
+]
+
 const instanceOfOverrides = <T extends Overrides>(
   obj: object | undefined,
 ): obj is T => {
-  const validKeys = [
-    "accessList",
-    "blockTag",
-    "ccipReadEnabled",
-    "chainId",
-    "customData",
-    "enableCcipRead",
-    "from",
-    "gasLimit",
-    "gasPrice",
-    "maxFeePerGas",
-    "maxPriorityFeePerGas",
-    "nonce",
-    "overrides",
-    "type",
-    "value",
-  ]
-
   if (obj === undefined) {
     return true
   }
@@ -100,7 +116,7 @@ const instanceOfOverrides = <T extends Overrides>(
     return false
   }
 
-  return Object.keys(obj).every(key => validKeys.includes(key))
+  return Object.keys(obj).every(key => validOverrideKeys.includes(key))
 }
 
 export type ContractMethodReturnType<

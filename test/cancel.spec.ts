@@ -198,4 +198,43 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
     expect(tx.from).to.equal(await offerer.getAddress())
     expect(args).to.have.length(2)
   })
+
+  it("leaves a mutable caller arguments array intact", async () => {
+    const { seaport, ethers } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const overrides = { gasLimit: OVERRIDE_GAS_LIMIT }
+    const args = [[order.parameters], overrides]
+
+    await getTransactionMethods(
+      ethers.getSigner(await offerer.getAddress()),
+      fixture.seaportContract,
+      "cancel",
+      args as any,
+    ).buildTransaction()
+
+    expect(args).to.deep.equal([[order.parameters], overrides])
+  })
+
+  it("treats an authorizationList as an override", async () => {
+    const { seaport } = fixture
+
+    const { executeAllActions } = await seaport.createOrder(
+      standardCreateOrderInput,
+    )
+    const order = await executeAllActions()
+
+    const tx = await seaport
+      .cancelOrders([order.parameters], await offerer.getAddress(), undefined, {
+        authorizationList: [],
+      })
+      .buildTransaction()
+
+    expect(tx.to).to.equal(await fixture.seaportContract.getAddress())
+    expect(tx.authorizationList).to.deep.equal([])
+  })
 })
