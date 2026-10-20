@@ -47,8 +47,8 @@ import type {
 } from "./types"
 import { getApprovalActions, getApprovalDedupKey } from "./utils/approval"
 import {
-  type InsufficientApprovals,
   getBalancesAndApprovals,
+  type InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck"
 import { getBulkOrderTree } from "./utils/eip712/bulk-orders"
@@ -262,12 +262,13 @@ export class Seaport {
 
     for (const input of createOrderInput) {
       const orderInput = { ...input, counter: input.counter ?? offererCounter }
-      const { orderComponents, insufficientApprovals } = await this._formatOrder(
-        signer,
-        offerer,
-        Boolean(exactApproval),
-        orderInput,
-      )
+      const { orderComponents, insufficientApprovals } =
+        await this._formatOrder(
+          signer,
+          offerer,
+          Boolean(exactApproval),
+          orderInput,
+        )
 
       // Frozen because these same objects are both exposed on the action and
       // signed below; see freezeOrderComponents.
@@ -277,8 +278,8 @@ export class Seaport {
         const token = approval.token.toLowerCase()
         cumulativeOffererAmounts[token] ??= {}
         cumulativeOffererAmounts[token][approval.identifierOrCriteria] =
-          (cumulativeOffererAmounts[token][approval.identifierOrCriteria] ?? 0n) +
-          approval.requiredApprovedAmount
+          (cumulativeOffererAmounts[token][approval.identifierOrCriteria] ??
+            0n) + approval.requiredApprovedAmount
 
         // Dedupe by key, keeping one entry per token+operator (+ identifier for
         // exact ERC721).  The amount is lifted to the cumulative total below.
