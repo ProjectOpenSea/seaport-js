@@ -223,5 +223,63 @@ describeWithFixture(
       // After the fix (spread copy), the original must remain untouched.
       expect(input.counter).to.be.undefined
     })
+    it("exactApproval: true sums ERC20 required amounts across all bulk orders", async () => {
+      // Regression: with exactApproval=true, createBulkOrders was deduping
+      // ERC20 approval actions by token+operator key and keeping only the
+      // FIRST order's amount.  If a second order offered more of the same
+      // token, its approve() would under-approve and every subsequent
+      // fulfillment would revert with an insufficient-allowance error.
+      //
+      // After the fix, the single approval action that survives dedup must
+      // carry the SUM of all orders' required amounts.
+      const { seaport, seaportContract, testErc20, ethers } = fixture
+
+      const [offerer] = await ethers.getSigners()
+
+      const order1Amount = parseEther("100")
+      const order2Amount = parseEther("200")
+      const totalAmount = order1Amount + order2Amount
+
+      await testErc20.mint(await offerer.getAddress(), totalAmount)
+
+      const operator = await seaportContract.getAddress()
+      const erc20Address = await testErc20.getAddress()
+      const offererAddress = await offerer.getAddress()
+
+      const makeOrder = (amount: bigint): CreateOrderInput => ({
+        offer: [
+          {
+            token: erc20Address,
+            amount: amount.toString(),
+          },
+        ],
+        consideration: [
+          {
+            amount: parseEther("1").toString(),
+            recipient: offererAddress,
+          },
+        ],
+      })
+
+      const { actions } = await seaport.createBulkOrders(
+        [makeOrder(order1Amount), makeOrder(order2Amount)],
+        offererAddress,
+        true, // exactApproval
+      )
+
+      const approvalActions = actions.filter(a => a.type === "approval")
+
+      // Should be exactly one approval action (one ERC20 token, one operator).
+      expect(approvalActions).to.have.lengthOf(1)
+
+      // Execute the approval and verify the on-chain allowance equals the SUM.
+      await (await approvalActions[0].transactionMethods.transact()).wait()
+
+      const allowance = await testErc20.allowance(offererAddress, operator)
+      expect(allowance).to.equal(
+        totalAmount,
+        "approval must cover the sum of both orders, not just the first",
+      )
+    })
   },
 )
