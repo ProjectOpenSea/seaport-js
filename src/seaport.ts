@@ -47,6 +47,7 @@ import type {
 } from "./types"
 import { getApprovalActions, getApprovalDedupKey } from "./utils/approval"
 import {
+  type InsufficientApprovals,
   getBalancesAndApprovals,
   validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck"
@@ -250,12 +251,19 @@ export class Seaport {
     const offerer = await signer.getAddress()
     const offererCounter = await this.getCounter(offerer)
 
-    const allApprovalActions: ApprovalAction[] = []
     const allOrderComponents: OrderComponents[] = []
+
+    // Collect every order's insufficient approvals so we can sum ERC20 amounts
+    // across the batch before generating approval actions.  When exactApproval
+    // is true the generated `approve()` call uses `requiredApprovedAmount`, so
+    // keeping only the first order's share would under-approve and cause every
+    // subsequent same-token fulfillment to revert.
+    const totalInsufficientApprovals: InsufficientApprovals = []
+    const cumulativeOffererAmounts: Record<string, Record<string, bigint>> = {}
 
     for (const input of createOrderInput) {
       const orderInput = { ...input, counter: input.counter ?? offererCounter }
-      const { orderComponents, approvalActions } = await this._formatOrder(
+      const { orderComponents, insufficientApprovals } = await this._formatOrder(
         signer,
         offerer,
         Boolean(exactApproval),
@@ -266,22 +274,44 @@ export class Seaport {
       // signed below; see freezeOrderComponents.
       allOrderComponents.push(freezeOrderComponents(orderComponents))
 
-      // Dedupe approvals by token and operator (and identifier for exact ERC721)
-      const seenApprovalKeys = new Set(
-        allApprovalActions.map(approval =>
-          getApprovalDedupKey(approval, Boolean(exactApproval)),
-        ),
-      )
+      for (const approval of insufficientApprovals) {
+        const token = approval.token.toLowerCase()
+        cumulativeOffererAmounts[token] ??= {}
+        cumulativeOffererAmounts[token][approval.identifierOrCriteria] =
+          (cumulativeOffererAmounts[token][approval.identifierOrCriteria] ?? 0n) +
+          approval.requiredApprovedAmount
 
-      for (const approval of approvalActions) {
+        // Dedupe by key, keeping one entry per token+operator (+ identifier for
+        // exact ERC721).  The amount is lifted to the cumulative total below.
         const key = getApprovalDedupKey(approval, Boolean(exactApproval))
-
-        if (!seenApprovalKeys.has(key)) {
-          seenApprovalKeys.add(key)
-          allApprovalActions.push(approval)
+        if (
+          !totalInsufficientApprovals.some(
+            a => getApprovalDedupKey(a, Boolean(exactApproval)) === key,
+          )
+        ) {
+          totalInsufficientApprovals.push(approval)
         }
       }
     }
+
+    // Lift each ERC20 exact-approval to the batch total so a single approve()
+    // covers every order that spends from the same allowance.
+    const approvalsForBatch = totalInsufficientApprovals.map(approval => {
+      const cumulative =
+        cumulativeOffererAmounts[approval.token.toLowerCase()]?.[
+          approval.identifierOrCriteria
+        ]
+      return cumulative !== undefined &&
+        cumulative > approval.requiredApprovedAmount
+        ? { ...approval, requiredApprovedAmount: cumulative }
+        : approval
+    })
+
+    const allApprovalActions = getApprovalActions(
+      approvalsForBatch,
+      Boolean(exactApproval),
+      signer,
+    )
 
     // The array itself too, so a caller cannot reorder or drop an order after
     // reading it; the signature covers the batch in this exact order.
@@ -409,6 +439,7 @@ export class Seaport {
       counter: (counter ?? (await this.getCounter(offerer))).toString(),
     }
 
+    let insufficientApprovals: InsufficientApprovals = []
     const approvalActions: ApprovalAction[] = []
 
     if (this.config.balanceAndApprovalChecksOnOrderCreation) {
@@ -420,7 +451,7 @@ export class Seaport {
         operator,
       })
 
-      const insufficientApprovals = validateOfferBalancesAndApprovals({
+      insufficientApprovals = validateOfferBalancesAndApprovals({
         offer: offerItems,
         criterias: [],
         balancesAndApprovals,
@@ -447,7 +478,7 @@ export class Seaport {
       approvalActions.push(...approvals)
     }
 
-    return { orderComponents, approvalActions }
+    return { orderComponents, approvalActions, insufficientApprovals }
   }
 
   /**
