@@ -1,4 +1,5 @@
 import { expect } from "chai"
+import { ethers } from "ethers"
 import { ItemType, OrderType } from "../src/constants"
 import type {
   ConsiderationItem,
@@ -11,6 +12,7 @@ import type { FulfillOrdersMetadata } from "../src/utils/fulfill"
 import {
   generateFulfillOrdersFulfillments,
   isOrderFulfillable,
+  offerItemsLandWithFulfiller,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "../src/utils/fulfill"
@@ -165,6 +167,77 @@ describe("generateFulfillOrdersFulfillments", () => {
         ],
       ])
     })
+
+    it("aggregates fungible items when token, offerer, or recipient addresses differ in casing", () => {
+      // Address casing (checksummed vs lowercase) must not split fulfillments into separate groups.
+      const checksummedToken = ethers.getAddress(NFT)
+      const lowercaseToken = NFT.toLowerCase()
+      const checksummedRecipient = ethers.getAddress(RECIPIENT)
+      const lowercaseRecipient = RECIPIENT.toLowerCase()
+
+      const item1: ConsiderationItem = {
+        itemType: ItemType.ERC20,
+        token: checksummedToken,
+        identifierOrCriteria: "0",
+        startAmount: "100",
+        endAmount: "100",
+        recipient: checksummedRecipient,
+      }
+      const item2: ConsiderationItem = {
+        itemType: ItemType.ERC20,
+        token: lowercaseToken,
+        identifierOrCriteria: "0",
+        startAmount: "200",
+        endAmount: "200",
+        recipient: lowercaseRecipient,
+      }
+      const metadata: FulfillOrdersMetadata = [
+        makeMeta(makeOrder({ consideration: [item1] })),
+        makeMeta(makeOrder({ consideration: [item2] })),
+      ]
+
+      const { considerationFulfillments } =
+        generateFulfillOrdersFulfillments(metadata)
+
+      expect(considerationFulfillments).to.deep.equal([
+        [
+          { orderIndex: 0, itemIndex: 0 },
+          { orderIndex: 1, itemIndex: 0 },
+        ],
+      ])
+    })
+  })
+})
+
+describe("offerItemsLandWithFulfiller", () => {
+  const FULFILLER = "0x5555555555555555555555555555555555555555"
+  const OTHER = "0x6666666666666666666666666666666666666666"
+
+  it("returns true when recipientAddress is ethers.ZeroAddress", () => {
+    expect(offerItemsLandWithFulfiller(ZERO_ADDR, FULFILLER)).to.be.true
+  })
+
+  it("returns true when recipientAddress is empty string", () => {
+    expect(offerItemsLandWithFulfiller("", FULFILLER)).to.be.true
+  })
+
+  it("returns true when recipientAddress matches fulfillerAddress regardless of casing", () => {
+    expect(
+      offerItemsLandWithFulfiller(
+        ethers.getAddress(FULFILLER),
+        FULFILLER.toLowerCase(),
+      ),
+    ).to.be.true
+    expect(
+      offerItemsLandWithFulfiller(
+        FULFILLER.toLowerCase(),
+        ethers.getAddress(FULFILLER),
+      ),
+    ).to.be.true
+  })
+
+  it("returns false when recipientAddress is a different party", () => {
+    expect(offerItemsLandWithFulfiller(OTHER, FULFILLER)).to.be.false
   })
 })
 
