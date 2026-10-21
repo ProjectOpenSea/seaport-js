@@ -56,6 +56,7 @@ import {
   fulfillAvailableOrders,
   fulfillBasicOrder,
   fulfillStandardOrder,
+  offerItemsLandWithFulfiller,
   scaleOrderStatusToMaxUnits,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
@@ -930,7 +931,10 @@ export class Seaport {
         this.config.ascendingAmountFulfillmentBuffer,
     }
 
-    const isRecipientSelf = recipientAddress === ethers.ZeroAddress
+    const isRecipientSelf = offerItemsLandWithFulfiller(
+      recipientAddress,
+      fulfillerAddress,
+    )
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.
