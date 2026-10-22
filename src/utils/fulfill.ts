@@ -483,7 +483,10 @@ export function fulfillStandardOrder(
     signer,
   )
 
-  const isGift = recipientAddress !== ethers.ZeroAddress
+  const isGift = !offerItemsLandWithFulfiller(
+    recipientAddress,
+    fulfillerAddress,
+  )
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems || isGift
 
@@ -559,7 +562,8 @@ export function offerItemsLandWithFulfiller(
   fulfillerAddress: string,
 ): boolean {
   return (
-    recipientAddress === ethers.ZeroAddress ||
+    !recipientAddress ||
+    recipientAddress.toLowerCase() === ethers.ZeroAddress.toLowerCase() ||
     recipientAddress.toLowerCase() === fulfillerAddress.toLowerCase()
   )
 }
@@ -995,7 +999,8 @@ export function generateFulfillOrdersFulfillments(
     operator?: string
     token: string
     identifier: string
-  }) => `${sourceOrDestination}-${operator}-${token}-${identifier}`
+  }) =>
+    `${sourceOrDestination.toLowerCase()}-${operator.toLowerCase()}-${token.toLowerCase()}-${identifier}`
 
   const offerAggregatedFulfillments: Record<
     string,
