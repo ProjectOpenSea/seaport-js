@@ -47,7 +47,7 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "concurrently": "^10.0.0",
-    "dotenv": "17.4.2",
+    "dotenv": "18.0.8",
     "hardhat": "^3.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.1.1",
