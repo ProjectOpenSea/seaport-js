@@ -1,4 +1,5 @@
 import { expect } from "chai"
+import { ethers } from "ethers"
 import { ItemType, OrderType } from "../src/constants"
 import type {
   ConsiderationItem,
@@ -11,6 +12,7 @@ import type { FulfillOrdersMetadata } from "../src/utils/fulfill"
 import {
   generateFulfillOrdersFulfillments,
   isOrderFulfillable,
+  offerItemsLandWithFulfiller,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "../src/utils/fulfill"
@@ -165,6 +167,119 @@ describe("generateFulfillOrdersFulfillments", () => {
         ],
       ])
     })
+
+    // Addresses with hex letters, so the checksummed and lowercased forms differ.
+    const MIXED_CASE_TOKEN = ethers.getAddress(
+      "0xabcdef0123456789abcdef0123456789abcdef01",
+    )
+    const MIXED_CASE_PARTY = ethers.getAddress(
+      "0xfedcba9876543210fedcba9876543210fedcba98",
+    )
+    const MIXED_CASE_OPERATOR = ethers.getAddress(
+      "0xa1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    )
+
+    it("aggregates consideration ERC20s whose token or recipient differ only in casing", () => {
+      const item = (
+        casing: (address: string) => string,
+      ): ConsiderationItem => ({
+        itemType: ItemType.ERC20,
+        token: casing(MIXED_CASE_TOKEN),
+        identifierOrCriteria: "0",
+        startAmount: "100",
+        endAmount: "100",
+        recipient: casing(MIXED_CASE_PARTY),
+      })
+      const metadata: FulfillOrdersMetadata = [
+        makeMeta(makeOrder({ consideration: [item(address => address)] })),
+        makeMeta(
+          makeOrder({
+            consideration: [item(address => address.toLowerCase())],
+          }),
+        ),
+      ]
+
+      const { considerationFulfillments } =
+        generateFulfillOrdersFulfillments(metadata)
+
+      expect(considerationFulfillments).to.deep.equal([
+        [
+          { orderIndex: 0, itemIndex: 0 },
+          { orderIndex: 1, itemIndex: 0 },
+        ],
+      ])
+    })
+
+    it("aggregates offer ERC20s whose token, offerer or operator differ only in casing", () => {
+      const meta = (casing: (address: string) => string) => {
+        const order = makeOrder({
+          offer: [
+            {
+              itemType: ItemType.ERC20,
+              token: casing(MIXED_CASE_TOKEN),
+              identifierOrCriteria: "0",
+              startAmount: "100",
+              endAmount: "100",
+            },
+          ],
+        })
+        return {
+          ...makeMeta({
+            ...order,
+            parameters: {
+              ...order.parameters,
+              offerer: casing(MIXED_CASE_PARTY),
+            },
+          }),
+          offererOperator: casing(MIXED_CASE_OPERATOR),
+        }
+      }
+      const metadata: FulfillOrdersMetadata = [
+        meta(address => address),
+        meta(address => address.toLowerCase()),
+      ]
+
+      const { offerFulfillments } = generateFulfillOrdersFulfillments(metadata)
+
+      expect(offerFulfillments).to.deep.equal([
+        [
+          { orderIndex: 0, itemIndex: 0 },
+          { orderIndex: 1, itemIndex: 0 },
+        ],
+      ])
+    })
+  })
+})
+
+describe("offerItemsLandWithFulfiller", () => {
+  const FULFILLER = "0x5555555555555555555555555555555555555555"
+  const OTHER = "0x6666666666666666666666666666666666666666"
+
+  it("returns true when recipientAddress is ethers.ZeroAddress", () => {
+    expect(offerItemsLandWithFulfiller(ZERO_ADDR, FULFILLER)).to.be.true
+  })
+
+  it("returns true when recipientAddress is empty string", () => {
+    expect(offerItemsLandWithFulfiller("", FULFILLER)).to.be.true
+  })
+
+  it("returns true when recipientAddress matches fulfillerAddress regardless of casing", () => {
+    expect(
+      offerItemsLandWithFulfiller(
+        ethers.getAddress(FULFILLER),
+        FULFILLER.toLowerCase(),
+      ),
+    ).to.be.true
+    expect(
+      offerItemsLandWithFulfiller(
+        FULFILLER.toLowerCase(),
+        ethers.getAddress(FULFILLER),
+      ),
+    ).to.be.true
+  })
+
+  it("returns false when recipientAddress is a different party", () => {
+    expect(offerItemsLandWithFulfiller(OTHER, FULFILLER)).to.be.false
   })
 })
 

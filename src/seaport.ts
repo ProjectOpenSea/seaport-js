@@ -36,6 +36,7 @@ import type {
   ExchangeAction,
   InputCriteria,
   MatchOrdersFulfillment,
+  OfferItem,
   Order,
   OrderComponents,
   OrderStatus,
@@ -47,7 +48,9 @@ import type {
 } from "./types"
 import { getApprovalActions, getApprovalDedupKey } from "./utils/approval"
 import {
+  type BalancesAndApprovals,
   getBalancesAndApprovals,
+  getInsufficientBalanceAndApprovalAmounts,
   validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck"
 import { getBulkOrderTree } from "./utils/eip712/bulk-orders"
@@ -56,11 +59,15 @@ import {
   fulfillAvailableOrders,
   fulfillBasicOrder,
   fulfillStandardOrder,
+  offerItemsLandWithFulfiller,
   scaleOrderStatusToMaxUnits,
   shouldUseBasicFulfill,
   validateAndSanitizeFromOrderStatus,
 } from "./utils/fulfill"
-import { isCurrencyItem } from "./utils/item"
+import {
+  getSummedTokenAndIdentifierAmounts,
+  isCurrencyItem,
+} from "./utils/item"
 import {
   areAllCurrenciesSame,
   deductFees,
@@ -249,38 +256,75 @@ export class Seaport {
     const offerer = await signer.getAddress()
     const offererCounter = await this.getCounter(offerer)
 
-    const allApprovalActions: ApprovalAction[] = []
     const allOrderComponents: OrderComponents[] = []
+
+    // An ERC20 allowance is shared by every order in the batch that spends
+    // through the same operator, so approvals are computed from the batch's
+    // summed offer per operator. Checking orders one at a time misses a batch
+    // whose existing allowance covers each order but not their total.
+    const offersByOperator = new Map<
+      string,
+      {
+        operator: string
+        offer: OfferItem[]
+        balancesAndApprovals: BalancesAndApprovals
+      }
+    >()
 
     for (const input of createOrderInput) {
       const orderInput = { ...input, counter: input.counter ?? offererCounter }
-      const { orderComponents, approvalActions } = await this._formatOrder(
-        signer,
-        offerer,
-        Boolean(exactApproval),
-        orderInput,
-      )
+      const { orderComponents, operator, balancesAndApprovals } =
+        await this._formatOrder(
+          signer,
+          offerer,
+          Boolean(exactApproval),
+          orderInput,
+        )
 
       // Frozen because these same objects are both exposed on the action and
       // signed below; see freezeOrderComponents.
       allOrderComponents.push(freezeOrderComponents(orderComponents))
 
-      // Dedupe approvals by token and operator (and identifier for exact ERC721)
-      const seenApprovalKeys = new Set(
-        allApprovalActions.map(approval =>
-          getApprovalDedupKey(approval, Boolean(exactApproval)),
-        ),
-      )
-
-      for (const approval of approvalActions) {
-        const key = getApprovalDedupKey(approval, Boolean(exactApproval))
-
-        if (!seenApprovalKeys.has(key)) {
-          seenApprovalKeys.add(key)
-          allApprovalActions.push(approval)
-        }
+      const batch = offersByOperator.get(operator.toLowerCase()) ?? {
+        operator,
+        offer: [],
+        balancesAndApprovals: [],
       }
+      batch.offer.push(...orderComponents.offer)
+      batch.balancesAndApprovals.push(...balancesAndApprovals)
+      offersByOperator.set(operator.toLowerCase(), batch)
     }
+
+    const batchInsufficientApprovals = this.config
+      .balanceAndApprovalChecksOnOrderCreation
+      ? [...offersByOperator.values()].flatMap(
+          ({ operator, offer, balancesAndApprovals }) =>
+            getInsufficientBalanceAndApprovalAmounts({
+              balancesAndApprovals,
+              tokenAndIdentifierAmounts: getSummedTokenAndIdentifierAmounts({
+                items: offer,
+                criterias: [],
+              }),
+              operator,
+            }).insufficientApprovals,
+        )
+      : []
+
+    // getApprovalActions keeps the last of a set of duplicates. Keep the first,
+    // so a collection-wide approval names the first order's token.
+    const seenApprovalKeys = new Set<string>()
+    const allApprovalActions = getApprovalActions(
+      batchInsufficientApprovals.filter(approval => {
+        const key = getApprovalDedupKey(approval, Boolean(exactApproval))
+        if (seenApprovalKeys.has(key)) {
+          return false
+        }
+        seenApprovalKeys.add(key)
+        return true
+      }),
+      Boolean(exactApproval),
+      signer,
+    )
 
     // The array itself too, so a caller cannot reorder or drop an order after
     // reading it; the signature covers the batch in this exact order.
@@ -408,10 +452,11 @@ export class Seaport {
       counter: (counter ?? (await this.getCounter(offerer))).toString(),
     }
 
+    let balancesAndApprovals: BalancesAndApprovals = []
     const approvalActions: ApprovalAction[] = []
 
     if (this.config.balanceAndApprovalChecksOnOrderCreation) {
-      const balancesAndApprovals = await getBalancesAndApprovals({
+      balancesAndApprovals = await getBalancesAndApprovals({
         owner: offerer,
         items: offerItems,
         criterias: [],
@@ -446,7 +491,7 @@ export class Seaport {
       approvalActions.push(...approvals)
     }
 
-    return { orderComponents, approvalActions }
+    return { orderComponents, approvalActions, operator, balancesAndApprovals }
   }
 
   /**
@@ -930,7 +975,10 @@ export class Seaport {
         this.config.ascendingAmountFulfillmentBuffer,
     }
 
-    const isRecipientSelf = recipientAddress === ethers.ZeroAddress
+    const isRecipientSelf = offerItemsLandWithFulfiller(
+      recipientAddress,
+      fulfillerAddress,
+    )
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
     // We cannot use basic fulfill if user is trying to partially fill though.

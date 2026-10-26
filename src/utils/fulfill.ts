@@ -26,6 +26,7 @@ import type {
 import { getApprovalActions, getApprovalDedupKey } from "./approval"
 import {
   type BalancesAndApprovals,
+  getInsufficientBalanceAndApprovalAmounts,
   type InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateCumulativeFulfillerBalances,
@@ -483,7 +484,10 @@ export function fulfillStandardOrder(
     signer,
   )
 
-  const isGift = recipientAddress !== ethers.ZeroAddress
+  const isGift = !offerItemsLandWithFulfiller(
+    recipientAddress,
+    fulfillerAddress,
+  )
 
   const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems || isGift
 
@@ -559,7 +563,8 @@ export function offerItemsLandWithFulfiller(
   fulfillerAddress: string,
 ): boolean {
   return (
-    recipientAddress === ethers.ZeroAddress ||
+    !recipientAddress ||
+    recipientAddress.toLowerCase() === ethers.ZeroAddress.toLowerCase() ||
     recipientAddress.toLowerCase() === fulfillerAddress.toLowerCase()
   )
 }
@@ -886,6 +891,16 @@ export function fulfillAvailableOrders({
     fulfillerBalancesAndApprovals,
   })
 
+  // An allowance can cover every order on its own and still fall short of the
+  // batch, and then no order above reports it.
+  addApprovalIfNeeded(
+    getInsufficientBalanceAndApprovalAmounts({
+      balancesAndApprovals: fulfillerBalancesAndApprovals,
+      tokenAndIdentifierAmounts: cumulativeFulfillerAmounts,
+      operator: fulfillerOperator,
+    }).insufficientApprovals,
+  )
+
   // An approval is deduped to one action per token and operator, and with
   // exactApproval that action approves `requiredApprovedAmount`. Left as the
   // first order's share it under-approves the batch and the fulfillment reverts.
@@ -995,7 +1010,8 @@ export function generateFulfillOrdersFulfillments(
     operator?: string
     token: string
     identifier: string
-  }) => `${sourceOrDestination}-${operator}-${token}-${identifier}`
+  }) =>
+    `${sourceOrDestination.toLowerCase()}-${operator.toLowerCase()}-${token.toLowerCase()}-${identifier}`
 
   const offerAggregatedFulfillments: Record<
     string,

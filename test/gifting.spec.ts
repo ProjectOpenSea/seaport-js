@@ -76,6 +76,36 @@ describeWithFixture(
 
             expect(owner).to.equal(await recipient.getAddress())
           })
+
+          it("selects fulfillBasicOrder when naming yourself as the recipient on a basic order", async () => {
+            const { seaport, seaportContract, testErc721 } = fixture
+
+            const { executeAllActions } = await seaport.createOrder(
+              standardCreateOrderInput,
+            )
+
+            const order = await executeAllActions()
+
+            const { actions } = await seaport.fulfillOrder({
+              order,
+              accountAddress: await fulfiller.getAddress(),
+              recipientAddress: await fulfiller.getAddress(),
+            })
+
+            expect(actions.length).to.eq(1)
+
+            const action = actions[0]
+            expect(action.type).to.eq("exchange")
+
+            const tx = await action.transactionMethods.buildTransaction()
+            const parsed = seaportContract.interface.parseTransaction(tx)
+            expect(parsed?.name).to.equal("fulfillBasicOrder")
+
+            await (await action.transactionMethods.transact()).wait()
+
+            const owner = await testErc721.ownerOf(nftId)
+            expect(owner).to.equal(await fulfiller.getAddress())
+          })
         })
 
         describe("with ERC20", () => {
@@ -373,7 +403,7 @@ describeWithFixture(
       })
 
       it("treats naming yourself as the recipient the same as keeping them", async () => {
-        const { seaport, testErc20 } = fixture
+        const { seaport, seaportContract, testErc20 } = fixture
 
         const { actions } = await seaport.fulfillOrder({
           order: bid,
@@ -381,12 +411,79 @@ describeWithFixture(
           recipientAddress: await fulfiller.getAddress(),
         })
 
+        const exchangeAction = actions.find(a => a.type === "exchange")!
+        const tx = await exchangeAction.transactionMethods.buildTransaction()
+        const parsed = seaportContract.interface.parseTransaction(tx)
+        // Naming yourself as the recipient correctly preserves fulfillBasicOrder,
+        // exactly matching the default zero-address behavior.
+        expect(parsed?.name).to.equal("fulfillBasicOrder")
+
         for (const action of actions) {
           await (await action.transactionMethods.transact()).wait()
         }
 
         expect(await testErc20.balanceOf(await fulfiller.getAddress())).to.eq(
           parseEther("9.75"),
+        )
+      })
+
+      it("routes to fulfillOrder instead of fulfillAdvancedOrder when naming yourself as the recipient on a standard order", async () => {
+        const { seaport, seaportContract, testErc721, ethers } = fixture
+        const [offerer, fulfiller] = await ethers.getSigners()
+
+        const nftId1 = "9988"
+        const nftId2 = "9989"
+        await testErc721.mint(await offerer.getAddress(), nftId1)
+        await testErc721.mint(await offerer.getAddress(), nftId2)
+
+        // Multiple offer items (2 NFTs) makes the order ineligible for fulfillBasicOrder
+        const multiItemInput = {
+          offer: [
+            {
+              itemType: ItemType.ERC721 as const,
+              token: await testErc721.getAddress(),
+              identifier: nftId1,
+              amount: "1",
+            },
+            {
+              itemType: ItemType.ERC721 as const,
+              token: await testErc721.getAddress(),
+              identifier: nftId2,
+              amount: "1",
+            },
+          ],
+          consideration: [
+            {
+              amount: parseEther("1").toString(),
+              recipient: await offerer.getAddress(),
+            },
+          ],
+        }
+
+        const { executeAllActions } = await seaport.createOrder(multiItemInput)
+        const order = await executeAllActions()
+
+        const { actions } = await seaport.fulfillOrder({
+          order,
+          accountAddress: await fulfiller.getAddress(),
+          recipientAddress: await fulfiller.getAddress(),
+        })
+
+        const exchangeAction = actions.find(a => a.type === "exchange")!
+        const tx = await exchangeAction.transactionMethods.buildTransaction()
+        const parsed = seaportContract.interface.parseTransaction(tx)
+        // With isGift=false, non-basic orders route to fulfillOrder rather than fulfillAdvancedOrder
+        expect(parsed?.name).to.equal("fulfillOrder")
+
+        for (const action of actions) {
+          await (await action.transactionMethods.transact()).wait()
+        }
+
+        expect(await testErc721.ownerOf(nftId1)).to.equal(
+          await fulfiller.getAddress(),
+        )
+        expect(await testErc721.ownerOf(nftId2)).to.equal(
+          await fulfiller.getAddress(),
         )
       })
     })
