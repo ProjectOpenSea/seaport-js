@@ -1,6 +1,8 @@
 import { expect } from "chai"
 import { parseEther, ZeroAddress, ZeroHash } from "ethers"
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
+import { Seaport } from "../src/seaport"
+import { LocalConduitController__factory } from "../src/typechain-types/index"
 import type {
   ApprovalAction,
   BasicErc721Item,
@@ -280,6 +282,165 @@ describeWithFixture(
         totalAmount,
         "approval must cover the sum of both orders, not just the first",
       )
+    })
+
+    const allowanceAfterBulkErc20Orders = async (
+      existingAllowance: bigint,
+      orderAmounts: bigint[],
+    ) => {
+      const { seaport, seaportContract, testErc20, ethers } = fixture
+      const [offerer] = await ethers.getSigners()
+      const offererAddress = await offerer.getAddress()
+      const operator = await seaportContract.getAddress()
+      const erc20Address = await testErc20.getAddress()
+
+      await testErc20.mint(
+        offererAddress,
+        orderAmounts.reduce((sum, amount) => sum + amount, 0n),
+      )
+      await (
+        await testErc20.connect(offerer).approve(operator, existingAllowance)
+      ).wait()
+
+      const { actions } = await seaport.createBulkOrders(
+        orderAmounts.map(amount => ({
+          offer: [{ token: erc20Address, amount: amount.toString() }],
+          consideration: [
+            { amount: parseEther("1").toString(), recipient: offererAddress },
+          ],
+        })),
+        offererAddress,
+        true,
+      )
+
+      const approvalActions = actions.filter(a => a.type === "approval")
+      for (const approval of approvalActions) {
+        await (await approval.transactionMethods.transact()).wait()
+      }
+
+      return {
+        approvalActions,
+        allowance: await testErc20.allowance(offererAddress, operator),
+      }
+    }
+
+    it("exactApproval: true approves the batch total when the existing allowance covers only some orders", async () => {
+      const { approvalActions, allowance } =
+        await allowanceAfterBulkErc20Orders(parseEther("150"), [
+          parseEther("100"),
+          parseEther("200"),
+        ])
+
+      expect(approvalActions).to.have.lengthOf(1)
+      expect(allowance).to.equal(parseEther("300"))
+    })
+
+    it("exactApproval: true adds an approval when the existing allowance covers each order but not the batch", async () => {
+      const { approvalActions, allowance } =
+        await allowanceAfterBulkErc20Orders(parseEther("250"), [
+          parseEther("100"),
+          parseEther("200"),
+        ])
+
+      expect(approvalActions).to.have.lengthOf(1)
+      expect(allowance).to.equal(parseEther("300"))
+    })
+
+    it("exactApproval: true adds no approval when the existing allowance covers the batch total", async () => {
+      const { approvalActions, allowance } =
+        await allowanceAfterBulkErc20Orders(parseEther("300"), [
+          parseEther("100"),
+          parseEther("200"),
+        ])
+
+      expect(approvalActions).to.have.lengthOf(0)
+      expect(allowance).to.equal(parseEther("300"))
+    })
+
+    it("exactApproval: true approves each operator only what its own orders spend", async () => {
+      const { seaportContract, testErc20, ethers } = fixture
+      const [offerer] = await ethers.getSigners()
+      const offererAddress = await offerer.getAddress()
+      const erc20Address = await testErc20.getAddress()
+
+      const conduitKey = `${offererAddress.toLowerCase()}${"00".repeat(11)}01`
+      const [, , controllerAddress] = await seaportContract.information()
+      const controller = LocalConduitController__factory.connect(
+        controllerAddress,
+        ethers.provider,
+      )
+      await (
+        await controller
+          .connect(offerer)
+          .createConduit(conduitKey, offererAddress)
+      ).wait()
+      const [conduit] = await controller.getConduit(conduitKey)
+
+      const seaport = new Seaport(ethers.provider as never, {
+        overrides: { contractAddress: await seaportContract.getAddress() },
+        conduitKeyToConduit: { [conduitKey]: conduit },
+      })
+
+      await testErc20.mint(offererAddress, parseEther("300"))
+
+      const order = (key: string, amount: bigint): CreateOrderInput => ({
+        conduitKey: key,
+        offer: [{ token: erc20Address, amount: amount.toString() }],
+        consideration: [
+          { amount: parseEther("1").toString(), recipient: offererAddress },
+        ],
+      })
+
+      const { actions } = await seaport.createBulkOrders(
+        [
+          order(NO_CONDUIT, parseEther("100")),
+          order(conduitKey, parseEther("200")),
+        ],
+        offererAddress,
+        true,
+      )
+
+      for (const action of actions.filter(a => a.type === "approval")) {
+        await (await action.transactionMethods.transact()).wait()
+      }
+
+      expect(
+        await testErc20.allowance(
+          offererAddress,
+          await seaportContract.getAddress(),
+        ),
+      ).to.equal(parseEther("100"))
+      expect(await testErc20.allowance(offererAddress, conduit)).to.equal(
+        parseEther("200"),
+      )
+    })
+
+    it("adds no approval actions when order creation checks are turned off", async () => {
+      const { seaport, testErc20, ethers } = fixture
+      const [offerer] = await ethers.getSigners()
+      const offererAddress = await offerer.getAddress()
+
+      ;(seaport as any).config.balanceAndApprovalChecksOnOrderCreation = false
+
+      const { actions } = await seaport.createBulkOrders(
+        [
+          {
+            offer: [
+              {
+                token: await testErc20.getAddress(),
+                amount: parseEther("100").toString(),
+              },
+            ],
+            consideration: [
+              { amount: parseEther("1").toString(), recipient: offererAddress },
+            ],
+          },
+        ],
+        offererAddress,
+        true,
+      )
+
+      expect(actions.map(action => action.type)).to.deep.equal(["createBulk"])
     })
   },
 )
