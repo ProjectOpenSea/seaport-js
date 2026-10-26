@@ -1315,6 +1315,81 @@ describeWithFixture(
           await fulfiller.getAddress(),
         )
       })
+
+      it("adds an ERC20 approval when the existing allowance covers each order but not the batch", async () => {
+        const { seaport, seaportContract, testErc721, testErc20 } = fixture
+
+        await testErc721.mint(await offerer.getAddress(), nftId)
+        await testErc721.mint(await secondOfferer.getAddress(), nftId2)
+        await testErc20.mint(
+          await fulfiller.getAddress(),
+          parseEther("30").toString(),
+        )
+        // Covers the 10 and the 20 listing on its own, not both together.
+        await (
+          await testErc20
+            .connect(fulfiller)
+            .approve(await seaportContract.getAddress(), parseEther("25"))
+        ).wait()
+
+        const listing = async (
+          seller: HardhatEthersSigner,
+          identifier: string,
+          price: string,
+        ) =>
+          (
+            await seaport.createOrder(
+              {
+                offer: [
+                  {
+                    itemType: ItemType.ERC721,
+                    token: await testErc721.getAddress(),
+                    identifier,
+                  },
+                ],
+                consideration: [
+                  {
+                    amount: parseEther(price).toString(),
+                    token: await testErc20.getAddress(),
+                    recipient: await seller.getAddress(),
+                  },
+                ],
+              },
+              await seller.getAddress(),
+            )
+          ).executeAllActions()
+
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [
+            { order: await listing(offerer, nftId, "10") },
+            { order: await listing(secondOfferer, nftId2, "20") },
+          ],
+          accountAddress: await fulfiller.getAddress(),
+          exactApproval: true,
+        })
+
+        const erc20Approvals = actions.filter(
+          (action): action is ApprovalAction =>
+            action.type === "approval" && action.token === testErc20.target,
+        )
+        expect(erc20Approvals.length).to.equal(1)
+
+        for (const action of erc20Approvals) {
+          await (await action.transactionMethods.transact()).wait()
+        }
+        expect(
+          await testErc20.allowance(
+            await fulfiller.getAddress(),
+            await seaportContract.getAddress(),
+          ),
+        ).to.equal(parseEther("30"))
+
+        await actions[actions.length - 1].transactionMethods.transact()
+
+        expect(await testErc721.ownerOf(nftId2)).to.equal(
+          await fulfiller.getAddress(),
+        )
+      })
     })
     describe("cumulative fulfiller balance", () => {
       it("rejects a batch the fulfiller cannot cover, even when each order alone is affordable", async () => {

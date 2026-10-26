@@ -26,6 +26,7 @@ import type {
 import { getApprovalActions, getApprovalDedupKey } from "./approval"
 import {
   type BalancesAndApprovals,
+  getInsufficientBalanceAndApprovalAmounts,
   type InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateCumulativeFulfillerBalances,
@@ -889,6 +890,16 @@ export function fulfillAvailableOrders({
     receivedAmounts: cumulativeReceivedAmounts,
     fulfillerBalancesAndApprovals,
   })
+
+  // An allowance can cover every order on its own and still fall short of the
+  // batch, and then no order above reports it.
+  addApprovalIfNeeded(
+    getInsufficientBalanceAndApprovalAmounts({
+      balancesAndApprovals: fulfillerBalancesAndApprovals,
+      tokenAndIdentifierAmounts: cumulativeFulfillerAmounts,
+      operator: fulfillerOperator,
+    }).insufficientApprovals,
+  )
 
   // An approval is deduped to one action per token and operator, and with
   // exactApproval that action approves `requiredApprovedAmount`. Left as the
