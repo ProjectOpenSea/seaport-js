@@ -168,38 +168,80 @@ describe("generateFulfillOrdersFulfillments", () => {
       ])
     })
 
-    it("aggregates fungible items when token, offerer, or recipient addresses differ in casing", () => {
-      // Address casing (checksummed vs lowercase) must not split fulfillments into separate groups.
-      const checksummedToken = ethers.getAddress(NFT)
-      const lowercaseToken = NFT.toLowerCase()
-      const checksummedRecipient = ethers.getAddress(RECIPIENT)
-      const lowercaseRecipient = RECIPIENT.toLowerCase()
+    // Addresses with hex letters, so the checksummed and lowercased forms differ.
+    const MIXED_CASE_TOKEN = ethers.getAddress(
+      "0xabcdef0123456789abcdef0123456789abcdef01",
+    )
+    const MIXED_CASE_PARTY = ethers.getAddress(
+      "0xfedcba9876543210fedcba9876543210fedcba98",
+    )
+    const MIXED_CASE_OPERATOR = ethers.getAddress(
+      "0xa1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    )
 
-      const item1: ConsiderationItem = {
+    it("aggregates consideration ERC20s whose token or recipient differ only in casing", () => {
+      const item = (
+        casing: (address: string) => string,
+      ): ConsiderationItem => ({
         itemType: ItemType.ERC20,
-        token: checksummedToken,
+        token: casing(MIXED_CASE_TOKEN),
         identifierOrCriteria: "0",
         startAmount: "100",
         endAmount: "100",
-        recipient: checksummedRecipient,
-      }
-      const item2: ConsiderationItem = {
-        itemType: ItemType.ERC20,
-        token: lowercaseToken,
-        identifierOrCriteria: "0",
-        startAmount: "200",
-        endAmount: "200",
-        recipient: lowercaseRecipient,
-      }
+        recipient: casing(MIXED_CASE_PARTY),
+      })
       const metadata: FulfillOrdersMetadata = [
-        makeMeta(makeOrder({ consideration: [item1] })),
-        makeMeta(makeOrder({ consideration: [item2] })),
+        makeMeta(makeOrder({ consideration: [item(address => address)] })),
+        makeMeta(
+          makeOrder({
+            consideration: [item(address => address.toLowerCase())],
+          }),
+        ),
       ]
 
       const { considerationFulfillments } =
         generateFulfillOrdersFulfillments(metadata)
 
       expect(considerationFulfillments).to.deep.equal([
+        [
+          { orderIndex: 0, itemIndex: 0 },
+          { orderIndex: 1, itemIndex: 0 },
+        ],
+      ])
+    })
+
+    it("aggregates offer ERC20s whose token, offerer or operator differ only in casing", () => {
+      const meta = (casing: (address: string) => string) => {
+        const order = makeOrder({
+          offer: [
+            {
+              itemType: ItemType.ERC20,
+              token: casing(MIXED_CASE_TOKEN),
+              identifierOrCriteria: "0",
+              startAmount: "100",
+              endAmount: "100",
+            },
+          ],
+        })
+        return {
+          ...makeMeta({
+            ...order,
+            parameters: {
+              ...order.parameters,
+              offerer: casing(MIXED_CASE_PARTY),
+            },
+          }),
+          offererOperator: casing(MIXED_CASE_OPERATOR),
+        }
+      }
+      const metadata: FulfillOrdersMetadata = [
+        meta(address => address),
+        meta(address => address.toLowerCase()),
+      ]
+
+      const { offerFulfillments } = generateFulfillOrdersFulfillments(metadata)
+
+      expect(offerFulfillments).to.deep.equal([
         [
           { orderIndex: 0, itemIndex: 0 },
           { orderIndex: 1, itemIndex: 0 },
