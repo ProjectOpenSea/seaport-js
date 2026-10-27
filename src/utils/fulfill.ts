@@ -1038,7 +1038,7 @@ export function generateFulfillOrdersFulfillments(
           identifier:
             itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
           // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-        })}${isErc721Item(item.itemType) ? `${orderIndex}-${itemIndex}` : ""}`
+        })}${isErc721Item(item.itemType) ? `-${orderIndex}-${itemIndex}` : ""}`
 
         offerAggregatedFulfillments[aggregateKey] = [
           ...(offerAggregatedFulfillments[aggregateKey] ?? []),
@@ -1062,7 +1062,7 @@ export function generateFulfillOrdersFulfillments(
             identifier:
               itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
             // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-          })}${isErc721Item(item.itemType) ? `${orderIndex}-${itemIndex}` : ""}`
+          })}${isErc721Item(item.itemType) ? `-${orderIndex}-${itemIndex}` : ""}`
 
           considerationAggregatedFulfillments[aggregateKey] = [
             ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
