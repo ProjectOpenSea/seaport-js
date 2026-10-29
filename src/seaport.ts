@@ -59,6 +59,7 @@ import {
   fulfillAvailableOrders,
   fulfillBasicOrder,
   fulfillStandardOrder,
+  hasExtraData,
   offerItemsLandWithFulfiller,
   scaleOrderStatusToMaxUnits,
   shouldUseBasicFulfill,
@@ -981,10 +982,12 @@ export class Seaport {
     )
 
     // We use basic fulfills as they are more optimal for simple and "hot" use cases
-    // We cannot use basic fulfill if user is trying to partially fill though.
+    // We cannot use basic fulfill if user is trying to partially fill though,
+    // or has extraData for the zone, which a basic fulfill cannot carry.
     if (
       !unitsToFill &&
       isRecipientSelf &&
+      !hasExtraData(extraData) &&
       shouldUseBasicFulfill(
         sanitizedOrder.parameters,
         totalFilled,

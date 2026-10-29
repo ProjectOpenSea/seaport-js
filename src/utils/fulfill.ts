@@ -489,7 +489,11 @@ export function fulfillStandardOrder(
     fulfillerAddress,
   )
 
-  const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems || isGift
+  const useAdvanced =
+    Boolean(unitsToFill) ||
+    hasCriteriaItems ||
+    isGift ||
+    hasExtraData(extraData)
 
   const orderAccountingForTips: OrderStruct = {
     ...order,
@@ -567,6 +571,17 @@ export function offerItemsLandWithFulfiller(
     recipientAddress.toLowerCase() === ethers.ZeroAddress.toLowerCase() ||
     recipientAddress.toLowerCase() === fulfillerAddress.toLowerCase()
   )
+}
+
+/**
+ * Whether the caller supplied extraData for the order's zone.
+ *
+ * Only `fulfillAdvancedOrder` carries extraData. `fulfillBasicOrder` and
+ * `fulfillOrder` hand the zone an empty value, so a fill with extraData to pass
+ * on has to take the advanced route or the bytes are silently dropped.
+ */
+export function hasExtraData(extraData?: string): boolean {
+  return Boolean(extraData) && ethers.dataLength(extraData as string) > 0
 }
 
 export function validateAndSanitizeFromOrderStatus(

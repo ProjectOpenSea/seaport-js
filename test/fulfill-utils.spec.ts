@@ -11,6 +11,7 @@ import type {
 import type { FulfillOrdersMetadata } from "../src/utils/fulfill"
 import {
   generateFulfillOrdersFulfillments,
+  hasExtraData,
   isOrderFulfillable,
   offerItemsLandWithFulfiller,
   shouldUseBasicFulfill,
@@ -280,6 +281,19 @@ describe("offerItemsLandWithFulfiller", () => {
 
   it("returns false when recipientAddress is a different party", () => {
     expect(offerItemsLandWithFulfiller(OTHER, FULFILLER)).to.be.false
+  })
+})
+
+describe("hasExtraData", () => {
+  it("returns false when no extraData is given", () => {
+    expect(hasExtraData(undefined)).to.be.false
+    expect(hasExtraData("")).to.be.false
+    expect(hasExtraData("0x")).to.be.false
+  })
+
+  it("returns true for any non-empty extraData, including a zero byte", () => {
+    expect(hasExtraData("0x00")).to.be.true
+    expect(hasExtraData("0x1234abcd")).to.be.true
   })
 })
 
