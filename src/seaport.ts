@@ -55,6 +55,7 @@ import {
 } from "./utils/balanceAndApprovalCheck"
 import { getBulkOrderTree } from "./utils/eip712/bulk-orders"
 import {
+  assertUnitsToFillIsPositive,
   type FulfillOrdersMetadata,
   fulfillAvailableOrders,
   fulfillBasicOrder,
@@ -944,6 +945,8 @@ export class Seaport {
       throw new Error("Order is missing signature")
     }
 
+    assertUnitsToFillIsPositive(unitsToFill)
+
     const { parameters: orderParameters } = order
     const { offerer, offer, consideration } = orderParameters
 
@@ -1115,6 +1118,10 @@ export class Seaport {
       fulfillOrderDetails.some(orderDetails => !orderDetails.order.signature)
     ) {
       throw new Error("All orders must include signatures")
+    }
+
+    for (const { unitsToFill } of fulfillOrderDetails) {
+      assertUnitsToFillIsPositive(unitsToFill)
     }
 
     const fulfiller = await this._getSigner(accountAddress)

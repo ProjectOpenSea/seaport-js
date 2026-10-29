@@ -1104,6 +1104,21 @@ export function assertNoCriteriaTips(tips: ConsiderationItem[]) {
 }
 
 /**
+ * Rejects a requested fill of zero or fewer units.
+ *
+ * Leaving `unitsToFill` out fills whatever is left of the order, and the fill
+ * paths tell the two apart by whether it is truthy. A zero written as a number
+ * or a bigint is falsy, so it was read as "not set" and filled the whole
+ * order, while the same zero as a string reached the "must be greater than 0"
+ * check in mapOrderAmountsFromUnitsToFill. Settle it before any of that runs.
+ */
+export const assertUnitsToFillIsPositive = (unitsToFill?: BigNumberish) => {
+  if (unitsToFill != null && BigInt(unitsToFill) <= 0n) {
+    throw new Error("Units to fill must be greater than 0")
+  }
+}
+
+/**
  * Caps a requested fill at what is left of a partially filled order.
  *
  * Seaport does this itself: asking for 8 of 10 units when only 4 remain
