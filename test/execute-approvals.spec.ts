@@ -295,5 +295,217 @@ describeWithFixture(
         signed.map(order => order.parameters),
       )
     })
+
+    describe("an ERC721 approved one token at a time by exactApproval", () => {
+      const nftId = "1"
+
+      // Lists nftId with exactApproval, which approves Seaport for that one
+      // token only, and leaves the collection unapproved.
+      const createExactApprovalListing = async () => {
+        const { seaport, seaportContract, testErc721, ethers } = fixture
+        const [offerer] = await ethers.getSigners()
+        await testErc721.mint(await offerer.getAddress(), nftId)
+
+        const useCase = await seaport.createOrder(
+          {
+            offer: [
+              {
+                itemType: ItemType.ERC721,
+                token: await testErc721.getAddress(),
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("1").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+          },
+          await offerer.getAddress(),
+          true,
+        )
+        const order = await useCase.executeAllActions()
+
+        const seaportAddress = await seaportContract.getAddress()
+        expect(await testErc721.getApproved(nftId)).to.equal(seaportAddress)
+        expect(
+          await testErc721.isApprovedForAll(
+            await offerer.getAddress(),
+            seaportAddress,
+          ),
+        ).to.be.false
+
+        return order
+      }
+
+      it("fulfills the listing through fulfillOrder on the basic route", async () => {
+        const { seaport, seaportContract, testErc721, ethers } = fixture
+        const [, fulfiller] = await ethers.getSigners()
+        const order = await createExactApprovalListing()
+
+        const { actions } = await seaport.fulfillOrder({
+          order,
+          accountAddress: await fulfiller.getAddress(),
+        })
+        expect(actions).to.have.lengthOf(1)
+        const tx = await actions[0].transactionMethods.buildTransaction()
+        expect(seaportContract.interface.parseTransaction(tx)?.name).to.equal(
+          "fulfillBasicOrder",
+        )
+        await (await actions[0].transactionMethods.transact()).wait()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await fulfiller.getAddress(),
+        )
+      })
+
+      it("fulfills the listing through fulfillOrder on the standard route", async () => {
+        const { seaport, seaportContract, testErc721, ethers } = fixture
+        const [, fulfiller, recipient] = await ethers.getSigners()
+        const order = await createExactApprovalListing()
+
+        const { actions } = await seaport.fulfillOrder({
+          order,
+          accountAddress: await fulfiller.getAddress(),
+          recipientAddress: await recipient.getAddress(),
+        })
+        expect(actions).to.have.lengthOf(1)
+        const tx = await actions[0].transactionMethods.buildTransaction()
+        expect(seaportContract.interface.parseTransaction(tx)?.name).to.equal(
+          "fulfillAdvancedOrder",
+        )
+        await (await actions[0].transactionMethods.transact()).wait()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await recipient.getAddress(),
+        )
+      })
+
+      it("fulfills the listing through fulfillOrders", async () => {
+        const { seaport, testErc721, ethers } = fixture
+        const [, fulfiller] = await ethers.getSigners()
+        const order = await createExactApprovalListing()
+
+        const { executeAllActions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [{ order }],
+          accountAddress: await fulfiller.getAddress(),
+        })
+        await executeAllActions()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await fulfiller.getAddress(),
+        )
+      })
+
+      it("does not ask to approve the token again for a second listing", async () => {
+        const { seaport, testErc721, ethers } = fixture
+        const [offerer] = await ethers.getSigners()
+        await createExactApprovalListing()
+
+        const useCase = await seaport.createOrder(
+          {
+            offer: [
+              {
+                itemType: ItemType.ERC721,
+                token: await testErc721.getAddress(),
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("2").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+          },
+          await offerer.getAddress(),
+          true,
+        )
+
+        expect(useCase.actions.map(({ type }) => type)).to.deep.equal([
+          "create",
+        ])
+      })
+
+      it("does not ask the fulfiller to approve a criteria token it already approved", async () => {
+        const { seaport, seaportContract, testErc721, testErc20, ethers } =
+          fixture
+        const [offerer, fulfiller] = await ethers.getSigners()
+        await testErc721.mint(await fulfiller.getAddress(), nftId)
+        await testErc20.mint(await offerer.getAddress(), parseEther("1"))
+        await testErc721
+          .connect(fulfiller)
+          .approve(await seaportContract.getAddress(), nftId)
+
+        // A collection offer: any token of the collection.
+        const order = await (
+          await seaport.createOrder(
+            {
+              offer: [
+                {
+                  amount: parseEther("1").toString(),
+                  token: await testErc20.getAddress(),
+                },
+              ],
+              consideration: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: await testErc721.getAddress(),
+                  identifiers: [],
+                  recipient: await offerer.getAddress(),
+                },
+              ],
+            },
+            await offerer.getAddress(),
+          )
+        ).executeAllActions()
+
+        const { actions, executeAllActions } = await seaport.fulfillOrder({
+          order,
+          considerationCriteria: [{ identifier: nftId, proof: [] }],
+          accountAddress: await fulfiller.getAddress(),
+          exactApproval: true,
+        })
+        expect(actions.map(({ type }) => type)).to.deep.equal(["exchange"])
+
+        await executeAllActions()
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await offerer.getAddress(),
+        )
+      })
+
+      it("still asks for an approval when the token is approved for another operator", async () => {
+        const { seaport, testErc721, ethers } = fixture
+        const [offerer, otherOperator] = await ethers.getSigners()
+        await testErc721.mint(await offerer.getAddress(), nftId)
+        await testErc721.approve(await otherOperator.getAddress(), nftId)
+
+        const useCase = await seaport.createOrder(
+          {
+            offer: [
+              {
+                itemType: ItemType.ERC721,
+                token: await testErc721.getAddress(),
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("1").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+          },
+          await offerer.getAddress(),
+          true,
+        )
+
+        expect(useCase.actions.map(({ type }) => type)).to.deep.equal([
+          "approval",
+          "create",
+        ])
+      })
+    })
   },
 )

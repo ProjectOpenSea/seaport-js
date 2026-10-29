@@ -86,6 +86,7 @@ export const getBalancesAndApprovals = async ({
           item,
           operator,
           provider,
+          itemToCriteria.get(item),
         )
       } else if (isErc20Item(item.itemType)) {
         approvedAmount = await approvedItemAmount(
