@@ -4,7 +4,7 @@ import {
   TestERC20__factory,
   TestERC721__factory,
 } from "../typechain-types/index"
-import type { ApprovalAction, Item } from "../types"
+import type { ApprovalAction, InputCriteria, Item } from "../types"
 import type { InsufficientApprovals } from "./balanceAndApprovalCheck"
 import { isErc721Item, isErc1155Item } from "./item"
 import { getTransactionMethods } from "./usecase"
@@ -14,6 +14,7 @@ export const approvedItemAmount = async (
   item: Item,
   operator: string,
   provider: ethers.Provider,
+  criteria?: InputCriteria,
 ) => {
   if (isErc721Item(item.itemType) || isErc1155Item(item.itemType)) {
     // isApprovedForAll check is the same for both ERC721 and ERC1155, defaulting to ERC721
@@ -21,7 +22,22 @@ export const approvedItemAmount = async (
 
     const isApprovedForAll = await contract.isApprovedForAll(owner, operator)
     // Setting to the max int to consolidate types and simplify
-    return isApprovedForAll ? MAX_INT : 0n
+    if (isApprovedForAll) {
+      return MAX_INT
+    }
+
+    // exactApproval approves an ERC721 one token at a time, so the token can be
+    // approved for the operator while the collection is not.
+    const identifier =
+      item.itemType === ItemType.ERC721_WITH_CRITERIA
+        ? criteria?.identifier
+        : item.identifierOrCriteria
+    if (!isErc721Item(item.itemType) || identifier === undefined) {
+      return 0n
+    }
+
+    const approved = await contract.getApproved(identifier)
+    return approved.toLowerCase() === operator.toLowerCase() ? 1n : 0n
   } else if (item.itemType === ItemType.ERC20) {
     const contract = TestERC20__factory.connect(item.token, provider)
 
