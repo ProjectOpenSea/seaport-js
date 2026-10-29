@@ -1,6 +1,16 @@
 import { expect } from "chai"
-import { keccak256, parseEther, Signature, ZeroAddress, ZeroHash } from "ethers"
+import {
+  AbiCoder,
+  dataLength,
+  keccak256,
+  parseEther,
+  Signature,
+  Wallet,
+  ZeroAddress,
+  ZeroHash,
+} from "ethers"
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
+import { Seaport } from "../src/seaport"
 import type {
   ApprovalAction,
   CreateOrderAction,
@@ -9,6 +19,7 @@ import type {
 import { generateRandomSalt } from "../src/utils/order"
 import { OPENSEA_DOMAIN, OPENSEA_DOMAIN_TAG } from "./utils/constants"
 import { describeWithFixture } from "./utils/setup"
+import { WrappedDigestSigner } from "./utils/wrapped-digest-signer"
 
 describeWithFixture("As a user I want to create an order", fixture => {
   it("should create the order after setting needed approvals", async () => {
@@ -1098,6 +1109,83 @@ describeWithFixture(
       expect(await testErc721.ownerOf(nftId)).to.equal(
         await testERC1271Wallet.getAddress(),
       )
+      expect(await testErc20.balanceOf(await nftOwner.getAddress())).to.equal(
+        parseEther("9.75"),
+      )
+    })
+
+    it("should fulfill an order signed by a wallet that only accepts its 65 byte signature", async () => {
+      const { seaportContract, seaport, testErc721, testErc20, ethers } =
+        fixture
+      const [, zone, nftOwner] = await ethers.getSigners()
+
+      const walletOwner = Wallet.createRandom()
+      const TestERC1271WrappedWallet = await ethers.getContractFactory(
+        "TestERC1271WrappedWallet",
+      )
+      const wallet = await TestERC1271WrappedWallet.deploy(walletOwner.address)
+      await wallet.waitForDeployment()
+      const walletAddress = await wallet.getAddress()
+
+      // Signs what the wallet checks, its own hash of the order digest, so the
+      // signature is 65 bytes but does not recover to the wallet.
+      const walletSigner = new WrappedDigestSigner(
+        walletOwner.privateKey,
+        ethers.provider as any,
+        digest =>
+          keccak256(
+            AbiCoder.defaultAbiCoder().encode(
+              ["address", "bytes32"],
+              [walletAddress, digest],
+            ),
+          ),
+      )
+      const walletSeaport = new Seaport(walletSigner as any, {
+        overrides: { contractAddress: await seaportContract.getAddress() },
+      })
+
+      const nftId = "1"
+      await testErc721.mint(await nftOwner.getAddress(), nftId)
+      await testErc20.mint(walletAddress, parseEther("10"))
+      await wallet.approveToken(
+        await testErc20.getAddress(),
+        await seaportContract.getAddress(),
+        parseEther("10"),
+      )
+
+      const { executeAllActions } = await walletSeaport.createOrder(
+        {
+          startTime: "0",
+          endTime: MAX_INT.toString(),
+          salt: generateRandomSalt(),
+          offer: [
+            {
+              amount: parseEther("10").toString(),
+              token: await testErc20.getAddress(),
+            },
+          ],
+          consideration: [
+            {
+              itemType: ItemType.ERC721,
+              token: await testErc721.getAddress(),
+              identifier: nftId,
+            },
+          ],
+          fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+        },
+        walletAddress,
+      )
+      const order = await executeAllActions()
+
+      expect(dataLength(order.signature)).to.eq(65)
+
+      const { executeAllActions: fulfill } = await seaport.fulfillOrders({
+        fulfillOrderDetails: [{ order }],
+        accountAddress: await nftOwner.getAddress(),
+      })
+      await (await fulfill()).wait()
+
+      expect(await testErc721.ownerOf(nftId)).to.equal(walletAddress)
       expect(await testErc20.balanceOf(await nftOwner.getAddress())).to.equal(
         parseEther("9.75"),
       )

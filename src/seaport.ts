@@ -608,18 +608,17 @@ export class Seaport {
 
     const domainData = await this._getDomainData()
 
-    let signature = await signer.signTypedData(
+    const signature = await signer.signTypedData(
       domainData,
       EIP_712_ORDER_TYPE,
       orderComponents,
     )
 
-    // Use EIP-2098 compact signatures to save gas.
-    if (signature.length === 132) {
-      signature = ethers.Signature.from(signature).compactSerialized
-    }
-
-    return signature
+    return this._compactOffererSignature(
+      signature,
+      TypedDataEncoder.hash(domainData, EIP_712_ORDER_TYPE, orderComponents),
+      [orderComponents.offerer],
+    )
   }
 
   /**
@@ -640,12 +639,11 @@ export class Seaport {
     const chunks = tree.getDataToSign()
     const value = { tree: chunks }
 
-    let signature = await signer.signTypedData(domainData, bulkOrderType, value)
-
-    // Use EIP-2098 compact signatures to save gas.
-    if (signature.length === 132) {
-      signature = ethers.Signature.from(signature).compactSerialized
-    }
+    const signature = this._compactOffererSignature(
+      await signer.signTypedData(domainData, bulkOrderType, value),
+      TypedDataEncoder.hash(domainData, bulkOrderType, value),
+      orderComponents.map(({ offerer }) => offerer),
+    )
 
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
       parameters,
@@ -653,6 +651,42 @@ export class Seaport {
     }))
 
     return orders
+  }
+
+  /**
+   * Shortens a signature to its EIP-2098 compact form to save gas, but only
+   * when it is the offerer's own ECDSA signature over `digest`.
+   *
+   * Seaport runs ecrecover on a 64 or 65 byte signature and, when that does not
+   * yield the offerer, passes the signature as given to the offerer's ERC-1271
+   * `isValidSignature`. A contract wallet's signature can be 65 bytes too (a
+   * 1-of-1 Safe returns its owner's r, s and v over the Safe's own message
+   * hash), and the wallet verifies it in exactly that form, so rewriting it to
+   * 64 bytes leaves the order unfulfillable. Its v can also be a value the
+   * ECDSA path never uses, such as the 31 or 32 of a Safe eth_sign signature,
+   * which ethers refuses to parse.
+   */
+  private _compactOffererSignature(
+    signature: string,
+    digest: string,
+    offerers: string[],
+  ): string {
+    if (signature.length !== 132) {
+      return signature
+    }
+
+    let recoveredSigner: string
+    try {
+      recoveredSigner = ethers.recoverAddress(digest, signature)
+    } catch {
+      return signature
+    }
+
+    return offerers.every(
+      offerer => offerer.toLowerCase() === recoveredSigner.toLowerCase(),
+    )
+      ? ethers.Signature.from(signature).compactSerialized
+      : signature
   }
 
   /**
