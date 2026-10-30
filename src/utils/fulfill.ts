@@ -489,7 +489,11 @@ export function fulfillStandardOrder(
     fulfillerAddress,
   )
 
-  const useAdvanced = Boolean(unitsToFill) || hasCriteriaItems || isGift
+  const useAdvanced =
+    Boolean(unitsToFill) ||
+    hasCriteriaItems ||
+    isGift ||
+    hasExtraData(extraData)
 
   const orderAccountingForTips: OrderStruct = {
     ...order,
@@ -567,6 +571,17 @@ export function offerItemsLandWithFulfiller(
     recipientAddress.toLowerCase() === ethers.ZeroAddress.toLowerCase() ||
     recipientAddress.toLowerCase() === fulfillerAddress.toLowerCase()
   )
+}
+
+/**
+ * Whether the caller supplied extraData for the order's zone.
+ *
+ * Only `fulfillAdvancedOrder` carries extraData. `fulfillBasicOrder` and
+ * `fulfillOrder` hand the zone an empty value, so a fill with extraData to pass
+ * on has to take the advanced route or the bytes are silently dropped.
+ */
+export function hasExtraData(extraData?: string): boolean {
+  return Boolean(extraData) && ethers.dataLength(extraData as string) > 0
 }
 
 export function validateAndSanitizeFromOrderStatus(
@@ -1038,7 +1053,7 @@ export function generateFulfillOrdersFulfillments(
           identifier:
             itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
           // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-        })}${isErc721Item(item.itemType) ? `${orderIndex}-${itemIndex}` : ""}`
+        })}${isErc721Item(item.itemType) ? `-${orderIndex}-${itemIndex}` : ""}`
 
         offerAggregatedFulfillments[aggregateKey] = [
           ...(offerAggregatedFulfillments[aggregateKey] ?? []),
@@ -1062,7 +1077,7 @@ export function generateFulfillOrdersFulfillments(
             identifier:
               itemToCriteria.get(item)?.identifier ?? item.identifierOrCriteria,
             // We tack on the index to ensure that erc721s can never be aggregated and instead must be in separate arrays
-          })}${isErc721Item(item.itemType) ? `${orderIndex}-${itemIndex}` : ""}`
+          })}${isErc721Item(item.itemType) ? `-${orderIndex}-${itemIndex}` : ""}`
 
           considerationAggregatedFulfillments[aggregateKey] = [
             ...(considerationAggregatedFulfillments[aggregateKey] ?? []),
@@ -1100,6 +1115,21 @@ export function assertNoCriteriaTips(tips: ConsiderationItem[]) {
         "consideration but gets no criteria resolver, so Seaport cannot resolve it. " +
         "Pass a tip with an explicit identifier instead.",
     )
+  }
+}
+
+/**
+ * Rejects a requested fill of zero or fewer units.
+ *
+ * Leaving `unitsToFill` out fills whatever is left of the order, and the fill
+ * paths tell the two apart by whether it is truthy. A zero written as a number
+ * or a bigint is falsy, so it was read as "not set" and filled the whole
+ * order, while the same zero as a string reached the "must be greater than 0"
+ * check in mapOrderAmountsFromUnitsToFill. Settle it before any of that runs.
+ */
+export const assertUnitsToFillIsPositive = (unitsToFill?: BigNumberish) => {
+  if (unitsToFill != null && BigInt(unitsToFill) <= 0n) {
+    throw new Error("Units to fill must be greater than 0")
   }
 }
 

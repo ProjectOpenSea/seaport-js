@@ -132,6 +132,50 @@ describeWithFixture(
           })
         })
 
+        it("rejects a zero unitsToFill written as a number or bigint instead of filling the whole order", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          )
+          const order = await executeAllActions()
+          const accountAddress = await fulfiller.getAddress()
+
+          for (const unitsToFill of [0, 0n]) {
+            await expect(
+              seaport.fulfillOrder({ order, unitsToFill, accountAddress }),
+            ).to.be.rejectedWith("Units to fill must be greater than 0")
+
+            await expect(
+              seaport.fulfillOrders({
+                fulfillOrderDetails: [{ order, unitsToFill }],
+                accountAddress,
+              }),
+            ).to.be.rejectedWith("Units to fill must be greater than 0")
+          }
+        })
+
+        it("rejects a zero unitsToFill written as a string, as before", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          )
+          const order = await executeAllActions()
+          const accountAddress = await fulfiller.getAddress()
+
+          await expect(
+            seaport.fulfillOrder({ order, unitsToFill: "0", accountAddress }),
+          ).to.be.rejectedWith("Units to fill must be greater than 0")
+
+          await expect(
+            seaport.fulfillOrders({
+              fulfillOrderDetails: [{ order, unitsToFill: "0" }],
+              accountAddress,
+            }),
+          ).to.be.rejectedWith("Units to fill must be greater than 0")
+        })
+
         it("ERC1155 <=> ETH adjust tips correctly", async () => {
           // Note: For simplicity in this test, tips are returned to the fulfiller.
           const tips = [
