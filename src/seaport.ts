@@ -647,6 +647,17 @@ export class Seaport {
       orderComponents.map(({ offerer }) => offerer),
     )
 
+    // Seaport reads a bulk order signature as 64 or 65 bytes followed by the
+    // proof. At any other length it checks the whole value against the single
+    // order's digest, which this signature does not cover, so the orders would
+    // be returned but could never be fulfilled.
+    const signatureLength = ethers.dataLength(signature)
+    if (signatureLength !== 64 && signatureLength !== 65) {
+      throw new Error(
+        `Seaport only reads a 64 or 65 byte signature as a bulk order signature, but the signer returned ${signatureLength} bytes, as a contract wallet with more than one owner does. Sign these orders one at a time with signOrder or createOrder instead.`,
+      )
+    }
+
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
       parameters,
       signature: tree.getEncodedProofAndSignature(i, signature),

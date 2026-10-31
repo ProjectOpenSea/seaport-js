@@ -1,5 +1,7 @@
 import { expect } from "chai"
 import {
+  AbiCoder,
+  concat,
   dataLength,
   keccak256,
   parseEther,
@@ -11,6 +13,7 @@ import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
 import { Seaport } from "../src/seaport"
 import type {
   ConsiderationItem,
+  CreateOrderInput,
   OfferItem,
   OrderComponents,
 } from "../src/types"
@@ -246,6 +249,159 @@ describeWithFixture(
       expect(dataLength(signature)).to.eq(64)
       // 64 + 3 + 32: the compact signature, the key, one proof element.
       expect(dataLength(bulkOrder.signature)).to.eq(99)
+    })
+
+    it("rejects a bulk signature longer than 65 bytes instead of returning orders Seaport cannot verify", async () => {
+      const { ethers } = fixture
+      const offerer = Wallet.createRandom().address
+      // A multi-owner Safe concatenates one 65 byte signature per owner (#323).
+      const signer = new WrappedDigestSigner(
+        Wallet.createRandom().privateKey,
+        ethers.provider as any,
+        wrapDigest,
+        signature => `${signature}${signature.slice(2)}`,
+      )
+
+      await expect(
+        (await seaportSigningWith(signer)).signBulkOrder([
+          await orderComponentsFor(offerer),
+          await orderComponentsFor(offerer),
+        ]),
+      ).to.be.rejectedWith(
+        "Seaport only reads a 64 or 65 byte signature as a bulk order signature, but the signer returned 130 bytes",
+      )
+    })
+
+    it("rejects the same signature when the bulk orders come from createBulkOrders", async () => {
+      const { seaportContract, testErc721, ethers } = fixture
+      const signer = new WrappedDigestSigner(
+        Wallet.createRandom().privateKey,
+        ethers.provider as any,
+        wrapDigest,
+        signature => `${signature}${signature.slice(2)}`,
+      )
+      const seaport = new Seaport(signer as any, {
+        balanceAndApprovalChecksOnOrderCreation: false,
+        overrides: { contractAddress: await seaportContract.getAddress() },
+      })
+      const input: CreateOrderInput = {
+        offer: [
+          {
+            itemType: ItemType.ERC721,
+            token: await testErc721.getAddress(),
+            identifier: "1",
+          },
+        ],
+        consideration: [
+          { amount: parseEther("1").toString(), recipient: signer.address },
+        ],
+      }
+
+      const { executeAllActions } = await seaport.createBulkOrders([
+        input,
+        input,
+      ])
+
+      await expect(executeAllActions()).to.be.rejectedWith(
+        "Seaport only reads a 64 or 65 byte signature as a bulk order signature, but the signer returned 130 bytes",
+      )
+    })
+
+    it("fills a two owner wallet's 130 byte signature as a single order and rejects it as a bulk order", async () => {
+      const { seaport, seaportContract, testErc20, testErc721, ethers } =
+        fixture
+      const [, , nftOwner] = await ethers.getSigners()
+
+      const firstOwner = Wallet.createRandom()
+      const secondOwner = Wallet.createRandom()
+      const TestERC1271TwoOwnerWallet = await ethers.getContractFactory(
+        "TestERC1271TwoOwnerWallet",
+      )
+      const wallet = await TestERC1271TwoOwnerWallet.deploy(
+        firstOwner.address,
+        secondOwner.address,
+      )
+      await wallet.waitForDeployment()
+      const walletAddress = await wallet.getAddress()
+
+      // Both owners sign the wallet's own hash of the digest, as the owners of
+      // a 2-of-2 Safe do, so the wallet's signature is 130 bytes.
+      const signer = new WrappedDigestSigner(
+        firstOwner.privateKey,
+        ethers.provider as any,
+        digest =>
+          keccak256(
+            AbiCoder.defaultAbiCoder().encode(
+              ["address", "bytes32"],
+              [walletAddress, digest],
+            ),
+          ),
+        (signature, wrappedDigest) =>
+          concat([
+            signature,
+            secondOwner.signingKey.sign(wrappedDigest).serialized,
+          ]),
+      )
+      const walletSeaport = await seaportSigningWith(signer)
+
+      await testErc20.mint(walletAddress, parseEther("10"))
+      await wallet.approveToken(
+        await testErc20.getAddress(),
+        await seaportContract.getAddress(),
+        parseEther("10"),
+      )
+
+      // The wallet bids 10 ERC20 for an NFT.
+      const bidFor = async (nftId: string): Promise<OrderComponents> => ({
+        offerer: walletAddress,
+        zone: ZeroAddress,
+        offer: [
+          {
+            itemType: ItemType.ERC20,
+            token: await testErc20.getAddress(),
+            identifierOrCriteria: "0",
+            startAmount: parseEther("10").toString(),
+            endAmount: parseEther("10").toString(),
+          },
+        ],
+        consideration: [
+          {
+            itemType: ItemType.ERC721,
+            token: await testErc721.getAddress(),
+            identifierOrCriteria: nftId,
+            startAmount: "1",
+            endAmount: "1",
+            recipient: walletAddress,
+          },
+        ],
+        orderType: OrderType.FULL_OPEN,
+        totalOriginalConsiderationItems: 1,
+        salt: generateRandomSalt(),
+        startTime: "0",
+        endTime: MAX_INT.toString(),
+        zoneHash: ZeroHash,
+        conduitKey: NO_CONDUIT,
+        counter: (await seaportContract.getCounter(walletAddress)).toString(),
+      })
+
+      const nftId = "1"
+      await testErc721.mint(await nftOwner.getAddress(), nftId)
+      const parameters = await bidFor(nftId)
+      const signature = await walletSeaport.signOrder(parameters)
+      expect(dataLength(signature)).to.eq(130)
+
+      const { executeAllActions } = await seaport.fulfillOrder({
+        order: { parameters, signature },
+        accountAddress: await nftOwner.getAddress(),
+      })
+      await (await executeAllActions()).wait()
+      expect(await testErc721.ownerOf(nftId)).to.equal(walletAddress)
+
+      await expect(
+        walletSeaport.signBulkOrder([await bidFor("2"), await bidFor("3")]),
+      ).to.be.rejectedWith(
+        "Seaport only reads a 64 or 65 byte signature as a bulk order signature, but the signer returned 130 bytes",
+      )
     })
   },
 )
