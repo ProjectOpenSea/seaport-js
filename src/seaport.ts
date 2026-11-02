@@ -246,6 +246,8 @@ export class Seaport {
    * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
    *
    * @param input See {@link createOrder} for more details about the input parameters.
+   * @param accountAddress Optional address to create the orders for. It is the offerer of every order and
+   *                       defaults to the signer's address, as in {@link createOrder}.
    * @param exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the list of actions needed to be performed in order to create the orders
    */
