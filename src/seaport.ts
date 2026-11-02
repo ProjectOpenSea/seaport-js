@@ -255,7 +255,9 @@ export class Seaport {
     exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
     const signer = await this._getSigner(accountAddress)
-    const offerer = await signer.getAddress()
+    // Same as createOrder: the account passed in is the offerer, which differs
+    // from the signer when a contract wallet's owner signs on its behalf.
+    const offerer = accountAddress ?? (await signer.getAddress())
     const offererCounter = await this.getCounter(offerer)
 
     const allOrderComponents: OrderComponents[] = []

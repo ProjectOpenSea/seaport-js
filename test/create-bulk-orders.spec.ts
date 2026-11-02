@@ -1,5 +1,12 @@
 import { expect } from "chai"
-import { parseEther, ZeroAddress, ZeroHash } from "ethers"
+import {
+  AbiCoder,
+  keccak256,
+  parseEther,
+  Wallet,
+  ZeroAddress,
+  ZeroHash,
+} from "ethers"
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
 import { Seaport } from "../src/seaport"
 import { LocalConduitController__factory } from "../src/typechain-types/index"
@@ -12,6 +19,7 @@ import type {
 import { getApprovalActions } from "../src/utils/approval"
 import { generateRandomSalt } from "../src/utils/order"
 import { describeWithFixture } from "./utils/setup"
+import { WrappedDigestSigner } from "./utils/wrapped-digest-signer"
 
 describeWithFixture(
   "As a user I want to create bulk orders with one signature",
@@ -441,6 +449,78 @@ describeWithFixture(
       )
 
       expect(actions.map(action => action.type)).to.deep.equal(["createBulk"])
+    })
+    it("creates the orders for the account passed in, not the signer, like createOrder does", async () => {
+      const { seaportContract, testErc721, testErc20, ethers } = fixture
+      const [, zone] = await ethers.getSigners()
+
+      // A contract wallet whose owner key signs for it, as in the createOrder
+      // test for a wallet that only accepts its 65 byte signature.
+      const walletOwner = Wallet.createRandom()
+      const TestERC1271WrappedWallet = await ethers.getContractFactory(
+        "TestERC1271WrappedWallet",
+      )
+      const wallet = await TestERC1271WrappedWallet.deploy(walletOwner.address)
+      await wallet.waitForDeployment()
+      const walletAddress = await wallet.getAddress()
+
+      const walletSigner = new WrappedDigestSigner(
+        walletOwner.privateKey,
+        ethers.provider as any,
+        digest =>
+          keccak256(
+            AbiCoder.defaultAbiCoder().encode(
+              ["address", "bytes32"],
+              [walletAddress, digest],
+            ),
+          ),
+      )
+      const walletSeaport = new Seaport(walletSigner as any, {
+        overrides: { contractAddress: await seaportContract.getAddress() },
+        balanceAndApprovalChecksOnOrderCreation: false,
+      })
+
+      const input = async (nftId: string): Promise<CreateOrderInput> => ({
+        startTime: "0",
+        endTime: MAX_INT.toString(),
+        salt: generateRandomSalt(),
+        offer: [
+          {
+            amount: parseEther("10").toString(),
+            token: await testErc20.getAddress(),
+          },
+        ],
+        consideration: [
+          {
+            itemType: ItemType.ERC721,
+            token: await testErc721.getAddress(),
+            identifier: nftId,
+          },
+        ],
+        fees: [{ recipient: await zone.getAddress(), basisPoints: 250 }],
+      })
+
+      // createOrder takes the account passed in as the offerer.
+      const single = await (
+        await walletSeaport.createOrder(await input("1"), walletAddress)
+      ).executeAllActions()
+      expect(single.parameters.offerer).to.equal(walletAddress)
+
+      // createBulkOrders has to do the same, or it signs orders that commit
+      // the signer's own assets instead of the account the caller named.
+      const bulk = await (
+        await walletSeaport.createBulkOrders(
+          [await input("2"), await input("3")],
+          walletAddress,
+        )
+      ).executeAllActions()
+
+      for (const order of bulk) {
+        expect(order.parameters.offerer).to.equal(walletAddress)
+        expect(order.parameters.consideration[0].recipient).to.equal(
+          walletAddress,
+        )
+      }
     })
   },
 )
