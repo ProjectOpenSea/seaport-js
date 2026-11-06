@@ -14,7 +14,8 @@ import {
  * 65 byte r, s, v signature, so it looks like an EOA signature by length alone
  * even though it does not recover to the offerer. `transform` lets a test
  * produce the other shapes such a wallet can return, like a Safe eth_sign
- * signature whose v is 31 or 32.
+ * signature whose v is 31 or 32, or a second owner's signature over the same
+ * wrapped digest appended to it.
  */
 export class WrappedDigestSigner extends Wallet {
   lastSignature?: string
@@ -23,8 +24,10 @@ export class WrappedDigestSigner extends Wallet {
     privateKey: string,
     provider: Provider | null,
     private readonly wrapDigest: (digest: string) => string,
-    private readonly transform: (signature: string) => string = signature =>
-      signature,
+    private readonly transform: (
+      signature: string,
+      wrappedDigest: string,
+    ) => string = signature => signature,
   ) {
     super(privateKey, provider)
   }
@@ -34,9 +37,12 @@ export class WrappedDigestSigner extends Wallet {
     types: Record<string, TypedDataField[]>,
     value: Record<string, unknown>,
   ): Promise<string> {
-    const digest = TypedDataEncoder.hash(domain, types, value)
+    const wrappedDigest = this.wrapDigest(
+      TypedDataEncoder.hash(domain, types, value),
+    )
     this.lastSignature = this.transform(
-      this.signingKey.sign(this.wrapDigest(digest)).serialized,
+      this.signingKey.sign(wrappedDigest).serialized,
+      wrappedDigest,
     )
     return this.lastSignature
   }

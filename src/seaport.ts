@@ -246,6 +246,8 @@ export class Seaport {
    * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
    *
    * @param input See {@link createOrder} for more details about the input parameters.
+   * @param accountAddress Optional address to create the orders for. It is the offerer of every order and
+   *                       defaults to the signer's address, as in {@link createOrder}.
    * @param exactApproval optional boolean to indicate whether the approval should be exact or not
    * @returns a use case containing the list of actions needed to be performed in order to create the orders
    */
@@ -255,7 +257,9 @@ export class Seaport {
     exactApproval?: boolean,
   ): Promise<OrderUseCase<CreateBulkOrdersAction>> {
     const signer = await this._getSigner(accountAddress)
-    const offerer = await signer.getAddress()
+    // Same as createOrder: the account passed in is the offerer, which differs
+    // from the signer when a contract wallet's owner signs on its behalf.
+    const offerer = accountAddress ?? (await signer.getAddress())
     const offererCounter = await this.getCounter(offerer)
 
     const allOrderComponents: OrderComponents[] = []
@@ -646,6 +650,17 @@ export class Seaport {
       TypedDataEncoder.hash(domainData, bulkOrderType, value),
       orderComponents.map(({ offerer }) => offerer),
     )
+
+    // Seaport reads a bulk order signature as 64 or 65 bytes followed by the
+    // proof. At any other length it checks the whole value against the single
+    // order's digest, which this signature does not cover, so the orders would
+    // be returned but could never be fulfilled.
+    const signatureLength = ethers.dataLength(signature)
+    if (signatureLength !== 64 && signatureLength !== 65) {
+      throw new Error(
+        `Seaport only reads a 64 or 65 byte signature as a bulk order signature, but the signer returned ${signatureLength} bytes, as a contract wallet with more than one owner does. Sign these orders one at a time with signOrder or createOrder instead.`,
+      )
+    }
 
     const orders: OrderWithCounter[] = orderComponents.map((parameters, i) => ({
       parameters,
