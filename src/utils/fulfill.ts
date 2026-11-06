@@ -623,6 +623,22 @@ export function isOrderFulfillable({
   return !isCancelled && !(totalSize > 0n && totalFilled / totalSize === 1n)
 }
 
+/**
+ * Whether an order's endTime has already passed at `currentBlockTimestamp`.
+ *
+ * Seaport only accepts an order while `startTime <= block.timestamp < endTime`,
+ * and `fulfillAvailableAdvancedOrders` skips one outside that window just as it
+ * skips a cancelled one. Block time only moves forward, so an order that has
+ * expired at the latest block is still expired when the fulfillment lands. An
+ * order that has not started yet is left alone: it can become active by then.
+ */
+export function hasOrderExpired(
+  { parameters: { endTime } }: Order,
+  currentBlockTimestamp: number,
+): boolean {
+  return BigInt(endTime) <= BigInt(currentBlockTimestamp)
+}
+
 export type FulfillOrdersMetadata = {
   order: Order
   unitsToFill?: BigNumberish
@@ -672,9 +688,15 @@ export function fulfillAvailableOrders({
 
   // Drop the orders that cannot be filled instead of throwing on the first one.
   // Every array built below is indexed by position in this list, so the
-  // fulfillments and criteria resolvers are derived from it too.
+  // fulfillments and criteria resolvers are derived from it too. An expired
+  // order is skipped on chain too, so keeping it would only check its offerer's
+  // balance and charge the fulfiller for an order that will never settle.
   const sanitizedOrdersMetadata = ordersMetadata
-    .filter(({ orderStatus }) => isOrderFulfillable(orderStatus))
+    .filter(
+      ({ order, orderStatus }) =>
+        isOrderFulfillable(orderStatus) &&
+        !hasOrderExpired(order, currentBlockTimestamp),
+    )
     .map(orderMetadata => ({
       ...orderMetadata,
       unitsToFill: orderMetadata.unitsToFill
@@ -691,7 +713,7 @@ export function fulfillAvailableOrders({
 
   if (sanitizedOrdersMetadata.length === 0) {
     throw new Error(
-      "None of the orders can be fulfilled: every one is already filled or cancelled.",
+      "None of the orders can be fulfilled: every one is already filled, cancelled or expired.",
     )
   }
 

@@ -12,6 +12,7 @@ import type { FulfillOrdersMetadata } from "../src/utils/fulfill"
 import {
   generateFulfillOrdersFulfillments,
   hasExtraData,
+  hasOrderExpired,
   isOrderFulfillable,
   offerItemsLandWithFulfiller,
   shouldUseBasicFulfill,
@@ -451,5 +452,32 @@ describe("isOrderFulfillable", () => {
     expect(
       isOrderFulfillable(orderStatus({ totalFilled: 0n, totalSize: 0n })),
     ).to.equal(true)
+  })
+})
+
+// Seaport accepts an order while startTime <= block.timestamp < endTime, so an
+// order is expired from the second its endTime is reached.
+describe("hasOrderExpired", () => {
+  const orderEndingAt = (endTime: string): Order => {
+    const order = makeOrder({ offer: [erc721Item()] })
+    return { ...order, parameters: { ...order.parameters, endTime } }
+  }
+
+  it("is false before the endTime", () => {
+    expect(hasOrderExpired(orderEndingAt("1000"), 999)).to.equal(false)
+  })
+
+  it("is true at the endTime itself", () => {
+    expect(hasOrderExpired(orderEndingAt("1000"), 1000)).to.equal(true)
+  })
+
+  it("is true after the endTime", () => {
+    expect(hasOrderExpired(orderEndingAt("1000"), 1001)).to.equal(true)
+  })
+
+  it("is false for an order that has not started yet", () => {
+    const order = orderEndingAt("2000")
+    order.parameters.startTime = "1500"
+    expect(hasOrderExpired(order, 1000)).to.equal(false)
   })
 })
