@@ -1566,6 +1566,135 @@ describeWithFixture(
         })
       })
 
+      describe("[Buy now] I want to tip on a partial buy of an ERC1155", () => {
+        // Seaport scales every tip by the fill fraction and reverts with
+        // InexactFraction when it does not divide evenly. 3 units for 9 ETH
+        // fill in thirds, so a 0.01 ETH tip cannot be scaled to any partial
+        // fill of this order while a 0.03 ETH tip can.
+        const inexactTips = async () => [
+          {
+            amount: parseEther("0.01").toString(),
+            recipient: await zone.getAddress(),
+          },
+        ]
+
+        beforeEach(async () => {
+          const { testErc1155 } = fixture
+
+          await testErc1155.mint(await offerer.getAddress(), nftId, 3)
+
+          standardCreateOrderInput = {
+            startTime: "0",
+            allowPartialFills: true,
+            offer: [
+              {
+                itemType: ItemType.ERC1155,
+                token: await testErc1155.getAddress(),
+                amount: "3",
+                identifier: nftId,
+              },
+            ],
+            consideration: [
+              {
+                amount: parseEther("9").toString(),
+                recipient: await offerer.getAddress(),
+              },
+            ],
+          }
+        })
+
+        it("rejects a tip a unitsToFill fill cannot scale exactly instead of building a fill that reverts", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          )
+          const order = await executeAllActions()
+          const accountAddress = await fulfiller.getAddress()
+          const tips = await inexactTips()
+
+          await expect(
+            seaport.fulfillOrder({
+              order,
+              unitsToFill: 1,
+              tips,
+              accountAddress,
+            }),
+          ).to.be.rejectedWith("Use a tip amount that is a multiple of 3")
+
+          await expect(
+            seaport.fulfillOrders({
+              fulfillOrderDetails: [{ order, unitsToFill: 1, tips }],
+              accountAddress,
+            }),
+          ).to.be.rejectedWith("Use a tip amount that is a multiple of 3")
+        })
+
+        it("rejects a tip the rest of a partially filled order cannot scale exactly", async () => {
+          const { seaport } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          )
+          const order = await executeAllActions()
+
+          // Another buyer takes one of the three units first.
+          const firstFill = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 1,
+            accountAddress: await zone.getAddress(),
+          })
+          await (await firstFill.executeAllActions()).wait()
+
+          const accountAddress = await fulfiller.getAddress()
+          const tips = await inexactTips()
+
+          await expect(
+            seaport.fulfillOrder({ order, tips, accountAddress }),
+          ).to.be.rejectedWith("Use a tip amount that is a multiple of 3")
+
+          await expect(
+            seaport.fulfillOrders({
+              fulfillOrderDetails: [{ order, tips }],
+              accountAddress,
+            }),
+          ).to.be.rejectedWith("Use a tip amount that is a multiple of 3")
+        })
+
+        it("still fills with a tip that scales exactly", async () => {
+          const { seaport, testErc1155 } = fixture
+
+          const { executeAllActions } = await seaport.createOrder(
+            standardCreateOrderInput,
+          )
+          const order = await executeAllActions()
+          const tipRecipient = await zone.getAddress()
+          const tipRecipientBalanceBefore =
+            await fixture.ethers.provider.getBalance(tipRecipient)
+
+          const { executeAllActions: fulfill } = await seaport.fulfillOrder({
+            order,
+            unitsToFill: 2,
+            tips: [
+              {
+                amount: parseEther("0.03").toString(),
+                recipient: tipRecipient,
+              },
+            ],
+            accountAddress: await fulfiller.getAddress(),
+          })
+          await (await fulfill()).wait()
+
+          expect(
+            await testErc1155.balanceOf(await fulfiller.getAddress(), nftId),
+          ).eq(2n)
+          expect(
+            (await fixture.ethers.provider.getBalance(tipRecipient)) -
+              tipRecipientBalanceBefore,
+          ).eq(parseEther("0.02"))
+        })
+      })
+
       describe("[Accept offer] I want to accept a partial offer for my ERC1155", () => {
         beforeEach(async () => {
           const { testErc20, testErc1155 } = fixture
