@@ -1,6 +1,6 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
-import { parseEther } from "ethers"
+import { parseEther, ZeroHash } from "ethers"
 import { ItemType } from "../src/constants"
 import type { CreateOrderInput } from "../src/types"
 import { getTransactionMethods } from "../src/utils/usecase"
@@ -11,12 +11,13 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
   let offerer: HardhatEthersSigner
   let zone: HardhatEthersSigner
   let fulfiller: HardhatEthersSigner
+  let secondOfferer: HardhatEthersSigner
   let standardCreateOrderInput: CreateOrderInput
   const nftId = "1"
 
   beforeEach(async () => {
     const { ethers } = fixture
-    ;[offerer, zone, fulfiller] = await ethers.getSigners()
+    ;[offerer, zone, fulfiller, secondOfferer] = await ethers.getSigners()
   })
 
   beforeEach(async () => {
@@ -77,29 +78,170 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
       .transact()
     expect(bulkCancelOrdersTx.gasLimit).to.eq(OVERRIDE_GAS_LIMIT)
 
-    const { executeAllActions: executeAllFulfillActionsOffChainOrder } =
-      await seaport.fulfillOrder({
+    await expect(
+      seaport.fulfillOrder({
         order: offChainOrder,
         accountAddress: await fulfiller.getAddress(),
-      })
+      }),
+    ).to.be.rejectedWith("The order you are trying to fulfill is cancelled")
 
-    const { executeAllActions: executeAllFulfillActionsOnChainOrder } =
-      await seaport.fulfillOrder({
+    await expect(
+      seaport.fulfillOrder({
         order: onChainOrder,
         accountAddress: await fulfiller.getAddress(),
-      })
-
-    await expect(executeAllFulfillActionsOffChainOrder()).to.be.revert(
-      fixture.ethers,
-    )
-    await expect(executeAllFulfillActionsOnChainOrder()).to.be.revert(
-      fixture.ethers,
-    )
+      }),
+    ).to.be.rejectedWith("The order you are trying to fulfill is cancelled")
 
     expect(
       (await seaport.getCounter(await offerer.getAddress())) >
         BigInt(offChainOrder.parameters.counter),
     ).to.be.true
+  })
+
+  it("is refused onchain for an order signed under the old counter", async () => {
+    const { seaport, seaportContract } = fixture
+
+    const order = await (
+      await seaport.createOrder(standardCreateOrderInput)
+    ).executeAllActions()
+    await (await seaport.bulkCancelOrders(offerer.address).transact()).wait()
+
+    const value = order.parameters.consideration.reduce(
+      (sum, { endAmount }) => sum + BigInt(endAmount),
+      0n,
+    )
+    await expect(
+      seaportContract
+        .connect(fulfiller)
+        .fulfillOrder(order, ZeroHash, { value }),
+    ).to.be.revertedWithCustomError(seaportContract, "InvalidSigner")
+  })
+
+  it("rejects an order cancelled by bulkCancelOrders in fulfillOrder", async () => {
+    const { seaport } = fixture
+
+    const order = await (
+      await seaport.createOrder(standardCreateOrderInput)
+    ).executeAllActions()
+    await (await seaport.bulkCancelOrders(offerer.address).transact()).wait()
+
+    await expect(
+      seaport.fulfillOrder({ order, accountAddress: fulfiller.address }),
+    ).to.be.rejectedWith("The order you are trying to fulfill is cancelled")
+  })
+
+  it("drops an order cancelled by bulkCancelOrders from fulfillOrders and fills the rest", async () => {
+    const { seaport, testErc721 } = fixture
+
+    const staleOrder = await (
+      await seaport.createOrder(standardCreateOrderInput)
+    ).executeAllActions()
+    await (await seaport.bulkCancelOrders(offerer.address).transact()).wait()
+
+    const liveNftId = "2"
+    await testErc721.mint(secondOfferer.address, liveNftId)
+    const liveOrder = await (
+      await seaport.createOrder(
+        {
+          ...standardCreateOrderInput,
+          offer: [
+            {
+              itemType: ItemType.ERC721,
+              token: await testErc721.getAddress(),
+              identifier: liveNftId,
+            },
+          ],
+          consideration: [
+            {
+              amount: parseEther("1").toString(),
+              recipient: secondOfferer.address,
+            },
+          ],
+        },
+        secondOfferer.address,
+      )
+    ).executeAllActions()
+
+    const { actions } = await seaport.fulfillOrders({
+      fulfillOrderDetails: [{ order: staleOrder }, { order: liveOrder }],
+      accountAddress: fulfiller.address,
+    })
+    const fulfillAction = actions[actions.length - 1]
+
+    // Only the live order is paid for.
+    const transaction =
+      await fulfillAction.transactionMethods.buildTransaction()
+    expect(transaction.value).to.eq(parseEther("1"))
+
+    await (await fulfillAction.transactionMethods.transact()).wait()
+
+    expect(await testErc721.ownerOf(liveNftId)).to.eq(fulfiller.address)
+    expect(await testErc721.ownerOf(nftId)).to.eq(offerer.address)
+  })
+
+  it("still fills an order signed after bulkCancelOrders", async () => {
+    const { seaport, testErc721 } = fixture
+
+    await (await seaport.bulkCancelOrders(offerer.address).transact()).wait()
+    const order = await (
+      await seaport.createOrder(standardCreateOrderInput)
+    ).executeAllActions()
+
+    const { executeAllActions } = await seaport.fulfillOrder({
+      order,
+      accountAddress: fulfiller.address,
+    })
+    await executeAllActions()
+
+    expect(await testErc721.ownerOf(nftId)).to.eq(fulfiller.address)
+  })
+
+  it("still fills an order the offerer validated again after bulkCancelOrders", async () => {
+    const { seaport, testErc721 } = fixture
+
+    const order = await (
+      await seaport.createOrder(standardCreateOrderInput)
+    ).executeAllActions()
+    await (await seaport.bulkCancelOrders(offerer.address).transact()).wait()
+
+    // Seaport validates under the current counter and skips the signature check
+    // when the offerer calls, so the order is live again.
+    await (await seaport.validate([order], offerer.address).transact()).wait()
+
+    const { executeAllActions } = await seaport.fulfillOrder({
+      order,
+      accountAddress: fulfiller.address,
+    })
+    await executeAllActions()
+
+    expect(await testErc721.ownerOf(nftId)).to.eq(fulfiller.address)
+  })
+
+  it("still lets the offerer fill their own order after bulkCancelOrders", async () => {
+    const { seaport } = fixture
+
+    const order = await (
+      await seaport.createOrder(standardCreateOrderInput)
+    ).executeAllActions()
+    await (await seaport.bulkCancelOrders(offerer.address).transact()).wait()
+
+    // Seaport skips the signature check when the offerer is the caller, so the
+    // order still settles, under the hash for the current counter.
+    const { executeAllActions } = await seaport.fulfillOrder({
+      order,
+      accountAddress: offerer.address,
+    })
+    await executeAllActions()
+
+    const counter = await seaport.getCounter(offerer.address)
+    const status = await seaport.getOrderStatus(
+      seaport.getOrderHash({
+        ...order.parameters,
+        counter: counter.toString(),
+      }),
+    )
+    expect(status.totalFilled).to.eq(1n)
+    expect(status.totalSize).to.eq(1n)
   })
 
   it("validate then cancel single order", async () => {
