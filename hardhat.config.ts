@@ -36,9 +36,9 @@ export default defineConfig({
       },
     ],
     npmFilesToBuild: [
-      "seaport/contracts/Seaport.sol",
-      "seaport/contracts/conduit/Conduit.sol",
-      "seaport/contracts/conduit/ConduitController.sol",
+      "seaport-core/src/Seaport.sol",
+      "seaport-core/src/conduit/Conduit.sol",
+      "seaport-core/src/conduit/ConduitController.sol",
     ],
   },
   networks: {

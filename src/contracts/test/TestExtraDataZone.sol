@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
-import "seaport/contracts/interfaces/ZoneInterface.sol";
+import "seaport-types/src/interfaces/ZoneInterface.sol";
 
 /**
  * @notice A zone that only authorizes an order when the fulfiller supplies

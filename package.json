@@ -51,7 +51,8 @@
     "hardhat": "^3.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.1.1",
-    "seaport": "ProjectOpenSea/seaport#080133906585660f6a76b82984f3fb690ff4b2a9",
+    "seaport-core": "1.6.6",
+    "seaport-types": "1.6.3",
     "typescript": "^7.0.2"
   },
   "engines": {
