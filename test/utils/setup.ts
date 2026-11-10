@@ -85,11 +85,11 @@ export const describeWithFixture = (
       const { ethers } = await hre.network.connect()
 
       const SeaportFactory = await ethers.getContractFactory(
-        "seaport/contracts/Seaport.sol:Seaport",
+        "seaport-core/src/Seaport.sol:Seaport",
       )
 
       const ConduitControllerFactory = await ethers.getContractFactory(
-        "seaport/contracts/conduit/ConduitController.sol:LocalConduitController",
+        "seaport-core/src/conduit/ConduitController.sol:ConduitController",
       )
 
       const conduitController = await ConduitControllerFactory.deploy()
