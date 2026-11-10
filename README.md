@@ -25,6 +25,8 @@
 
 This is a TypeScript library to help interface with Seaport. It includes various helper methods and constants that makes interfacing with Seaport easier. These include creating orders, fulfilling orders, doing the necessary balance and approval checks, and more. We recommend taking a look at the [Seaport][seaport-link] docs to get a better understanding of how the Seaport marketplace works.
 
+Seaport.js talks to the Seaport contracts directly and knows nothing about OpenSea. To list, buy, or make offers on OpenSea, use the [OpenSea SDK](https://github.com/ProjectOpenSea/opensea-sdk) (`@opensea/sdk`) instead. It builds on this library and also handles the OpenSea API, including posting orders and fetching listings and offers.
+
 ## Installation
 
 We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions. Execute `nvm use`, if you have `nvm` installed.
