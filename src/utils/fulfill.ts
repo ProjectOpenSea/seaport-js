@@ -5,7 +5,12 @@ import {
   type Signer,
   type TransactionResponse,
 } from "ethers"
-import { BasicOrderRouteType, ItemType, NO_CONDUIT } from "../constants"
+import {
+  BasicOrderRouteType,
+  ItemType,
+  NO_CONDUIT,
+  OrderType,
+} from "../constants"
 import type {
   BasicOrderParametersStruct,
   FulfillmentComponentStruct,
@@ -1206,6 +1211,20 @@ export const getAdvancedOrderNumeratorDenominator = (
         `Cannot fill ${unitsToFillBn} units: this order is only divisible into ${maxUnits} unit(s). ` +
           "This usually means the item amounts (including fees) share no common divisor, " +
           "making the order effectively non-partially-fillable.",
+      )
+    }
+
+    // Seaport reverts any fill short of the whole order on a FULL order type
+    // (OrderValidator._doesNotSupportPartialFills) with
+    // PartialFillsNotEnabledForOrder, even inside fulfillAvailableAdvancedOrders,
+    // so surface that here instead of building a transaction that reverts.
+    if (
+      unitsToFillBn < maxUnits &&
+      (order.parameters.orderType === OrderType.FULL_OPEN ||
+        order.parameters.orderType === OrderType.FULL_RESTRICTED)
+    ) {
+      throw new Error(
+        `Cannot fill ${unitsToFillBn} of ${maxUnits} units: this order does not allow partial fills, so it can only be filled whole.`,
       )
     }
 
