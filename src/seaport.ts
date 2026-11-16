@@ -798,6 +798,40 @@ export class Seaport {
   }
 
   /**
+   * Seaport checks an order under its offerer's current counter, so once
+   * bulkCancelOrders raises the counter, an order signed under the old one
+   * reverts with InvalidSigner, while the status of the hash it was signed
+   * under still reads as live. Read the status Seaport will read instead, and
+   * report the order as cancelled unless Seaport skips the signature check:
+   * the order was validated onchain under the current counter, or the offerer
+   * is the one filling it.
+   */
+  private async _getOrderStatusForFulfiller(
+    orderParameters: OrderComponents,
+    fulfillerAddress: string,
+  ): Promise<OrderStatus> {
+    const [orderStatus, counter] = await Promise.all([
+      this.getOrderStatus(this.getOrderHash(orderParameters)),
+      this.getCounter(orderParameters.offerer),
+    ])
+
+    if (BigInt(orderParameters.counter) === counter) {
+      return orderStatus
+    }
+
+    const currentStatus = await this.getOrderStatus(
+      this.getOrderHash({ ...orderParameters, counter: counter.toString() }),
+    )
+    const signatureChecked =
+      !currentStatus.isValidated &&
+      orderParameters.offerer.toLowerCase() !== fulfillerAddress.toLowerCase()
+
+    return signatureChecked
+      ? { ...currentStatus, isCancelled: true }
+      : currentStatus
+  }
+
+  /**
    * Calculates the order hash of order components so we can forgo executing a request to the contract
    * This saves us RPC calls and latency.
    */
@@ -1006,7 +1040,7 @@ export class Seaport {
         operator: fulfillerOperator,
       }),
       this.provider.getBlock("latest"),
-      this.getOrderStatus(this.getOrderHash(orderParameters)),
+      this._getOrderStatusForFulfiller(orderParameters, fulfillerAddress),
     ])
 
     const currentBlockTimestamp = currentBlock!.timestamp
@@ -1209,7 +1243,7 @@ export class Seaport {
       this.provider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
-          this.getOrderStatus(this.getOrderHash(order.parameters)),
+          this._getOrderStatusForFulfiller(order.parameters, fulfillerAddress),
         ),
       ),
     ])
