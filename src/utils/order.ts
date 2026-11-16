@@ -19,6 +19,7 @@ import type {
   OrderComponents,
   OrderParameters,
 } from "../types"
+import { gcd } from "./gcd"
 import { getMaximumSizeForOrder, isCurrencyItem } from "./item"
 import { MerkleTree } from "./merkletree"
 
@@ -279,6 +280,33 @@ const multiplyDivision = (
 ) => (BigInt(amount) * BigInt(numerator)) / BigInt(denominator)
 
 /**
+ * Scales a tip by the fraction of the order being filled, the way Seaport will.
+ *
+ * Seaport applies the fill fraction to every consideration item, tips
+ * included, and reverts with InexactFraction when an amount does not divide
+ * evenly. The order's own amounts always do, because the units a fill is
+ * measured in come from their greatest common divisor, but a tip is not part
+ * of that divisor. Flooring it here would build a transaction that can never
+ * succeed, so name the problem instead.
+ */
+const scaleTipAmount = (
+  amount: BigNumberish,
+  numerator: bigint,
+  denominator: bigint,
+) => {
+  const scaled = multiplyDivision(amount, numerator, denominator)
+
+  if (scaled * denominator !== BigInt(amount) * numerator) {
+    const divisor = denominator / gcd(numerator, denominator)
+    throw new Error(
+      `Tip amount ${amount} cannot be scaled to this fill (${numerator}/${denominator} of the order): Seaport scales tips by the fill fraction and reverts with InexactFraction when it does not divide evenly. Use a tip amount that is a multiple of ${divisor}.`,
+    )
+  }
+
+  return scaled
+}
+
+/**
  * Maps order offer and consideration item amounts based on the units needed to fulfill
  * After applying the fraction, we can view this order as the "canonical" order for which we
  * check approvals and balances
@@ -347,12 +375,12 @@ export function mapTipAmountsFromUnitsToFill(
 
   return tips.map(tip => ({
     ...tip,
-    startAmount: multiplyDivision(
+    startAmount: scaleTipAmount(
       tip.startAmount,
       unitsToFillBn,
       totalSize,
     ).toString(),
-    endAmount: multiplyDivision(
+    endAmount: scaleTipAmount(
       tip.endAmount,
       unitsToFillBn,
       totalSize,
@@ -374,12 +402,12 @@ export function mapTipAmountsFromFilledStatus(
 
   return tips.map(tip => ({
     ...tip,
-    startAmount: multiplyDivision(
+    startAmount: scaleTipAmount(
       tip.startAmount,
       remainingUnits,
       totalSize,
     ).toString(),
-    endAmount: multiplyDivision(
+    endAmount: scaleTipAmount(
       tip.endAmount,
       remainingUnits,
       totalSize,
