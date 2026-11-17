@@ -1,4 +1,5 @@
 import { expect } from "chai"
+import { OrderType } from "../src/constants"
 import type { Order } from "../src/types"
 import {
   clampUnitsToRemaining,
@@ -71,6 +72,49 @@ describe("units-to-fill validation (getAdvancedOrderNumeratorDenominator)", () =
       "Cannot fill 2 units: this order is only divisible into 1 unit(s)",
     )
   })
+})
+
+// Seaport only accepts a fill short of the whole order on a PARTIAL order type;
+// a FULL order type reverts it with PartialFillsNotEnabledForOrder.
+describe("units-to-fill on orders that do not allow partial fills", () => {
+  // 10 units of an ERC1155 for 10 ETH, so maxUnits is 10.
+  const withOrderType = (orderType: OrderType): Order => {
+    const order = orderWithAmounts(["10"], ["10000000000000000000"])
+    return {
+      ...order,
+      parameters: { ...order.parameters, orderType },
+    }
+  }
+
+  for (const orderType of [OrderType.FULL_OPEN, OrderType.FULL_RESTRICTED]) {
+    it(`rejects part of a ${OrderType[orderType]} order`, () => {
+      expect(() =>
+        getAdvancedOrderNumeratorDenominator(withOrderType(orderType), 5),
+      ).to.throw(
+        "Cannot fill 5 of 10 units: this order does not allow partial fills, so it can only be filled whole.",
+      )
+    })
+
+    it(`still fills all units of a ${OrderType[orderType]} order as 1/1`, () => {
+      expect(
+        getAdvancedOrderNumeratorDenominator(withOrderType(orderType), 10),
+      ).to.deep.eq({ numerator: 1n, denominator: 1n })
+      expect(
+        getAdvancedOrderNumeratorDenominator(withOrderType(orderType)),
+      ).to.deep.eq({ numerator: 1n, denominator: 1n })
+    })
+  }
+
+  for (const orderType of [
+    OrderType.PARTIAL_OPEN,
+    OrderType.PARTIAL_RESTRICTED,
+  ]) {
+    it(`still splits a ${OrderType[orderType]} order`, () => {
+      expect(
+        getAdvancedOrderNumeratorDenominator(withOrderType(orderType), 5),
+      ).to.deep.eq({ numerator: 1n, denominator: 2n })
+    })
+  }
 })
 
 // Seaport caps a fill at whatever is left of a partially filled order, so the
