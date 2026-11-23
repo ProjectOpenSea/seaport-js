@@ -5,7 +5,23 @@ interface IERC20Approve {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
+interface ICounter {
+    function incrementCounter() external returns (uint256);
+}
+
 contract TestERC1271Wallet {
+    mapping(bytes32 => bytes32) private approvedSignatures;
+
+    function incrementCounter(address seaport) external {
+        require(msg.sender == orderSigner);
+        ICounter(seaport).incrementCounter();
+    }
+
+    function approveSignature(bytes32 digest, bytes calldata signature) external {
+        require(msg.sender == orderSigner);
+        approvedSignatures[digest] = keccak256(signature);
+    }
+
     address public orderSigner;
 
     constructor() {
@@ -24,6 +40,9 @@ contract TestERC1271Wallet {
         bytes32 hash,
         bytes calldata signature
     ) external view returns (bytes4) {
+        if (approvedSignatures[hash] == keccak256(signature)) {
+            return 0x1626ba7e;
+        }
         address signer_ = recover(hash, signature);
         if (signer_ == orderSigner) {
             return 0x1626ba7e;

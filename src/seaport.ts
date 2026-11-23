@@ -798,18 +798,14 @@ export class Seaport {
   }
 
   /**
-   * Seaport checks an order under its offerer's current counter, so once
-   * bulkCancelOrders raises the counter, an order signed under the old one
-   * reverts with InvalidSigner, while the status of the hash it was signed
-   * under still reads as live. Read the status Seaport will read instead, and
-   * report the order as cancelled unless Seaport skips the signature check:
-   * the order was validated onchain under the current counter, or the offerer
-   * is the one filling it.
+   * A counter increment leaves the old hash's status untouched. Check the
+   * current hash and let Seaport evaluate signatures, including ERC-1271.
    */
   private async _getOrderStatusForFulfiller(
-    orderParameters: OrderComponents,
+    order: OrderWithCounter,
     fulfillerAddress: string,
   ): Promise<OrderStatus> {
+    const orderParameters = order.parameters
     const [orderStatus, counter] = await Promise.all([
       this.getOrderStatus(this.getOrderHash(orderParameters)),
       this.getCounter(orderParameters.offerer),
@@ -822,13 +818,44 @@ export class Seaport {
     const currentStatus = await this.getOrderStatus(
       this.getOrderHash({ ...orderParameters, counter: counter.toString() }),
     )
-    const signatureChecked =
-      !currentStatus.isValidated &&
-      orderParameters.offerer.toLowerCase() !== fulfillerAddress.toLowerCase()
+    if (
+      currentStatus.isCancelled ||
+      currentStatus.isValidated ||
+      orderParameters.offerer.toLowerCase() === fulfillerAddress.toLowerCase()
+    ) {
+      return currentStatus
+    }
 
-    return signatureChecked
-      ? { ...currentStatus, isCancelled: true }
-      : currentStatus
+    try {
+      await this.contract.validate.staticCall([order], {
+        from: fulfillerAddress,
+      })
+      return currentStatus
+    } catch (error) {
+      // Only a signature rejection establishes that the counter invalidated
+      // the order. Surface provider errors instead of silently dropping it.
+      if (
+        typeof error !== "object" ||
+        error === null ||
+        !("data" in error) ||
+        typeof error.data !== "string" ||
+        !ethers.isHexString(error.data) ||
+        error.data.length < 10
+      )
+        throw error
+      const reason = this.contract.interface.getError(
+        error.data.slice(0, 10),
+      )?.name
+      if (
+        reason === "InvalidSigner" ||
+        reason === "InvalidSignature" ||
+        reason === "BadContractSignature" ||
+        reason === "BadSignatureV"
+      ) {
+        return { ...currentStatus, isCancelled: true }
+      }
+      throw error
+    }
   }
 
   /**
@@ -1040,7 +1067,7 @@ export class Seaport {
         operator: fulfillerOperator,
       }),
       this.provider.getBlock("latest"),
-      this._getOrderStatusForFulfiller(orderParameters, fulfillerAddress),
+      this._getOrderStatusForFulfiller(order, fulfillerAddress),
     ])
 
     const currentBlockTimestamp = currentBlock!.timestamp
@@ -1243,7 +1270,7 @@ export class Seaport {
       this.provider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
-          this._getOrderStatusForFulfiller(order.parameters, fulfillerAddress),
+          this._getOrderStatusForFulfiller(order, fulfillerAddress),
         ),
       ),
     ])

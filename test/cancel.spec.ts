@@ -1,6 +1,6 @@
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/types"
 import { expect } from "chai"
-import { parseEther, ZeroHash } from "ethers"
+import { concat, keccak256, parseEther, ZeroHash } from "ethers"
 import { ItemType } from "../src/constants"
 import type { CreateOrderInput } from "../src/types"
 import { getTransactionMethods } from "../src/utils/usecase"
@@ -243,6 +243,66 @@ describeWithFixture("As a user I want to cancel an order", fixture => {
     expect(status.totalFilled).to.eq(1n)
     expect(status.totalSize).to.eq(1n)
   })
+
+  for (const batch of [false, true]) {
+    it(`fills a counter-stale order authorized by its wallet in ${batch ? "fulfillOrders" : "fulfillOrder"}`, async () => {
+      const {
+        seaport,
+        seaportWithSigner,
+        seaportContract,
+        testERC1271Wallet: wallet,
+        testErc20,
+        testErc721,
+      } = fixture
+      const walletAddress = await wallet.getAddress()
+      const market = await seaportContract.getAddress()
+      const bid = parseEther("1")
+      await testErc20.mint(walletAddress, bid)
+      await wallet.approveToken(await testErc20.getAddress(), market, bid)
+      const order = await (
+        await seaportWithSigner.createOrder(
+          {
+            startTime: "0",
+            offer: [
+              { token: await testErc20.getAddress(), amount: bid.toString() },
+            ],
+            consideration: [
+              {
+                itemType: ItemType.ERC721,
+                token: await testErc721.getAddress(),
+                identifier: nftId,
+              },
+            ],
+          },
+          walletAddress,
+        )
+      ).executeAllActions()
+
+      await wallet.incrementCounter(market)
+      const counter = await seaport.getCounter(walletAddress)
+      expect(counter).not.to.eq(BigInt(order.parameters.counter))
+      const hash = seaport.getOrderHash({
+        ...order.parameters,
+        counter: counter.toString(),
+      })
+      const [, domainSeparator] = await seaportContract.information()
+      await wallet.approveSignature(
+        keccak256(concat(["0x1901", domainSeparator, hash])),
+        order.signature,
+      )
+
+      const accountAddress = offerer.address
+      const fill = batch
+        ? await seaport.fulfillOrders({
+            fulfillOrderDetails: [{ order }],
+            accountAddress,
+          })
+        : await seaport.fulfillOrder({ order, accountAddress })
+      await (await fill.executeAllActions()).wait()
+      expect(await testErc721.ownerOf(nftId)).to.eq(walletAddress)
+      expect(await testErc20.balanceOf(accountAddress)).to.eq(bid)
+    })
+  }
 
   it("validate then cancel single order", async () => {
     const { seaport } = fixture
