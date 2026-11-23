@@ -798,6 +798,67 @@ export class Seaport {
   }
 
   /**
+   * A counter increment leaves the old hash's status untouched. Check the
+   * current hash and let Seaport evaluate signatures, including ERC-1271.
+   */
+  private async _getOrderStatusForFulfiller(
+    order: OrderWithCounter,
+    fulfillerAddress: string,
+  ): Promise<OrderStatus> {
+    const orderParameters = order.parameters
+    const [orderStatus, counter] = await Promise.all([
+      this.getOrderStatus(this.getOrderHash(orderParameters)),
+      this.getCounter(orderParameters.offerer),
+    ])
+
+    if (BigInt(orderParameters.counter) === counter) {
+      return orderStatus
+    }
+
+    const currentStatus = await this.getOrderStatus(
+      this.getOrderHash({ ...orderParameters, counter: counter.toString() }),
+    )
+    if (
+      currentStatus.isCancelled ||
+      currentStatus.isValidated ||
+      orderParameters.offerer.toLowerCase() === fulfillerAddress.toLowerCase()
+    ) {
+      return currentStatus
+    }
+
+    try {
+      await this.contract.validate.staticCall([order], {
+        from: fulfillerAddress,
+      })
+      return currentStatus
+    } catch (error) {
+      // Only a signature rejection establishes that the counter invalidated
+      // the order. Surface provider errors instead of silently dropping it.
+      if (
+        typeof error !== "object" ||
+        error === null ||
+        !("data" in error) ||
+        typeof error.data !== "string" ||
+        !ethers.isHexString(error.data) ||
+        error.data.length < 10
+      )
+        throw error
+      const reason = this.contract.interface.getError(
+        error.data.slice(0, 10),
+      )?.name
+      if (
+        reason === "InvalidSigner" ||
+        reason === "InvalidSignature" ||
+        reason === "BadContractSignature" ||
+        reason === "BadSignatureV"
+      ) {
+        return { ...currentStatus, isCancelled: true }
+      }
+      throw error
+    }
+  }
+
+  /**
    * Calculates the order hash of order components so we can forgo executing a request to the contract
    * This saves us RPC calls and latency.
    */
@@ -1006,7 +1067,7 @@ export class Seaport {
         operator: fulfillerOperator,
       }),
       this.provider.getBlock("latest"),
-      this.getOrderStatus(this.getOrderHash(orderParameters)),
+      this._getOrderStatusForFulfiller(order, fulfillerAddress),
     ])
 
     const currentBlockTimestamp = currentBlock!.timestamp
@@ -1209,7 +1270,7 @@ export class Seaport {
       this.provider.getBlock("latest"),
       Promise.all(
         fulfillOrderDetails.map(({ order }) =>
-          this.getOrderStatus(this.getOrderHash(order.parameters)),
+          this._getOrderStatusForFulfiller(order, fulfillerAddress),
         ),
       ),
     ])
