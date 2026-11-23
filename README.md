@@ -92,10 +92,7 @@ Look at the relevant definitions in `seaport.ts` in order to see the different f
 
 ```js
 const seaport = new Seaport(provider, {
-  balanceAndApprovalChecksOnOrderCreation: false,
-  overrides: {
-    defaultConduitKey: "0x...",
-  },
+  ascendingAmountFulfillmentBuffer: 120,
 });
 ```
 
