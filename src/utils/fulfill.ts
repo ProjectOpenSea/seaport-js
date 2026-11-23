@@ -10,7 +10,7 @@ import type {
   BasicOrderParametersStruct,
   FulfillmentComponentStruct,
   OrderStruct,
-} from "../typechain-types/seaport/contracts/Seaport"
+} from "../typechain-types/seaport-core/src/Seaport"
 import type {
   AdvancedOrder,
   ConsiderationItem,

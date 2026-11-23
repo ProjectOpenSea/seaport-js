@@ -9,7 +9,7 @@ import {
 } from "ethers"
 import { ItemType, MAX_INT, NO_CONDUIT, OrderType } from "../src/constants"
 import { Seaport } from "../src/seaport"
-import { LocalConduitController__factory } from "../src/typechain-types/index"
+import { ConduitController__factory } from "../src/typechain-types/index"
 import type {
   ApprovalAction,
   BasicErc721Item,
@@ -373,7 +373,7 @@ describeWithFixture(
 
       const conduitKey = `${offererAddress.toLowerCase()}${"00".repeat(11)}01`
       const [, , controllerAddress] = await seaportContract.information()
-      const controller = LocalConduitController__factory.connect(
+      const controller = ConduitController__factory.connect(
         controllerAddress,
         ethers.provider,
       )
