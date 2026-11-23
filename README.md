@@ -17,6 +17,7 @@
 - [Synopsis](#synopsis)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+  - [Configuration](#configuration)
   - [Use Cases](#use-cases)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -84,6 +85,26 @@ const seaport = new Seaport(signer);
 ```
 
 Look at the relevant definitions in `seaport.ts` in order to see the different functionality this library offers.
+
+### Configuration
+
+`Seaport` takes an optional second argument with settings. Every setting has a default, so you only pass the ones you want to change:
+
+```js
+const seaport = new Seaport(provider, {
+  ascendingAmountFulfillmentBuffer: 120,
+});
+```
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `ascendingAmountFulfillmentBuffer` | `300` | Seconds added to the current block time when computing how much to pay for an item whose amount rises over time, so the fill still covers it if the transaction confirms later. |
+| `balanceAndApprovalChecksOnOrderCreation` | `true` | When `false`, `createOrder` and `createBulkOrders` skip the offerer's balance and approval checks and return no approval actions. |
+| `conduitKeyToConduit` | OpenSea conduit only | Extra mappings from conduit key to conduit address. Add one for each custom conduit you use, so approvals are checked against the right address. |
+| `overrides.contractAddress` | `0x0000000000000068F116a894984e2DB1123eB395` | The Seaport contract address. The default is Seaport 1.6, deployed at the same address on every supported chain. |
+| `overrides.seaportVersion` | `"1.6"` | The Seaport version in the EIP-712 domain used for signing. Set it to match `overrides.contractAddress`. |
+| `overrides.domainRegistryAddress` | `0x000000000DaD0DE04D2B2D4a5A74581EBA94124A` | The domain registry contract address. |
+| `overrides.defaultConduitKey` | Zero hash (no conduit) | The conduit key used when you don't pass `conduitKey` to `createOrder`, `createBulkOrders`, `fulfillOrder` or `fulfillOrders`. With no conduit, approvals go to the Seaport contract itself. |
 
 ### Use Cases
 

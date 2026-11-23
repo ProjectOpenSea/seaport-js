@@ -107,7 +107,17 @@ export class Seaport {
 
   /**
    * @param providerOrSigner - The provider or signer to use for web3-related calls
-   * @param considerationConfig - A config to provide flexibility in the usage of Seaport
+   * @param config - Optional settings. See the Configuration section of the README.
+   * @param config.ascendingAmountFulfillmentBuffer - Seconds added to the current block time when
+   *                                                  computing the amount of an ascending-amount item to fill. Defaults to 300.
+   * @param config.balanceAndApprovalChecksOnOrderCreation - Whether order creation checks the offerer's balances and
+   *                                                        approvals and returns approval actions. Defaults to true.
+   * @param config.conduitKeyToConduit - Extra conduit key to conduit address mappings, added to the known ones.
+   * @param config.overrides.seaportVersion - The Seaport version used in the EIP-712 domain. Defaults to "1.6".
+   * @param config.overrides.contractAddress - The Seaport contract address. Defaults to the cross-chain Seaport 1.6 address.
+   * @param config.overrides.domainRegistryAddress - The domain registry address. Defaults to the cross-chain address.
+   * @param config.overrides.defaultConduitKey - The conduit key used when none is passed to createOrder, createBulkOrders,
+   *                                            fulfillOrder or fulfillOrders. Defaults to the zero hash (no conduit).
    */
   public constructor(
     providerOrSigner: JsonRpcProvider | Signer,
@@ -245,7 +255,7 @@ export class Seaport {
    * The list of actions will either be an approval if approvals are necessary
    * or a signature request that will then be supplied into the final orders, ready to be fulfilled.
    *
-   * @param input See {@link createOrder} for more details about the input parameters.
+   * @param createOrderInput See {@link createOrder} for more details about the input parameters.
    * @param accountAddress Optional address to create the orders for. It is the offerer of every order and
    *                       defaults to the signer's address, as in {@link createOrder}.
    * @param exactApproval optional boolean to indicate whether the approval should be exact or not
