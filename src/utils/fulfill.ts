@@ -35,6 +35,7 @@ import {
   type InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateCumulativeFulfillerBalances,
+  validateCumulativeOffererBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balanceAndApprovalCheck"
 import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria"
@@ -646,6 +647,7 @@ export function hasOrderExpired(
 
 export type FulfillOrdersMetadata = {
   order: Order
+  orderHash: string
   unitsToFill?: BigNumberish
   orderStatus: OrderStatus
   offerCriteria: InputCriteria[]
@@ -801,6 +803,11 @@ export function fulfillAvailableOrders({
     fulfillerAddress,
   )
   const cumulativeReceivedAmounts: Record<string, Record<string, bigint>> = {}
+  // What each order offers, for checking every offerer against all of their
+  // orders in the batch at once (see validateCumulativeOffererBalancesAndApprovals).
+  const offeredByOrder: Parameters<
+    typeof validateCumulativeOffererBalancesAndApprovals
+  >[0] = []
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap(orderMetadata => [
       orderMetadata.order.parameters.offer,
@@ -829,6 +836,7 @@ export function fulfillAvailableOrders({
   ordersMetadataWithAdjustedFills.forEach(
     ({
       order,
+      orderHash,
       tips,
       offerCriteria,
       considerationCriteria,
@@ -868,16 +876,24 @@ export function fulfillAvailableOrders({
         }
       }
 
-      if (offerItemsGoToFulfiller) {
-        const summedOffer = getSummedTokenAndIdentifierAmounts({
-          items: order.parameters.offer,
-          criterias: offerCriteria,
-          timeBasedItemParams: {
-            ...timeBasedItemParams,
-            isConsiderationItem: false,
-          },
-        })
+      const summedOffer = getSummedTokenAndIdentifierAmounts({
+        items: order.parameters.offer,
+        criterias: offerCriteria,
+        timeBasedItemParams: {
+          ...timeBasedItemParams,
+          isConsiderationItem: false,
+        },
+      })
 
+      offeredByOrder.push({
+        orderHash,
+        offerer: order.parameters.offerer,
+        operator: offererOperator,
+        offeredAmounts: summedOffer,
+        balancesAndApprovals: offererBalancesAndApprovals,
+      })
+
+      if (offerItemsGoToFulfiller) {
         for (const [token, identifierToAmount] of Object.entries(summedOffer)) {
           for (const [identifier, amount] of Object.entries(
             identifierToAmount,
@@ -926,6 +942,8 @@ export function fulfillAvailableOrders({
   )
 
   overrides = { ...overrides, value: totalNativeAmount }
+
+  validateCumulativeOffererBalancesAndApprovals(offeredByOrder)
 
   validateCumulativeFulfillerBalances({
     requiredAmounts: cumulativeFulfillerAmounts,
