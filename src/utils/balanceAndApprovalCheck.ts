@@ -385,6 +385,46 @@ export const validateCumulativeFulfillerBalances = ({
   }
 }
 
+/**
+ * Check each offerer can cover all of their orders in a batch together, not
+ * just each order on its own.
+ *
+ * Every order's offer is checked against its offerer's balance and approval as
+ * they stand, so two bids of 10 from an offerer holding 15 each pass, and the
+ * batch reverts when Seaport transfers the 20 they offer between them. The same
+ * goes for an allowance: approving the exact amount of each bid leaves one
+ * allowance the size of the last bid, not the sum.
+ *
+ * `offerers` holds, per offerer and operator, what their orders in the batch
+ * offer in total and the balances and approvals read for those orders.
+ */
+export const validateCumulativeOffererBalancesAndApprovals = (
+  offerers: {
+    offeredAmounts: Record<string, Record<string, bigint>>
+    balancesAndApprovals: BalancesAndApprovals
+    operator: string
+  }[],
+) => {
+  for (const { offeredAmounts, balancesAndApprovals, operator } of offerers) {
+    const { insufficientBalances, insufficientApprovals } =
+      getInsufficientBalanceAndApprovalAmounts({
+        balancesAndApprovals,
+        tokenAndIdentifierAmounts: offeredAmounts,
+        operator,
+      })
+
+    if (insufficientBalances.length > 0) {
+      throw new Error(
+        "The offerer does not have the amount needed to create or fulfill.",
+      )
+    }
+
+    if (insufficientApprovals.length > 0) {
+      throw new Error("The offerer does not have the sufficient approvals.")
+    }
+  }
+}
+
 export const validateStandardFulfillBalancesAndApprovals = ({
   offer,
   consideration,

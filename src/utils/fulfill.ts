@@ -35,6 +35,7 @@ import {
   type InsufficientApprovals,
   validateBasicFulfillBalancesAndApprovals,
   validateCumulativeFulfillerBalances,
+  validateCumulativeOffererBalancesAndApprovals,
   validateStandardFulfillBalancesAndApprovals,
 } from "./balanceAndApprovalCheck"
 import { generateCriteriaResolvers, getItemToCriteriaMap } from "./criteria"
@@ -801,6 +802,18 @@ export function fulfillAvailableOrders({
     fulfillerAddress,
   )
   const cumulativeReceivedAmounts: Record<string, Record<string, bigint>> = {}
+  // What each offerer gives up across the batch, keyed by offerer and the
+  // operator their orders approve. Each order's offer is checked on its own
+  // below, against the offerer's balance as it stands, so two orders from one
+  // offerer can each pass while together they offer more than the offerer has.
+  const cumulativeOffererAmounts = new Map<
+    string,
+    {
+      offeredAmounts: Record<string, Record<string, bigint>>
+      balancesAndApprovals: BalancesAndApprovals
+      operator: string
+    }
+  >()
   const criteriaOffersAndConsiderations = sanitizedOrdersMetadata
     .flatMap(orderMetadata => [
       orderMetadata.order.parameters.offer,
@@ -868,16 +881,32 @@ export function fulfillAvailableOrders({
         }
       }
 
-      if (offerItemsGoToFulfiller) {
-        const summedOffer = getSummedTokenAndIdentifierAmounts({
-          items: order.parameters.offer,
-          criterias: offerCriteria,
-          timeBasedItemParams: {
-            ...timeBasedItemParams,
-            isConsiderationItem: false,
-          },
-        })
+      const summedOffer = getSummedTokenAndIdentifierAmounts({
+        items: order.parameters.offer,
+        criterias: offerCriteria,
+        timeBasedItemParams: {
+          ...timeBasedItemParams,
+          isConsiderationItem: false,
+        },
+      })
 
+      const offererKey = `${order.parameters.offerer.toLowerCase()}-${offererOperator.toLowerCase()}`
+      const offererTotals = cumulativeOffererAmounts.get(offererKey) ?? {
+        offeredAmounts: {},
+        balancesAndApprovals: [],
+        operator: offererOperator,
+      }
+      for (const [token, identifierToAmount] of Object.entries(summedOffer)) {
+        for (const [identifier, amount] of Object.entries(identifierToAmount)) {
+          offererTotals.offeredAmounts[token] ??= {}
+          offererTotals.offeredAmounts[token][identifier] =
+            (offererTotals.offeredAmounts[token][identifier] ?? 0n) + amount
+        }
+      }
+      offererTotals.balancesAndApprovals.push(...offererBalancesAndApprovals)
+      cumulativeOffererAmounts.set(offererKey, offererTotals)
+
+      if (offerItemsGoToFulfiller) {
         for (const [token, identifierToAmount] of Object.entries(summedOffer)) {
           for (const [identifier, amount] of Object.entries(
             identifierToAmount,
@@ -926,6 +955,10 @@ export function fulfillAvailableOrders({
   )
 
   overrides = { ...overrides, value: totalNativeAmount }
+
+  validateCumulativeOffererBalancesAndApprovals([
+    ...cumulativeOffererAmounts.values(),
+  ])
 
   validateCumulativeFulfillerBalances({
     requiredAmounts: cumulativeFulfillerAmounts,

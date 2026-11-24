@@ -1507,6 +1507,106 @@ describeWithFixture(
       })
     })
 
+    describe("cumulative offerer balance", () => {
+      // Two bids from one offerer, each for 10, accepted by a fulfiller who
+      // holds both NFTs.
+      const acceptTwoBidsFromOneOfferer = async (offererBalance: string) => {
+        const { seaport, testErc721, testErc20 } = fixture
+
+        await testErc721.mint(await fulfiller.getAddress(), nftId)
+        await testErc721.mint(await fulfiller.getAddress(), nftId2)
+        await testErc20.mint(
+          await offerer.getAddress(),
+          parseEther(offererBalance).toString(),
+        )
+
+        const bid = async (identifier: string) =>
+          (
+            await seaport.createOrder({
+              offer: [
+                {
+                  amount: parseEther("10").toString(),
+                  token: await testErc20.getAddress(),
+                },
+              ],
+              consideration: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: await testErc721.getAddress(),
+                  identifier,
+                  recipient: await offerer.getAddress(),
+                },
+              ],
+            })
+          ).executeAllActions()
+
+        return [await bid(nftId), await bid(nftId2)]
+      }
+
+      it("rejects a batch whose offerer cannot cover all of their orders, even when each order alone is covered", async () => {
+        const { seaport } = fixture
+
+        // Enough for either bid on its own, not for both together.
+        const [firstBid, secondBid] = await acceptTwoBidsFromOneOfferer("15")
+
+        await expect(
+          seaport.fulfillOrders({
+            fulfillOrderDetails: [{ order: firstBid }, { order: secondBid }],
+            accountAddress: await fulfiller.getAddress(),
+          }),
+        ).to.be.rejectedWith(
+          "The offerer does not have the amount needed to create or fulfill.",
+        )
+      })
+
+      it("rejects a batch whose offerer approved each order but not all of them together", async () => {
+        const { seaport, testErc20 } = fixture
+
+        const [firstBid, secondBid] = await acceptTwoBidsFromOneOfferer("30")
+        // An exact approval for one bid, as a second `approve` overwrites the
+        // first instead of adding to it.
+        await testErc20
+          .connect(offerer)
+          .approve(await seaport.contract.getAddress(), parseEther("10"))
+
+        await expect(
+          seaport.fulfillOrders({
+            fulfillOrderDetails: [{ order: firstBid }, { order: secondBid }],
+            accountAddress: await fulfiller.getAddress(),
+          }),
+        ).to.be.rejectedWith(
+          "The offerer does not have the sufficient approvals.",
+        )
+      })
+
+      it("allows a batch the offerer can cover in total", async () => {
+        const { seaport, testErc721, testErc20 } = fixture
+
+        // Exactly enough for both bids together.
+        const [firstBid, secondBid] = await acceptTwoBidsFromOneOfferer("20")
+
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [{ order: firstBid }, { order: secondBid }],
+          accountAddress: await fulfiller.getAddress(),
+        })
+
+        for (const action of actions.filter(a => a.type === "approval")) {
+          await action.transactionMethods.transact()
+        }
+        await actions[actions.length - 1].transactionMethods.transact()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await offerer.getAddress(),
+        )
+        expect(await testErc721.ownerOf(nftId2)).to.equal(
+          await offerer.getAddress(),
+        )
+        expect(await testErc20.balanceOf(await fulfiller.getAddress())).to.eq(
+          parseEther("20"),
+        )
+      })
+    })
+
     // TODO
     describe("Special use cases", () => {
       it("Can fulfill dutch auction orders", () => {})
