@@ -1579,6 +1579,66 @@ describeWithFixture(
         )
       })
 
+      // A seller who relists an NFT at a new price without cancelling the old
+      // listing has two valid listings for one token.
+      const listNftTwice = async () => {
+        const { seaport, testErc721 } = fixture
+
+        await testErc721.mint(await offerer.getAddress(), nftId)
+
+        const listing = async (price: string) =>
+          (
+            await seaport.createOrder({
+              offer: [
+                {
+                  itemType: ItemType.ERC721,
+                  token: await testErc721.getAddress(),
+                  identifier: nftId,
+                },
+              ],
+              consideration: [
+                {
+                  amount: parseEther(price).toString(),
+                  recipient: await offerer.getAddress(),
+                },
+              ],
+            })
+          ).executeAllActions()
+
+        return [await listing("2"), await listing("1")]
+      }
+
+      it("rejects a batch with two listings of the same NFT from one offerer", async () => {
+        const { seaport } = fixture
+
+        const [oldListing, newListing] = await listNftTwice()
+
+        await expect(
+          seaport.fulfillOrders({
+            fulfillOrderDetails: [{ order: oldListing }, { order: newListing }],
+            accountAddress: await fulfiller.getAddress(),
+          }),
+        ).to.be.rejectedWith(
+          "The offerer does not have the amount needed to create or fulfill.",
+        )
+      })
+
+      it("counts an order passed twice once, as Seaport skips the repeat", async () => {
+        const { seaport, testErc721 } = fixture
+
+        const [listing] = await listNftTwice()
+
+        const { actions } = await seaport.fulfillOrders({
+          fulfillOrderDetails: [{ order: listing }, { order: listing }],
+          accountAddress: await fulfiller.getAddress(),
+        })
+        await actions[actions.length - 1].transactionMethods.transact()
+
+        expect(await testErc721.ownerOf(nftId)).to.equal(
+          await fulfiller.getAddress(),
+        )
+      })
+
       it("allows a batch the offerer can cover in total", async () => {
         const { seaport, testErc721, testErc20 } = fixture
 

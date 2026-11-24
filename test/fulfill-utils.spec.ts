@@ -63,6 +63,8 @@ const makeOrder = ({
 
 const makeMeta = (order: Order): FulfillOrdersMetadata[number] => ({
   order,
+  // Not read by generateFulfillOrdersFulfillments.
+  orderHash: ZERO_HASH,
   orderStatus: {
     isValidated: false,
     isCancelled: false,

@@ -1289,6 +1289,7 @@ export class Seaport {
       (orderDetails, index) => {
         const order = {
           order: orderDetails.order,
+          orderHash: this.getOrderHash(orderDetails.order.parameters),
           unitsToFill: orderDetails.unitsToFill,
           orderStatus: scaleOrderStatusToMaxUnits(
             orderDetails.order,

@@ -395,17 +395,70 @@ export const validateCumulativeFulfillerBalances = ({
  * goes for an allowance: approving the exact amount of each bid leaves one
  * allowance the size of the last bid, not the sum.
  *
- * `offerers` holds, per offerer and operator, what their orders in the batch
- * offer in total and the balances and approvals read for those orders.
+ * An order listed more than once counts once, at its largest entry. Seaport
+ * fills the entries in turn and skips or clamps whatever an earlier entry
+ * already filled, so the offerer gives up at least that much and at most the
+ * order's remainder. Summing the entries would reject a batch that settles.
  */
 export const validateCumulativeOffererBalancesAndApprovals = (
-  offerers: {
+  orders: {
+    orderHash: string
+    offerer: string
+    operator: string
     offeredAmounts: Record<string, Record<string, bigint>>
     balancesAndApprovals: BalancesAndApprovals
-    operator: string
   }[],
 ) => {
-  for (const { offeredAmounts, balancesAndApprovals, operator } of offerers) {
+  const offerers = new Map<
+    string,
+    {
+      operator: string
+      offeredAmounts: Record<string, Record<string, bigint>>
+      balancesAndApprovals: BalancesAndApprovals
+    }
+  >()
+  // Largest amount each order offers, per token and identifier, across its
+  // entries in the batch.
+  const largestPerOrder = new Map<
+    string,
+    Record<string, Record<string, bigint>>
+  >()
+
+  for (const order of orders) {
+    const offererKey = `${order.offerer.toLowerCase()}-${order.operator.toLowerCase()}`
+    const offerer = offerers.get(offererKey) ?? {
+      operator: order.operator,
+      offeredAmounts: {},
+      balancesAndApprovals: [],
+    }
+    offerer.balancesAndApprovals.push(...order.balancesAndApprovals)
+    offerers.set(offererKey, offerer)
+
+    const orderKey = `${offererKey}-${order.orderHash.toLowerCase()}`
+    const largest = largestPerOrder.get(orderKey) ?? {}
+    for (const [token, identifierToAmount] of Object.entries(
+      order.offeredAmounts,
+    )) {
+      for (const [identifier, amount] of Object.entries(identifierToAmount)) {
+        const counted = largest[token]?.[identifier] ?? 0n
+        if (amount <= counted) {
+          continue
+        }
+        largest[token] ??= {}
+        largest[token][identifier] = amount
+        offerer.offeredAmounts[token] ??= {}
+        offerer.offeredAmounts[token][identifier] =
+          (offerer.offeredAmounts[token][identifier] ?? 0n) + amount - counted
+      }
+    }
+    largestPerOrder.set(orderKey, largest)
+  }
+
+  for (const {
+    offeredAmounts,
+    balancesAndApprovals,
+    operator,
+  } of offerers.values()) {
     const { insufficientBalances, insufficientApprovals } =
       getInsufficientBalanceAndApprovalAmounts({
         balancesAndApprovals,

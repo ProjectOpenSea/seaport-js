@@ -38,6 +38,8 @@ const makeMeta = ({
     } satisfies OrderParameters,
     signature: "0x",
   },
+  // Not read by generateFulfillOrdersFulfillments.
+  orderHash: ZERO_HASH,
   orderStatus: {
     isValidated: false,
     isCancelled: false,
