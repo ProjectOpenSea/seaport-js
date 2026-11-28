@@ -1191,6 +1191,98 @@ describeWithFixture(
       )
     })
 
+    // Approval actions are sent by the signer, so they can only approve the
+    // signer's own tokens. When the wallet's owner signs for a wallet that has
+    // not approved Seaport, approving would grant an allowance on the owner's
+    // tokens and still leave the order unfillable.
+    describe("a wallet that has not approved Seaport", () => {
+      const offerFor = async (): Promise<CreateOrderInput> => {
+        const { testErc20, testErc721, testERC1271Wallet, ethers } = fixture
+        const [, , nftOwner] = await ethers.getSigners()
+        await testErc721.mint(await nftOwner.getAddress(), "1")
+        await testErc20.mint(
+          await testERC1271Wallet.getAddress(),
+          parseEther("10"),
+        )
+        return {
+          startTime: "0",
+          offer: [
+            {
+              amount: parseEther("10").toString(),
+              token: await testErc20.getAddress(),
+            },
+          ],
+          consideration: [
+            {
+              itemType: ItemType.ERC721,
+              token: await testErc721.getAddress(),
+              identifier: "1",
+            },
+          ],
+        }
+      }
+
+      it("createOrder rejects instead of approving the signer's tokens", async () => {
+        const {
+          seaportWithSigner,
+          seaportContract,
+          testErc20,
+          testERC1271Wallet,
+          ethers,
+        } = fixture
+        const [walletOwner] = await ethers.getSigners()
+        const walletAddress = await testERC1271Wallet.getAddress()
+
+        await expect(
+          seaportWithSigner.createOrder(await offerFor(), walletAddress),
+        ).to.be.rejectedWith(
+          `The offerer ${walletAddress} has not approved ${await seaportContract.getAddress()}`,
+        )
+
+        expect(
+          await testErc20.allowance(
+            await walletOwner.getAddress(),
+            await seaportContract.getAddress(),
+          ),
+        ).to.equal(0n)
+      })
+
+      it("createBulkOrders rejects instead of approving the signer's tokens", async () => {
+        const { seaportWithSigner, seaportContract, testERC1271Wallet } =
+          fixture
+        const walletAddress = await testERC1271Wallet.getAddress()
+
+        await expect(
+          seaportWithSigner.createBulkOrders([await offerFor()], walletAddress),
+        ).to.be.rejectedWith(
+          `The offerer ${walletAddress} has not approved ${await seaportContract.getAddress()}`,
+        )
+      })
+
+      it("createBulkOrders rejects when the allowance covers each order but not the batch", async () => {
+        const {
+          seaportWithSigner,
+          seaportContract,
+          testErc20,
+          testERC1271Wallet,
+        } = fixture
+        const walletAddress = await testERC1271Wallet.getAddress()
+        const order = await offerFor()
+        await testErc20.mint(walletAddress, parseEther("10"))
+        await testERC1271Wallet.approveToken(
+          await testErc20.getAddress(),
+          await seaportContract.getAddress(),
+          parseEther("10"),
+        )
+
+        await expect(
+          seaportWithSigner.createBulkOrders([order, order], walletAddress),
+        ).to.be.rejectedWith(
+          `The offerer ${walletAddress} has not approved ${await seaportContract.getAddress()}`,
+        )
+      })
+    })
+
     // multiplyBasisPoints floors, so a small enough price makes the fee item come
     // out as zero. Seaport rejects a zero-amount item with MissingItemAmount, so
     // such an item would leave the signed order impossible to fill.
