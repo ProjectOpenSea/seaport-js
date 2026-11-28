@@ -179,5 +179,52 @@ describeWithFixture(
         await fulfiller.getAddress(),
       )
     })
+
+    describe("a conduit key the instance was not configured with", () => {
+      // Orders from other marketplaces carry their own conduit keys. Without a
+      // mapping the operator was undefined, and ethers failed with
+      // "unsupported addressable value", which names neither the key nor the
+      // setting to change.
+      const unconfigured = () =>
+        new Seaport(fixture.ethers.provider as never, {
+          overrides: {
+            contractAddress: fixture.seaportContract.target as string,
+          },
+        })
+
+      const unknownKeyError = () =>
+        `Unknown conduit key ${conduitKey}. Add it with its conduit address to the conduitKeyToConduit setting.`
+
+      it("names the key when creating an order", async () => {
+        await expect(
+          unconfigured().createOrder(
+            await listingWithConduit(conduitKey),
+            await offerer.getAddress(),
+          ),
+        ).to.be.rejectedWith(unknownKeyError())
+      })
+
+      it("names the key when fulfilling an order", async () => {
+        const order = await createListing(conduitKey)
+
+        await expect(
+          unconfigured().fulfillOrder({
+            order,
+            accountAddress: await fulfiller.getAddress(),
+          }),
+        ).to.be.rejectedWith(unknownKeyError())
+      })
+
+      it("names the key when fulfilling a batch", async () => {
+        const order = await createListing(conduitKey)
+
+        await expect(
+          unconfigured().fulfillOrders({
+            fulfillOrderDetails: [{ order }],
+            accountAddress: await fulfiller.getAddress(),
+          }),
+        ).to.be.rejectedWith(unknownKeyError())
+      })
+    })
   },
 )
