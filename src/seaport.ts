@@ -517,10 +517,19 @@ export class Seaport {
    * case and still be the same value on chain. Looking it up as a raw string
    * would miss on a key that only differs in case, leaving the operator
    * undefined and failing later with an error that names neither the conduit
-   * nor the key.
+   * nor the key. A key that is not configured at all, such as one on an order
+   * from another marketplace, fails here for the same reason.
    */
   private _getConduit(conduitKey: string): string {
-    return this.config.conduitKeyToConduit[conduitKey.toLowerCase()]
+    const conduit = this.config.conduitKeyToConduit[conduitKey.toLowerCase()]
+
+    if (!conduit) {
+      throw new Error(
+        `Unknown conduit key ${conduitKey}. Add it with its conduit address to the conduitKeyToConduit setting.`,
+      )
+    }
+
+    return conduit
   }
 
   private async _getSigner(
