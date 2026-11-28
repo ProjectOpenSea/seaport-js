@@ -51,6 +51,7 @@ import {
   type BalancesAndApprovals,
   getBalancesAndApprovals,
   getInsufficientBalanceAndApprovalAmounts,
+  type InsufficientApprovals,
   validateOfferBalancesAndApprovals,
 } from "./utils/balanceAndApprovalCheck"
 import { getBulkOrderTree } from "./utils/eip712/bulk-orders"
@@ -326,6 +327,12 @@ export class Seaport {
         )
       : []
 
+    await this._assertSignerCanApprove(
+      signer,
+      offerer,
+      batchInsufficientApprovals,
+    )
+
     // getApprovalActions keeps the last of a set of duplicates. Keep the first,
     // so a collection-wide approval names the first order's token.
     const seenApprovalKeys = new Set<string>()
@@ -499,6 +506,8 @@ export class Seaport {
         )
       }
 
+      await this._assertSignerCanApprove(signer, offerer, insufficientApprovals)
+
       const approvals = getApprovalActions(
         insufficientApprovals,
         exactApproval,
@@ -508,6 +517,32 @@ export class Seaport {
     }
 
     return { orderComponents, approvalActions, operator, balancesAndApprovals }
+  }
+
+  /**
+   * Approval actions are sent by the signer, so they can only approve the
+   * signer's own tokens. When the offerer is another account, such as a
+   * contract wallet whose owner signs for it, an approval action would grant an
+   * allowance on the signer's tokens and leave the offerer's order unfillable.
+   */
+  private async _assertSignerCanApprove(
+    signer: Signer | JsonRpcSigner,
+    offerer: string,
+    insufficientApprovals: InsufficientApprovals,
+  ) {
+    if (insufficientApprovals.length === 0) {
+      return
+    }
+
+    const signerAddress = await signer.getAddress()
+    if (signerAddress.toLowerCase() === offerer.toLowerCase()) {
+      return
+    }
+
+    const { token, operator } = insufficientApprovals[0]
+    throw new Error(
+      `The offerer ${offerer} has not approved ${operator} to transfer ${token}. Approvals are sent by the signer ${signerAddress}, which cannot approve for the offerer, so approve from the offerer and then create the order.`,
+    )
   }
 
   /**
