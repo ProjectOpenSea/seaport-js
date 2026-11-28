@@ -190,6 +190,51 @@ const { executeAllActions: executeAllFulfillActions } =
 const transaction = await executeAllFulfillActions();
 ```
 
+#### Making a collection offer for any ERC-721 for 10 WETH and fulfilling it
+
+A collection offer is a criteria-based item: instead of a single `identifier`, the consideration item takes `identifiers`. An empty list matches any token in the collection. The fulfiller chooses the token they sell and passes it in `considerationCriteria`. A collection-wide offer needs no proof, so `proof` is an empty array.
+
+```js
+import { ethers } from "ethers";
+import { ItemType } from "@opensea/seaport-js";
+
+const offerer = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+const fulfiller = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
+const { executeAllActions } = await seaport.createOrder(
+  {
+    offer: [
+      {
+        amount: ethers.parseEther("10").toString(),
+        // WETH
+        token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      },
+    ],
+    consideration: [
+      {
+        itemType: ItemType.ERC721,
+        token: "0x8a90cab2b38dba80c64b7734e58ee1db38b8992e",
+        // An empty list matches any token in the collection
+        identifiers: [],
+        recipient: offerer,
+      },
+    ],
+  },
+  offerer,
+);
+
+const order = await executeAllActions();
+
+const { executeAllActions: executeAllFulfillActions } =
+  await seaport.fulfillOrder({
+    order,
+    accountAddress: fulfiller,
+    // The token the fulfiller sells into the offer
+    considerationCriteria: [{ identifier: "1", proof: [] }],
+  });
+
+const transaction = await executeAllFulfillActions();
+```
+
 ## Contributing
 
 See [the contributing guide](./.github/CONTRIBUTING.md) for detailed instructions on how to get started with this project.
